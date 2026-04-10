@@ -11,11 +11,14 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => (
       <div className="flex-1 flex flex-col">
         <header className="h-14 flex items-center justify-between border-b bg-card px-4">
           <SidebarTrigger className="ml-0" />
-          <Link to="/" target="_blank">
-            <Button variant="ghost" size="sm" className="text-xs gap-1">
-              <ExternalLink className="h-3.5 w-3.5" /> View Store
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground hidden sm:block">Apsoncure PHC Admin</span>
+            <Link to="/" target="_blank">
+              <Button variant="ghost" size="sm" className="text-xs gap-1">
+                <ExternalLink className="h-3.5 w-3.5" /> स्टोर देखें
+              </Button>
+            </Link>
+          </div>
         </header>
         <main className="flex-1 p-6 bg-background overflow-auto">{children}</main>
       </div>
