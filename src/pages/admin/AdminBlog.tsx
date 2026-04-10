@@ -1,78 +1,150 @@
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Plus, Edit, Trash2, Eye, MoreHorizontal, Search, Calendar, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminLayout from "@/components/AdminLayout";
 import { blogPosts } from "@/data/mockData";
 
-const AdminBlog = () => (
-  <AdminLayout>
-    <div className="flex items-center justify-between mb-6">
-      <h1 className="text-2xl font-serif font-bold">Blog Management</h1>
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button className="gap-2"><Plus className="h-4 w-4" /> New Post</Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Create Blog Post</DialogTitle></DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div><Label>Title</Label><Input className="mt-1" placeholder="Post title..." /></div>
-            <div><Label>Category</Label><Input className="mt-1" placeholder="e.g. Herbs, Lifestyle" /></div>
-            <div><Label>Featured Image URL</Label><Input className="mt-1" placeholder="https://..." /></div>
-            <div><Label>Excerpt</Label><Textarea className="mt-1" rows={2} placeholder="Brief summary..." /></div>
-            <div><Label>Content</Label><Textarea className="mt-1" rows={10} placeholder="Write your article here..." /></div>
-            <Button className="w-full">Publish Post</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+const AdminBlog = () => {
+  const [search, setSearch] = useState("");
+  const filtered = blogPosts.filter(p => p.title.toLowerCase().includes(search.toLowerCase()));
 
-    <Card>
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left">
-                <th className="p-4 font-medium text-muted-foreground">Post</th>
-                <th className="p-4 font-medium text-muted-foreground">Category</th>
-                <th className="p-4 font-medium text-muted-foreground">Author</th>
-                <th className="p-4 font-medium text-muted-foreground">Date</th>
-                <th className="p-4 font-medium text-muted-foreground">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {blogPosts.map((post) => (
-                <tr key={post.id} className="border-b last:border-0">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <img src={post.image} alt={post.title} className="h-10 w-14 rounded object-cover" />
-                      <div>
-                        <span className="font-medium line-clamp-1">{post.title}</span>
-                        <span className="block text-xs text-muted-foreground">{post.readTime}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4"><Badge variant="secondary" className="text-xs">{post.category}</Badge></td>
-                  <td className="p-4 text-muted-foreground">{post.author}</td>
-                  <td className="p-4 text-muted-foreground">{post.date}</td>
-                  <td className="p-4">
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4" /></Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+  return (
+    <AdminLayout>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-serif font-bold">ब्लॉग प्रबंधन (Blog)</h1>
+          <p className="text-sm text-muted-foreground">{blogPosts.length} पोस्ट्स प्रकाशित</p>
         </div>
-      </CardContent>
-    </Card>
-  </AdminLayout>
-);
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button size="sm" className="gap-1.5 text-xs h-8"><Plus className="h-3.5 w-3.5" /> नई पोस्ट लिखें</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle className="font-serif">📝 नई ब्लॉग पोस्ट</DialogTitle></DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div><Label className="text-xs">शीर्षक (Title)</Label><Input className="mt-1 h-9 text-lg font-serif" placeholder="अपना शीर्षक लिखें..." /></div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label className="text-xs">श्रेणी</Label>
+                  <Select><SelectTrigger className="mt-1 h-9"><SelectValue placeholder="चुनें" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="herbs">जड़ी-बूटी</SelectItem>
+                      <SelectItem value="lifestyle">जीवनशैली</SelectItem>
+                      <SelectItem value="skincare">त्वचा देखभाल</SelectItem>
+                      <SelectItem value="education">शिक्षा</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">लेखक</Label>
+                  <Input className="mt-1 h-9" placeholder="डॉ. प्राची" />
+                </div>
+                <div>
+                  <Label className="text-xs">पढ़ने का समय</Label>
+                  <Input className="mt-1 h-9" placeholder="5 मिनट" />
+                </div>
+              </div>
+              <div><Label className="text-xs">फीचर्ड इमेज URL</Label><Input className="mt-1 h-9" placeholder="https://..." /></div>
+              <div><Label className="text-xs">सारांश (Excerpt)</Label><Textarea className="mt-1" rows={2} placeholder="संक्षिप्त विवरण..." /></div>
+              <div>
+                <Label className="text-xs">पूरा लेख (Content)</Label>
+                <div className="mt-1 border rounded-lg">
+                  <div className="flex gap-1 p-2 border-b bg-muted/30">
+                    <Button variant="ghost" size="sm" className="h-7 text-xs font-bold">B</Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs italic">I</Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs underline">U</Button>
+                    <div className="w-px bg-border mx-1" />
+                    <Button variant="ghost" size="sm" className="h-7 text-xs">H1</Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs">H2</Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs">📷</Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs">🔗</Button>
+                  </div>
+                  <Textarea className="border-0 focus-visible:ring-0 min-h-[200px]" placeholder="यहाँ अपना लेख लिखें..." />
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2"><Switch id="seo" defaultChecked /><Label htmlFor="seo" className="text-xs">SEO अनुकूल</Label></div>
+                <div className="flex items-center gap-2"><Switch id="featured" /><Label htmlFor="featured" className="text-xs">फीचर्ड पोस्ट</Label></div>
+              </div>
+              <div className="flex gap-2">
+                <Button className="flex-1">🚀 प्रकाशित करें</Button>
+                <Button variant="outline" className="flex-1">📋 ड्राफ्ट सेव करें</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <Card className="bg-primary/5"><CardContent className="p-3 text-center"><p className="text-2xl font-bold">{blogPosts.length}</p><p className="text-xs text-muted-foreground">कुल पोस्ट</p></CardContent></Card>
+        <Card className="bg-accent/5"><CardContent className="p-3 text-center"><p className="text-2xl font-bold">2.4K</p><p className="text-xs text-muted-foreground">कुल व्यूज</p></CardContent></Card>
+        <Card className="bg-sage/5"><CardContent className="p-3 text-center"><p className="text-2xl font-bold">156</p><p className="text-xs text-muted-foreground">कमेंट्स</p></CardContent></Card>
+        <Card className="bg-gold/5"><CardContent className="p-3 text-center"><p className="text-2xl font-bold">89%</p><p className="text-xs text-muted-foreground">एंगेजमेंट</p></CardContent></Card>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <Tabs defaultValue="all"><TabsList className="h-8">
+              <TabsTrigger value="all" className="text-xs h-7">सभी</TabsTrigger>
+              <TabsTrigger value="published" className="text-xs h-7">प्रकाशित</TabsTrigger>
+              <TabsTrigger value="draft" className="text-xs h-7">ड्राफ्ट</TabsTrigger>
+            </TabsList></Tabs>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="खोजें..." className="pl-8 h-8 text-xs w-48" value={search} onChange={(e) => setSearch(e.target.value)} />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y">
+            {filtered.map((post) => (
+              <div key={post.id} className="p-4 flex gap-4 hover:bg-muted/20 transition-colors">
+                <img src={post.image} alt={post.title} className="h-20 w-32 rounded-lg object-cover shadow-sm shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="font-serif font-bold text-sm line-clamp-1">{post.title}</h3>
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{post.excerpt}</p>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"><MoreHorizontal className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-36">
+                        <DropdownMenuItem className="text-xs"><Eye className="h-3 w-3 mr-2" /> देखें</DropdownMenuItem>
+                        <DropdownMenuItem className="text-xs"><Edit className="h-3 w-3 mr-2" /> एडिट</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-xs text-destructive"><Trash2 className="h-3 w-3 mr-2" /> डिलीट</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <div className="flex items-center gap-3 mt-2 flex-wrap">
+                    <Badge variant="secondary" className="text-[10px]"><Tag className="h-2.5 w-2.5 mr-1" />{post.category}</Badge>
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">✍️ {post.author}</span>
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Calendar className="h-2.5 w-2.5" /> {post.date}</span>
+                    <span className="text-[10px] text-muted-foreground">⏱ {post.readTime}</span>
+                    <Badge variant="default" className="text-[10px]">प्रकाशित</Badge>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </AdminLayout>
+  );
+};
 
 export default AdminBlog;
