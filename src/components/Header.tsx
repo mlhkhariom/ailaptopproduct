@@ -12,6 +12,7 @@ const Header = () => {
     { label: "Products", to: "/products" },
     { label: "Blog", to: "/blog" },
     { label: "About", to: "/about" },
+    { label: "Contact", to: "/contact" },
   ];
 
   return (
@@ -30,9 +31,7 @@ const Header = () => {
 
         <nav className="hidden md:flex items-center gap-5">
           {navLinks.map((l) => (
-            <Link key={l.to} to={l.to} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              {l.label}
-            </Link>
+            <Link key={l.to} to={l.to} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">{l.label}</Link>
           ))}
         </nav>
 
@@ -47,9 +46,7 @@ const Header = () => {
               <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">3</span>
             </Button>
           </Link>
-          <Link to="/admin">
-            <Button size="sm" variant="outline" className="text-xs">Admin</Button>
-          </Link>
+          <Link to="/admin"><Button size="sm" variant="outline" className="text-xs">Admin</Button></Link>
         </div>
 
         <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
@@ -60,17 +57,11 @@ const Header = () => {
       {mobileOpen && (
         <div className="md:hidden border-t bg-card p-4 space-y-3">
           {navLinks.map((l) => (
-            <Link key={l.to} to={l.to} className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setMobileOpen(false)}>
-              {l.label}
-            </Link>
+            <Link key={l.to} to={l.to} className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setMobileOpen(false)}>{l.label}</Link>
           ))}
           <div className="flex gap-2 pt-2">
-            <Link to="/cart" className="flex-1">
-              <Button variant="outline" className="w-full" size="sm">🛒 Cart</Button>
-            </Link>
-            <Link to="/admin" className="flex-1">
-              <Button className="w-full" size="sm">Admin</Button>
-            </Link>
+            <Link to="/cart" className="flex-1"><Button variant="outline" className="w-full" size="sm">🛒 Cart</Button></Link>
+            <Link to="/admin" className="flex-1"><Button className="w-full" size="sm">Admin</Button></Link>
           </div>
         </div>
       )}

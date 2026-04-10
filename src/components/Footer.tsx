@@ -15,7 +15,10 @@ const Footer = () => (
               <span className="text-[10px] opacity-70">Prachi Homeo Clinic</span>
             </div>
           </div>
-          <p className="text-sm opacity-80">Pure, Authentic & Trusted Ayurvedic Products. Ancient wisdom for modern health.</p>
+          <p className="text-sm opacity-80 mb-4">Pure, Authentic & Trusted Ayurvedic Products. Ancient wisdom for modern health.</p>
+          <a href="https://wa.me/919876543210" target="_blank" rel="noreferrer" className="inline-block text-xs bg-primary-foreground/10 px-3 py-1.5 rounded-full hover:bg-primary-foreground/20 transition-colors">
+            💬 Chat on WhatsApp
+          </a>
         </div>
 
         <div>
@@ -24,7 +27,17 @@ const Footer = () => (
             <Link to="/products" className="block hover:opacity-100">Products</Link>
             <Link to="/blog" className="block hover:opacity-100">Blog</Link>
             <Link to="/about" className="block hover:opacity-100">About Us</Link>
-            <Link to="/cart" className="block hover:opacity-100">Cart</Link>
+            <Link to="/contact" className="block hover:opacity-100">Contact</Link>
+          </div>
+        </div>
+
+        <div>
+          <h4 className="font-semibold mb-4">Policies</h4>
+          <div className="space-y-2 text-sm opacity-80">
+            <Link to="/privacy" className="block hover:opacity-100">Privacy Policy</Link>
+            <Link to="/terms" className="block hover:opacity-100">Terms & Conditions</Link>
+            <Link to="/refund" className="block hover:opacity-100">Refund & Returns</Link>
+            <Link to="/shipping" className="block hover:opacity-100">Shipping Policy</Link>
           </div>
         </div>
 
@@ -35,19 +48,12 @@ const Footer = () => (
             <div className="flex items-center gap-2"><Mail className="h-4 w-4" /> hello@apsoncure.com</div>
             <div className="flex items-center gap-2"><MapPin className="h-4 w-4" /> India</div>
           </div>
-          <div className="mt-3">
-            <a href="https://wa.me/919876543210" target="_blank" rel="noreferrer" className="inline-block text-xs bg-primary-foreground/10 px-3 py-1.5 rounded-full hover:bg-primary-foreground/20 transition-colors">
-              💬 Chat on WhatsApp
-            </a>
-          </div>
-        </div>
-
-        <div>
-          <h4 className="font-semibold mb-4">Newsletter</h4>
-          <p className="text-sm opacity-80 mb-3">Get Ayurvedic tips and exclusive offers.</p>
-          <div className="flex gap-2">
-            <Input placeholder="Your email" className="bg-primary-foreground/10 border-primary-foreground/20 placeholder:text-primary-foreground/50 text-primary-foreground text-sm h-9" />
-            <Button size="sm" variant="secondary" className="shrink-0">Subscribe</Button>
+          <div className="mt-4">
+            <p className="text-xs opacity-70 mb-2">Newsletter</p>
+            <div className="flex gap-2">
+              <Input placeholder="Your email" className="bg-primary-foreground/10 border-primary-foreground/20 placeholder:text-primary-foreground/50 text-primary-foreground text-sm h-9" />
+              <Button size="sm" variant="secondary" className="shrink-0">Join</Button>
+            </div>
           </div>
         </div>
       </div>
