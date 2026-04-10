@@ -11,8 +11,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import AdminLayout from "@/components/AdminLayout";
 import { orders } from "@/data/mockData";
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; color: string; icon: string }> = {
   pending: { label: "Pending", color: "bg-accent/10 text-accent border-accent/30", icon: "⏳" },
+  processing: { label: "Processing", color: "bg-yellow-100 text-yellow-700 border-yellow-300", icon: "⚙️" },
   shipped: { label: "Shipped", color: "bg-sage/10 text-sage border-sage/30", icon: "🚚" },
   delivered: { label: "Delivered", color: "bg-primary/10 text-primary border-primary/30", icon: "✓" },
 };
