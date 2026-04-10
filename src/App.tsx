@@ -17,6 +17,9 @@ import AdminBlog from "./pages/admin/AdminBlog";
 import AdminSocial from "./pages/admin/AdminSocial";
 import AdminMedia from "./pages/admin/AdminMedia";
 import AdminWhatsApp from "./pages/admin/AdminWhatsApp";
+import AdminCustomers from "./pages/admin/AdminCustomers";
+import AdminCategories from "./pages/admin/AdminCategories";
+import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +45,9 @@ const App = () => (
           <Route path="/admin/social" element={<AdminSocial />} />
           <Route path="/admin/media" element={<AdminMedia />} />
           <Route path="/admin/whatsapp" element={<AdminWhatsApp />} />
+          <Route path="/admin/customers" element={<AdminCustomers />} />
+          <Route path="/admin/categories" element={<AdminCategories />} />
+          <Route path="/admin/settings" element={<AdminSettings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

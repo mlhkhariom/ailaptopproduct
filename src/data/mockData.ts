@@ -145,7 +145,7 @@ export const products: Product[] = [
     ingredients: ["आंवला (Amla)", "बहेड़ा (Bibhitaki)", "हरड़ (Haritaki)"],
     benefits: ["पाचन सुधारे", "शरीर की सफाई", "एंटीऑक्सीडेंट से भरपूर", "पेट स्वास्थ्य"],
     usage: "रात को सोने से पहले गर्म पानी के साथ 2 कैप्सूल लें।",
-    inStock: true, stock: 3, reels: makeReels("Triphala", 1556228578000), status: "active", sku: "APC-TRI-002", slug: "triphala-capsules",
+    inStock: true, reels: makeReels("Triphala", 1556228578000),
   },
   {
     id: "3", name: "Kumkumadi Face Oil", nameHi: "कुमकुमादि तेल", price: 1299, originalPrice: 1599,
