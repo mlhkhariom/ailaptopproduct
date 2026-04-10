@@ -21,8 +21,8 @@ const Products = () => {
   return (
     <CustomerLayout>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-serif font-bold mb-2">Our Products</h1>
-        <p className="text-muted-foreground mb-6">Explore our range of authentic Ayurvedic products</p>
+        <h1 className="text-3xl font-serif font-bold mb-1">हमारे प्रोडक्ट्स</h1>
+        <p className="text-muted-foreground mb-6">Our Products – शुद्ध आयुर्वेदिक उत्पादों की पूरी रेंज</p>
 
         <div className="flex flex-wrap gap-3 items-center justify-between mb-8">
           <div className="flex flex-wrap gap-2">
@@ -34,19 +34,19 @@ const Products = () => {
                 onClick={() => setCategory(c)}
                 className="text-xs"
               >
-                {c}
+                {c === "All" ? "सभी (All)" : c}
               </Button>
             ))}
           </div>
           <Select value={sort} onValueChange={setSort}>
-            <SelectTrigger className="w-44 h-9 text-sm">
+            <SelectTrigger className="w-48 h-9 text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="popular">Most Popular</SelectItem>
-              <SelectItem value="rating">Highest Rated</SelectItem>
-              <SelectItem value="price-low">Price: Low to High</SelectItem>
-              <SelectItem value="price-high">Price: High to Low</SelectItem>
+              <SelectItem value="popular">लोकप्रिय (Popular)</SelectItem>
+              <SelectItem value="rating">सबसे अच्छी रेटिंग</SelectItem>
+              <SelectItem value="price-low">कम दाम पहले</SelectItem>
+              <SelectItem value="price-high">ज़्यादा दाम पहले</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -58,7 +58,7 @@ const Products = () => {
         </div>
 
         {filtered.length === 0 && (
-          <div className="text-center py-16 text-muted-foreground">No products found in this category.</div>
+          <div className="text-center py-16 text-muted-foreground">इस श्रेणी में कोई प्रोडक्ट नहीं मिला।</div>
         )}
       </div>
     </CustomerLayout>

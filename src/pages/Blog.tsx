@@ -7,8 +7,8 @@ import { blogPosts } from "@/data/mockData";
 const Blog = () => (
   <CustomerLayout>
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-serif font-bold mb-2">Ayurvedic Wisdom</h1>
-      <p className="text-muted-foreground mb-8">Tips, guides, and insights for holistic wellness</p>
+      <h1 className="text-3xl font-serif font-bold mb-1">आयुर्वेदिक ज्ञान</h1>
+      <p className="text-muted-foreground mb-8">Ayurvedic Wisdom – सेहत के टिप्स, गाइड और जानकारी</p>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {blogPosts.map((post) => (
@@ -27,7 +27,7 @@ const Blog = () => (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span>{post.author}</span>
                   <span>•</span>
-                  <span>{new Date(post.date).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
+                  <span>{post.date}</span>
                 </div>
               </CardContent>
             </Card>

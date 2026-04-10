@@ -8,18 +8,18 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 const AdminDashboard = () => (
   <AdminLayout>
-    <h1 className="text-2xl font-serif font-bold mb-6">Dashboard</h1>
+    <h1 className="text-2xl font-serif font-bold mb-6">डैशबोर्ड (Dashboard)</h1>
 
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      <StatCard title="Total Revenue" value="₹3,81,000" change="+12.5% from last month" icon={IndianRupee} />
-      <StatCard title="Total Orders" value="473" change="+8.2% from last month" icon={ShoppingBag} />
-      <StatCard title="Customers" value="1,284" change="+15.3% from last month" icon={Users} />
-      <StatCard title="Conversion" value="3.2%" change="+0.4% from last month" icon={TrendingUp} />
+      <StatCard title="कुल आय (Revenue)" value="₹3,81,000" change="+12.5% पिछले महीने से" icon={IndianRupee} />
+      <StatCard title="कुल ऑर्डर्स" value="473" change="+8.2% पिछले महीने से" icon={ShoppingBag} />
+      <StatCard title="ग्राहक (Customers)" value="1,284" change="+15.3% पिछले महीने से" icon={Users} />
+      <StatCard title="कन्वर्जन रेट" value="3.2%" change="+0.4% पिछले महीने से" icon={TrendingUp} />
     </div>
 
     <div className="grid lg:grid-cols-3 gap-6 mb-8">
       <Card className="lg:col-span-2">
-        <CardHeader><CardTitle className="text-lg">Sales Trend</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-lg">बिक्री रुझान (Sales Trend)</CardTitle></CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={salesData}>
@@ -34,11 +34,11 @@ const AdminDashboard = () => (
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-lg">By Category</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-lg">श्रेणी अनुसार (By Category)</CardTitle></CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
-              <Pie data={categoryData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, percent }) => `${name.split(" ")[0]} ${(percent * 100).toFixed(0)}%`}>
+              <Pie data={categoryData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                 {categoryData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
               </Pie>
               <Tooltip />
@@ -49,17 +49,17 @@ const AdminDashboard = () => (
     </div>
 
     <Card>
-      <CardHeader><CardTitle className="text-lg">Recent Orders</CardTitle></CardHeader>
+      <CardHeader><CardTitle className="text-lg">हालिया ऑर्डर्स (Recent Orders)</CardTitle></CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left">
-                <th className="pb-3 font-medium text-muted-foreground">Order ID</th>
-                <th className="pb-3 font-medium text-muted-foreground">Customer</th>
-                <th className="pb-3 font-medium text-muted-foreground">Amount</th>
-                <th className="pb-3 font-medium text-muted-foreground">Status</th>
-                <th className="pb-3 font-medium text-muted-foreground">Date</th>
+                <th className="pb-3 font-medium text-muted-foreground">ऑर्डर ID</th>
+                <th className="pb-3 font-medium text-muted-foreground">ग्राहक</th>
+                <th className="pb-3 font-medium text-muted-foreground">राशि</th>
+                <th className="pb-3 font-medium text-muted-foreground">स्थिति</th>
+                <th className="pb-3 font-medium text-muted-foreground">तारीख</th>
               </tr>
             </thead>
             <tbody>
@@ -70,7 +70,7 @@ const AdminDashboard = () => (
                   <td className="py-3">₹{o.total}</td>
                   <td className="py-3">
                     <Badge variant={o.status === "delivered" ? "default" : o.status === "shipped" ? "secondary" : "outline"} className="text-xs capitalize">
-                      {o.status}
+                      {o.status === "delivered" ? "डिलीवर्ड" : o.status === "shipped" ? "भेजा गया" : "लंबित"}
                     </Badge>
                   </td>
                   <td className="py-3 text-muted-foreground">{o.date}</td>
