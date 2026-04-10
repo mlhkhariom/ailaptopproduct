@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import { ShoppingCart, Menu, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useCMSStore } from "@/store/cmsStore";
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { siteSettings } = useCMSStore();
 
   const navLinks = [
     { label: "Home", to: "/" },
@@ -13,19 +15,22 @@ const Header = () => {
     { label: "Blog", to: "/blog" },
     { label: "About", to: "/about" },
     { label: "Contact", to: "/contact" },
+    { label: "FAQs", to: "/faq" },
   ];
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur border-b">
-      <div className="bg-primary text-primary-foreground text-xs text-center py-1.5 px-4">
-        🌿 Apsoncure PHC – Prachi Homeo Clinic | Free Delivery above ₹499 | ☎ +91 98765 43210
-      </div>
+      {siteSettings.announcementActive && (
+        <div className="bg-primary text-primary-foreground text-xs text-center py-1.5 px-4">
+          {siteSettings.announcementBar}
+        </div>
+      )}
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-serif font-bold text-sm">A</div>
           <div className="leading-tight">
-            <span className="text-lg font-serif font-bold text-foreground block leading-none">Apsoncure</span>
-            <span className="text-[10px] text-muted-foreground leading-none">Prachi Homeo Clinic</span>
+            <span className="text-lg font-serif font-bold text-foreground block leading-none">{siteSettings.storeName.split(" ")[0]}</span>
+            <span className="text-[10px] text-muted-foreground leading-none">{siteSettings.tagline}</span>
           </div>
         </Link>
 
