@@ -11,8 +11,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import AdminLayout from "@/components/AdminLayout";
 import { orders } from "@/data/mockData";
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; color: string; icon: string }> = {
   pending: { label: "Pending", color: "bg-accent/10 text-accent border-accent/30", icon: "⏳" },
+  processing: { label: "Processing", color: "bg-yellow-100 text-yellow-700 border-yellow-300", icon: "⚙️" },
   shipped: { label: "Shipped", color: "bg-sage/10 text-sage border-sage/30", icon: "🚚" },
   delivered: { label: "Delivered", color: "bg-primary/10 text-primary border-primary/30", icon: "✓" },
 };
@@ -29,6 +30,7 @@ const AdminOrders = () => {
   const counts = {
     all: orders.length,
     pending: orders.filter(o => o.status === "pending").length,
+    processing: orders.filter(o => o.status === "processing").length,
     shipped: orders.filter(o => o.status === "shipped").length,
     delivered: orders.filter(o => o.status === "delivered").length,
   };
@@ -85,6 +87,7 @@ const AdminOrders = () => {
               <TabsList className="h-8">
                 <TabsTrigger value="all" className="text-xs h-7 px-3" onClick={() => setStatusFilter("all")}>All ({counts.all})</TabsTrigger>
                 <TabsTrigger value="pending" className="text-xs h-7 px-3" onClick={() => setStatusFilter("pending")}>Pending ({counts.pending})</TabsTrigger>
+                <TabsTrigger value="processing" className="text-xs h-7 px-3" onClick={() => setStatusFilter("processing")}>Processing ({counts.processing})</TabsTrigger>
                 <TabsTrigger value="shipped" className="text-xs h-7 px-3" onClick={() => setStatusFilter("shipped")}>Shipped ({counts.shipped})</TabsTrigger>
                 <TabsTrigger value="delivered" className="text-xs h-7 px-3" onClick={() => setStatusFilter("delivered")}>Delivered ({counts.delivered})</TabsTrigger>
               </TabsList>
@@ -144,6 +147,7 @@ const AdminOrders = () => {
                           <SelectTrigger className="h-7 w-24 text-[10px]"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="pending" className="text-xs">⏳ Pending</SelectItem>
+                            <SelectItem value="processing" className="text-xs">⚙️ Processing</SelectItem>
                             <SelectItem value="shipped" className="text-xs">🚚 Shipped</SelectItem>
                             <SelectItem value="delivered" className="text-xs">✓ Delivered</SelectItem>
                           </SelectContent>
