@@ -30,6 +30,7 @@ const AdminOrders = () => {
   const counts = {
     all: orders.length,
     pending: orders.filter(o => o.status === "pending").length,
+    processing: orders.filter(o => o.status === "processing").length,
     shipped: orders.filter(o => o.status === "shipped").length,
     delivered: orders.filter(o => o.status === "delivered").length,
   };
