@@ -25,8 +25,8 @@ const ProductDetail = () => {
     return (
       <CustomerLayout>
         <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-2xl font-serif font-bold">प्रोडक्ट नहीं मिला</h1>
-          <Link to="/products"><Button className="mt-4">वापस जाएं</Button></Link>
+          <h1 className="text-2xl font-serif font-bold">Product not found</h1>
+          <Link to="/products"><Button className="mt-4">Go Back</Button></Link>
         </div>
       </CustomerLayout>
     );
@@ -40,17 +40,15 @@ const ProductDetail = () => {
     <CustomerLayout>
       <div className="container mx-auto px-4 py-8">
         <Link to="/products" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-6">
-          <ArrowLeft className="h-4 w-4" /> वापस जाएं (Back)
+          <ArrowLeft className="h-4 w-4" /> Back to Products
         </Link>
 
         <div className="grid md:grid-cols-2 gap-8 mb-12">
-          {/* Image + Reel Thumbnails */}
           <div>
             <div className="relative rounded-2xl overflow-hidden bg-muted aspect-square mb-4">
               <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-              {discount > 0 && <Badge className="absolute top-4 left-4 bg-accent text-accent-foreground text-sm">{discount}% छूट</Badge>}
+              {discount > 0 && <Badge className="absolute top-4 left-4 bg-accent text-accent-foreground text-sm">{discount}% OFF</Badge>}
             </div>
-            {/* Mini reel thumbnails below product image */}
             <div className="grid grid-cols-3 gap-2">
               {product.reels.map((reel, i) => {
                 const Icon = platformIcon[reel.platform];
@@ -73,7 +71,6 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          {/* Info */}
           <div>
             <p className="text-sm text-muted-foreground mb-1">{product.category}</p>
             <h1 className="text-3xl font-serif font-bold mb-1">{product.name}</h1>
@@ -85,13 +82,13 @@ const ProductDetail = () => {
                   <Star key={i} className={`h-4 w-4 ${i < Math.floor(product.rating) ? "fill-gold text-gold" : "text-border"}`} />
                 ))}
               </div>
-              <span className="text-sm text-muted-foreground">{product.rating} ({product.reviews} समीक्षाएं)</span>
+              <span className="text-sm text-muted-foreground">{product.rating} ({product.reviews} reviews)</span>
             </div>
 
             <div className="flex items-baseline gap-3 mb-6">
               <span className="text-3xl font-bold text-foreground">₹{product.price}</span>
               {product.originalPrice && <span className="text-lg text-muted-foreground line-through">₹{product.originalPrice}</span>}
-              {discount > 0 && <Badge variant="secondary" className="text-xs">{discount}% बचत</Badge>}
+              {discount > 0 && <Badge variant="secondary" className="text-xs">Save {discount}%</Badge>}
             </div>
 
             <p className="text-muted-foreground mb-6 leading-relaxed">{product.description}</p>
@@ -106,22 +103,21 @@ const ProductDetail = () => {
 
             <div className="flex flex-wrap gap-3 mb-6">
               <Button size="lg" className="flex-1 gap-2" disabled={!product.inStock}>
-                <ShoppingCart className="h-4 w-4" /> कार्ट में डालें
+                <ShoppingCart className="h-4 w-4" /> Add to Cart
               </Button>
-              <Button size="lg" variant="secondary" className="flex-1">अभी खरीदें</Button>
+              <Button size="lg" variant="secondary" className="flex-1">Buy Now</Button>
             </div>
 
-            <a href={`https://wa.me/919876543210?text=नमस्ते! मुझे ${product.name} (${product.nameHi || ''}) के बारे में जानकारी चाहिए।`} target="_blank" rel="noreferrer">
+            <a href={`https://wa.me/919876543210?text=Hi! I'd like to know more about ${product.name}`} target="_blank" rel="noreferrer">
               <Button variant="outline" className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/5">
-                <MessageCircle className="h-4 w-4" /> 💬 WhatsApp पर डॉक्टर से पूछें
+                <MessageCircle className="h-4 w-4" /> Ask Dr. Prachi on WhatsApp
               </Button>
             </a>
           </div>
         </div>
 
-        {/* Video Reels Section */}
         <section className="mb-12">
-          <h2 className="text-2xl font-serif font-bold mb-4">📹 प्रोडक्ट Reels & Videos</h2>
+          <h2 className="text-2xl font-serif font-bold mb-4">Product Reels & Videos</h2>
           <div className="grid md:grid-cols-3 gap-4">
             {product.reels.map((reel) => {
               const Icon = platformIcon[reel.platform];
@@ -149,12 +145,11 @@ const ProductDetail = () => {
           </div>
         </section>
 
-        {/* Tabs */}
         <Tabs defaultValue="ingredients" className="mb-16">
           <TabsList className="w-full justify-start">
-            <TabsTrigger value="ingredients">सामग्री (Ingredients)</TabsTrigger>
-            <TabsTrigger value="benefits">फायदे (Benefits)</TabsTrigger>
-            <TabsTrigger value="usage">उपयोग विधि (Usage)</TabsTrigger>
+            <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
+            <TabsTrigger value="benefits">Benefits</TabsTrigger>
+            <TabsTrigger value="usage">How to Use</TabsTrigger>
           </TabsList>
           <TabsContent value="ingredients" className="mt-4">
             <ul className="space-y-2">
@@ -175,10 +170,9 @@ const ProductDetail = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Related */}
         {related.length > 0 && (
           <div>
-            <h2 className="text-2xl font-serif font-bold mb-6">संबंधित प्रोडक्ट्स (Related)</h2>
+            <h2 className="text-2xl font-serif font-bold mb-6">Related Products</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {related.map((p) => <ProductCard key={p.id} product={p} />)}
             </div>

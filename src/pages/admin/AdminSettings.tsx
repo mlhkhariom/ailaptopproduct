@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Save, Eye, EyeOff, Globe, CreditCard, Truck, Phone, Mail, Shield, Key, MessageCircle } from "lucide-react";
+import { Save, Eye, EyeOff, Globe, Phone, Mail, Shield, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,34 +19,34 @@ const AdminSettings = () => {
     <AdminLayout>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-serif font-bold">⚙️ सेटिंग्स (Settings)</h1>
-          <p className="text-sm text-muted-foreground">स्टोर, API, शिपिंग और अन्य सेटिंग्स — Super Admin Only</p>
+          <h1 className="text-2xl font-serif font-bold">Settings</h1>
+          <p className="text-sm text-muted-foreground">Store, API, shipping & notification settings — Super Admin only</p>
         </div>
         <Badge variant="default" className="gap-1"><Shield className="h-3 w-3" /> Super Admin</Badge>
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
         <TabsList className="h-9">
-          <TabsTrigger value="general" className="text-xs">🏪 सामान्य</TabsTrigger>
-          <TabsTrigger value="api" className="text-xs">🔑 API Keys</TabsTrigger>
-          <TabsTrigger value="shipping" className="text-xs">🚚 शिपिंग & टैक्स</TabsTrigger>
-          <TabsTrigger value="notifications" className="text-xs">🔔 नोटिफिकेशन</TabsTrigger>
+          <TabsTrigger value="general" className="text-xs">General</TabsTrigger>
+          <TabsTrigger value="api" className="text-xs">API Keys</TabsTrigger>
+          <TabsTrigger value="shipping" className="text-xs">Shipping & Tax</TabsTrigger>
+          <TabsTrigger value="notifications" className="text-xs">Notifications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">🏪 स्टोर सामान्य सेटिंग्स (General Settings)</CardTitle>
-              <CardDescription className="text-xs">बेसिक स्टोर जानकारी जो पूरी वेबसाइट पर दिखेगी</CardDescription>
+              <CardTitle className="text-base">General Settings</CardTitle>
+              <CardDescription className="text-xs">Basic store information displayed across the website</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
-                <div><Label className="text-xs">स्टोर का नाम *</Label><Input className="mt-1 h-9" defaultValue="Apsoncure PHC – Prachi Homeo Clinic" /></div>
-                <div><Label className="text-xs">स्टोर Tagline</Label><Input className="mt-1 h-9" defaultValue="प्रकृति की शक्ति, आधुनिक विज्ञान" /></div>
+                <div><Label className="text-xs">Store Name *</Label><Input className="mt-1 h-9" defaultValue="Apsoncure PHC – Prachi Homeo Clinic" /></div>
+                <div><Label className="text-xs">Tagline</Label><Input className="mt-1 h-9" defaultValue="Nature's Power, Modern Science" /></div>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div><Label className="text-xs flex items-center gap-1"><Mail className="h-3 w-3" /> Contact Email *</Label><Input className="mt-1 h-9" defaultValue="info@apsoncure.com" /></div>
-                <div><Label className="text-xs flex items-center gap-1"><Phone className="h-3 w-3" /> Customer Support WhatsApp *</Label><Input className="mt-1 h-9" defaultValue="+91 98765 43210" /><p className="text-[10px] text-muted-foreground mt-0.5">यह नंबर frontend chat button में दिखेगा</p></div>
+                <div><Label className="text-xs flex items-center gap-1"><Phone className="h-3 w-3" /> Customer Support WhatsApp *</Label><Input className="mt-1 h-9" defaultValue="+91 98765 43210" /><p className="text-[10px] text-muted-foreground mt-0.5">This number appears on the frontend chat button</p></div>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div><Label className="text-xs flex items-center gap-1"><Globe className="h-3 w-3" /> Website URL</Label><Input className="mt-1 h-9" defaultValue="https://apsoncure.com" /></div>
@@ -55,19 +55,19 @@ const AdminSettings = () => {
               <Separator />
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium">🌙 डार्क मोड</p>
-                  <p className="text-xs text-muted-foreground">Admin panel dark mode</p>
+                  <p className="text-sm font-medium">Dark Mode</p>
+                  <p className="text-xs text-muted-foreground">Toggle admin panel dark mode</p>
                 </div>
                 <Switch />
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium">🔧 Maintenance Mode</p>
-                  <p className="text-xs text-muted-foreground">स्टोर बंद करें (Coming Soon पेज दिखेगा)</p>
+                  <p className="text-sm font-medium">Maintenance Mode</p>
+                  <p className="text-xs text-muted-foreground">Show "Coming Soon" page to visitors</p>
                 </div>
                 <Switch />
               </div>
-              <Button className="gap-1.5"><Save className="h-4 w-4" /> सेव करें</Button>
+              <Button className="gap-1.5"><Save className="h-4 w-4" /> Save Changes</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -76,17 +76,16 @@ const AdminSettings = () => {
           <div className="space-y-4">
             <Card className="border-primary/30">
               <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2"><Key className="h-4 w-4" /> 🔑 API Keys & Secrets (Crucial for Node.js)</CardTitle>
-                <CardDescription className="text-xs">⚠️ ये keys सुरक्षित रखें — कभी किसी के साथ शेयर न करें</CardDescription>
+                <CardTitle className="text-base flex items-center gap-2"><Key className="h-4 w-4" /> API Keys & Secrets</CardTitle>
+                <CardDescription className="text-xs">⚠️ Keep these keys secure — never share with anyone</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Meta Graph API */}
                 <div className="p-4 rounded-xl border bg-muted/20">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-lg">📸</span>
                     <div>
                       <h3 className="font-medium text-sm">Meta Graph API (Instagram/Facebook Auto-Post)</h3>
-                      <p className="text-[10px] text-muted-foreground">Instagram Reels और Facebook Video auto-publish के लिए</p>
+                      <p className="text-[10px] text-muted-foreground">For auto-publishing Instagram Reels and Facebook Videos</p>
                     </div>
                     <Badge variant="secondary" className="text-[9px] ml-auto">Integration Ready</Badge>
                   </div>
@@ -105,13 +104,12 @@ const AdminSettings = () => {
                   <div className="mt-2"><Label className="text-xs">Page Access Token</Label><Input className="mt-1 h-9 text-xs" type="password" placeholder="EAA..." /></div>
                 </div>
 
-                {/* Razorpay */}
                 <div className="p-4 rounded-xl border bg-muted/20">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-lg">💳</span>
                     <div>
                       <h3 className="font-medium text-sm">Razorpay Payment Gateway</h3>
-                      <p className="text-[10px] text-muted-foreground">ऑनलाइन पेमेंट (UPI, Card, Net Banking) के लिए</p>
+                      <p className="text-[10px] text-muted-foreground">For online payments (UPI, Card, Net Banking)</p>
                     </div>
                     <Badge variant="default" className="text-[9px] ml-auto gap-1">✓ Connected</Badge>
                   </div>
@@ -129,13 +127,12 @@ const AdminSettings = () => {
                   </div>
                 </div>
 
-                {/* WhatsApp */}
                 <div className="p-4 rounded-xl border bg-muted/20">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-lg">💬</span>
                     <div>
                       <h3 className="font-medium text-sm">WhatsApp Business API</h3>
-                      <p className="text-[10px] text-muted-foreground">Auto-reply, Order notification, Customer chat</p>
+                      <p className="text-[10px] text-muted-foreground">Auto-reply, order notifications, customer chat</p>
                     </div>
                     <Badge variant="outline" className="text-[9px] ml-auto">Optional</Badge>
                   </div>
@@ -145,7 +142,7 @@ const AdminSettings = () => {
                   </div>
                 </div>
 
-                <Button className="gap-1.5"><Save className="h-4 w-4" /> API Keys सेव करें</Button>
+                <Button className="gap-1.5"><Save className="h-4 w-4" /> Save API Keys</Button>
               </CardContent>
             </Card>
           </div>
@@ -154,13 +151,13 @@ const AdminSettings = () => {
         <TabsContent value="shipping">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">🚚 शिपिंग & टैक्स सेटिंग्स</CardTitle>
-              <CardDescription className="text-xs">डिलीवरी चार्जेस और GST सेटिंग्स</CardDescription>
+              <CardTitle className="text-base">Shipping & Tax Settings</CardTitle>
+              <CardDescription className="text-xs">Delivery charges and GST configuration</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
-                <div><Label className="text-xs">शिपिंग चार्ज (Flat Rate) ₹</Label><Input type="number" className="mt-1 h-9" defaultValue="50" /></div>
-                <div><Label className="text-xs">फ्री शिपिंग — इस राशि से ऊपर (₹)</Label><Input type="number" className="mt-1 h-9" defaultValue="499" /><p className="text-[10px] text-muted-foreground mt-0.5">₹499 से ऊपर ऑर्डर पर फ्री शिपिंग</p></div>
+                <div><Label className="text-xs">Shipping Charge (Flat Rate) ₹</Label><Input type="number" className="mt-1 h-9" defaultValue="50" /></div>
+                <div><Label className="text-xs">Free Shipping Above (₹)</Label><Input type="number" className="mt-1 h-9" defaultValue="499" /><p className="text-[10px] text-muted-foreground mt-0.5">Orders above ₹499 get free shipping</p></div>
               </div>
               <Separator />
               <div className="grid sm:grid-cols-2 gap-4">
@@ -169,7 +166,7 @@ const AdminSettings = () => {
               </div>
               <Separator />
               <div>
-                <Label className="text-xs mb-2 block">कूरियर पार्टनर (Preferred)</Label>
+                <Label className="text-xs mb-2 block">Preferred Courier Partner</Label>
                 <Select defaultValue="dtdc">
                   <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -184,11 +181,11 @@ const AdminSettings = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">COD (Cash on Delivery)</p>
-                  <p className="text-xs text-muted-foreground">ग्राहकों को COD का option दें</p>
+                  <p className="text-xs text-muted-foreground">Allow customers to pay on delivery</p>
                 </div>
                 <Switch defaultChecked />
               </div>
-              <Button className="gap-1.5"><Save className="h-4 w-4" /> सेव करें</Button>
+              <Button className="gap-1.5"><Save className="h-4 w-4" /> Save Changes</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -196,15 +193,15 @@ const AdminSettings = () => {
         <TabsContent value="notifications">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">🔔 नोटिफिकेशन सेटिंग्स</CardTitle>
+              <CardTitle className="text-base">Notification Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {[
-                { label: "नया ऑर्डर आने पर ईमेल", desc: "हर नए ऑर्डर पर admin को ईमेल जाएगा", checked: true },
-                { label: "Low Stock अलर्ट", desc: "जब प्रोडक्ट का स्टॉक 5 से कम हो", checked: true },
-                { label: "पेमेंट फ़ेल अलर्ट", desc: "Razorpay payment fail होने पर", checked: true },
-                { label: "WhatsApp ऑर्डर नोटिफिकेशन", desc: "ग्राहक को WhatsApp पर ऑर्डर अपडेट भेजें", checked: false },
-                { label: "Social Post Fail अलर्ट", desc: "Instagram/Facebook auto-post fail होने पर", checked: true },
+                { label: "New Order Email", desc: "Send email to admin on every new order", checked: true },
+                { label: "Low Stock Alert", desc: "When product stock drops below 5", checked: true },
+                { label: "Payment Failure Alert", desc: "When a Razorpay payment fails", checked: true },
+                { label: "WhatsApp Order Updates", desc: "Send order updates to customers via WhatsApp", checked: false },
+                { label: "Social Post Failure", desc: "When Instagram/Facebook auto-post fails", checked: true },
               ].map((n) => (
                 <div key={n.label} className="flex items-center justify-between p-3 rounded-lg border">
                   <div>
@@ -214,7 +211,7 @@ const AdminSettings = () => {
                   <Switch defaultChecked={n.checked} />
                 </div>
               ))}
-              <Button className="gap-1.5"><Save className="h-4 w-4" /> सेव करें</Button>
+              <Button className="gap-1.5"><Save className="h-4 w-4" /> Save Changes</Button>
             </CardContent>
           </Card>
         </TabsContent>

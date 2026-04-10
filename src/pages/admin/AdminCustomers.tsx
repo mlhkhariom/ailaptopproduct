@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Download, Phone, Mail, ShoppingBag, IndianRupee, Calendar, MoreHorizontal, MessageCircle, Eye } from "lucide-react";
+import { Search, Download, Phone, Mail, ShoppingBag, IndianRupee, MoreHorizontal, MessageCircle, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,26 +23,26 @@ const AdminCustomers = () => {
     <AdminLayout>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-serif font-bold">👥 ग्राहक डेटाबेस (Customers)</h1>
-          <p className="text-sm text-muted-foreground">{customers.length} रजिस्टर्ड ग्राहक</p>
+          <h1 className="text-2xl font-serif font-bold">Customers</h1>
+          <p className="text-sm text-muted-foreground">{customers.length} registered customers</p>
         </div>
         <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8"><Download className="h-3.5 w-3.5" /> Export</Button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold">{customers.length}</p><p className="text-xs text-muted-foreground">कुल ग्राहक</p></CardContent></Card>
-        <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold">₹{totalLifetime.toLocaleString()}</p><p className="text-xs text-muted-foreground">कुल Lifetime Value</p></CardContent></Card>
-        <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold">₹{avgLifetime.toLocaleString()}</p><p className="text-xs text-muted-foreground">औसत LTV</p></CardContent></Card>
-        <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold">{customers.reduce((s, c) => s + c.totalOrders, 0)}</p><p className="text-xs text-muted-foreground">कुल ऑर्डर</p></CardContent></Card>
+        <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold">{customers.length}</p><p className="text-xs text-muted-foreground">Total Customers</p></CardContent></Card>
+        <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold">₹{totalLifetime.toLocaleString()}</p><p className="text-xs text-muted-foreground">Total Lifetime Value</p></CardContent></Card>
+        <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold">₹{avgLifetime.toLocaleString()}</p><p className="text-xs text-muted-foreground">Avg. LTV</p></CardContent></Card>
+        <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold">{customers.reduce((s, c) => s + c.totalOrders, 0)}</p><p className="text-xs text-muted-foreground">Total Orders</p></CardContent></Card>
       </div>
 
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">ग्राहक सूची</CardTitle>
+            <CardTitle className="text-base">Customer List</CardTitle>
             <div className="relative">
               <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="नाम, ईमेल या फ़ोन..." className="pl-8 h-8 text-xs w-52" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Input placeholder="Search name, email or phone..." className="pl-8 h-8 text-xs w-52" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
           </div>
         </CardHeader>
@@ -51,13 +51,13 @@ const AdminCustomers = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30 text-left">
-                  <th className="p-3 font-medium text-muted-foreground text-xs">ग्राहक</th>
-                  <th className="p-3 font-medium text-muted-foreground text-xs">फ़ोन</th>
-                  <th className="p-3 font-medium text-muted-foreground text-xs">शहर</th>
-                  <th className="p-3 font-medium text-muted-foreground text-xs">कुल ऑर्डर</th>
+                  <th className="p-3 font-medium text-muted-foreground text-xs">Customer</th>
+                  <th className="p-3 font-medium text-muted-foreground text-xs">Phone</th>
+                  <th className="p-3 font-medium text-muted-foreground text-xs">City</th>
+                  <th className="p-3 font-medium text-muted-foreground text-xs">Orders</th>
                   <th className="p-3 font-medium text-muted-foreground text-xs">Lifetime Value</th>
-                  <th className="p-3 font-medium text-muted-foreground text-xs">अंतिम ऑर्डर</th>
-                  <th className="p-3 font-medium text-muted-foreground text-xs">जॉइन तारीख</th>
+                  <th className="p-3 font-medium text-muted-foreground text-xs">Last Order</th>
+                  <th className="p-3 font-medium text-muted-foreground text-xs">Joined</th>
                   <th className="p-3 w-10"></th>
                 </tr>
               </thead>
@@ -91,9 +91,9 @@ const AdminCustomers = () => {
                           <Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem className="text-xs"><Eye className="h-3 w-3 mr-2" /> ऑर्डर हिस्ट्री</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs"><Eye className="h-3 w-3 mr-2" /> Order History</DropdownMenuItem>
                           <DropdownMenuItem className="text-xs"><MessageCircle className="h-3 w-3 mr-2" /> WhatsApp</DropdownMenuItem>
-                          <DropdownMenuItem className="text-xs"><Mail className="h-3 w-3 mr-2" /> ईमेल भेजें</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs"><Mail className="h-3 w-3 mr-2" /> Send Email</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>
