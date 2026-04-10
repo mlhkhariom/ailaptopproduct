@@ -1,7 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { Link, useLocation } from "react-router-dom";
-import { ExternalLink, Bell, Search, Moon, Sun, RefreshCw, ChevronRight } from "lucide-react";
+import { ExternalLink, Bell, Search, RefreshCw, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -15,19 +15,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const routeNames: Record<string, string> = {
-  "/admin": "डैशबोर्ड",
-  "/admin/products": "प्रोडक्ट्स",
-  "/admin/orders": "ऑर्डर्स",
-  "/admin/blog": "ब्लॉग",
-  "/admin/social": "सोशल मीडिया",
-  "/admin/media": "मीडिया लाइब्रेरी",
+  "/admin": "Dashboard",
+  "/admin/products": "Products",
+  "/admin/orders": "Orders",
+  "/admin/customers": "Customers",
+  "/admin/categories": "Categories",
+  "/admin/blog": "Blog",
+  "/admin/social": "Social Automation",
+  "/admin/media": "Media Library",
   "/admin/whatsapp": "WhatsApp",
+  "/admin/settings": "Settings",
 };
 
 const notifications = [
-  { id: 1, text: "नया ऑर्डर APC-007 आया है", time: "2 मिनट पहले", read: false },
-  { id: 2, text: "Ashwagandha स्टॉक कम हो रहा है", time: "1 घंटा पहले", read: false },
-  { id: 3, text: "Instagram रील पब्लिश हो गई", time: "3 घंटे पहले", read: true },
+  { id: 1, text: "New order APC-007 received", time: "2 min ago", read: false },
+  { id: 2, text: "Ashwagandha stock running low", time: "1 hour ago", read: false },
+  { id: 3, text: "Instagram reel published successfully", time: "3 hours ago", read: true },
 ];
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
@@ -39,12 +42,9 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       <div className="min-h-screen flex w-full bg-muted/30">
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Premium Header */}
           <header className="h-14 flex items-center justify-between border-b bg-card/80 backdrop-blur-sm px-4 sticky top-0 z-30">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="ml-0" />
-
-              {/* Breadcrumb */}
               <div className="hidden sm:flex items-center gap-1.5 text-sm">
                 <span className="text-muted-foreground">Admin</span>
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
@@ -53,18 +53,15 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Search */}
               <div className="relative hidden md:block">
                 <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="खोजें... (⌘K)" className="pl-8 w-56 h-8 text-xs bg-muted/50 border-0 focus-visible:ring-1" />
+                <Input placeholder="Search... (⌘K)" className="pl-8 w-56 h-8 text-xs bg-muted/50 border-0 focus-visible:ring-1" />
               </div>
 
-              {/* Refresh */}
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <RefreshCw className="h-4 w-4 text-muted-foreground" />
               </Button>
 
-              {/* Notifications */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8 relative">
@@ -74,8 +71,8 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-80">
                   <DropdownMenuLabel className="flex items-center justify-between">
-                    <span>सूचनाएं (Notifications)</span>
-                    <Badge variant="secondary" className="text-[10px]">2 नई</Badge>
+                    <span>Notifications</span>
+                    <Badge variant="secondary" className="text-[10px]">2 new</Badge>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {notifications.map((n) => (
@@ -89,40 +86,39 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                   ))}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-center text-xs text-primary justify-center">
-                    सभी सूचनाएं देखें →
+                    View all notifications →
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
               <div className="h-6 w-px bg-border mx-1 hidden sm:block" />
 
-              {/* Profile */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2 h-8 px-2">
                     <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-[10px] font-bold text-primary">प्रा</span>
+                      <span className="text-[10px] font-bold text-primary">DP</span>
                     </div>
-                    <span className="text-xs hidden sm:inline">डॉ. प्राची</span>
+                    <span className="text-xs hidden sm:inline">Dr. Prachi</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuLabel className="font-normal">
-                    <p className="text-sm font-medium">डॉ. प्राची</p>
+                    <p className="text-sm font-medium">Dr. Prachi</p>
                     <p className="text-xs text-muted-foreground">prachi@apsoncure.com</p>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>⚙️ सेटिंग्स</DropdownMenuItem>
-                  <DropdownMenuItem>📊 रिपोर्ट्स</DropdownMenuItem>
-                  <DropdownMenuItem>❓ मदद (Help)</DropdownMenuItem>
+                  <DropdownMenuItem>⚙️ Settings</DropdownMenuItem>
+                  <DropdownMenuItem>📊 Reports</DropdownMenuItem>
+                  <DropdownMenuItem>❓ Help</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive">🚪 लॉग आउट</DropdownMenuItem>
+                  <DropdownMenuItem className="text-destructive">🚪 Logout</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
               <Link to="/" target="_blank" className="hidden sm:block">
                 <Button variant="outline" size="sm" className="text-xs gap-1 h-8">
-                  <ExternalLink className="h-3 w-3" /> स्टोर
+                  <ExternalLink className="h-3 w-3" /> Store
                 </Button>
               </Link>
             </div>

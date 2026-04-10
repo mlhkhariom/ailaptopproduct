@@ -32,8 +32,8 @@ const AdminProducts = () => {
     <AdminLayout>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-serif font-bold">प्रोडक्ट्स (Products)</h1>
-          <p className="text-sm text-muted-foreground">{products.length} प्रोडक्ट्स, {products.filter(p => p.inStock).length} स्टॉक में</p>
+          <h1 className="text-2xl font-serif font-bold">Products</h1>
+          <p className="text-sm text-muted-foreground">{products.length} products, {products.filter(p => p.inStock).length} in stock</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8">
@@ -41,38 +41,38 @@ const AdminProducts = () => {
           </Button>
           <Dialog>
             <DialogTrigger asChild>
-              <Button size="sm" className="gap-1.5 text-xs h-8"><Plus className="h-3.5 w-3.5" /> नया प्रोडक्ट</Button>
+              <Button size="sm" className="gap-1.5 text-xs h-8"><Plus className="h-3.5 w-3.5" /> Add Product</Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader><DialogTitle className="font-serif">नया प्रोडक्ट जोड़ें</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle className="font-serif">Add New Product</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div><Label className="text-xs">प्रोडक्ट नाम (English)</Label><Input className="mt-1 h-9" placeholder="Ashwagandha Powder" /></div>
-                  <div><Label className="text-xs">हिंदी नाम</Label><Input className="mt-1 h-9" placeholder="अश्वगंधा चूर्ण" /></div>
+                  <div><Label className="text-xs">Product Name</Label><Input className="mt-1 h-9" placeholder="Ashwagandha Powder" /></div>
+                  <div><Label className="text-xs">Hindi Name</Label><Input className="mt-1 h-9" placeholder="अश्वगंधा चूर्ण" /></div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
-                  <div><Label className="text-xs">कीमत (₹)</Label><Input type="number" className="mt-1 h-9" placeholder="599" /></div>
-                  <div><Label className="text-xs">पुरानी कीमत (₹)</Label><Input type="number" className="mt-1 h-9" placeholder="799" /></div>
+                  <div><Label className="text-xs">Price (₹)</Label><Input type="number" className="mt-1 h-9" placeholder="599" /></div>
+                  <div><Label className="text-xs">Compare Price (₹)</Label><Input type="number" className="mt-1 h-9" placeholder="799" /></div>
                   <div>
-                    <Label className="text-xs">श्रेणी</Label>
-                    <Select><SelectTrigger className="mt-1 h-9"><SelectValue placeholder="चुनें" /></SelectTrigger>
+                    <Label className="text-xs">Category</Label>
+                    <Select><SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>{categories.filter(c => c !== "All").map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                 </div>
-                <div><Label className="text-xs">विवरण (Description)</Label><Textarea className="mt-1" rows={3} placeholder="प्रोडक्ट का विवरण..." /></div>
+                <div><Label className="text-xs">Description</Label><Textarea className="mt-1" rows={3} placeholder="Product description..." /></div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><Label className="text-xs">सामग्री (एक प्रति लाइन)</Label><Textarea className="mt-1" rows={3} placeholder="अश्वगंधा जड़..." /></div>
-                  <div><Label className="text-xs">फायदे (एक प्रति लाइन)</Label><Textarea className="mt-1" rows={3} placeholder="तनाव कम करे..." /></div>
+                  <div><Label className="text-xs">Ingredients (one per line)</Label><Textarea className="mt-1" rows={3} placeholder="Ashwagandha root..." /></div>
+                  <div><Label className="text-xs">Benefits (one per line)</Label><Textarea className="mt-1" rows={3} placeholder="Reduces stress..." /></div>
                 </div>
-                <div><Label className="text-xs">उपयोग विधि</Label><Textarea className="mt-1" rows={2} /></div>
-                <div><Label className="text-xs">प्रोडक्ट इमेज URL</Label><Input className="mt-1 h-9" placeholder="https://..." /></div>
+                <div><Label className="text-xs">Usage / Dosage</Label><Textarea className="mt-1" rows={2} /></div>
+                <div><Label className="text-xs">Product Image URL</Label><Input className="mt-1 h-9" placeholder="https://..." /></div>
                 <div className="flex items-center gap-2">
-                  <Switch id="stock" defaultChecked /><Label htmlFor="stock" className="text-xs">स्टॉक में है</Label>
+                  <Switch id="stock" defaultChecked /><Label htmlFor="stock" className="text-xs">In Stock</Label>
                 </div>
                 <div className="flex gap-2">
-                  <Button className="flex-1">💾 सेव करें</Button>
-                  <Button variant="outline" className="flex-1">सेव & नया जोड़ें</Button>
+                  <Button className="flex-1">Save Product</Button>
+                  <Button variant="outline" className="flex-1">Save & Add Another</Button>
                 </div>
               </div>
             </DialogContent>
@@ -80,15 +80,14 @@ const AdminProducts = () => {
         </div>
       </div>
 
-      {/* Bulk actions bar */}
       {selected.length > 0 && (
         <Card className="mb-4 border-primary/30 bg-primary/5">
           <CardContent className="p-3 flex items-center justify-between">
-            <span className="text-sm font-medium">{selected.length} प्रोडक्ट चुने गए</span>
+            <span className="text-sm font-medium">{selected.length} product(s) selected</span>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="text-xs h-7">स्टॉक अपडेट</Button>
-              <Button size="sm" variant="destructive" className="text-xs h-7">🗑 डिलीट</Button>
-              <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => setSelected([])}>रद्द करें</Button>
+              <Button size="sm" variant="outline" className="text-xs h-7">Update Stock</Button>
+              <Button size="sm" variant="destructive" className="text-xs h-7">Delete</Button>
+              <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => setSelected([])}>Cancel</Button>
             </div>
           </CardContent>
         </Card>
@@ -99,17 +98,17 @@ const AdminProducts = () => {
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
             <Tabs defaultValue="all" className="w-auto">
               <TabsList className="h-8">
-                <TabsTrigger value="all" className="text-xs h-7 px-3" onClick={() => setView("all")}>सभी ({products.length})</TabsTrigger>
-                <TabsTrigger value="active" className="text-xs h-7 px-3" onClick={() => setView("active")}>स्टॉक में ({products.filter(p => p.inStock).length})</TabsTrigger>
-                <TabsTrigger value="out" className="text-xs h-7 px-3" onClick={() => setView("out")}>स्टॉक में नहीं ({products.filter(p => !p.inStock).length})</TabsTrigger>
+                <TabsTrigger value="all" className="text-xs h-7 px-3" onClick={() => setView("all")}>All ({products.length})</TabsTrigger>
+                <TabsTrigger value="active" className="text-xs h-7 px-3" onClick={() => setView("active")}>In Stock ({products.filter(p => p.inStock).length})</TabsTrigger>
+                <TabsTrigger value="out" className="text-xs h-7 px-3" onClick={() => setView("out")}>Out of Stock ({products.filter(p => !p.inStock).length})</TabsTrigger>
               </TabsList>
             </Tabs>
             <div className="flex gap-2 w-full sm:w-auto">
               <div className="relative flex-1 sm:flex-initial">
                 <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="खोजें..." className="pl-8 h-8 text-xs w-full sm:w-48" value={search} onChange={(e) => setSearch(e.target.value)} />
+                <Input placeholder="Search..." className="pl-8 h-8 text-xs w-full sm:w-48" value={search} onChange={(e) => setSearch(e.target.value)} />
               </div>
-              <Button variant="outline" size="sm" className="gap-1 text-xs h-8"><Filter className="h-3 w-3" /> फ़िल्टर</Button>
+              <Button variant="outline" size="sm" className="gap-1 text-xs h-8"><Filter className="h-3 w-3" /> Filter</Button>
             </div>
           </div>
         </CardHeader>
@@ -119,12 +118,12 @@ const AdminProducts = () => {
               <thead>
                 <tr className="border-b bg-muted/30 text-left">
                   <th className="p-3 w-10"><Checkbox checked={selected.length === filtered.length && filtered.length > 0} onCheckedChange={(c) => setSelected(c ? filtered.map(p => p.id) : [])} /></th>
-                  <th className="p-3 font-medium text-muted-foreground text-xs">प्रोडक्ट</th>
-                  <th className="p-3 font-medium text-muted-foreground text-xs">श्रेणी</th>
-                  <th className="p-3 font-medium text-muted-foreground text-xs">कीमत</th>
-                  <th className="p-3 font-medium text-muted-foreground text-xs">रेटिंग</th>
+                  <th className="p-3 font-medium text-muted-foreground text-xs">Product</th>
+                  <th className="p-3 font-medium text-muted-foreground text-xs">Category</th>
+                  <th className="p-3 font-medium text-muted-foreground text-xs">Price</th>
+                  <th className="p-3 font-medium text-muted-foreground text-xs">Rating</th>
                   <th className="p-3 font-medium text-muted-foreground text-xs">Reels</th>
-                  <th className="p-3 font-medium text-muted-foreground text-xs">स्टॉक</th>
+                  <th className="p-3 font-medium text-muted-foreground text-xs">Stock</th>
                   <th className="p-3 font-medium text-muted-foreground text-xs w-10"></th>
                 </tr>
               </thead>
@@ -152,7 +151,7 @@ const AdminProducts = () => {
                     <td className="p-3"><Badge variant="outline" className="text-[10px]">📹 {p.reels.length}</Badge></td>
                     <td className="p-3">
                       <Badge variant={p.inStock ? "default" : "destructive"} className="text-[10px]">
-                        {p.inStock ? "✓ स्टॉक में" : "✗ ख़त्म"}
+                        {p.inStock ? "✓ In Stock" : "✗ Out"}
                       </Badge>
                     </td>
                     <td className="p-3">
@@ -161,11 +160,11 @@ const AdminProducts = () => {
                           <Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem className="text-xs"><Eye className="h-3 w-3 mr-2" /> देखें</DropdownMenuItem>
-                          <DropdownMenuItem className="text-xs"><Edit className="h-3 w-3 mr-2" /> एडिट</DropdownMenuItem>
-                          <DropdownMenuItem className="text-xs"><Copy className="h-3 w-3 mr-2" /> डुप्लीकेट</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs"><Eye className="h-3 w-3 mr-2" /> View</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs"><Edit className="h-3 w-3 mr-2" /> Edit</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs"><Copy className="h-3 w-3 mr-2" /> Duplicate</DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-xs text-destructive"><Trash2 className="h-3 w-3 mr-2" /> डिलीट</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs text-destructive"><Trash2 className="h-3 w-3 mr-2" /> Delete</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>
@@ -174,13 +173,12 @@ const AdminProducts = () => {
               </tbody>
             </table>
           </div>
-          {/* Pagination */}
           <div className="p-3 border-t flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">{filtered.length} में से 1-{filtered.length} दिखा रहे हैं</span>
+            <span className="text-xs text-muted-foreground">Showing 1-{filtered.length} of {filtered.length}</span>
             <div className="flex gap-1">
-              <Button variant="outline" size="sm" className="h-7 text-xs" disabled>← पिछला</Button>
+              <Button variant="outline" size="sm" className="h-7 text-xs" disabled>← Prev</Button>
               <Button variant="outline" size="sm" className="h-7 w-7 text-xs bg-primary text-primary-foreground">1</Button>
-              <Button variant="outline" size="sm" className="h-7 text-xs" disabled>अगला →</Button>
+              <Button variant="outline" size="sm" className="h-7 text-xs" disabled>Next →</Button>
             </div>
           </div>
         </CardContent>
