@@ -147,6 +147,7 @@ const AdminOrders = () => {
                           <SelectTrigger className="h-7 w-24 text-[10px]"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="pending" className="text-xs">⏳ Pending</SelectItem>
+                            <SelectItem value="processing" className="text-xs">⚙️ Processing</SelectItem>
                             <SelectItem value="shipped" className="text-xs">🚚 Shipped</SelectItem>
                             <SelectItem value="delivered" className="text-xs">✓ Delivered</SelectItem>
                           </SelectContent>
