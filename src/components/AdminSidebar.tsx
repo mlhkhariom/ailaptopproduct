@@ -1,6 +1,5 @@
-import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, Zap, IndianRupee, BarChart3, Palette, Globe } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
@@ -23,9 +22,11 @@ const toolsMenu = [
   { title: "Media Library", url: "/admin/media", icon: Image, badge: "" },
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageCircle, badge: "" },
   { title: "CMS / Pages", url: "/admin/cms", icon: Palette, badge: "NEW" },
+  { title: "Contact Queries", url: "/admin/contacts", icon: Mail, badge: "3" },
 ];
 
 const systemMenu = [
+  { title: "User & Roles", url: "/admin/users", icon: UserCog, badge: "" },
   { title: "Reports", url: "/admin/reports", icon: BarChart3, badge: "" },
   { title: "Settings", url: "/admin/settings", icon: Settings, badge: "" },
 ];
