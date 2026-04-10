@@ -38,7 +38,7 @@ const FAQ = () => {
       <section className="py-12">
         <div className="container mx-auto px-4 max-w-3xl">
           <div className="flex flex-wrap gap-2 mb-8 justify-center">
-            {categories.map((c) => (
+            {categories.map((c: string) => (
               <Button key={c} variant={category === c ? "default" : "outline"} size="sm" className="text-xs" onClick={() => setCategory(c)}>
                 {c}
               </Button>
