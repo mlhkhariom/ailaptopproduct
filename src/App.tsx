@@ -10,9 +10,16 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Refund from "./pages/Refund";
+import Shipping from "./pages/Shipping";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
+import AdminPayments from "./pages/admin/AdminPayments";
 import AdminBlog from "./pages/admin/AdminBlog";
 import AdminSocial from "./pages/admin/AdminSocial";
 import AdminMedia from "./pages/admin/AdminMedia";
@@ -38,9 +45,16 @@ const App = () => (
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:id" element={<BlogPost />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/refund" element={<Refund />} />
+          <Route path="/shipping" element={<Shipping />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/products" element={<AdminProducts />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
+          <Route path="/admin/payments" element={<AdminPayments />} />
           <Route path="/admin/blog" element={<AdminBlog />} />
           <Route path="/admin/social" element={<AdminSocial />} />
           <Route path="/admin/media" element={<AdminMedia />} />
