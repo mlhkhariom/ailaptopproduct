@@ -87,6 +87,7 @@ const AdminOrders = () => {
               <TabsList className="h-8">
                 <TabsTrigger value="all" className="text-xs h-7 px-3" onClick={() => setStatusFilter("all")}>All ({counts.all})</TabsTrigger>
                 <TabsTrigger value="pending" className="text-xs h-7 px-3" onClick={() => setStatusFilter("pending")}>Pending ({counts.pending})</TabsTrigger>
+                <TabsTrigger value="processing" className="text-xs h-7 px-3" onClick={() => setStatusFilter("processing")}>Processing ({counts.processing})</TabsTrigger>
                 <TabsTrigger value="shipped" className="text-xs h-7 px-3" onClick={() => setStatusFilter("shipped")}>Shipped ({counts.shipped})</TabsTrigger>
                 <TabsTrigger value="delivered" className="text-xs h-7 px-3" onClick={() => setStatusFilter("delivered")}>Delivered ({counts.delivered})</TabsTrigger>
               </TabsList>
