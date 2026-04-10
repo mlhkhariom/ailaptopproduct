@@ -22,6 +22,7 @@ const toolsMenu = [
   { title: "Blog / Content", url: "/admin/blog", icon: FileText, badge: "" },
   { title: "Media Library", url: "/admin/media", icon: Image, badge: "" },
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageCircle, badge: "" },
+  { title: "CMS / Content", url: "/admin/cms", icon: Palette, badge: "NEW" },
 ];
 
 const systemMenu = [
