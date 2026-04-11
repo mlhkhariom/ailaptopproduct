@@ -11,6 +11,7 @@ const iconMap: Record<string, typeof Leaf> = { Leaf, Award, Truck, HeartPulse, S
 
 const Index = () => {
   const { heroBanners, benefits, testimonials, siteSettings } = useCMSStore();
+  const { products } = useProductStore();
   const activeBanner = heroBanners.find((h) => h.active) || heroBanners[0];
   const activeBenefits = benefits.filter((b) => b.active);
   const activeTestimonials = testimonials.filter((t) => t.active);
