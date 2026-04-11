@@ -20,7 +20,7 @@ import type { Product } from "@/data/mockData";
 const emptyForm = {
   name: "", nameHi: "", price: 0, originalPrice: 0, image: "",
   category: "", description: "", ingredients: "", benefits: "", usage: "",
-  precautions: "", sku: "", slug: "", stock: 10, inStock: true, status: "active" as const,
+  precautions: "", sku: "", slug: "", stock: 10, inStock: true, status: "active" as "active" | "draft",
 };
 
 const AdminProducts = () => {
