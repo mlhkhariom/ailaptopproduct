@@ -1,17 +1,22 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, Menu, X, Search, User, LogIn } from "lucide-react";
+import { ShoppingCart, Menu, X, Search, User, LogIn, Heart, Bell, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import { useCMSStore } from "@/store/cmsStore";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCartStore } from "@/store/cartStore";
+import { useWishlistStore } from "@/store/wishlistStore";
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { siteSettings } = useCMSStore();
   const { user, logout, isAdmin } = useAuth();
+  const cartCount = useCartStore((s) => s.getItemCount());
+  const wishlistCount = useWishlistStore((s) => s.items.length);
 
   const navLinks = [
     { label: "Home", to: "/" },
@@ -19,7 +24,7 @@ const Header = () => {
     { label: "Blog", to: "/blog" },
     { label: "About", to: "/about" },
     { label: "Contact", to: "/contact" },
-    { label: "FAQs", to: "/faq" },
+    { label: "Track Order", to: "/track-order" },
   ];
 
   return (
@@ -44,15 +49,23 @@ const Header = () => {
           ))}
         </nav>
 
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search..." className="pl-8 w-44 h-9 text-sm" />
+            <Input placeholder="Search..." className="pl-8 w-40 h-9 text-sm" />
           </div>
+
+          <Link to="/account">
+            <Button variant="ghost" size="icon" className="relative">
+              <Heart className="h-5 w-5" />
+              {wishlistCount > 0 && <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center">{wishlistCount}</span>}
+            </Button>
+          </Link>
+
           <Link to="/cart">
             <Button variant="ghost" size="icon" className="relative">
               <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">3</span>
+              {cartCount > 0 && <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">{cartCount}</span>}
             </Button>
           </Link>
 
@@ -73,6 +86,7 @@ const Header = () => {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild><Link to="/account">My Account</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link to="/cart">My Cart</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link to="/track-order">Track Order</Link></DropdownMenuItem>
                 {isAdmin && (
                   <>
                     <DropdownMenuSeparator />
@@ -103,7 +117,7 @@ const Header = () => {
             <Link key={l.to} to={l.to} className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary" onClick={() => setMobileOpen(false)}>{l.label}</Link>
           ))}
           <div className="flex gap-2 pt-2">
-            <Link to="/cart" className="flex-1"><Button variant="outline" className="w-full" size="sm">🛒 Cart</Button></Link>
+            <Link to="/cart" className="flex-1"><Button variant="outline" className="w-full" size="sm">🛒 Cart {cartCount > 0 && `(${cartCount})`}</Button></Link>
             {user ? (
               <Link to="/account" className="flex-1"><Button className="w-full" size="sm">My Account</Button></Link>
             ) : (
