@@ -1,80 +1,70 @@
 
 
-# Product Page Enhancement + Admin CRUD + WhatsApp Auto-Reply Plan
+# WhatsApp Module — Light Theme + Full Features Rewrite
 
-## What We'll Build
+## Problem
+Current WhatsApp module uses dark theme (dark green/black) which clashes with the site's light Ayurvedic theme (cream, sage green). Also many features are incomplete or missing.
 
-### 1. Product Store (Zustand with localStorage persistence)
-Create `src/store/productStore.ts` — a persistent Zustand store replacing the static `mockData.ts` products array. Admin can Add/Edit/Delete products, and all public pages (Products, ProductDetail) read from this store in real-time.
+## What Changes
 
-### 2. Enhanced Product Detail Page
-- Image gallery with multiple thumbnails (not just reels)
-- Zoom on hover for main image
-- "Recently Viewed" section
-- Better mobile layout with sticky bottom bar
-- Dynamic data from productStore
+### 1. Light Theme Conversion
+- Replace all dark colors (`#111b21`, `#202c33`, `#0b141a`, `#005c4b`) with light equivalents matching the site's cream/green palette
+- Contact sidebar: white/cream background, green accents
+- Chat area: WhatsApp light wallpaper (light beige with subtle pattern)
+- Sent messages: light green (`#d9fdd3`), received: white
+- Input bar, headers: light backgrounds with subtle borders
+- Context menu, contact info panel: all light theme
 
-### 3. Enhanced Products Listing Page  
-- Sidebar filters (category checkboxes, in-stock toggle)
-- Better grid cards with quick-add-to-cart overlay
-- Reads from productStore (admin changes reflect instantly)
+### 2. Full WhatsApp Web Features (every option working)
 
-### 4. Admin Products — Full CRUD Working
-- **Add Product**: Form saves to productStore → appears on public pages instantly
-- **Edit Product**: Pre-filled dialog, updates store
-- **Delete Product**: Confirmation dialog, removes from store
-- **Duplicate**: Clones product with new ID
-- **Bulk Delete/Stock Update**: Works on selected items
-- **Image URL preview** in form
+**Contact List:**
+- New chat button (opens dialog to add new contact with name/phone)
+- Contact right-click menu: Pin, Mute, Archive, Delete, Mark as read/unread
+- Contact labels editable (VIP/Customer/New/Supplier)
+- Group filter tabs: All, Unread, Pinned, Groups
 
-### 5. WhatsApp Auto-Reply System
-Add an **Automation** tab to AdminWhatsApp with:
-- **Auto-Reply Rules Database**: Define keyword → response mappings stored in a Zustand store
-  - e.g., keywords: "price", "rate" → auto-reply with product price from productStore
-  - keywords: "order status", "track" → reply with order details from mockData
-  - keywords: "hello", "hi" → greeting template
-- **Rule Builder UI**: Add/Edit/Delete rules with keyword triggers, response templates with variables (`{{product_name}}`, `{{price}}`, `{{order_status}}`)
-- **Smart Matching**: When a message comes in, check keywords against rules database, auto-fill response
-- **Incoming Message Simulation**: A "Simulate Message" button that triggers the auto-reply logic and shows the matched response
-- **Product Lookup**: Type product name → bot fetches price, stock, description from productStore and generates reply
+**Chat Window:**
+- Right-click context menu: Reply, Forward (opens contact picker dialog), Copy, Star, Info (shows sent/delivered/read times), Delete for me, Delete for everyone
+- Message reactions (double-click to react with emoji)
+- Image/document attachment button (shows placeholder attachment UI)
+- Voice message button (shows recording indicator UI)
+- Message search within chat (search icon in header opens search bar)
+- Scroll-to-bottom button when scrolled up
+- "New messages" divider line
 
-### 6. All Public Pages Read from Stores
-- Products page → productStore
-- ProductDetail → productStore  
-- Home page → already uses cmsStore
-- Cart/Checkout → already uses cartStore
+**Contact Info Panel:**
+- Media/Links/Docs tabs (placeholder counts)
+- Shared groups section
+- Block contact option
+- Report contact option
+- Disappearing messages toggle
 
-## Technical Details
+**Forward Dialog:**
+- When forwarding, shows contact list to pick recipient
+- Message appears in target chat with "Forwarded" label
 
-### New Files
-- `src/store/productStore.ts` — Zustand persist store with full CRUD for products
-- `src/store/whatsappStore.ts` — Zustand store for auto-reply rules, chat messages, contacts
+**New Contact Dialog:**
+- Add name, phone, label
+- Appears in contact list immediately
 
-### Modified Files
-- `src/pages/Products.tsx` — Read from productStore, enhanced filters
-- `src/pages/ProductDetail.tsx` — Read from productStore, image gallery
-- `src/pages/admin/AdminProducts.tsx` — Working Add/Edit/Delete with productStore
-- `src/pages/admin/AdminWhatsApp.tsx` — Add Automation tab with auto-reply rules, simulate incoming messages, product lookup bot
-- `src/components/ProductCard.tsx` — Quick add-to-cart on hover
+### 3. WhatsApp Documentation File
+Create `WHATSAPP_MODULE.md` with:
+- Every function name, parameters, return type, and what it does
+- State structure (contacts, messages, rules)
+- Event flow diagrams (send message → delivery tick → read tick)
+- Auto-reply rule matching logic
+- Template variable replacement logic
+- Data structures for contacts, messages, rules
+- How to connect to real WhatsApp Business API (webhook endpoints needed, message format)
 
-### Data Flow
-```text
-Admin Panel                    Public Pages
-┌─────────────┐               ┌──────────────┐
-│ AdminProducts│──CRUD──►     │ Products.tsx  │
-│ (Add/Edit/  │   via        │ ProductDetail │
-│  Delete)    │ productStore  │ Cart/Checkout │
-└─────────────┘               └──────────────┘
+## Files Modified
+- `src/pages/admin/AdminWhatsApp.tsx` — Complete rewrite with light theme + all features
+- `WHATSAPP_MODULE.md` — New detailed documentation file
 
-WhatsApp Auto-Reply
-┌──────────────────────────────────────────┐
-│ Incoming Message → Keyword Match         │
-│ → Lookup productStore for details        │
-│ → Generate auto-reply with real data     │
-│ → Show in chat as bot response           │
-└──────────────────────────────────────────┘
-```
-
-### Storage
-All data persists in localStorage via Zustand `persist` middleware — no backend needed. Works like SQLite for browser-based persistence.
+## Technical Approach
+- All inline dark styles replaced with light theme CSS variables or light hex values
+- New state: `forwardingMsg`, `newContactDialog`, `searchInChat`, `messageReactions`
+- Forward flow: select msg → pick contact → message copies to that chat
+- All interactions work with local state (no backend needed)
+- ~900-1000 lines total for the component
 
