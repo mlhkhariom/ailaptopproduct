@@ -1,15 +1,22 @@
 import { Link } from "react-router-dom";
-import { Star, ShoppingCart, Play } from "lucide-react";
+import { Star, ShoppingCart, Play, Heart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/data/mockData";
+import { useCartStore } from "@/store/cartStore";
+import { useWishlistStore } from "@/store/wishlistStore";
+import { toast } from "sonner";
 
 const ProductCard = ({ product }: { product: Product }) => {
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
   const hasReels = product.reels && product.reels.length > 0;
+  const addItem = useCartStore((s) => s.addItem);
+  const { toggleItem, isInWishlist } = useWishlistStore();
+  const wishlisted = isInWishlist(product.id);
+  const isLowStock = product.stock > 0 && product.stock <= 5;
 
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50">
@@ -17,6 +24,7 @@ const ProductCard = ({ product }: { product: Product }) => {
         <div className="relative overflow-hidden aspect-square bg-muted">
           <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           {discount > 0 && <Badge className="absolute top-3 left-3 bg-accent text-accent-foreground">{discount}% OFF</Badge>}
+          {isLowStock && <Badge variant="destructive" className="absolute top-3 left-3 text-[9px]" style={discount > 0 ? { top: '2.5rem' } : {}}>Only {product.stock} left!</Badge>}
           {hasReels && (
             <div className="absolute top-3 right-3 bg-foreground/60 text-primary-foreground rounded-full h-7 w-7 flex items-center justify-center">
               <Play className="h-3.5 w-3.5 fill-primary-foreground ml-0.5" />
@@ -46,9 +54,25 @@ const ProductCard = ({ product }: { product: Product }) => {
             <span className="font-bold text-foreground">₹{product.price}</span>
             {product.originalPrice && <span className="text-xs text-muted-foreground line-through">₹{product.originalPrice}</span>}
           </div>
-          <Button size="icon" variant="ghost" className="h-8 w-8 text-primary hover:bg-primary hover:text-primary-foreground" disabled={!product.inStock}>
-            <ShoppingCart className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8"
+              onClick={(e) => { e.preventDefault(); toggleItem(product.id); toast(wishlisted ? "Removed from wishlist" : "Added to wishlist"); }}
+            >
+              <Heart className={`h-4 w-4 ${wishlisted ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 text-primary hover:bg-primary hover:text-primary-foreground"
+              disabled={!product.inStock}
+              onClick={(e) => { e.preventDefault(); addItem(product); toast.success("Added to cart!"); }}
+            >
+              <ShoppingCart className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         {hasReels && <p className="text-[10px] text-primary mt-1.5">📹 {product.reels.length} Reels Available</p>}
       </CardContent>

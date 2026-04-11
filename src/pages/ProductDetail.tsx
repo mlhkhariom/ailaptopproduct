@@ -1,25 +1,33 @@
 import { useParams, Link } from "react-router-dom";
-import { ShoppingCart, MessageCircle, Star, ArrowLeft, Minus, Plus, Play, Instagram, Youtube, Facebook } from "lucide-react";
+import { ShoppingCart, MessageCircle, Star, ArrowLeft, Minus, Plus, Play, Instagram, Youtube, Facebook, Heart, Share2, Copy, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import CustomerLayout from "@/components/CustomerLayout";
 import ProductCard from "@/components/ProductCard";
 import { products } from "@/data/mockData";
+import { useCartStore } from "@/store/cartStore";
+import { useWishlistStore } from "@/store/wishlistStore";
+import { toast } from "sonner";
 
-const platformIcon = {
-  instagram: Instagram,
-  youtube: Youtube,
-  facebook: Facebook,
-};
+const platformIcon = { instagram: Instagram, youtube: Youtube, facebook: Facebook };
+
+const mockReviews = [
+  { id: 1, name: "Priya S.", rating: 5, text: "Amazing product! Saw results in just 2 weeks. Highly recommended.", date: "2024-01-15" },
+  { id: 2, name: "Rahul V.", rating: 4, text: "Good quality, authentic Ayurvedic product. Packaging was great.", date: "2024-01-10" },
+  { id: 3, name: "Anita D.", rating: 5, text: "Been using this for a month now, excellent results!", date: "2024-01-08" },
+];
 
 const ProductDetail = () => {
   const { id } = useParams();
   const product = products.find((p) => p.id === id);
   const [qty, setQty] = useState(1);
   const [activeReel, setActiveReel] = useState(0);
+  const addItem = useCartStore((s) => s.addItem);
+  const { toggleItem, isInWishlist } = useWishlistStore();
 
   if (!product) {
     return (
@@ -34,7 +42,15 @@ const ProductDetail = () => {
 
   const related = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
   const discount = product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
-  const PlatformIcon = product.reels[activeReel] ? platformIcon[product.reels[activeReel].platform] : Instagram;
+  const wishlisted = isInWishlist(product.id);
+
+  const ratingBreakdown = [
+    { stars: 5, percent: 68 },
+    { stars: 4, percent: 20 },
+    { stars: 3, percent: 8 },
+    { stars: 2, percent: 3 },
+    { stars: 1, percent: 1 },
+  ];
 
   return (
     <CustomerLayout>
@@ -45,8 +61,8 @@ const ProductDetail = () => {
 
         <div className="grid md:grid-cols-2 gap-8 mb-12">
           <div>
-            <div className="relative rounded-2xl overflow-hidden bg-muted aspect-square mb-4">
-              <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+            <div className="relative rounded-2xl overflow-hidden bg-muted aspect-square mb-4 group">
+              <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
               {discount > 0 && <Badge className="absolute top-4 left-4 bg-accent text-accent-foreground text-sm">{discount}% OFF</Badge>}
             </div>
             <div className="grid grid-cols-3 gap-2">
@@ -62,9 +78,7 @@ const ProductDetail = () => {
                     <div className="absolute inset-0 bg-foreground/30 flex items-center justify-center">
                       <Play className="h-5 w-5 text-primary-foreground fill-primary-foreground" />
                     </div>
-                    <div className="absolute bottom-1 left-1">
-                      <Icon className="h-3.5 w-3.5 text-primary-foreground" />
-                    </div>
+                    <div className="absolute bottom-1 left-1"><Icon className="h-3.5 w-3.5 text-primary-foreground" /></div>
                   </div>
                 );
               })}
@@ -99,13 +113,27 @@ const ProductDetail = () => {
                 <span className="w-10 text-center font-medium">{qty}</span>
                 <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setQty(qty + 1)}><Plus className="h-4 w-4" /></Button>
               </div>
+              {product.inStock ? (
+                <Badge variant="outline" className="text-primary border-primary/30">✓ In Stock ({product.stock})</Badge>
+              ) : (
+                <Badge variant="destructive">Out of Stock</Badge>
+              )}
             </div>
 
-            <div className="flex flex-wrap gap-3 mb-6">
-              <Button size="lg" className="flex-1 gap-2" disabled={!product.inStock}>
+            <div className="flex flex-wrap gap-3 mb-4">
+              <Button size="lg" className="flex-1 gap-2" disabled={!product.inStock} onClick={() => { addItem(product, qty); toast.success("Added to cart!"); }}>
                 <ShoppingCart className="h-4 w-4" /> Add to Cart
               </Button>
-              <Button size="lg" variant="secondary" className="flex-1">Buy Now</Button>
+              <Button size="lg" variant="secondary" className="flex-1" onClick={() => { addItem(product, qty); toast.success("Redirecting to checkout..."); }}>Buy Now</Button>
+            </div>
+
+            <div className="flex gap-2 mb-6">
+              <Button variant="outline" className="flex-1 gap-2" onClick={() => { toggleItem(product.id); toast(wishlisted ? "Removed from wishlist" : "Added to wishlist ❤️"); }}>
+                <Heart className={`h-4 w-4 ${wishlisted ? "fill-destructive text-destructive" : ""}`} /> {wishlisted ? "Wishlisted" : "Wishlist"}
+              </Button>
+              <Button variant="outline" className="gap-2" onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success("Link copied!"); }}>
+                <Share2 className="h-4 w-4" /> Share
+              </Button>
             </div>
 
             <a href={`https://wa.me/919876543210?text=Hi! I'd like to know more about ${product.name}`} target="_blank" rel="noreferrer">
@@ -116,6 +144,7 @@ const ProductDetail = () => {
           </div>
         </div>
 
+        {/* Reels Section */}
         <section className="mb-12">
           <h2 className="text-2xl font-serif font-bold mb-4">Product Reels & Videos</h2>
           <div className="grid md:grid-cols-3 gap-4">
@@ -145,11 +174,13 @@ const ProductDetail = () => {
           </div>
         </section>
 
-        <Tabs defaultValue="ingredients" className="mb-16">
+        {/* Tabs */}
+        <Tabs defaultValue="ingredients" className="mb-12">
           <TabsList className="w-full justify-start">
             <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
             <TabsTrigger value="benefits">Benefits</TabsTrigger>
             <TabsTrigger value="usage">How to Use</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews ({product.reviews})</TabsTrigger>
           </TabsList>
           <TabsContent value="ingredients" className="mt-4">
             <ul className="space-y-2">
@@ -157,6 +188,12 @@ const ProductDetail = () => {
                 <li key={i} className="flex items-center gap-2 text-sm"><span className="h-1.5 w-1.5 rounded-full bg-primary" />{ing}</li>
               ))}
             </ul>
+            {product.precautions && (
+              <div className="mt-4 p-4 rounded-xl bg-destructive/5 border border-destructive/20">
+                <p className="text-sm font-medium text-destructive mb-1">⚠️ Precautions</p>
+                <p className="text-xs text-muted-foreground">{product.precautions}</p>
+              </div>
+            )}
           </TabsContent>
           <TabsContent value="benefits" className="mt-4">
             <ul className="space-y-2">
@@ -168,10 +205,73 @@ const ProductDetail = () => {
           <TabsContent value="usage" className="mt-4">
             <p className="text-sm text-muted-foreground leading-relaxed">{product.usage}</p>
           </TabsContent>
+          <TabsContent value="reviews" className="mt-4">
+            {/* Rating Breakdown */}
+            <div className="grid md:grid-cols-2 gap-8 mb-8">
+              <div>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="text-center">
+                    <p className="text-4xl font-bold">{product.rating}</p>
+                    <div className="flex items-center gap-0.5 mt-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className={`h-3.5 w-3.5 ${i < Math.floor(product.rating) ? "fill-gold text-gold" : "text-border"}`} />
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{product.reviews} reviews</p>
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    {ratingBreakdown.map((r) => (
+                      <div key={r.stars} className="flex items-center gap-2">
+                        <span className="text-xs w-3">{r.stars}</span>
+                        <Star className="h-3 w-3 fill-gold text-gold" />
+                        <Progress value={r.percent} className="h-2 flex-1" />
+                        <span className="text-xs text-muted-foreground w-8">{r.percent}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {mockReviews.map((review) => (
+                <Card key={review.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">{review.name[0]}</div>
+                        <div>
+                          <p className="text-sm font-medium">{review.name}</p>
+                          <div className="flex items-center gap-0.5">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Star key={i} className={`h-3 w-3 ${i < review.rating ? "fill-gold text-gold" : "text-border"}`} />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground">{review.date}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{review.text}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
         </Tabs>
 
+        {/* Sticky Mobile Add to Cart */}
+        <div className="fixed bottom-0 left-0 right-0 md:hidden bg-card border-t p-3 flex gap-2 z-40">
+          <div className="flex-1">
+            <p className="text-xs text-muted-foreground">Total</p>
+            <p className="font-bold text-lg">₹{product.price * qty}</p>
+          </div>
+          <Button className="gap-2 h-11 flex-1" disabled={!product.inStock} onClick={() => { addItem(product, qty); toast.success("Added to cart!"); }}>
+            <ShoppingCart className="h-4 w-4" /> Add to Cart
+          </Button>
+        </div>
+
         {related.length > 0 && (
-          <div>
+          <div className="mb-16">
             <h2 className="text-2xl font-serif font-bold mb-6">Related Products</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {related.map((p) => <ProductCard key={p.id} product={p} />)}

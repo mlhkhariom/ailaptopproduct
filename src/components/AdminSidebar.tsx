@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -6,6 +6,9 @@ import {
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useNotificationStore } from "@/store/notificationStore";
+import { useAuth } from "@/contexts/AuthContext";
 
 const mainMenu = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, badge: "" },
@@ -23,6 +26,7 @@ const toolsMenu = [
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageCircle, badge: "" },
   { title: "CMS / Pages", url: "/admin/cms", icon: Palette, badge: "NEW" },
   { title: "Contact Queries", url: "/admin/contacts", icon: Mail, badge: "3" },
+  { title: "Coupons", url: "/admin/coupons", icon: Ticket, badge: "NEW" },
 ];
 
 const systemMenu = [
@@ -34,6 +38,8 @@ const systemMenu = [
 export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const unreadCount = useNotificationStore((s) => s.unreadCount());
+  const { user } = useAuth();
 
   const renderMenu = (items: typeof mainMenu) => (
     <SidebarMenu>
@@ -65,10 +71,15 @@ export function AdminSidebar() {
         <div className="flex items-center gap-2.5">
           <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-ring flex items-center justify-center text-sidebar-primary-foreground font-serif font-bold text-sm shrink-0 shadow-lg">A</div>
           {!collapsed && (
-            <div className="leading-tight">
+            <div className="leading-tight flex-1">
               <span className="font-serif font-bold text-sidebar-foreground block text-sm leading-none">Apsoncure</span>
               <span className="text-[10px] text-sidebar-foreground/50 flex items-center gap-1 mt-0.5"><Zap className="h-2.5 w-2.5" /> Admin Console</span>
             </div>
+          )}
+          {!collapsed && unreadCount > 0 && (
+            <Badge className="bg-destructive text-destructive-foreground border-0 text-[9px] h-5 px-1.5">
+              <Bell className="h-3 w-3 mr-0.5" /> {unreadCount}
+            </Badge>
           )}
         </div>
       </SidebarHeader>
@@ -94,9 +105,11 @@ export function AdminSidebar() {
         {!collapsed && (
           <div className="rounded-xl bg-sidebar-accent/30 p-3">
             <div className="flex items-center gap-2 mb-2">
-              <div className="h-7 w-7 rounded-full bg-sidebar-ring/20 flex items-center justify-center"><span className="text-xs font-bold text-sidebar-ring">DP</span></div>
+              <div className="h-7 w-7 rounded-full bg-sidebar-ring/20 flex items-center justify-center">
+                <span className="text-xs font-bold text-sidebar-ring">{user?.name?.split(' ').map(n => n[0]).join('') || 'A'}</span>
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-sidebar-foreground truncate">Dr. Prachi</p>
+                <p className="text-xs font-medium text-sidebar-foreground truncate">{user?.name || 'Admin'}</p>
                 <p className="text-[10px] text-sidebar-foreground/50">Super Admin</p>
               </div>
               <ChevronDown className="h-3.5 w-3.5 text-sidebar-foreground/40" />

@@ -1,26 +1,32 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Minus, Plus, Trash2, ArrowRight } from "lucide-react";
+import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import CustomerLayout from "@/components/CustomerLayout";
+import ProductCard from "@/components/ProductCard";
+import { useCartStore } from "@/store/cartStore";
 import { products } from "@/data/mockData";
-
-const initialCart = [
-  { product: products[0], qty: 2 },
-  { product: products[2], qty: 1 },
-  { product: products[4], qty: 1 },
-];
+import { toast } from "sonner";
 
 const Cart = () => {
-  const [items, setItems] = useState(initialCart);
+  const { items, updateQty, removeItem, getSubtotal, getTotal, discount, appliedCoupon, applyCoupon, removeCoupon } = useCartStore();
+  const [couponInput, setCouponInput] = useState("");
 
-  const updateQty = (id: string, delta: number) => {
-    setItems((prev) => prev.map((i) => i.product.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i));
+  const subtotal = getSubtotal();
+  const total = getTotal();
+  const suggested = products.filter((p) => !items.find((i) => i.product.id === p.id)).slice(0, 4);
+
+  const handleApplyCoupon = () => {
+    if (!couponInput.trim()) return;
+    const ok = applyCoupon(couponInput);
+    if (ok) toast.success("Coupon applied!");
+    else toast.error("Invalid coupon or minimum order not met");
+    setCouponInput("");
   };
-  const remove = (id: string) => setItems((prev) => prev.filter((i) => i.product.id !== id));
-  const subtotal = items.reduce((s, i) => s + i.product.price * i.qty, 0);
 
   return (
     <CustomerLayout>
@@ -29,8 +35,10 @@ const Cart = () => {
 
         {items.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-muted-foreground mb-4">Your cart is empty</p>
-            <Link to="/products"><Button>Continue Shopping</Button></Link>
+            <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground/20 mb-4" />
+            <p className="text-xl font-medium mb-2">Your cart is empty</p>
+            <p className="text-muted-foreground mb-6">Browse our products and add your favorites!</p>
+            <Link to="/products"><Button size="lg">Continue Shopping</Button></Link>
           </div>
         ) : (
           <div className="grid lg:grid-cols-3 gap-8">
@@ -44,13 +52,13 @@ const Cart = () => {
                       {product.nameHi && <p className="text-xs text-muted-foreground">{product.nameHi}</p>}
                       <div className="flex items-center justify-between mt-3">
                         <div className="flex items-center border rounded-lg">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQty(product.id, -1)}><Minus className="h-3 w-3" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQty(product.id, qty - 1)}><Minus className="h-3 w-3" /></Button>
                           <span className="w-8 text-center text-sm">{qty}</span>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQty(product.id, 1)}><Plus className="h-3 w-3" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQty(product.id, qty + 1)}><Plus className="h-3 w-3" /></Button>
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="font-bold">₹{product.price * qty}</span>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => remove(product.id)}><Trash2 className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItem(product.id)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </div>
                     </div>
@@ -62,15 +70,50 @@ const Cart = () => {
             <Card className="h-fit">
               <CardContent className="p-6 space-y-4">
                 <h3 className="font-semibold text-lg">Order Summary</h3>
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span>₹{subtotal}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal ({items.length} items)</span><span>₹{subtotal}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-muted-foreground">Delivery</span><span className="text-primary">Free</span></div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-primary flex items-center gap-1"><Tag className="h-3 w-3" /> {appliedCoupon}</span>
+                    <span className="text-primary">−₹{discount}</span>
+                  </div>
+                )}
                 <Separator />
-                <div className="flex justify-between font-bold"><span>Total</span><span>₹{subtotal}</span></div>
+                <div className="flex justify-between font-bold"><span>Total</span><span>₹{total}</span></div>
+
+                {/* Coupon */}
+                {!appliedCoupon ? (
+                  <div className="flex gap-2">
+                    <Input placeholder="Coupon code" value={couponInput} onChange={(e) => setCouponInput(e.target.value)} className="h-9 text-sm uppercase" />
+                    <Button variant="outline" size="sm" onClick={handleApplyCoupon}>Apply</Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/20">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="default" className="text-[10px]">{appliedCoupon}</Badge>
+                      <span className="text-xs text-primary">−₹{discount} off</span>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-xs h-6 text-destructive" onClick={removeCoupon}>Remove</Button>
+                  </div>
+                )}
+
+                <p className="text-[10px] text-muted-foreground">Try: AYUR10, FLAT100, WELCOME20</p>
+
                 <Link to="/checkout">
                   <Button className="w-full gap-2 mt-2">Proceed to Checkout <ArrowRight className="h-4 w-4" /></Button>
                 </Link>
               </CardContent>
             </Card>
+          </div>
+        )}
+
+        {/* Suggested */}
+        {suggested.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-serif font-bold mb-6">You May Also Like</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {suggested.map((p) => <ProductCard key={p.id} product={p} />)}
+            </div>
           </div>
         )}
       </div>
