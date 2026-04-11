@@ -34,7 +34,7 @@ const mockCoupons: Coupon[] = [
 const AdminCoupons = () => {
   const [coupons, setCoupons] = useState(mockCoupons);
   const [showAdd, setShowAdd] = useState(false);
-  const [newCoupon, setNewCoupon] = useState({ code: "", type: "percent" as const, value: 10, minOrder: 0, maxUses: 100, expiry: "" });
+  const [newCoupon, setNewCoupon] = useState<{ code: string; type: "percent" | "flat"; value: number; minOrder: number; maxUses: number; expiry: string }>({ code: "", type: "percent", value: 10, minOrder: 0, maxUses: 100, expiry: "" });
 
   const toggleActive = (id: string) => {
     setCoupons((prev) => prev.map((c) => c.id === id ? { ...c, active: !c.active } : c));
