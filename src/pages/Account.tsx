@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, Mail, Phone, MapPin, ShoppingBag, Heart, LogOut, Edit, Save, Camera } from "lucide-react";
+import { User, Mail, Phone, MapPin, ShoppingBag, Heart, LogOut, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,13 +11,16 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import CustomerLayout from "@/components/CustomerLayout";
+import ProductCard from "@/components/ProductCard";
 import { useAuth } from "@/contexts/AuthContext";
-import { orders } from "@/data/mockData";
+import { useWishlistStore } from "@/store/wishlistStore";
+import { orders, products } from "@/data/mockData";
 
 const Account = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [editing, setEditing] = useState(false);
+  const wishlistItems = useWishlistStore((s) => s.items);
+  const wishlistProducts = products.filter((p) => wishlistItems.includes(p.id));
 
   if (!user) { navigate("/login"); return null; }
 
@@ -59,7 +62,7 @@ const Account = () => {
               <TabsList>
                 <TabsTrigger value="orders" className="gap-1"><ShoppingBag className="h-3 w-3" /> Orders</TabsTrigger>
                 <TabsTrigger value="profile" className="gap-1"><User className="h-3 w-3" /> Profile</TabsTrigger>
-                <TabsTrigger value="wishlist" className="gap-1"><Heart className="h-3 w-3" /> Wishlist</TabsTrigger>
+                <TabsTrigger value="wishlist" className="gap-1"><Heart className="h-3 w-3" /> Wishlist ({wishlistProducts.length})</TabsTrigger>
               </TabsList>
               <TabsContent value="orders" className="mt-4 space-y-3">
                 {userOrders.map(order => (
@@ -103,14 +106,20 @@ const Account = () => {
                 </Card>
               </TabsContent>
               <TabsContent value="wishlist" className="mt-4">
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <Heart className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                    <p className="font-medium">Your wishlist is empty</p>
-                    <p className="text-sm text-muted-foreground mt-1">Browse products and add your favorites!</p>
-                    <Button className="mt-4" onClick={() => navigate("/products")}>Browse Products</Button>
-                  </CardContent>
-                </Card>
+                {wishlistProducts.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <Heart className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                      <p className="font-medium">Your wishlist is empty</p>
+                      <p className="text-sm text-muted-foreground mt-1">Browse products and add your favorites!</p>
+                      <Button className="mt-4" onClick={() => navigate("/products")}>Browse Products</Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    {wishlistProducts.map((p) => <ProductCard key={p.id} product={p} />)}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
