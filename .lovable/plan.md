@@ -1,115 +1,80 @@
 
 
-# Apsoncure PHC — Complete Enhancement Plan
+# Product Page Enhancement + Admin CRUD + WhatsApp Auto-Reply Plan
 
-## Current State Analysis
+## What We'll Build
 
-After reviewing the full codebase, here's what EXISTS and what's MISSING or needs improvement:
+### 1. Product Store (Zustand with localStorage persistence)
+Create `src/store/productStore.ts` — a persistent Zustand store replacing the static `mockData.ts` products array. Admin can Add/Edit/Delete products, and all public pages (Products, ProductDetail) read from this store in real-time.
 
-### Already Built (18 pages, 15 admin modules)
-- Home, Products, Product Detail, Cart, Checkout, Blog, BlogPost, About, Contact, FAQ, Privacy, Terms, Refund, Shipping, Login, Register, Account, NotFound
-- Admin: Dashboard, Products, Orders, Payments, Customers, Categories, Social, Blog, Media, WhatsApp, CMS, Reports, Settings, Contacts, Users
+### 2. Enhanced Product Detail Page
+- Image gallery with multiple thumbnails (not just reels)
+- Zoom on hover for main image
+- "Recently Viewed" section
+- Better mobile layout with sticky bottom bar
+- Dynamic data from productStore
 
-### What Needs Work
+### 3. Enhanced Products Listing Page  
+- Sidebar filters (category checkboxes, in-stock toggle)
+- Better grid cards with quick-add-to-cart overlay
+- Reads from productStore (admin changes reflect instantly)
 
----
+### 4. Admin Products — Full CRUD Working
+- **Add Product**: Form saves to productStore → appears on public pages instantly
+- **Edit Product**: Pre-filled dialog, updates store
+- **Delete Product**: Confirmation dialog, removes from store
+- **Duplicate**: Clones product with new ID
+- **Bulk Delete/Stock Update**: Works on selected items
+- **Image URL preview** in form
 
-## Phase 1: Authentication & Route Protection
+### 5. WhatsApp Auto-Reply System
+Add an **Automation** tab to AdminWhatsApp with:
+- **Auto-Reply Rules Database**: Define keyword → response mappings stored in a Zustand store
+  - e.g., keywords: "price", "rate" → auto-reply with product price from productStore
+  - keywords: "order status", "track" → reply with order details from mockData
+  - keywords: "hello", "hi" → greeting template
+- **Rule Builder UI**: Add/Edit/Delete rules with keyword triggers, response templates with variables (`{{product_name}}`, `{{price}}`, `{{order_status}}`)
+- **Smart Matching**: When a message comes in, check keywords against rules database, auto-fill response
+- **Incoming Message Simulation**: A "Simulate Message" button that triggers the auto-reply logic and shows the matched response
+- **Product Lookup**: Type product name → bot fetches price, stock, description from productStore and generates reply
 
-1. **Protected Routes Component** — Admin routes should redirect to login if not authenticated or not admin. Customer routes like `/account` should require login.
-2. **Login/Register UI Polish** — Add "Forgot Password" flow, social login buttons (Google placeholder), better validation errors.
-3. **Admin login separation** — `/admin` routes check `isAdmin` from AuthContext, redirect to `/login` with message if not admin.
+### 6. All Public Pages Read from Stores
+- Products page → productStore
+- ProductDetail → productStore  
+- Home page → already uses cmsStore
+- Cart/Checkout → already uses cartStore
 
----
+## Technical Details
 
-## Phase 2: Public Pages Improvement
+### New Files
+- `src/store/productStore.ts` — Zustand persist store with full CRUD for products
+- `src/store/whatsappStore.ts` — Zustand store for auto-reply rules, chat messages, contacts
 
-4. **Product Detail Page** — Add image gallery zoom, sticky "Add to Cart" bar on mobile, reviews section with star breakdown, share buttons, reels carousel with video player UI.
-5. **Products Page** — Add grid/list view toggle, better filter sidebar with checkboxes, price range slider, "New Arrivals" and "Best Sellers" badges.
-6. **Checkout Page** — Connect to cart state (currently hardcoded items), add coupon code field, order summary improvements, address save option.
-7. **Cart Page** — Add "You may also like" section, empty cart illustration, saved for later section.
-8. **Blog & BlogPost** — Add reading time, share buttons, author card, related posts, categories sidebar.
-9. **About Page** — Add timeline/milestones, certifications section, video introduction placeholder.
-10. **Contact Page** — Add Google Maps embed placeholder, office hours, response time indicator.
-11. **Privacy/Terms/Refund/Shipping** — Add table of contents sidebar, print button, last updated date, better typography.
+### Modified Files
+- `src/pages/Products.tsx` — Read from productStore, enhanced filters
+- `src/pages/ProductDetail.tsx` — Read from productStore, image gallery
+- `src/pages/admin/AdminProducts.tsx` — Working Add/Edit/Delete with productStore
+- `src/pages/admin/AdminWhatsApp.tsx` — Add Automation tab with auto-reply rules, simulate incoming messages, product lookup bot
+- `src/components/ProductCard.tsx` — Quick add-to-cart on hover
 
----
-
-## Phase 3: Admin Panel Improvements
-
-12. **Contact Queries Module** — Verify it's accessible from sidebar (currently added). Add reply functionality, status pipeline (New → Read → Replied → Resolved), export contacts CSV.
-13. **Orders Module** — Add date range filter, payment status filter, order detail modal with timeline, bulk actions (mark shipped, print invoice), invoice PDF generation.
-14. **Payment Tracking Module** — New dedicated module showing payment transactions, refund management, daily/weekly settlement summary, payment method breakdown chart.
-15. **User & Roles** — Add role change confirmation, activity log per user, bulk role assignment, user search by email/phone.
-16. **CMS Module** — Verify sidebar link works. Add drag-and-drop reorder for banners, preview button that opens homepage in new tab.
-
----
-
-## Phase 4: Social Media & WhatsApp
-
-17. **Social Automation** — Add auto-link products to reels (when publishing, select product → reel appears on product detail page). Add analytics per post (likes, reach mockup), content calendar drag-and-drop.
-18. **WhatsApp Module** — Already has WhatsApp Web-style UI. Add quick reply from contact queries, broadcast list management, message template variables preview.
-
----
-
-## Phase 5: New Features
-
-19. **Wishlist System** — Heart icon on product cards, wishlist page accessible from account, move to cart functionality.
-20. **Coupon/Discount Module** (Admin) — Create coupons (percentage/flat), set expiry, usage limits, apply at checkout.
-21. **Notification Center** (Admin) — Bell icon in admin header showing new orders, new contacts, low stock alerts.
-22. **Order Tracking Page** (Public) — `/track-order` page where customers enter order ID to see status timeline.
-
----
-
-## Phase 6: README.md — Complete Documentation
-
-23. **Exhaustive README** — Full module-by-module documentation with:
-    - Architecture diagram (ASCII)
-    - Every module's working logic
-    - Database schema recommendations for Lovable Cloud migration
-    - API integration guide (Razorpay, Meta Graph, WhatsApp Business)
-    - Environment variables needed
-    - Deployment steps
-    - Developer credits (MLHK Infotech)
-
----
-
-## Implementation Priority
-
+### Data Flow
 ```text
-Priority 1 (Critical):
-  ├── Route protection (admin guard)
-  ├── Contact queries sidebar fix verification
-  ├── Orders filter improvements
-  └── Payment tracking module
+Admin Panel                    Public Pages
+┌─────────────┐               ┌──────────────┐
+│ AdminProducts│──CRUD──►     │ Products.tsx  │
+│ (Add/Edit/  │   via        │ ProductDetail │
+│  Delete)    │ productStore  │ Cart/Checkout │
+└─────────────┘               └──────────────┘
 
-Priority 2 (Important):
-  ├── Product detail page (reels, reviews, gallery)
-  ├── Checkout connected to cart state
-  ├── CMS sidebar link verification
-  └── User roles improvements
-
-Priority 3 (Enhancement):
-  ├── All public pages polish
-  ├── Wishlist system
-  ├── Coupon module
-  ├── Notification center
-  └── Order tracking page
-
-Priority 4 (Documentation):
-  └── Complete README.md
+WhatsApp Auto-Reply
+┌──────────────────────────────────────────┐
+│ Incoming Message → Keyword Match         │
+│ → Lookup productStore for details        │
+│ → Generate auto-reply with real data     │
+│ → Show in chat as bot response           │
+└──────────────────────────────────────────┘
 ```
 
----
-
-## Technical Approach
-
-- All UI-only with mock data (no Cloud integration yet)
-- Zustand stores for cart, wishlist, notifications state
-- React Router guards via wrapper components
-- Recharts for any new charts
-- Mobile-first responsive throughout
-- Developer credit: "MLHK Infotech (Hariom Vishwkarma) — mlhk.in" in footer
-
-Shall I proceed with implementation?
+### Storage
+All data persists in localStorage via Zustand `persist` middleware — no backend needed. Works like SQLite for browser-based persistence.
 
