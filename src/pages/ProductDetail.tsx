@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { ShoppingCart, MessageCircle, Star, ArrowLeft, Minus, Plus, Play, Instagram, Youtube, Facebook, Heart, Share2, Copy, ExternalLink } from "lucide-react";
+import { ShoppingCart, MessageCircle, Star, ArrowLeft, Minus, Plus, Play, Instagram, Youtube, Facebook, Heart, Share2, ZoomIn } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import CustomerLayout from "@/components/CustomerLayout";
 import ProductCard from "@/components/ProductCard";
-import { products } from "@/data/mockData";
+import { useProductStore } from "@/store/productStore";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
 import { toast } from "sonner";
@@ -23,11 +23,26 @@ const mockReviews = [
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const { products } = useProductStore();
   const product = products.find((p) => p.id === id);
   const [qty, setQty] = useState(1);
   const [activeReel, setActiveReel] = useState(0);
+  const [mainImage, setMainImage] = useState(0);
+  const [showZoom, setShowZoom] = useState(false);
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const addItem = useCartStore((s) => s.addItem);
   const { toggleItem, isInWishlist } = useWishlistStore();
+
+  // Recently viewed
+  const [recentlyViewed] = useState(() => {
+    const stored = JSON.parse(localStorage.getItem("recently-viewed") || "[]") as string[];
+    if (id && !stored.includes(id)) {
+      const updated = [id, ...stored].slice(0, 8);
+      localStorage.setItem("recently-viewed", JSON.stringify(updated));
+    }
+    return stored.filter(rid => rid !== id);
+  });
+  const recentProducts = recentlyViewed.map(rid => products.find(p => p.id === rid)).filter(Boolean).slice(0, 4);
 
   if (!product) {
     return (
@@ -44,6 +59,8 @@ const ProductDetail = () => {
   const discount = product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
   const wishlisted = isInWishlist(product.id);
 
+  const allImages = [product.image, ...product.reels.map(r => r.thumbnail)];
+
   const ratingBreakdown = [
     { stars: 5, percent: 68 },
     { stars: 4, percent: 20 },
@@ -51,6 +68,13 @@ const ProductDetail = () => {
     { stars: 2, percent: 3 },
     { stars: 1, percent: 1 },
   ];
+
+  const handleZoomMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setZoomPos({ x, y });
+  };
 
   return (
     <CustomerLayout>
@@ -60,31 +84,42 @@ const ProductDetail = () => {
         </Link>
 
         <div className="grid md:grid-cols-2 gap-8 mb-12">
+          {/* Image Gallery */}
           <div>
-            <div className="relative rounded-2xl overflow-hidden bg-muted aspect-square mb-4 group">
-              <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+            <div
+              className="relative rounded-2xl overflow-hidden bg-muted aspect-square mb-3 cursor-crosshair group"
+              onMouseEnter={() => setShowZoom(true)}
+              onMouseLeave={() => setShowZoom(false)}
+              onMouseMove={handleZoomMove}
+            >
+              <img src={allImages[mainImage]} alt={product.name} className="w-full h-full object-cover" />
               {discount > 0 && <Badge className="absolute top-4 left-4 bg-accent text-accent-foreground text-sm">{discount}% OFF</Badge>}
+              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                <ZoomIn className="h-5 w-5 text-foreground/70" />
+              </div>
+              {/* Zoom lens */}
+              {showZoom && (
+                <div
+                  className="absolute top-0 right-0 w-48 h-48 border-2 border-primary rounded-xl overflow-hidden shadow-xl pointer-events-none z-20 hidden md:block"
+                  style={{ backgroundImage: `url(${allImages[mainImage]})`, backgroundSize: "400%", backgroundPosition: `${zoomPos.x}% ${zoomPos.y}%` }}
+                />
+              )}
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              {product.reels.map((reel, i) => {
-                const Icon = platformIcon[reel.platform];
-                return (
-                  <div
-                    key={reel.id}
-                    className={`relative aspect-video rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${activeReel === i ? "border-primary" : "border-transparent hover:border-primary/30"}`}
-                    onClick={() => setActiveReel(i)}
-                  >
-                    <img src={reel.thumbnail} alt={reel.title} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-foreground/30 flex items-center justify-center">
-                      <Play className="h-5 w-5 text-primary-foreground fill-primary-foreground" />
-                    </div>
-                    <div className="absolute bottom-1 left-1"><Icon className="h-3.5 w-3.5 text-primary-foreground" /></div>
-                  </div>
-                );
-              })}
+            {/* Thumbnails */}
+            <div className="grid grid-cols-5 gap-2">
+              {allImages.slice(0, 5).map((img, i) => (
+                <button
+                  key={i}
+                  className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${mainImage === i ? "border-primary ring-1 ring-primary" : "border-transparent hover:border-primary/30"}`}
+                  onClick={() => setMainImage(i)}
+                >
+                  <img src={img} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
             </div>
           </div>
 
+          {/* Product Info */}
           <div>
             <p className="text-sm text-muted-foreground mb-1">{product.category}</p>
             <h1 className="text-3xl font-serif font-bold mb-1">{product.name}</h1>
@@ -93,7 +128,7 @@ const ProductDetail = () => {
             <div className="flex items-center gap-2 mb-4">
               <div className="flex items-center gap-0.5">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className={`h-4 w-4 ${i < Math.floor(product.rating) ? "fill-gold text-gold" : "text-border"}`} />
+                  <Star key={i} className={`h-4 w-4 ${i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-border"}`} />
                 ))}
               </div>
               <span className="text-sm text-muted-foreground">{product.rating} ({product.reviews} reviews)</span>
@@ -145,34 +180,36 @@ const ProductDetail = () => {
         </div>
 
         {/* Reels Section */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-serif font-bold mb-4">Product Reels & Videos</h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            {product.reels.map((reel) => {
-              const Icon = platformIcon[reel.platform];
-              return (
-                <Card key={reel.id} className="group overflow-hidden cursor-pointer hover:shadow-lg transition-all">
-                  <div className="relative aspect-[9/16] bg-muted">
-                    <img src={reel.thumbnail} alt={reel.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-transparent flex flex-col justify-end p-4">
-                      <div className="flex items-center justify-center mb-auto mt-auto">
-                        <div className="h-14 w-14 rounded-full bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Play className="h-7 w-7 text-primary-foreground fill-primary-foreground ml-1" />
+        {product.reels.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-2xl font-serif font-bold mb-4">Product Reels & Videos</h2>
+            <div className="grid md:grid-cols-3 gap-4">
+              {product.reels.map((reel) => {
+                const Icon = platformIcon[reel.platform];
+                return (
+                  <Card key={reel.id} className="group overflow-hidden cursor-pointer hover:shadow-lg transition-all">
+                    <div className="relative aspect-[9/16] bg-muted">
+                      <img src={reel.thumbnail} alt={reel.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-transparent flex flex-col justify-end p-4">
+                        <div className="flex items-center justify-center mb-auto mt-auto">
+                          <div className="h-14 w-14 rounded-full bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Play className="h-7 w-7 text-primary-foreground fill-primary-foreground ml-1" />
+                          </div>
                         </div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Icon className="h-4 w-4 text-primary-foreground" />
+                          <span className="text-primary-foreground text-xs capitalize">{reel.platform}</span>
+                        </div>
+                        <p className="text-primary-foreground text-sm font-medium line-clamp-2">{reel.title}</p>
+                        <p className="text-primary-foreground/70 text-xs mt-1">👁 {reel.views} views</p>
                       </div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Icon className="h-4 w-4 text-primary-foreground" />
-                        <span className="text-primary-foreground text-xs capitalize">{reel.platform}</span>
-                      </div>
-                      <p className="text-primary-foreground text-sm font-medium line-clamp-2">{reel.title}</p>
-                      <p className="text-primary-foreground/70 text-xs mt-1">👁 {reel.views} views</p>
                     </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        </section>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Tabs */}
         <Tabs defaultValue="ingredients" className="mb-12">
@@ -206,7 +243,6 @@ const ProductDetail = () => {
             <p className="text-sm text-muted-foreground leading-relaxed">{product.usage}</p>
           </TabsContent>
           <TabsContent value="reviews" className="mt-4">
-            {/* Rating Breakdown */}
             <div className="grid md:grid-cols-2 gap-8 mb-8">
               <div>
                 <div className="flex items-center gap-4 mb-4">
@@ -214,7 +250,7 @@ const ProductDetail = () => {
                     <p className="text-4xl font-bold">{product.rating}</p>
                     <div className="flex items-center gap-0.5 mt-1">
                       {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} className={`h-3.5 w-3.5 ${i < Math.floor(product.rating) ? "fill-gold text-gold" : "text-border"}`} />
+                        <Star key={i} className={`h-3.5 w-3.5 ${i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-border"}`} />
                       ))}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{product.reviews} reviews</p>
@@ -223,7 +259,7 @@ const ProductDetail = () => {
                     {ratingBreakdown.map((r) => (
                       <div key={r.stars} className="flex items-center gap-2">
                         <span className="text-xs w-3">{r.stars}</span>
-                        <Star className="h-3 w-3 fill-gold text-gold" />
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                         <Progress value={r.percent} className="h-2 flex-1" />
                         <span className="text-xs text-muted-foreground w-8">{r.percent}%</span>
                       </div>
@@ -232,7 +268,6 @@ const ProductDetail = () => {
                 </div>
               </div>
             </div>
-
             <div className="space-y-4">
               {mockReviews.map((review) => (
                 <Card key={review.id}>
@@ -244,7 +279,7 @@ const ProductDetail = () => {
                           <p className="text-sm font-medium">{review.name}</p>
                           <div className="flex items-center gap-0.5">
                             {Array.from({ length: 5 }).map((_, i) => (
-                              <Star key={i} className={`h-3 w-3 ${i < review.rating ? "fill-gold text-gold" : "text-border"}`} />
+                              <Star key={i} className={`h-3 w-3 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-border"}`} />
                             ))}
                           </div>
                         </div>
@@ -259,7 +294,7 @@ const ProductDetail = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Sticky Mobile Add to Cart */}
+        {/* Sticky Mobile Bar */}
         <div className="fixed bottom-0 left-0 right-0 md:hidden bg-card border-t p-3 flex gap-2 z-40">
           <div className="flex-1">
             <p className="text-xs text-muted-foreground">Total</p>
@@ -269,6 +304,16 @@ const ProductDetail = () => {
             <ShoppingCart className="h-4 w-4" /> Add to Cart
           </Button>
         </div>
+
+        {/* Recently Viewed */}
+        {recentProducts.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-serif font-bold mb-6">Recently Viewed</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              {recentProducts.map((p: any) => <ProductCard key={p.id} product={p} />)}
+            </div>
+          </div>
+        )}
 
         {related.length > 0 && (
           <div className="mb-16">
