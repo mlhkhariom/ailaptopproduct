@@ -1,82 +1,115 @@
 
-# Automated Ayurvedic E-commerce & Social Media Management System
 
-## Design System
-- **Colors**: Forest Green (#2D5A27), Sage (#7C9070), Beige (#F5F0E8), Light Gold (#D4A574), White, Dark text (#2C1810)
-- **Typography**: Clean sans-serif (Inter) with serif accents for headings
-- **Style**: Rounded cards, soft shadows, earthy gradients, leaf/botanical accents
+# Apsoncure PHC — Complete Enhancement Plan
 
-## Customer-Facing Pages
+## Current State Analysis
 
-### 1. Home Page (`/`)
-- Hero with background image, tagline, "Shop Now" & "Consult Now" CTAs
-- Featured products horizontal slider (mock data)
-- "Why Ayurveda" benefits section with icons
-- Instagram Reels video carousel section
-- Customer testimonials carousel
-- Footer with contact info, social links, newsletter signup
+After reviewing the full codebase, here's what EXISTS and what's MISSING or needs improvement:
 
-### 2. Product Listing (`/products`)
-- Sidebar/top filters: Category, Price range, Popularity, Rating
-- Product grid cards: image, name, price, rating stars, quick-view button
-- Sort dropdown, pagination
+### Already Built (18 pages, 15 admin modules)
+- Home, Products, Product Detail, Cart, Checkout, Blog, BlogPost, About, Contact, FAQ, Privacy, Terms, Refund, Shipping, Login, Register, Account, NotFound
+- Admin: Dashboard, Products, Orders, Payments, Customers, Categories, Social, Blog, Media, WhatsApp, CMS, Reports, Settings, Contacts, Users
 
-### 3. Product Detail (`/products/:id`)
-- Image gallery with thumbnails
-- Product info: name, price, rating, description
-- Tabs: Ingredients, Benefits, Usage
-- Embedded video/reel section
-- Buy Now, Add to Cart, "Consult a Vaidya" (WhatsApp) buttons
-- Related products row
+### What Needs Work
 
-### 4. Cart & Checkout (`/cart`, `/checkout`)
-- Cart: item list, quantity controls, subtotal, proceed button
-- Checkout: address form, order summary, payment option buttons (Razorpay/UPI placeholders)
+---
 
-### 5. Blog (`/blog`, `/blog/:id`)
-- Blog listing with cards (image, title, excerpt, date)
-- Blog detail with rich content layout, related articles
+## Phase 1: Authentication & Route Protection
 
-## Admin Dashboard Pages
+1. **Protected Routes Component** — Admin routes should redirect to login if not authenticated or not admin. Customer routes like `/account` should require login.
+2. **Login/Register UI Polish** — Add "Forgot Password" flow, social login buttons (Google placeholder), better validation errors.
+3. **Admin login separation** — `/admin` routes check `isAdmin` from AuthContext, redirect to `/login` with message if not admin.
 
-### 6. Dashboard Home (`/admin`)
-- Sidebar navigation with collapsible menu
-- Sales analytics cards (revenue, orders, customers)
-- Charts: sales trend line chart, category pie chart
-- Recent orders table, recent activity feed
+---
 
-### 7. Product Management (`/admin/products`)
-- Products table with search, filters
-- Add/Edit product form: images upload, name, price, category, ingredients, benefits, usage fields
+## Phase 2: Public Pages Improvement
 
-### 8. Order Management (`/admin/orders`)
-- Orders table with status badges (Pending/Shipped/Delivered)
-- Order detail view with customer info, items, status update dropdown
+4. **Product Detail Page** — Add image gallery zoom, sticky "Add to Cart" bar on mobile, reviews section with star breakdown, share buttons, reels carousel with video player UI.
+5. **Products Page** — Add grid/list view toggle, better filter sidebar with checkboxes, price range slider, "New Arrivals" and "Best Sellers" badges.
+6. **Checkout Page** — Connect to cart state (currently hardcoded items), add coupon code field, order summary improvements, address save option.
+7. **Cart Page** — Add "You may also like" section, empty cart illustration, saved for later section.
+8. **Blog & BlogPost** — Add reading time, share buttons, author card, related posts, categories sidebar.
+9. **About Page** — Add timeline/milestones, certifications section, video introduction placeholder.
+10. **Contact Page** — Add Google Maps embed placeholder, office hours, response time indicator.
+11. **Privacy/Terms/Refund/Shipping** — Add table of contents sidebar, print button, last updated date, better typography.
 
-### 9. Blog Management (`/admin/blog`)
-- Blog posts table
-- Create/edit form with rich text editor area
+---
 
-### 10. Social Media Automation (`/admin/social`)
-- Upload video/reel area
-- Toggle options: Post to Instagram? Post to Facebook?
-- Link to Product selector (existing or create new)
-- Preview card before publishing
-- Publishing history/scheduled posts list
+## Phase 3: Admin Panel Improvements
 
-### 11. Media Library (`/admin/media`)
-- Grid of uploaded images/videos with upload button
-- Filter by type, search
+12. **Contact Queries Module** — Verify it's accessible from sidebar (currently added). Add reply functionality, status pipeline (New → Read → Replied → Resolved), export contacts CSV.
+13. **Orders Module** — Add date range filter, payment status filter, order detail modal with timeline, bulk actions (mark shipped, print invoice), invoice PDF generation.
+14. **Payment Tracking Module** — New dedicated module showing payment transactions, refund management, daily/weekly settlement summary, payment method breakdown chart.
+15. **User & Roles** — Add role change confirmation, activity log per user, bulk role assignment, user search by email/phone.
+16. **CMS Module** — Verify sidebar link works. Add drag-and-drop reorder for banners, preview button that opens homepage in new tab.
 
-### 12. WhatsApp Integration (`/admin/whatsapp`)
-- Predefined message templates list
-- Template editor with product auto-fill variables
-- Preview of WhatsApp message
+---
+
+## Phase 4: Social Media & WhatsApp
+
+17. **Social Automation** — Add auto-link products to reels (when publishing, select product → reel appears on product detail page). Add analytics per post (likes, reach mockup), content calendar drag-and-drop.
+18. **WhatsApp Module** — Already has WhatsApp Web-style UI. Add quick reply from contact queries, broadcast list management, message template variables preview.
+
+---
+
+## Phase 5: New Features
+
+19. **Wishlist System** — Heart icon on product cards, wishlist page accessible from account, move to cart functionality.
+20. **Coupon/Discount Module** (Admin) — Create coupons (percentage/flat), set expiry, usage limits, apply at checkout.
+21. **Notification Center** (Admin) — Bell icon in admin header showing new orders, new contacts, low stock alerts.
+22. **Order Tracking Page** (Public) — `/track-order` page where customers enter order ID to see status timeline.
+
+---
+
+## Phase 6: README.md — Complete Documentation
+
+23. **Exhaustive README** — Full module-by-module documentation with:
+    - Architecture diagram (ASCII)
+    - Every module's working logic
+    - Database schema recommendations for Lovable Cloud migration
+    - API integration guide (Razorpay, Meta Graph, WhatsApp Business)
+    - Environment variables needed
+    - Deployment steps
+    - Developer credits (MLHK Infotech)
+
+---
+
+## Implementation Priority
+
+```text
+Priority 1 (Critical):
+  ├── Route protection (admin guard)
+  ├── Contact queries sidebar fix verification
+  ├── Orders filter improvements
+  └── Payment tracking module
+
+Priority 2 (Important):
+  ├── Product detail page (reels, reviews, gallery)
+  ├── Checkout connected to cart state
+  ├── CMS sidebar link verification
+  └── User roles improvements
+
+Priority 3 (Enhancement):
+  ├── All public pages polish
+  ├── Wishlist system
+  ├── Coupon module
+  ├── Notification center
+  └── Order tracking page
+
+Priority 4 (Documentation):
+  └── Complete README.md
+```
+
+---
 
 ## Technical Approach
-- All pages built with React + TypeScript + Tailwind CSS
-- Mock data for all products, orders, blogs, analytics
-- Recharts for dashboard charts
-- React Router for all navigation
-- Reusable component library: ProductCard, OrderRow, StatCard, etc.
-- Mobile-first responsive design throughout
+
+- All UI-only with mock data (no Cloud integration yet)
+- Zustand stores for cart, wishlist, notifications state
+- React Router guards via wrapper components
+- Recharts for any new charts
+- Mobile-first responsive throughout
+- Developer credit: "MLHK Infotech (Hariom Vishwkarma) — mlhk.in" in footer
+
+Shall I proceed with implementation?
+
