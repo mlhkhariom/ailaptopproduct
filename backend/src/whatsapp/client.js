@@ -130,7 +130,6 @@ export const initWhatsApp = () => {
     const contact = await msg.getContact();
     let mediaData = null;
 
-    // Download media if present
     if (msg.hasMedia) {
       try {
         const media = await msg.downloadMedia();
@@ -152,6 +151,63 @@ export const initWhatsApp = () => {
     emit('whatsapp:message', msgData);
     db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
       .run(msg.id._serialized, msg.from, 'me', msg.body || `[${msg.type}]`, 'incoming');
+
+    // AI Agent processing
+    if (msg.body && msg.type === 'chat') {
+      try {
+        const { processAgentMessage } = await import('./agent.js');
+        const { getAgentSettings } = await import('./agent.js');
+        const agentSettings = getAgentSettings();
+
+        const result = await processAgentMessage(msg.from, contact.pushname || contact.name || msg.from.split('@')[0], msg.body);
+
+        if (result?.reply) {
+          // Typing indicator
+          if (agentSettings.feature_typing_indicator) {
+            const chat = await msg.getChat();
+            await chat.sendStateTyping();
+          }
+
+          // Random delay (human feel)
+          const delay = (agentSettings.reply_delay_min || 1) * 1000 +
+            Math.random() * ((agentSettings.reply_delay_max || 3) - (agentSettings.reply_delay_min || 1)) * 1000;
+          await new Promise(r => setTimeout(r, delay));
+
+          // Stop typing
+          if (agentSettings.feature_typing_indicator) {
+            const chat = await msg.getChat();
+            await chat.clearState();
+          }
+
+          await msg.reply(result.reply);
+
+          // Save AI reply to DB
+          db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
+            .run(uuid(), 'ai-agent', msg.from, result.reply, 'outgoing');
+
+          // Emit to frontend with AI flag + custom color
+          emit('whatsapp:message', {
+            id: `ai-${Date.now()}`,
+            from: 'me',
+            body: result.reply,
+            time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+            fromMe: true,
+            isAI: true,
+            bubbleColor: agentSettings.agent_bubble_color || '#e8d5ff',
+            ack: 1,
+          });
+
+          // Human handoff alert
+          if (result.isHandoff) {
+            db.prepare('INSERT INTO notifications (id, type, title, message, link) VALUES (?,?,?,?,?)')
+              .run(uuid(), 'whatsapp', 'Human Handoff Requested', `${contact.pushname || msg.from} wants to talk to a human`, '/admin/whatsapp');
+          }
+        }
+      } catch (e) {
+        console.error('AI Agent error:', e.message);
+      }
+    }
+
     await processAutoReply(msg);
   });
 

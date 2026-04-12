@@ -18,6 +18,16 @@ const req = async (method: string, path: string, body?: unknown) => {
 };
 
 export const api = {
+  // AI Agent
+  getAISettings: () => req('GET', '/ai/settings'),
+  updateAISettings: (data: unknown) => req('PUT', '/ai/settings', data),
+  getAIModels: (provider: string, key: string) => req('GET', `/ai/models?provider=${provider}&key=${encodeURIComponent(key)}`),
+  getContactAI: (contactId: string) => req('GET', `/ai/contact/${encodeURIComponent(contactId)}`),
+  updateContactAI: (contactId: string, enabled: boolean) => req('PUT', `/ai/contact/${encodeURIComponent(contactId)}`, { agent_enabled: enabled }),
+  getAIMemory: (contactId: string) => req('GET', `/ai/memory/${encodeURIComponent(contactId)}`),
+  clearAIMemory: (contactId: string) => req('DELETE', `/ai/memory/${encodeURIComponent(contactId)}`),
+  testAI: (message: string) => req('POST', '/ai/test', { message }),
+
   // Payment
   getShipping: (subtotal: number) => req('GET', `/payment/shipping?subtotal=${subtotal}`),
   getPaymentMethods: () => req('GET', '/payment/methods'),
