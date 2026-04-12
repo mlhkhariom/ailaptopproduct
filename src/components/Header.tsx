@@ -6,14 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { useCMSStore } from "@/store/cmsStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
+import { useAppSettings } from "@/contexts/SiteSettingsContext";
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { siteSettings } = useCMSStore();
+  const appSettings = useAppSettings();
   const { user, logout, isAdmin } = useAuth();
   const cartCount = useCartStore((s) => s.getItemCount());
   const wishlistCount = useWishlistStore((s) => s.items.length);
@@ -29,17 +29,20 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur border-b">
-      {siteSettings.announcementActive && (
+      {appSettings.announcement_active === 'true' && appSettings.announcement_bar && (
         <div className="bg-primary text-primary-foreground text-xs text-center py-1.5 px-4">
-          {siteSettings.announcementBar}
+          {appSettings.announcement_bar}
         </div>
       )}
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-serif font-bold text-sm">A</div>
+          {appSettings.store_logo
+            ? <img src={appSettings.store_logo} alt={appSettings.store_name} className="h-9 w-auto" />
+            : <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-serif font-bold text-sm">A</div>
+          }
           <div className="leading-tight">
-            <span className="text-lg font-serif font-bold text-foreground block leading-none">{siteSettings.storeName.split(" ")[0]}</span>
-            <span className="text-[10px] text-muted-foreground leading-none">{siteSettings.tagline}</span>
+            <span className="text-lg font-serif font-bold text-foreground block leading-none">{appSettings.store_name?.split(" ")[0] || 'Apsoncure'}</span>
+            <span className="text-[10px] text-muted-foreground leading-none">{appSettings.store_tagline}</span>
           </div>
         </Link>
 

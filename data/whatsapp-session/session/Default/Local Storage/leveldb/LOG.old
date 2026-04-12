@@ -1,0 +1,6 @@
+2026/04/12-01:10:25.560 7e8b Reusing MANIFEST /home/mlhkhariom/Zecdata Pro/NEW/wellness-hub/data/whatsapp-session/session/Default/Local Storage/leveldb/MANIFEST-000001
+2026/04/12-01:10:25.573 7e8b Recovering log #10
+2026/04/12-01:10:25.575 7e8b Reusing old log /home/mlhkhariom/Zecdata Pro/NEW/wellness-hub/data/whatsapp-session/session/Default/Local Storage/leveldb/000010.log 
+2026/04/12-01:10:36.344 7e91 Level-0 table #14: started
+2026/04/12-01:10:36.355 7e91 Level-0 table #14: 16581 bytes OK
+2026/04/12-01:10:36.373 7e91 Delete type=0 #10

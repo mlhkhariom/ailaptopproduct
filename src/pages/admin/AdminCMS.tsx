@@ -1,240 +1,336 @@
-import { useState } from "react";
-import { Save, Plus, Trash2, Eye, EyeOff, Edit, Image, GripVertical, Star, MessageCircle, HelpCircle, Settings, Layout, Award } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Save, Plus, Trash2, Edit, Image, Star, HelpCircle, Settings, Layout, Award, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import AdminLayout from "@/components/AdminLayout";
-import { useCMSStore } from "@/store/cmsStore";
+import { api } from "@/lib/api";
 
-const AdminCMS = () => {
-  const cms = useCMSStore();
-  const [editingBanner, setEditingBanner] = useState<string | null>(null);
+// Generic CMS section manager
+const useCMSSection = (section: string) => {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const activeBanner = cms.heroBanners.find((h) => h.active);
+  const load = async () => {
+    setLoading(true);
+    try { setItems(await api.getCMS(section)); } catch {}
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, [section]);
+
+  const save = async (id: string, content: any, sort_order?: number, is_active?: boolean) => {
+    await api.updateCMS(id, { content, sort_order, is_active: is_active !== false });
+    toast.success('Saved!'); load();
+  };
+
+  const add = async (content: any, sort_order = 0) => {
+    await api.createCMS({ section, content, sort_order });
+    toast.success('Added!'); load();
+  };
+
+  const remove = async (id: string) => {
+    await api.deleteCMS(id);
+    toast.success('Deleted!'); load();
+  };
+
+  const toggle = async (item: any) => {
+    await api.updateCMS(item.id, { content: item.content, sort_order: item.sort_order, is_active: !item.is_active });
+    load();
+  };
+
+  return { items, loading, load, save, add, remove, toggle };
+};
+
+// ── Banners ──────────────────────────────────────────────
+const BannersTab = () => {
+  const { items, loading, add, save, remove, toggle } = useCMSSection('banner');
+  const [dialog, setDialog] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+  const [form, setForm] = useState({ title: '', subtitle: '', cta: 'Shop Now', image: '' });
+  const f = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const openAdd = () => { setEditing(null); setForm({ title: '', subtitle: '', cta: 'Shop Now', image: '' }); setDialog(true); };
+  const openEdit = (item: any) => { setEditing(item); setForm({ title: item.content.title || '', subtitle: item.content.subtitle || '', cta: item.content.cta || 'Shop Now', image: item.content.image || '' }); setDialog(true); };
+
+  const submit = async () => {
+    if (editing) await save(editing.id, form, editing.sort_order, editing.is_active);
+    else await add(form, items.length);
+    setDialog(false);
+  };
 
   return (
-    <AdminLayout>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-serif font-bold">Content Management</h1>
-          <p className="text-sm text-muted-foreground">Manage hero banners, testimonials, FAQs & site content</p>
-        </div>
-        <Button size="sm" className="gap-1.5 text-xs h-8" onClick={() => toast.success("All changes saved!")}><Save className="h-3.5 w-3.5" /> Save All</Button>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-muted-foreground">{items.length} banners</p>
+        <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={openAdd}><Plus className="h-3.5 w-3.5" /> Add Banner</Button>
       </div>
-
-      <Tabs defaultValue="hero" className="space-y-4">
-        <TabsList className="h-8">
-          <TabsTrigger value="hero" className="text-xs h-7 px-3 gap-1"><Layout className="h-3 w-3" /> Hero Banner</TabsTrigger>
-          <TabsTrigger value="benefits" className="text-xs h-7 px-3 gap-1"><Award className="h-3 w-3" /> Benefits</TabsTrigger>
-          <TabsTrigger value="testimonials" className="text-xs h-7 px-3 gap-1"><Star className="h-3 w-3" /> Testimonials</TabsTrigger>
-          <TabsTrigger value="faqs" className="text-xs h-7 px-3 gap-1"><HelpCircle className="h-3 w-3" /> FAQs</TabsTrigger>
-          <TabsTrigger value="site" className="text-xs h-7 px-3 gap-1"><Settings className="h-3 w-3" /> Site Settings</TabsTrigger>
-        </TabsList>
-
-        {/* HERO BANNER */}
-        <TabsContent value="hero" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-sm">Hero Banners ({cms.heroBanners.length})</h2>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs h-7" onClick={() => {
-              const id = Date.now().toString();
-              cms.addHeroBanner({ id, tagline: "New Banner", heading: "Heading", headingHighlight: "Highlight", subtitle: "Subtitle", subtext: "", ctaText: "Shop Now", ctaLink: "/products", secondaryCtaText: "", secondaryCtaLink: "", image: "", badgeText: "", badgeSubtext: "", active: false });
-              setEditingBanner(id);
-            }}>
-              <Plus className="h-3 w-3" /> Add Banner
-            </Button>
-          </div>
-
-          {cms.heroBanners.map((banner) => (
-            <Card key={banner.id} className={`transition-all ${banner.active ? "ring-2 ring-primary" : ""}`}>
-              <CardContent className="p-4">
-                {editingBanner === banner.id ? (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label className="text-xs">Tagline</Label><Input className="mt-1 h-8 text-xs" value={banner.tagline} onChange={(e) => cms.updateHeroBanner(banner.id, { tagline: e.target.value })} /></div>
-                      <div><Label className="text-xs">Heading Highlight</Label><Input className="mt-1 h-8 text-xs" value={banner.headingHighlight} onChange={(e) => cms.updateHeroBanner(banner.id, { headingHighlight: e.target.value })} /></div>
-                    </div>
-                    <div><Label className="text-xs">Heading (after highlight)</Label><Input className="mt-1 h-8 text-xs" value={banner.heading} onChange={(e) => cms.updateHeroBanner(banner.id, { heading: e.target.value })} /></div>
-                    <div><Label className="text-xs">Subtitle</Label><Textarea className="mt-1 text-xs" rows={2} value={banner.subtitle} onChange={(e) => cms.updateHeroBanner(banner.id, { subtitle: e.target.value })} /></div>
-                    <div><Label className="text-xs">Sub-text</Label><Input className="mt-1 h-8 text-xs" value={banner.subtext} onChange={(e) => cms.updateHeroBanner(banner.id, { subtext: e.target.value })} /></div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label className="text-xs">CTA Text</Label><Input className="mt-1 h-8 text-xs" value={banner.ctaText} onChange={(e) => cms.updateHeroBanner(banner.id, { ctaText: e.target.value })} /></div>
-                      <div><Label className="text-xs">CTA Link</Label><Input className="mt-1 h-8 text-xs" value={banner.ctaLink} onChange={(e) => cms.updateHeroBanner(banner.id, { ctaLink: e.target.value })} /></div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label className="text-xs">Secondary CTA</Label><Input className="mt-1 h-8 text-xs" value={banner.secondaryCtaText} onChange={(e) => cms.updateHeroBanner(banner.id, { secondaryCtaText: e.target.value })} /></div>
-                      <div><Label className="text-xs">Secondary Link</Label><Input className="mt-1 h-8 text-xs" value={banner.secondaryCtaLink} onChange={(e) => cms.updateHeroBanner(banner.id, { secondaryCtaLink: e.target.value })} /></div>
-                    </div>
-                    <div><Label className="text-xs">Image URL</Label><Input className="mt-1 h-8 text-xs" value={banner.image} onChange={(e) => cms.updateHeroBanner(banner.id, { image: e.target.value })} /></div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label className="text-xs">Badge Text</Label><Input className="mt-1 h-8 text-xs" value={banner.badgeText} onChange={(e) => cms.updateHeroBanner(banner.id, { badgeText: e.target.value })} /></div>
-                      <div><Label className="text-xs">Badge Subtext</Label><Input className="mt-1 h-8 text-xs" value={banner.badgeSubtext} onChange={(e) => cms.updateHeroBanner(banner.id, { badgeSubtext: e.target.value })} /></div>
-                    </div>
-                    <div className="flex items-center justify-between pt-2">
-                      <div className="flex items-center gap-2"><Switch checked={banner.active} onCheckedChange={(v) => cms.updateHeroBanner(banner.id, { active: v })} /><Label className="text-xs">Active</Label></div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="destructive" className="text-xs h-7" onClick={() => { cms.deleteHeroBanner(banner.id); setEditingBanner(null); }}><Trash2 className="h-3 w-3" /></Button>
-                        <Button size="sm" className="text-xs h-7" onClick={() => { setEditingBanner(null); toast.success("Banner saved!"); }}><Save className="h-3 w-3 mr-1" /> Done</Button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      {banner.image && <img src={banner.image} alt="" className="h-16 w-24 rounded-lg object-cover" />}
-                      <div>
-                        <p className="font-medium text-sm">{banner.headingHighlight} {banner.heading}</p>
-                        <p className="text-xs text-muted-foreground truncate max-w-xs">{banner.subtitle}</p>
-                        <Badge variant={banner.active ? "default" : "secondary"} className="text-[9px] mt-1">{banner.active ? "Active" : "Draft"}</Badge>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm" className="text-xs" onClick={() => setEditingBanner(banner.id)}><Edit className="h-3.5 w-3.5" /></Button>
-                  </div>
-                )}
+      {loading ? <div className="text-center py-8"><RefreshCw className="h-5 w-5 animate-spin mx-auto" /></div> : (
+        <div className="space-y-3">
+          {items.map(item => (
+            <Card key={item.id}>
+              <CardContent className="p-4 flex gap-4">
+                {item.content.image && <img src={item.content.image} alt="" className="h-16 w-28 rounded-lg object-cover shrink-0" onError={e => (e.currentTarget.style.display='none')} />}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm">{item.content.title}</p>
+                  <p className="text-xs text-muted-foreground">{item.content.subtitle}</p>
+                  <Badge variant="outline" className="text-[10px] mt-1">{item.content.cta}</Badge>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Switch checked={!!item.is_active} onCheckedChange={() => toggle(item)} />
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(item)}><Edit className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => remove(item.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                </div>
               </CardContent>
             </Card>
           ))}
-        </TabsContent>
-
-        {/* BENEFITS */}
-        <TabsContent value="benefits" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-sm">Benefit Cards ({cms.benefits.length})</h2>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs h-7" onClick={() => cms.addBenefit({ id: Date.now().toString(), icon: "Leaf", title: "New Benefit", description: "Description here", active: true })}>
-              <Plus className="h-3 w-3" /> Add
-            </Button>
+        </div>
+      )}
+      <Dialog open={dialog} onOpenChange={setDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{editing ? 'Edit Banner' : 'Add Banner'}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label className="text-xs">Title *</Label><Input value={form.title} onChange={f('title')} className="mt-1 text-sm" /></div>
+            <div><Label className="text-xs">Subtitle</Label><Input value={form.subtitle} onChange={f('subtitle')} className="mt-1 text-sm" /></div>
+            <div><Label className="text-xs">CTA Button Text</Label><Input value={form.cta} onChange={f('cta')} className="mt-1 text-sm" /></div>
+            <div><Label className="text-xs">Image URL</Label><Input value={form.image} onChange={f('image')} className="mt-1 text-sm" placeholder="https://..." /></div>
+            {form.image && <img src={form.image} alt="" className="w-full h-28 object-cover rounded-lg" onError={e => (e.currentTarget.style.display='none')} />}
           </div>
-          <div className="grid md:grid-cols-2 gap-3">
-            {cms.benefits.map((b) => (
-              <Card key={b.id} className={!b.active ? "opacity-50" : ""}>
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Select value={b.icon} onValueChange={(v) => cms.updateBenefit(b.id, { icon: v })}>
-                      <SelectTrigger className="h-7 w-32 text-[10px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {["Leaf", "Award", "Truck", "HeartPulse", "Shield", "Star", "Heart", "Target"].map((i) => <SelectItem key={i} value={i} className="text-xs">{i}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                    <div className="flex items-center gap-2">
-                      <Switch checked={b.active} onCheckedChange={(v) => cms.updateBenefit(b.id, { active: v })} className="scale-75" />
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => cms.deleteBenefit(b.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
-                    </div>
-                  </div>
-                  <Input className="h-8 text-xs font-medium" value={b.title} onChange={(e) => cms.updateBenefit(b.id, { title: e.target.value })} />
-                  <Input className="h-8 text-xs" value={b.description} onChange={(e) => cms.updateBenefit(b.id, { description: e.target.value })} />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* TESTIMONIALS */}
-        <TabsContent value="testimonials" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-sm">Customer Testimonials ({cms.testimonials.length})</h2>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs h-7" onClick={() => cms.addTestimonial({ id: Date.now().toString(), name: "Customer Name", text: "Review text here", rating: 5, avatar: "CN", location: "City", active: true })}>
-              <Plus className="h-3 w-3" /> Add
-            </Button>
-          </div>
-          <div className="grid md:grid-cols-2 gap-3">
-            {cms.testimonials.map((t) => (
-              <Card key={t.id} className={!t.active ? "opacity-50" : ""}>
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Input className="h-7 w-20 text-xs" value={t.avatar} onChange={(e) => cms.updateTestimonial(t.id, { avatar: e.target.value })} />
-                      <Select value={t.rating.toString()} onValueChange={(v) => cms.updateTestimonial(t.id, { rating: parseInt(v) })}>
-                        <SelectTrigger className="h-7 w-20 text-[10px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>{[1, 2, 3, 4, 5].map((r) => <SelectItem key={r} value={r.toString()} className="text-xs">{"⭐".repeat(r)}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Switch checked={t.active} onCheckedChange={(v) => cms.updateTestimonial(t.id, { active: v })} className="scale-75" />
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => cms.deleteTestimonial(t.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input className="h-8 text-xs" placeholder="Name" value={t.name} onChange={(e) => cms.updateTestimonial(t.id, { name: e.target.value })} />
-                    <Input className="h-8 text-xs" placeholder="Location" value={t.location} onChange={(e) => cms.updateTestimonial(t.id, { location: e.target.value })} />
-                  </div>
-                  <Textarea className="text-xs" rows={2} value={t.text} onChange={(e) => cms.updateTestimonial(t.id, { text: e.target.value })} />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* FAQS */}
-        <TabsContent value="faqs" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-sm">FAQs ({cms.faqs.length})</h2>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs h-7" onClick={() => cms.addFAQ({ id: Date.now().toString(), question: "New Question?", answer: "Answer here", category: "General", active: true, order: cms.faqs.length + 1 })}>
-              <Plus className="h-3 w-3" /> Add FAQ
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {cms.faqs.map((faq) => (
-              <Card key={faq.id} className={!faq.active ? "opacity-50" : ""}>
-                <CardContent className="p-3 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab shrink-0" />
-                    <Input className="h-8 text-xs font-medium flex-1" value={faq.question} onChange={(e) => cms.updateFAQ(faq.id, { question: e.target.value })} />
-                    <Select value={faq.category} onValueChange={(v) => cms.updateFAQ(faq.id, { category: v })}>
-                      <SelectTrigger className="h-7 w-28 text-[10px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {["General", "Products", "Shipping", "Payment", "Returns", "Consultation"].map((c) => <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                    <Switch checked={faq.active} onCheckedChange={(v) => cms.updateFAQ(faq.id, { active: v })} className="scale-75" />
-                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => cms.deleteFAQ(faq.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
-                  </div>
-                  <Textarea className="text-xs" rows={2} value={faq.answer} onChange={(e) => cms.updateFAQ(faq.id, { answer: e.target.value })} />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* SITE SETTINGS */}
-        <TabsContent value="site" className="space-y-4">
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">General Settings</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Store Name</Label><Input className="mt-1 h-8 text-xs" value={cms.siteSettings.storeName} onChange={(e) => cms.updateSiteSettings({ storeName: e.target.value })} /></div>
-                <div><Label className="text-xs">Tagline</Label><Input className="mt-1 h-8 text-xs" value={cms.siteSettings.tagline} onChange={(e) => cms.updateSiteSettings({ tagline: e.target.value })} /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Phone</Label><Input className="mt-1 h-8 text-xs" value={cms.siteSettings.phone} onChange={(e) => cms.updateSiteSettings({ phone: e.target.value })} /></div>
-                <div><Label className="text-xs">Email</Label><Input className="mt-1 h-8 text-xs" value={cms.siteSettings.email} onChange={(e) => cms.updateSiteSettings({ email: e.target.value })} /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">WhatsApp Number</Label><Input className="mt-1 h-8 text-xs" value={cms.siteSettings.whatsappNumber} onChange={(e) => cms.updateSiteSettings({ whatsappNumber: e.target.value })} /></div>
-                <div><Label className="text-xs">Working Hours</Label><Input className="mt-1 h-8 text-xs" value={cms.siteSettings.workingHours} onChange={(e) => cms.updateSiteSettings({ workingHours: e.target.value })} /></div>
-              </div>
-              <div><Label className="text-xs">Address</Label><Input className="mt-1 h-8 text-xs" value={cms.siteSettings.address} onChange={(e) => cms.updateSiteSettings({ address: e.target.value })} /></div>
-              <div><Label className="text-xs">Footer Text</Label><Textarea className="mt-1 text-xs" rows={2} value={cms.siteSettings.footerText} onChange={(e) => cms.updateSiteSettings({ footerText: e.target.value })} /></div>
-              <div className="flex items-center gap-3 p-3 rounded-lg border">
-                <Switch checked={cms.siteSettings.announcementActive} onCheckedChange={(v) => cms.updateSiteSettings({ announcementActive: v })} />
-                <div className="flex-1">
-                  <Label className="text-xs">Announcement Bar</Label>
-                  <Input className="mt-1 h-8 text-xs" value={cms.siteSettings.announcementBar} onChange={(e) => cms.updateSiteSettings({ announcementBar: e.target.value })} />
-                </div>
-              </div>
-              <Button className="w-full" onClick={() => toast.success("Settings saved!")}><Save className="h-4 w-4 mr-2" /> Save Settings</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </AdminLayout>
+          <DialogFooter><Button variant="outline" onClick={() => setDialog(false)}>Cancel</Button><Button onClick={submit}>{editing ? 'Update' : 'Add'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
+
+// ── Benefits ─────────────────────────────────────────────
+const BenefitsTab = () => {
+  const { items, loading, add, save, remove, toggle } = useCMSSection('benefit');
+  const [dialog, setDialog] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+  const [form, setForm] = useState({ icon: 'Leaf', title: '', description: '' });
+  const f = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: e.target.value }));
+  const ICONS = ['Leaf', 'Award', 'Truck', 'HeartPulse', 'Shield', 'Heart', 'Star'];
+
+  const openAdd = () => { setEditing(null); setForm({ icon: 'Leaf', title: '', description: '' }); setDialog(true); };
+  const openEdit = (item: any) => { setEditing(item); setForm({ icon: item.content.icon || 'Leaf', title: item.content.title || '', description: item.content.description || '' }); setDialog(true); };
+  const submit = async () => { if (editing) await save(editing.id, form, editing.sort_order, editing.is_active); else await add(form, items.length); setDialog(false); };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-muted-foreground">{items.length} benefits</p>
+        <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={openAdd}><Plus className="h-3.5 w-3.5" /> Add</Button>
+      </div>
+      {loading ? <div className="text-center py-8"><RefreshCw className="h-5 w-5 animate-spin mx-auto" /></div> : (
+        <div className="grid sm:grid-cols-2 gap-3">
+          {items.map(item => (
+            <Card key={item.id}>
+              <CardContent className="p-3 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-lg shrink-0">🌿</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{item.content.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">{item.content.description}</p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Switch checked={!!item.is_active} onCheckedChange={() => toggle(item)} />
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(item)}><Edit className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => remove(item.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+      <Dialog open={dialog} onOpenChange={setDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>{editing ? 'Edit Benefit' : 'Add Benefit'}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label className="text-xs">Icon</Label><Input value={form.icon} onChange={f('icon')} className="mt-1 text-sm" placeholder="Leaf, Award, Truck..." /><p className="text-[10px] text-muted-foreground mt-1">Options: {ICONS.join(', ')}</p></div>
+            <div><Label className="text-xs">Title *</Label><Input value={form.title} onChange={f('title')} className="mt-1 text-sm" /></div>
+            <div><Label className="text-xs">Description</Label><Input value={form.description} onChange={f('description')} className="mt-1 text-sm" /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setDialog(false)}>Cancel</Button><Button onClick={submit}>{editing ? 'Update' : 'Add'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+// ── Testimonials ─────────────────────────────────────────
+const TestimonialsTab = () => {
+  const { items, loading, add, save, remove, toggle } = useCMSSection('testimonial');
+  const [dialog, setDialog] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+  const [form, setForm] = useState({ name: '', text: '', rating: 5, avatar: '', location: '' });
+  const f = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: k === 'rating' ? Number(e.target.value) : e.target.value }));
+
+  const openAdd = () => { setEditing(null); setForm({ name: '', text: '', rating: 5, avatar: '', location: '' }); setDialog(true); };
+  const openEdit = (item: any) => { setEditing(item); setForm({ name: item.content.name || '', text: item.content.text || '', rating: item.content.rating || 5, avatar: item.content.avatar || '', location: item.content.location || '' }); setDialog(true); };
+  const submit = async () => { if (editing) await save(editing.id, form, editing.sort_order, editing.is_active); else await add(form, items.length); setDialog(false); };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-muted-foreground">{items.length} testimonials</p>
+        <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={openAdd}><Plus className="h-3.5 w-3.5" /> Add</Button>
+      </div>
+      {loading ? <div className="text-center py-8"><RefreshCw className="h-5 w-5 animate-spin mx-auto" /></div> : (
+        <div className="space-y-3">
+          {items.map(item => (
+            <Card key={item.id}>
+              <CardContent className="p-4 flex gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">{item.content.avatar || item.content.name?.charAt(0)}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2"><p className="text-sm font-medium">{item.content.name}</p><span className="text-xs text-muted-foreground">{item.content.location}</span></div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{'⭐'.repeat(item.content.rating)} ({item.content.rating}/5)</p>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">"{item.content.text}"</p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Switch checked={!!item.is_active} onCheckedChange={() => toggle(item)} />
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(item)}><Edit className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => remove(item.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+      <Dialog open={dialog} onOpenChange={setDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>{editing ? 'Edit Testimonial' : 'Add Testimonial'}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label className="text-xs">Name *</Label><Input value={form.name} onChange={f('name')} className="mt-1 text-sm" /></div>
+            <div><Label className="text-xs">Location</Label><Input value={form.location} onChange={f('location')} className="mt-1 text-sm" placeholder="Mumbai" /></div>
+            <div><Label className="text-xs">Avatar (initials)</Label><Input value={form.avatar} onChange={f('avatar')} className="mt-1 text-sm" placeholder="प्रि" /></div>
+            <div><Label className="text-xs">Rating (1-5)</Label><Input type="number" min={1} max={5} value={form.rating} onChange={f('rating')} className="mt-1 text-sm" /></div>
+            <div><Label className="text-xs">Review Text *</Label><Textarea value={form.text} onChange={f('text')} className="mt-1 text-sm resize-none" rows={3} /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setDialog(false)}>Cancel</Button><Button onClick={submit}>{editing ? 'Update' : 'Add'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+// ── FAQs ─────────────────────────────────────────────────
+const FAQsTab = () => {
+  const { items, loading, add, save, remove, toggle } = useCMSSection('faq');
+  const [dialog, setDialog] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+  const [form, setForm] = useState({ question: '', answer: '', category: 'General' });
+  const f = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const openAdd = () => { setEditing(null); setForm({ question: '', answer: '', category: 'General' }); setDialog(true); };
+  const openEdit = (item: any) => { setEditing(item); setForm({ question: item.content.question || '', answer: item.content.answer || '', category: item.content.category || 'General' }); setDialog(true); };
+  const submit = async () => { if (editing) await save(editing.id, form, editing.sort_order, editing.is_active); else await add(form, items.length); setDialog(false); };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-muted-foreground">{items.length} FAQs</p>
+        <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={openAdd}><Plus className="h-3.5 w-3.5" /> Add FAQ</Button>
+      </div>
+      {loading ? <div className="text-center py-8"><RefreshCw className="h-5 w-5 animate-spin mx-auto" /></div> : (
+        <div className="space-y-2">
+          {items.map(item => (
+            <Card key={item.id} className={!item.is_active ? 'opacity-50' : ''}>
+              <CardContent className="p-3 flex gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{item.content.question}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{item.content.answer}</p>
+                  <Badge variant="outline" className="text-[10px] mt-1">{item.content.category}</Badge>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Switch checked={!!item.is_active} onCheckedChange={() => toggle(item)} />
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(item)}><Edit className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => remove(item.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+      <Dialog open={dialog} onOpenChange={setDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{editing ? 'Edit FAQ' : 'Add FAQ'}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label className="text-xs">Question *</Label><Input value={form.question} onChange={f('question')} className="mt-1 text-sm" /></div>
+            <div><Label className="text-xs">Answer *</Label><Textarea value={form.answer} onChange={f('answer')} className="mt-1 text-sm resize-none" rows={3} /></div>
+            <div><Label className="text-xs">Category</Label><Input value={form.category} onChange={f('category')} className="mt-1 text-sm" placeholder="Products, Shipping, Payment..." /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setDialog(false)}>Cancel</Button><Button onClick={submit}>{editing ? 'Update' : 'Add'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+// ── Site Settings ─────────────────────────────────────────
+const SettingsTab = () => {
+  const { items, loading, save, add } = useCMSSection('setting');
+  const [form, setForm] = useState({ siteName: 'Apsoncure PHC', tagline: 'Prachi Homeo Clinic', phone: '', email: '', address: '', whatsappNumber: '' });
+  const f = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  useEffect(() => {
+    if (items[0]) setForm({ ...form, ...items[0].content });
+  }, [items]);
+
+  const submit = async () => {
+    if (items[0]) await save(items[0].id, form, 1, true);
+    else await add(form, 1);
+  };
+
+  return (
+    <div className="space-y-4 max-w-lg">
+      {loading ? <div className="text-center py-8"><RefreshCw className="h-5 w-5 animate-spin mx-auto" /></div> : (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label className="text-xs">Site Name</Label><Input value={form.siteName} onChange={f('siteName')} className="mt-1 text-sm" /></div>
+            <div><Label className="text-xs">Tagline</Label><Input value={form.tagline} onChange={f('tagline')} className="mt-1 text-sm" /></div>
+            <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={f('phone')} className="mt-1 text-sm" /></div>
+            <div><Label className="text-xs">WhatsApp Number</Label><Input value={form.whatsappNumber} onChange={f('whatsappNumber')} className="mt-1 text-sm" placeholder="919876543210" /></div>
+            <div className="col-span-2"><Label className="text-xs">Email</Label><Input value={form.email} onChange={f('email')} className="mt-1 text-sm" /></div>
+            <div className="col-span-2"><Label className="text-xs">Address</Label><Input value={form.address} onChange={f('address')} className="mt-1 text-sm" /></div>
+          </div>
+          <Button onClick={submit} className="gap-2"><Save className="h-4 w-4" /> Save Settings</Button>
+        </>
+      )}
+    </div>
+  );
+};
+
+// ── Main Component ────────────────────────────────────────
+const AdminCMS = () => (
+  <AdminLayout>
+    <div className="p-4 md:p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-serif font-bold">Content Management</h1>
+        <p className="text-sm text-muted-foreground">Manage homepage banners, benefits, testimonials, FAQs & site settings</p>
+      </div>
+      <Tabs defaultValue="banners">
+        <TabsList className="h-9 mb-6">
+          <TabsTrigger value="banners" className="text-xs gap-1.5"><Layout className="h-3.5 w-3.5" /> Banners</TabsTrigger>
+          <TabsTrigger value="benefits" className="text-xs gap-1.5"><Award className="h-3.5 w-3.5" /> Benefits</TabsTrigger>
+          <TabsTrigger value="testimonials" className="text-xs gap-1.5"><Star className="h-3.5 w-3.5" /> Testimonials</TabsTrigger>
+          <TabsTrigger value="faqs" className="text-xs gap-1.5"><HelpCircle className="h-3.5 w-3.5" /> FAQs</TabsTrigger>
+          <TabsTrigger value="settings" className="text-xs gap-1.5"><Settings className="h-3.5 w-3.5" /> Settings</TabsTrigger>
+        </TabsList>
+        <TabsContent value="banners"><BannersTab /></TabsContent>
+        <TabsContent value="benefits"><BenefitsTab /></TabsContent>
+        <TabsContent value="testimonials"><TestimonialsTab /></TabsContent>
+        <TabsContent value="faqs"><FAQsTab /></TabsContent>
+        <TabsContent value="settings"><SettingsTab /></TabsContent>
+      </Tabs>
+    </div>
+  </AdminLayout>
+);
 
 export default AdminCMS;

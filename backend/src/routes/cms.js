@@ -24,7 +24,7 @@ router.post('/', authMiddleware, adminOnly, (req, res) => {
 // PUT /api/cms/:id — admin update
 router.put('/:id', authMiddleware, adminOnly, (req, res) => {
   const { content, sort_order, is_active } = req.body;
-  db.prepare('UPDATE cms_content SET content=?, sort_order=?, is_active=?, updated_at=datetime("now") WHERE id=?')
+  db.prepare("UPDATE cms_content SET content=?, sort_order=?, is_active=?, updated_at=datetime('now') WHERE id=?")
     .run(JSON.stringify(content), sort_order, is_active ? 1 : 0, req.params.id);
   res.json({ message: 'Updated' });
 });

@@ -9,23 +9,28 @@ import { Badge } from "@/components/ui/badge";
 import CustomerLayout from "@/components/CustomerLayout";
 import ProductCard from "@/components/ProductCard";
 import { useCartStore } from "@/store/cartStore";
-import { products } from "@/data/mockData";
+import { useProductStore } from "@/store/productStore";
 import { toast } from "sonner";
 
 const Cart = () => {
   const { items, updateQty, removeItem, getSubtotal, getTotal, discount, appliedCoupon, applyCoupon, removeCoupon } = useCartStore();
+  const { products } = useProductStore();
   const [couponInput, setCouponInput] = useState("");
+  const [applying, setApplying] = useState(false);
 
   const subtotal = getSubtotal();
   const total = getTotal();
   const suggested = products.filter((p) => !items.find((i) => i.product.id === p.id)).slice(0, 4);
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return;
-    const ok = applyCoupon(couponInput);
-    if (ok) toast.success("Coupon applied!");
-    else toast.error("Invalid coupon or minimum order not met");
-    setCouponInput("");
+    setApplying(true);
+    try {
+      const ok = await applyCoupon(couponInput);
+      if (ok) toast.success("Coupon applied!");
+      else toast.error("Invalid coupon or minimum order not met");
+      setCouponInput("");
+    } finally { setApplying(false); }
   };
 
   return (
@@ -85,7 +90,7 @@ const Cart = () => {
                 {!appliedCoupon ? (
                   <div className="flex gap-2">
                     <Input placeholder="Coupon code" value={couponInput} onChange={(e) => setCouponInput(e.target.value)} className="h-9 text-sm uppercase" />
-                    <Button variant="outline" size="sm" onClick={handleApplyCoupon}>Apply</Button>
+                    <Button variant="outline" size="sm" onClick={handleApplyCoupon} disabled={applying}>{applying ? '...' : 'Apply'}</Button>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/20">

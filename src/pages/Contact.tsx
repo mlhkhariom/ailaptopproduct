@@ -1,12 +1,13 @@
-import { Mail, Phone, MapPin, Clock, MessageCircle, Globe } from "lucide-react";
+import { useState } from "react";
+import { Mail, Phone, MapPin, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import CustomerLayout from "@/components/CustomerLayout";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
 
 const contactInfo = [
   { icon: Phone, title: "Phone", value: "+91 98765 43210", link: "tel:+919876543210" },
@@ -15,8 +16,26 @@ const contactInfo = [
   { icon: Clock, title: "Hours", value: "Mon-Sat: 9 AM – 7 PM", link: "#" },
 ];
 
-const Contact = () => (
-  <CustomerLayout>
+const Contact = () => {
+  const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '' });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.submitContact(form);
+      toast.success('Message sent! We will reply soon.');
+      setForm({ name: '', email: '', phone: '', subject: '', message: '' });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <CustomerLayout>
     <section className="bg-gradient-to-br from-primary/5 via-background to-accent/10 py-16">
       <div className="container mx-auto px-4 text-center max-w-3xl">
         <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">Contact Us</h1>
@@ -73,13 +92,14 @@ const Contact = () => (
               <div><Label className="text-xs">Email *</Label><Input className="mt-1" placeholder="you@example.com" /></div>
               <div><Label className="text-xs">Subject</Label><Input className="mt-1" placeholder="Order inquiry, consultation, etc." /></div>
               <div><Label className="text-xs">Message *</Label><Textarea className="mt-1" rows={4} placeholder="Tell us how we can help..." /></div>
-              <Button className="w-full" onClick={() => toast.success("Message sent! We'll get back to you soon.")}>Send Message</Button>
+              <Button className="w-full" disabled={loading} onClick={handleSubmit}>{loading ? 'Sending...' : 'Send Message'}</Button>
             </CardContent>
           </Card>
         </div>
       </div>
     </section>
-  </CustomerLayout>
-);
+    </CustomerLayout>
+  );
+};
 
 export default Contact;

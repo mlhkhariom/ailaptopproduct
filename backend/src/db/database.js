@@ -141,6 +141,59 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS social_settings (
+    id TEXT PRIMARY KEY DEFAULT 'main',
+    meta_app_id TEXT,
+    meta_app_secret TEXT,
+    meta_access_token TEXT,
+    meta_page_id TEXT,
+    meta_ig_account_id TEXT,
+    updated_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS social_posts (
+    id TEXT PRIMARY KEY,
+    title TEXT,
+    caption TEXT,
+    hashtags TEXT,
+    thumbnail TEXT,
+    video_path TEXT,
+    platform TEXT NOT NULL,
+    status TEXT DEFAULT 'draft',
+    meta_post_id TEXT,
+    error_msg TEXT,
+    product_id TEXT,
+    scheduled_at TEXT,
+    published_at TEXT,
+    likes INTEGER DEFAULT 0,
+    comments INTEGER DEFAULT 0,
+    shares INTEGER DEFAULT 0,
+    views TEXT DEFAULT '0',
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS reels (
+    id TEXT PRIMARY KEY,
+    product_id TEXT REFERENCES products(id) ON DELETE SET NULL,
+    title TEXT NOT NULL,
+    thumbnail TEXT,
+    video_url TEXT,
+    platform TEXT DEFAULT 'instagram',
+    views TEXT DEFAULT '0',
+    is_active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS whatsapp_messages (
+    id TEXT PRIMARY KEY,
+    from_phone TEXT NOT NULL,
+    to_phone TEXT NOT NULL,
+    body TEXT NOT NULL,
+    direction TEXT DEFAULT 'incoming',
+    is_read INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
   CREATE TABLE IF NOT EXISTS notifications (
     id TEXT PRIMARY KEY,
     type TEXT NOT NULL,

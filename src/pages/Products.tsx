@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,9 +9,11 @@ import { LayoutGrid, List, Search, SlidersHorizontal, X } from "lucide-react";
 import CustomerLayout from "@/components/CustomerLayout";
 import ProductCard from "@/components/ProductCard";
 import { useProductStore } from "@/store/productStore";
+import { api } from "@/lib/api";
 
 const Products = () => {
-  const { products, categories } = useProductStore();
+  const { products, fetchProducts } = useProductStore();
+  const [categories, setCategories] = useState<string[]>(["All"]);
   const [category, setCategory] = useState("All");
   const [sort, setSort] = useState("popular");
   const [search, setSearch] = useState("");
@@ -20,14 +22,19 @@ const Products = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
 
+  useEffect(() => {
+    fetchProducts();
+    api.getCategories().then((cats: any[]) => setCategories(["All", ...cats.map((c: any) => c.name)])).catch(() => {});
+  }, []);
+
   const maxPrice = Math.max(...products.map(p => p.price), 2000);
 
   const filtered = products
     .filter((p) => p.status === "active")
     .filter((p) => category === "All" || p.category === category)
     .filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1])
-    .filter((p) => !inStockOnly || p.inStock)
-    .filter((p) => !search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.nameHi && p.nameHi.includes(search)))
+    .filter((p) => !inStockOnly || p.in_stock)
+    .filter((p) => !search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.name_hi && p.name_hi.includes(search)))
     .sort((a, b) => {
       if (sort === "price-low") return a.price - b.price;
       if (sort === "price-high") return b.price - a.price;

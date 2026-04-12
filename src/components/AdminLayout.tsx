@@ -1,18 +1,17 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
-import { Link, useLocation } from "react-router-dom";
-import { ExternalLink, Bell, Search, RefreshCw, ChevronRight } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ExternalLink, Bell, Search, RefreshCw, ChevronRight, CheckCheck, LogOut, Settings, BarChart3, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from "react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 const routeNames: Record<string, string> = {
   "/admin": "Dashboard",
@@ -35,7 +34,32 @@ const notifications = [
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const currentPage = routeNames[location.pathname] || "Admin";
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  const loadNotifications = () => {
+    api.getNotifications().then(setNotifications).catch(() => {});
+  };
+
+  useEffect(() => {
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30000); // poll every 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const markRead = async (id: string) => {
+    await api.markRead(id).catch(() => {});
+    loadNotifications();
+  };
+
+  const markAllRead = async () => {
+    await api.markAllRead().catch(() => {});
+    loadNotifications();
+  };
 
   return (
     <SidebarProvider>
@@ -66,28 +90,33 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8 relative">
                     <Bell className="h-4 w-4 text-muted-foreground" />
-                    <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[9px] flex items-center justify-center font-bold">2</span>
+                    {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[9px] flex items-center justify-center font-bold">{unreadCount > 9 ? '9+' : unreadCount}</span>}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto">
                   <DropdownMenuLabel className="flex items-center justify-between">
                     <span>Notifications</span>
-                    <Badge variant="secondary" className="text-[10px]">2 new</Badge>
+                    <div className="flex items-center gap-2">
+                      {unreadCount > 0 && <Badge variant="secondary" className="text-[10px]">{unreadCount} new</Badge>}
+                      {unreadCount > 0 && <button onClick={markAllRead} className="text-[10px] text-primary hover:underline flex items-center gap-1"><CheckCheck className="h-3 w-3" /> All read</button>}
+                    </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {notifications.map((n) => (
-                    <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-0.5 py-2.5 cursor-pointer">
+                  {notifications.length === 0 ? (
+                    <div className="text-center py-6 text-xs text-muted-foreground">No notifications</div>
+                  ) : notifications.map((n) => (
+                    <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-0.5 py-2.5 cursor-pointer"
+                      onClick={() => { markRead(n.id); if (n.link) navigate(n.link); }}>
                       <div className="flex items-center gap-2 w-full">
-                        {!n.read && <span className="h-2 w-2 rounded-full bg-primary shrink-0" />}
-                        <span className={`text-sm flex-1 ${!n.read ? 'font-medium' : 'text-muted-foreground'}`}>{n.text}</span>
+                        {!n.is_read && <span className="h-2 w-2 rounded-full bg-primary shrink-0" />}
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs ${!n.is_read ? 'font-semibold' : 'text-muted-foreground'}`}>{n.title}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{n.message}</p>
+                        </div>
                       </div>
-                      <span className="text-[10px] text-muted-foreground ml-4">{n.time}</span>
+                      <span className="text-[10px] text-muted-foreground ml-4">{new Date(n.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
                     </DropdownMenuItem>
                   ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-center text-xs text-primary justify-center">
-                    View all notifications →
-                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -97,22 +126,32 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2 h-8 px-2">
                     <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-[10px] font-bold text-primary">DP</span>
+                      <span className="text-[10px] font-bold text-primary">{user?.name?.charAt(0)?.toUpperCase() || 'A'}</span>
                     </div>
-                    <span className="text-xs hidden sm:inline">Dr. Prachi</span>
+                    <span className="text-xs hidden sm:inline max-w-24 truncate">{user?.name || 'Admin'}</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuLabel className="font-normal">
-                    <p className="text-sm font-medium">Dr. Prachi</p>
-                    <p className="text-xs text-muted-foreground">prachi@apsoncure.com</p>
+                    <p className="text-sm font-medium truncate">{user?.name || 'Admin'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                    <Badge className="text-[9px] mt-1 capitalize">{(user as any)?.role || 'admin'}</Badge>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>⚙️ Settings</DropdownMenuItem>
-                  <DropdownMenuItem>📊 Reports</DropdownMenuItem>
-                  <DropdownMenuItem>❓ Help</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/admin/settings')} className="gap-2 cursor-pointer">
+                    <Settings className="h-3.5 w-3.5" /> Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/admin/reports')} className="gap-2 cursor-pointer">
+                    <BarChart3 className="h-3.5 w-3.5" /> Reports
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/account')} className="gap-2 cursor-pointer">
+                    <User className="h-3.5 w-3.5" /> My Account
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive">🚪 Logout</DropdownMenuItem>
+                  <DropdownMenuItem className="gap-2 text-destructive cursor-pointer focus:text-destructive"
+                    onClick={() => { logout(); navigate('/login'); }}>
+                    <LogOut className="h-3.5 w-3.5" /> Logout
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 

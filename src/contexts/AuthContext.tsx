@@ -1,13 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { api } from "@/lib/api";
 
 export interface User {
   id: string;
   email: string;
   name: string;
   role: "admin" | "customer";
-  avatar?: string;
   phone?: string;
-  joinDate: string;
+  created_at?: string;
 }
 
 interface AuthContextType {
@@ -21,61 +21,44 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for UI demo (will be replaced with Lovable Cloud later)
-const MOCK_USERS: (User & { password: string })[] = [
-  { id: "admin-1", email: "admin@apsoncure.com", password: "admin123", name: "Dr. Prachi", role: "admin", phone: "+91 98765 43210", joinDate: "2023-01-01" },
-  { id: "user-1", email: "priya@email.com", password: "user123", name: "Priya Sharma", role: "customer", phone: "+91 98765 43211", joinDate: "2023-06-10" },
-];
-
-const STORAGE_KEY = "apsoncure_auth_user";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [registeredUsers, setRegisteredUsers] = useState<(User & { password: string })[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try { setUser(JSON.parse(stored)); } catch { /* ignore */ }
+    const token = localStorage.getItem('apsoncure_token');
+    if (token) {
+      api.me().then(setUser).catch(() => localStorage.removeItem('apsoncure_token')).finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
     }
-    const regUsers = localStorage.getItem("apsoncure_registered_users");
-    if (regUsers) {
-      try { setRegisteredUsers(JSON.parse(regUsers)); } catch { /* ignore */ }
-    }
-    setIsLoading(false);
   }, []);
 
-  const allUsers = [...MOCK_USERS, ...registeredUsers];
-
   const login = async (email: string, password: string) => {
-    const found = allUsers.find(u => u.email === email && u.password === password);
-    if (found) {
-      const { password: _, ...userData } = found;
-      setUser(userData);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+    try {
+      const { token, user } = await api.login(email, password);
+      localStorage.setItem('apsoncure_token', token);
+      setUser(user);
       return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
     }
-    return { success: false, error: "Invalid email or password" };
   };
 
   const register = async (name: string, email: string, password: string, phone?: string) => {
-    if (allUsers.find(u => u.email === email)) {
-      return { success: false, error: "Email already registered" };
+    try {
+      const { token, user } = await api.register(name, email, password, phone);
+      localStorage.setItem('apsoncure_token', token);
+      setUser(user);
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
     }
-    const newUser = { id: `user-${Date.now()}`, email, password, name, role: "customer" as const, phone, joinDate: new Date().toISOString().split('T')[0] };
-    const updated = [...registeredUsers, newUser];
-    setRegisteredUsers(updated);
-    localStorage.setItem("apsoncure_registered_users", JSON.stringify(updated));
-    const { password: _, ...userData } = newUser;
-    setUser(userData);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
-    return { success: true };
   };
 
   const logout = () => {
+    localStorage.removeItem('apsoncure_token');
     setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
   };
 
   return (

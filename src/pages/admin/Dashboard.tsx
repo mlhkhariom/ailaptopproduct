@@ -1,277 +1,194 @@
-import { IndianRupee, ShoppingBag, Users, TrendingUp, ArrowUpRight, ArrowDownRight, Eye, Package, Clock, CheckCircle, Truck, AlertTriangle, MoreHorizontal, Download, Calendar } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { IndianRupee, ShoppingBag, Users, Package, ArrowUpRight, Clock, CheckCircle, Truck, AlertTriangle, RefreshCw, TrendingUp } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminLayout from "@/components/AdminLayout";
-import { salesData, categoryData, orders, products } from "@/data/mockData";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { api } from "@/lib/api";
+import { useNavigate } from "react-router-dom";
 
-const statCards = [
-  { title: "Total Revenue", value: "₹3,81,000", change: "+12.5%", positive: true, icon: IndianRupee, color: "text-primary", bg: "bg-primary/10" },
-  { title: "Total Orders", value: "473", change: "+8.2%", positive: true, icon: ShoppingBag, color: "text-accent", bg: "bg-accent/10" },
-  { title: "Customers", value: "1,284", change: "+15.3%", positive: true, icon: Users, color: "text-sage", bg: "bg-sage/10" },
-  { title: "Visitors", value: "12.8K", change: "-2.1%", positive: false, icon: Eye, color: "text-gold", bg: "bg-gold/10" },
-];
+const STATUS_COLOR: Record<string, string> = {
+  placed: 'bg-blue-100 text-blue-700', processing: 'bg-yellow-100 text-yellow-700',
+  shipped: 'bg-purple-100 text-purple-700', delivered: 'bg-green-100 text-green-700',
+};
 
-const topProducts = [
-  { name: "Kumkumadi Face Oil", sales: 312, revenue: "₹4,05,588", progress: 95 },
-  { name: "Chyawanprash Premium", sales: 278, revenue: "₹1,52,622", progress: 82 },
-  { name: "Bhringraj Hair Oil", sales: 267, revenue: "₹1,33,233", progress: 78 },
-  { name: "Ashwagandha Powder", sales: 234, revenue: "₹1,40,166", progress: 70 },
-];
+const AdminDashboard = () => {
+  const navigate = useNavigate();
+  const [data, setData] = useState<any>(null);
+  const [sales, setSales] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-const recentActivity = [
-  { icon: ShoppingBag, text: "New order APC-007 — Priya Sharma", time: "2 min ago", color: "text-primary" },
-  { icon: CheckCircle, text: "Order APC-005 delivered", time: "1 hour ago", color: "text-primary" },
-  { icon: Package, text: "Bhringraj Hair Oil back in stock", time: "2 hours ago", color: "text-sage" },
-  { icon: Truck, text: "Order APC-002 shipped", time: "3 hours ago", color: "text-accent" },
-  { icon: AlertTriangle, text: "Triphala Capsules stock low", time: "5 hours ago", color: "text-destructive" },
-];
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [d, s] = await Promise.all([api.dashboard(), api.salesReport('30d')]);
+      setData(d); setSales(s);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
 
-const orderStatusData = [
-  { status: "Pending", count: 12, color: "bg-accent" },
-  { status: "Shipped", count: 8, color: "bg-sage" },
-  { status: "Delivered", count: 45, color: "bg-primary" },
-];
+  useEffect(() => { load(); }, []);
 
-const AdminDashboard = () => (
-  <AdminLayout>
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-      <div>
-        <h1 className="text-2xl font-serif font-bold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Welcome back, Dr. Prachi — here's today's business report</p>
+  if (loading) return (
+    <AdminLayout>
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
       </div>
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8">
-          <Calendar className="h-3.5 w-3.5" /> Last 30 Days
-        </Button>
-        <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8">
-          <Download className="h-3.5 w-3.5" /> Report
-        </Button>
-      </div>
-    </div>
+    </AdminLayout>
+  );
 
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {statCards.map((s) => (
-        <Card key={s.title} className="relative overflow-hidden">
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-xs text-muted-foreground font-medium">{s.title}</p>
-                <p className="text-2xl font-bold mt-2">{s.value}</p>
-                <div className={`flex items-center gap-1 mt-1 text-xs ${s.positive ? 'text-primary' : 'text-destructive'}`}>
-                  {s.positive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                  <span className="font-medium">{s.change}</span>
-                </div>
-              </div>
-              <div className={`h-10 w-10 rounded-xl ${s.bg} flex items-center justify-center`}>
-                <s.icon className={`h-5 w-5 ${s.color}`} />
-              </div>
-            </div>
-            <div className="mt-3 -mx-1">
-              <ResponsiveContainer width="100%" height={35}>
-                <AreaChart data={salesData.slice(-4)}>
-                  <Area type="monotone" dataKey="sales" stroke="hsl(120,37%,25%)" fill="hsl(120,37%,25%)" fillOpacity={0.1} strokeWidth={1.5} dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+  const stats = [
+    { title: 'Total Revenue', value: `₹${(data?.totalRevenue || 0).toLocaleString()}`, icon: IndianRupee, color: 'text-primary', bg: 'bg-primary/10' },
+    { title: 'Total Orders', value: data?.totalOrders || 0, sub: `${data?.pendingOrders || 0} pending`, icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-100' },
+    { title: 'Customers', value: data?.totalCustomers || 0, icon: Users, color: 'text-purple-600', bg: 'bg-purple-100' },
+    { title: 'Products', value: data?.totalProducts || 0, sub: data?.lowStock > 0 ? `⚠ ${data.lowStock} low stock` : 'All stocked', icon: Package, color: data?.lowStock > 0 ? 'text-orange-500' : 'text-green-600', bg: data?.lowStock > 0 ? 'bg-orange-100' : 'bg-green-100' },
+  ];
 
-    <div className="grid lg:grid-cols-3 gap-4 mb-6">
-      <Card className="lg:col-span-2">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base">Sales Analytics</CardTitle>
-              <CardDescription className="text-xs">Monthly sales and orders overview</CardDescription>
-            </div>
-            <Tabs defaultValue="sales" className="w-auto">
-              <TabsList className="h-7">
-                <TabsTrigger value="sales" className="text-xs h-6 px-2">Sales</TabsTrigger>
-                <TabsTrigger value="orders" className="text-xs h-6 px-2">Orders</TabsTrigger>
-              </TabsList>
-            </Tabs>
+  return (
+    <AdminLayout>
+      <div className="p-4 md:p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-serif font-bold">Dashboard</h1>
+            <p className="text-sm text-muted-foreground">Welcome back! Here's what's happening.</p>
           </div>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={salesData}>
-              <defs>
-                <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(120,37%,25%)" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="hsl(120,37%,25%)" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-              <XAxis dataKey="month" className="text-xs" />
-              <YAxis className="text-xs" />
-              <Tooltip contentStyle={{ borderRadius: "8px", fontSize: "12px" }} />
-              <Area type="monotone" dataKey="sales" stroke="hsl(120,37%,25%)" fill="url(#salesGrad)" strokeWidth={2.5} dot={{ fill: "hsl(120,37%,25%)", r: 4 }} activeDot={{ r: 6 }} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={load}>
+            <RefreshCw className="h-3.5 w-3.5" /> Refresh
+          </Button>
+        </div>
 
-      <div className="space-y-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Categories</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={140}>
-              <PieChart>
-                <Pie data={categoryData} cx="50%" cy="50%" innerRadius={40} outerRadius={60} dataKey="value" paddingAngle={3}>
-                  {categoryData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="space-y-1.5 mt-2">
-              {categoryData.slice(0, 3).map((c) => (
-                <div key={c.name} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.fill }} />
-                    <span className="text-muted-foreground">{c.name}</span>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {stats.map(s => (
+            <Card key={s.title} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`h-10 w-10 rounded-xl ${s.bg} flex items-center justify-center`}>
+                    <s.icon className={`h-5 w-5 ${s.color}`} />
                   </div>
-                  <span className="font-medium">{c.value}%</span>
+                </div>
+                <p className="text-2xl font-bold">{s.value}</p>
+                <p className="text-xs text-muted-foreground">{s.title}</p>
+                {s.sub && <p className="text-[10px] text-muted-foreground mt-0.5">{s.sub}</p>}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-4">
+          {/* Revenue Chart */}
+          <Card className="lg:col-span-2">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" /> Revenue (Last 30 Days)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {sales?.sales?.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <AreaChart data={sales.sales}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={d => d.slice(5)} />
+                    <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `₹${v}`} />
+                    <Tooltip formatter={(v: any) => [`₹${v}`, 'Revenue']} />
+                    <Area type="monotone" dataKey="revenue" stroke="#2d6a4f" fill="#d8f3dc" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
+                  No sales data yet. Place some orders!
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Order Status */}
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-base">Order Status</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              {(sales?.byStatus || []).map((s: any) => (
+                <div key={s.status} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={`h-2 w-2 rounded-full ${s.status === 'delivered' ? 'bg-green-500' : s.status === 'shipped' ? 'bg-purple-500' : s.status === 'processing' ? 'bg-yellow-500' : 'bg-blue-500'}`} />
+                    <span className="text-sm capitalize">{s.status}</span>
+                  </div>
+                  <Badge variant="outline" className="text-xs">{s.count}</Badge>
                 </div>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Order Status</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {orderStatusData.map((s) => (
-              <div key={s.status}>
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-muted-foreground">{s.status}</span>
-                  <span className="font-medium">{s.count}</span>
-                </div>
-                <Progress value={(s.count / 65) * 100} className="h-1.5" />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-
-    <div className="grid lg:grid-cols-3 gap-4">
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">🏆 Top Products</CardTitle>
-            <Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {topProducts.map((p, i) => (
-            <div key={p.name}>
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-muted-foreground w-4">#{i + 1}</span>
-                  <span className="text-sm font-medium truncate max-w-[140px]">{p.name}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">{p.sales} sold</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Progress value={p.progress} className="h-1.5 flex-1" />
-                <span className="text-xs font-medium text-primary">{p.revenue}</span>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Recent Orders</CardTitle>
-            <Button variant="ghost" size="sm" className="text-xs h-7">View All →</Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {orders.slice(0, 4).map((o) => (
-              <div key={o.id} className="flex items-center justify-between py-1">
-                <div className="flex items-center gap-2.5">
-                  <div className={`h-8 w-8 rounded-lg flex items-center justify-center text-xs font-bold ${
-                    o.status === 'delivered' ? 'bg-primary/10 text-primary' :
-                    o.status === 'shipped' ? 'bg-sage/10 text-sage' : 'bg-accent/10 text-accent'
-                  }`}>
-                    {o.status === 'delivered' ? '✓' : o.status === 'shipped' ? '🚚' : '⏳'}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{o.id}</p>
-                    <p className="text-[10px] text-muted-foreground">{o.customer.split('(')[0].trim()}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold">₹{o.total}</p>
-                  <Badge variant={o.status === "delivered" ? "default" : o.status === "shipped" ? "secondary" : "outline"} className="text-[9px] h-4 px-1">
-                    {o.status === "delivered" ? "Delivered" : o.status === "shipped" ? "Shipped" : "Pending"}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Activity Feed</CardTitle>
-            <Badge variant="secondary" className="text-[10px]">Live</Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentActivity.map((a, i) => (
-              <div key={i} className="flex gap-3">
-                <div className="relative">
-                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                    <a.icon className={`h-3.5 w-3.5 ${a.color}`} />
-                  </div>
-                  {i < recentActivity.length - 1 && (
-                    <div className="absolute top-8 left-1/2 -translate-x-1/2 w-px h-4 bg-border" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs leading-relaxed">{a.text}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
-                    <Clock className="h-2.5 w-2.5" /> {a.time}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-
-    <Card className="mt-4">
-      <CardContent className="p-4">
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" className="gap-1.5 text-xs h-8">🛒 Create Order</Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8">📦 Add Product</Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8">📝 Write Blog</Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8">📱 Upload Reel</Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8">💬 WhatsApp Broadcast</Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8">📊 Download Report</Button>
+              {!sales?.byStatus?.length && <p className="text-sm text-muted-foreground text-center py-4">No orders yet</p>}
+              <Button variant="outline" size="sm" className="w-full text-xs mt-2" onClick={() => navigate('/admin/orders')}>
+                View All Orders <ArrowUpRight className="h-3 w-3 ml-1" />
+              </Button>
+            </CardContent>
+          </Card>
         </div>
-      </CardContent>
-    </Card>
-  </AdminLayout>
-);
+
+        <div className="grid lg:grid-cols-2 gap-4">
+          {/* Recent Orders */}
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+              <CardTitle className="text-base">Recent Orders</CardTitle>
+              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate('/admin/orders')}>View all →</Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              {(data?.recentOrders || []).map((o: any) => (
+                <div key={o.id} className="flex items-center justify-between px-4 py-3 border-b last:border-0 hover:bg-muted/20 transition-colors">
+                  <div>
+                    <p className="text-sm font-medium">{o.order_number}</p>
+                    <p className="text-xs text-muted-foreground">{o.customer_name || 'Guest'}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold">₹{o.total}</p>
+                    <Badge className={`text-[10px] capitalize ${STATUS_COLOR[o.status] || STATUS_COLOR.placed}`}>{o.status}</Badge>
+                  </div>
+                </div>
+              ))}
+              {!data?.recentOrders?.length && <p className="text-center py-8 text-sm text-muted-foreground">No orders yet</p>}
+            </CardContent>
+          </Card>
+
+          {/* Top Products */}
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+              <CardTitle className="text-base">Top Products</CardTitle>
+              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate('/admin/products')}>View all →</Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {(data?.topProducts || []).map((p: any, i: number) => (
+                <div key={p.name} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="truncate flex-1">{i + 1}. {p.name}</span>
+                    <span className="text-xs text-muted-foreground ml-2 shrink-0">{p.order_count} orders</span>
+                  </div>
+                  <Progress value={Math.min(100, (p.order_count / Math.max(...(data?.topProducts || []).map((x: any) => x.order_count), 1)) * 100)} className="h-1.5" />
+                </div>
+              ))}
+              {!data?.topProducts?.length && <p className="text-center py-8 text-sm text-muted-foreground">No product data yet</p>}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Low Stock Alert */}
+        {data?.lowStock > 0 && (
+          <Card className="border-orange-200 bg-orange-50/30">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-orange-500" />
+                <div>
+                  <p className="text-sm font-semibold text-orange-700">{data.lowStock} products have low stock (≤5 units)</p>
+                  <p className="text-xs text-orange-600">Update stock to avoid order failures</p>
+                </div>
+              </div>
+              <Button size="sm" variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-100 text-xs" onClick={() => navigate('/admin/products')}>
+                Manage Stock
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </AdminLayout>
+  );
+};
 
 export default AdminDashboard;

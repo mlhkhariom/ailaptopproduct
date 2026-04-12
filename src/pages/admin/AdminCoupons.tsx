@@ -1,146 +1,196 @@
-import { useState } from "react";
-import { Plus, Trash2, Edit, Tag, Calendar, Copy, CheckCircle, Percent, IndianRupee } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Trash2, Edit, Tag, Copy, Percent, IndianRupee, RefreshCw, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import AdminLayout from "@/components/AdminLayout";
+import { api } from "@/lib/api";
 
-interface Coupon {
-  id: string;
-  code: string;
-  type: "percent" | "flat";
-  value: number;
-  minOrder: number;
-  maxUses: number;
-  usedCount: number;
-  expiry: string;
-  active: boolean;
-}
-
-const mockCoupons: Coupon[] = [
-  { id: "1", code: "AYUR10", type: "percent", value: 10, minOrder: 499, maxUses: 100, usedCount: 34, expiry: "2024-03-31", active: true },
-  { id: "2", code: "FLAT100", type: "flat", value: 100, minOrder: 999, maxUses: 50, usedCount: 12, expiry: "2024-02-28", active: true },
-  { id: "3", code: "WELCOME20", type: "percent", value: 20, minOrder: 299, maxUses: 200, usedCount: 89, expiry: "2024-06-30", active: true },
-  { id: "4", code: "FREESHIP", type: "flat", value: 50, minOrder: 0, maxUses: 500, usedCount: 156, expiry: "2024-12-31", active: true },
-  { id: "5", code: "DIWALI25", type: "percent", value: 25, minOrder: 1499, maxUses: 50, usedCount: 50, expiry: "2023-11-15", active: false },
-];
+const emptyForm = { code: '', type: 'percentage', value: 10, min_order: 0, max_uses: '', expires_at: '', is_active: true };
 
 const AdminCoupons = () => {
-  const [coupons, setCoupons] = useState(mockCoupons);
-  const [showAdd, setShowAdd] = useState(false);
-  const [newCoupon, setNewCoupon] = useState<{ code: string; type: "percent" | "flat"; value: number; minOrder: number; maxUses: number; expiry: string }>({ code: "", type: "percent", value: 10, minOrder: 0, maxUses: 100, expiry: "" });
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialog, setDialog] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+  const [form, setForm] = useState<any>({ ...emptyForm });
 
-  const toggleActive = (id: string) => {
-    setCoupons((prev) => prev.map((c) => c.id === id ? { ...c, active: !c.active } : c));
-    toast.success("Coupon updated");
+  const load = async () => {
+    setLoading(true);
+    try { setCoupons(await api.getCoupons()); } catch (e: any) { toast.error(e.message); }
+    finally { setLoading(false); }
   };
 
-  const deleteCoupon = (id: string) => {
-    setCoupons((prev) => prev.filter((c) => c.id !== id));
-    toast.success("Coupon deleted");
+  useEffect(() => { load(); }, []);
+
+  const f = (k: string) => (e: any) => setForm((p: any) => ({ ...p, [k]: e.target.value }));
+
+  const openAdd = () => { setEditing(null); setForm({ ...emptyForm }); setDialog(true); };
+  const openEdit = (c: any) => {
+    setEditing(c);
+    setForm({ code: c.code, type: c.type, value: c.value, min_order: c.min_order, max_uses: c.max_uses || '', expires_at: c.expires_at ? c.expires_at.split('T')[0] : '', is_active: !!c.is_active });
+    setDialog(true);
   };
 
-  const addCoupon = () => {
-    if (!newCoupon.code.trim()) { toast.error("Enter coupon code"); return; }
-    setCoupons((prev) => [...prev, { ...newCoupon, id: Date.now().toString(), usedCount: 0, active: true }]);
-    setShowAdd(false);
-    setNewCoupon({ code: "", type: "percent", value: 10, minOrder: 0, maxUses: 100, expiry: "" });
-    toast.success("Coupon created!");
+  const save = async () => {
+    if (!form.code || !form.value) return toast.error('Code and value required');
+    const payload = { ...form, value: Number(form.value), min_order: Number(form.min_order) || 0, max_uses: form.max_uses ? Number(form.max_uses) : null, expires_at: form.expires_at || null };
+    try {
+      if (editing) await api.updateCoupon(editing.id, payload);
+      else await api.createCoupon(payload);
+      toast.success(editing ? 'Updated!' : 'Coupon created!');
+      setDialog(false); load();
+    } catch (e: any) { toast.error(e.message); }
   };
 
-  const totalRevenueSaved = coupons.reduce((s, c) => s + c.usedCount * (c.type === "flat" ? c.value : c.value * 5), 0);
+  const remove = async (id: string) => {
+    if (!confirm('Delete this coupon?')) return;
+    await api.deleteCoupon(id); toast.success('Deleted'); load();
+  };
+
+  const toggleActive = async (c: any) => {
+    await api.updateCoupon(c.id, { ...c, is_active: !c.is_active });
+    load();
+  };
+
+  const copyCode = (code: string) => { navigator.clipboard.writeText(code); toast.success('Copied!'); };
+
+  const stats = { total: coupons.length, active: coupons.filter(c => c.is_active).length, used: coupons.reduce((s, c) => s + (c.used_count || 0), 0) };
 
   return (
     <AdminLayout>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-serif font-bold">Coupons & Discounts</h1>
-          <p className="text-sm text-muted-foreground">Create & manage promotional discount codes</p>
+      <div className="p-4 md:p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-serif font-bold">Coupons & Discounts</h1>
+            <p className="text-sm text-muted-foreground">{stats.active} active · {stats.used} total uses</p>
+          </div>
+          <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={openAdd}><Plus className="h-3.5 w-3.5" /> Create Coupon</Button>
         </div>
-        <Dialog open={showAdd} onOpenChange={setShowAdd}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5 text-xs h-8"><Plus className="h-3.5 w-3.5" /> Create Coupon</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Create New Coupon</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div><Label className="text-xs">Coupon Code</Label><Input className="mt-1 uppercase" placeholder="e.g. SUMMER20" value={newCoupon.code} onChange={(e) => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })} /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs">Type</Label>
-                  <Select value={newCoupon.type} onValueChange={(v: "percent" | "flat") => setNewCoupon({ ...newCoupon, type: v })}>
-                    <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="percent">Percentage (%)</SelectItem>
-                      <SelectItem value="flat">Flat Amount (₹)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div><Label className="text-xs">Value</Label><Input type="number" className="mt-1 h-9" value={newCoupon.value} onChange={(e) => setNewCoupon({ ...newCoupon, value: Number(e.target.value) })} /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Min. Order (₹)</Label><Input type="number" className="mt-1 h-9" value={newCoupon.minOrder} onChange={(e) => setNewCoupon({ ...newCoupon, minOrder: Number(e.target.value) })} /></div>
-                <div><Label className="text-xs">Max Uses</Label><Input type="number" className="mt-1 h-9" value={newCoupon.maxUses} onChange={(e) => setNewCoupon({ ...newCoupon, maxUses: Number(e.target.value) })} /></div>
-              </div>
-              <div><Label className="text-xs">Expiry Date</Label><Input type="date" className="mt-1 h-9" value={newCoupon.expiry} onChange={(e) => setNewCoupon({ ...newCoupon, expiry: e.target.value })} /></div>
-              <Button className="w-full" onClick={addCoupon}>Create Coupon</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Card><CardContent className="p-4 flex items-center gap-3"><Tag className="h-8 w-8 text-primary" /><div><p className="text-2xl font-bold">{coupons.length}</p><p className="text-[10px] text-muted-foreground">Total Coupons</p></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><CheckCircle className="h-8 w-8 text-green-500" /><div><p className="text-2xl font-bold">{coupons.filter(c => c.active).length}</p><p className="text-[10px] text-muted-foreground">Active</p></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><Percent className="h-8 w-8 text-accent" /><div><p className="text-2xl font-bold">{coupons.reduce((s, c) => s + c.usedCount, 0)}</p><p className="text-[10px] text-muted-foreground">Total Uses</p></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><IndianRupee className="h-8 w-8 text-blue-500" /><div><p className="text-2xl font-bold">₹{totalRevenueSaved.toLocaleString()}</p><p className="text-[10px] text-muted-foreground">Discount Given</p></div></CardContent></Card>
-      </div>
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Total Coupons', value: stats.total, icon: Tag },
+            { label: 'Active', value: stats.active, icon: CheckCircle },
+            { label: 'Total Uses', value: stats.used, icon: Percent },
+          ].map(s => (
+            <Card key={s.label}><CardContent className="p-3 text-center">
+              <s.icon className="h-5 w-5 mx-auto text-primary mb-1" />
+              <p className="text-2xl font-bold">{s.value}</p>
+              <p className="text-xs text-muted-foreground">{s.label}</p>
+            </CardContent></Card>
+          ))}
+        </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <table className="w-full text-sm">
-            <thead><tr className="border-b bg-muted/30 text-left">
-              <th className="p-3 text-xs font-medium text-muted-foreground">Code</th>
-              <th className="p-3 text-xs font-medium text-muted-foreground">Discount</th>
-              <th className="p-3 text-xs font-medium text-muted-foreground">Min. Order</th>
-              <th className="p-3 text-xs font-medium text-muted-foreground">Usage</th>
-              <th className="p-3 text-xs font-medium text-muted-foreground">Expiry</th>
-              <th className="p-3 text-xs font-medium text-muted-foreground">Status</th>
-              <th className="p-3 text-xs font-medium text-muted-foreground">Actions</th>
-            </tr></thead>
-            <tbody>
-              {coupons.map((coupon) => (
-                <tr key={coupon.id} className="border-b last:border-0 hover:bg-muted/20">
-                  <td className="p-3">
+        {/* Coupons List */}
+        {loading ? (
+          <div className="text-center py-12"><RefreshCw className="h-6 w-6 animate-spin mx-auto text-muted-foreground" /></div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {coupons.map(c => (
+              <Card key={c.id} className={`hover:shadow-md transition-shadow ${!c.is_active ? 'opacity-60' : ''}`}>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="font-mono text-xs">{coupon.code}</Badge>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText(coupon.code); toast.success("Copied!"); }}>
-                        <Copy className="h-3 w-3" />
-                      </Button>
+                      <code className="text-base font-bold tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded">{c.code}</code>
+                      <button onClick={() => copyCode(c.code)}><Copy className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" /></button>
                     </div>
-                  </td>
-                  <td className="p-3 font-medium">{coupon.type === "percent" ? `${coupon.value}%` : `₹${coupon.value}`}</td>
-                  <td className="p-3 text-muted-foreground">₹{coupon.minOrder}</td>
-                  <td className="p-3"><span className="font-medium">{coupon.usedCount}</span><span className="text-muted-foreground">/{coupon.maxUses}</span></td>
-                  <td className="p-3 text-xs text-muted-foreground">{coupon.expiry}</td>
-                  <td className="p-3"><Switch checked={coupon.active} onCheckedChange={() => toggleActive(coupon.id)} /></td>
-                  <td className="p-3">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteCoupon(coupon.id)}>
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+                    <Switch checked={!!c.is_active} onCheckedChange={() => toggleActive(c)} />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Badge className={`gap-1 ${c.type === 'percentage' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                      {c.type === 'percentage' ? <Percent className="h-3 w-3" /> : <IndianRupee className="h-3 w-3" />}
+                      {c.type === 'percentage' ? `${c.value}% OFF` : `₹${c.value} OFF`}
+                    </Badge>
+                    {c.min_order > 0 && <span className="text-xs text-muted-foreground">Min ₹{c.min_order}</span>}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div><p className="font-medium text-foreground">{c.used_count || 0}{c.max_uses ? `/${c.max_uses}` : ''}</p><p>Uses</p></div>
+                    <div><p className="font-medium text-foreground">{c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-IN') : 'No expiry'}</p><p>Expires</p></div>
+                  </div>
+
+                  {c.expires_at && new Date(c.expires_at) < new Date() && (
+                    <Badge variant="destructive" className="text-[10px]">Expired</Badge>
+                  )}
+
+                  <div className="flex gap-2 pt-1">
+                    <Button size="sm" variant="outline" className="flex-1 h-7 text-xs gap-1" onClick={() => openEdit(c)}><Edit className="h-3 w-3" /> Edit</Button>
+                    <Button size="sm" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => remove(c.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {coupons.length === 0 && (
+              <div className="col-span-3 text-center py-12 text-muted-foreground">
+                <Tag className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                <p>No coupons yet</p>
+                <Button size="sm" className="mt-3" onClick={openAdd}><Plus className="h-3.5 w-3.5 mr-1" /> Create First Coupon</Button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={dialog} onOpenChange={setDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>{editing ? 'Edit Coupon' : 'Create Coupon'}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Coupon Code *</Label>
+              <Input value={form.code} onChange={f('code')} className="mt-1 text-sm font-mono uppercase" placeholder="SAVE20"
+                onInput={e => (e.currentTarget.value = e.currentTarget.value.toUpperCase())} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Type</Label>
+                <Select value={form.type} onValueChange={v => setForm((p: any) => ({ ...p, type: v }))}>
+                  <SelectTrigger className="mt-1 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="percentage">Percentage (%)</SelectItem>
+                    <SelectItem value="flat">Flat (₹)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Value *</Label>
+                <Input type="number" value={form.value} onChange={f('value')} className="mt-1 text-sm" placeholder={form.type === 'percentage' ? '10' : '100'} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Min Order (₹)</Label>
+                <Input type="number" value={form.min_order} onChange={f('min_order')} className="mt-1 text-sm" placeholder="0" />
+              </div>
+              <div>
+                <Label className="text-xs">Max Uses</Label>
+                <Input type="number" value={form.max_uses} onChange={f('max_uses')} className="mt-1 text-sm" placeholder="Unlimited" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Expiry Date</Label>
+              <Input type="date" value={form.expires_at} onChange={f('expires_at')} className="mt-1 text-sm" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={form.is_active} onCheckedChange={v => setForm((p: any) => ({ ...p, is_active: v }))} />
+              <Label className="text-xs">Active</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialog(false)}>Cancel</Button>
+            <Button onClick={save}>{editing ? 'Update' : 'Create'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };

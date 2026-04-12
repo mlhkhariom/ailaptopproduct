@@ -1,33 +1,45 @@
 import { useParams, Link } from "react-router-dom";
-import { ShoppingCart, MessageCircle, Star, ArrowLeft, Minus, Plus, Play, Instagram, Youtube, Facebook, Heart, Share2, ZoomIn } from "lucide-react";
-import { useState } from "react";
+import { ShoppingCart, MessageCircle, Star, ArrowLeft, Minus, Plus, Play, Instagram, Youtube, Facebook, Heart, Share2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import CustomerLayout from "@/components/CustomerLayout";
 import ProductCard from "@/components/ProductCard";
 import { useProductStore } from "@/store/productStore";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
+import { api } from "@/lib/api";
 import { toast } from "sonner";
 
-const platformIcon = { instagram: Instagram, youtube: Youtube, facebook: Facebook };
+const platformIcon: any = { instagram: Instagram, youtube: Youtube, facebook: Facebook };
 
 const mockReviews = [
-  { id: 1, name: "Priya S.", rating: 5, text: "Amazing product! Saw results in just 2 weeks. Highly recommended.", date: "2024-01-15" },
-  { id: 2, name: "Rahul V.", rating: 4, text: "Good quality, authentic Ayurvedic product. Packaging was great.", date: "2024-01-10" },
+  { id: 1, name: "Priya S.", rating: 5, text: "Amazing product! Saw results in just 2 weeks.", date: "2024-01-15" },
+  { id: 2, name: "Rahul V.", rating: 4, text: "Good quality, authentic Ayurvedic product.", date: "2024-01-10" },
   { id: 3, name: "Anita D.", rating: 5, text: "Been using this for a month now, excellent results!", date: "2024-01-08" },
 ];
 
 const ProductDetail = () => {
   const { id } = useParams();
-  const { products } = useProductStore();
-  const product = products.find((p) => p.id === id);
+  const { products, fetchProducts } = useProductStore();
+  const [reels, setReels] = useState<any[]>([]);
   const [qty, setQty] = useState(1);
   const [activeReel, setActiveReel] = useState(0);
   const [mainImage, setMainImage] = useState(0);
+
+  useEffect(() => {
+    if (products.length === 0) fetchProducts();
+  }, []);
+
+  const product = products.find((p) => p.id === id || p.slug === id);
+
+  useEffect(() => {
+    if (product) {
+      api.getReels({ product_id: product.id }).then(setReels).catch(() => {});
+    }
+  }, [product?.id]);
   const [showZoom, setShowZoom] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const addItem = useCartStore((s) => s.addItem);
@@ -59,7 +71,7 @@ const ProductDetail = () => {
   const discount = product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
   const wishlisted = isInWishlist(product.id);
 
-  const allImages = [product.image, ...product.reels.map(r => r.thumbnail)];
+  const allImages = [product.image];
 
   const ratingBreakdown = [
     { stars: 5, percent: 68 },
@@ -180,14 +192,15 @@ const ProductDetail = () => {
         </div>
 
         {/* Reels Section */}
-        {product.reels.length > 0 && (
+        {reels.length > 0 && (
           <section className="mb-12">
             <h2 className="text-2xl font-serif font-bold mb-4">Product Reels & Videos</h2>
             <div className="grid md:grid-cols-3 gap-4">
-              {product.reels.map((reel) => {
-                const Icon = platformIcon[reel.platform];
+              {reels.map((reel) => {
+                const Icon = platformIcon[reel.platform] || platformIcon.instagram;
                 return (
                   <Card key={reel.id} className="group overflow-hidden cursor-pointer hover:shadow-lg transition-all">
+                    <a href={reel.video_url || '#'} target="_blank" rel="noreferrer">
                     <div className="relative aspect-[9/16] bg-muted">
                       <img src={reel.thumbnail} alt={reel.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-transparent flex flex-col justify-end p-4">
@@ -204,6 +217,7 @@ const ProductDetail = () => {
                         <p className="text-primary-foreground/70 text-xs mt-1">👁 {reel.views} views</p>
                       </div>
                     </div>
+                    </a>
                   </Card>
                 );
               })}

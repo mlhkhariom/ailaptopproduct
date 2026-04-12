@@ -1,27 +1,38 @@
-import { useState } from "react";
-import { Search, Package, Truck, CheckCircle, Clock, MapPin, Phone } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Search, Package, Truck, CheckCircle, Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CustomerLayout from "@/components/CustomerLayout";
-import { orders } from "@/data/mockData";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 const TrackOrder = () => {
-  const [orderId, setOrderId] = useState("");
-  const [result, setResult] = useState<typeof orders[0] | null | "not_found">(null);
+  const [searchParams] = useSearchParams();
+  const [orderId, setOrderId] = useState(searchParams.get('order') || "");
+  const [result, setResult] = useState<any | null | "not_found">(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!orderId.trim()) return;
-    const order = orders.find((o) => o.id.toLowerCase() === orderId.trim().toLowerCase());
-    setResult(order || "not_found");
+    setLoading(true);
+    try {
+      const order = await api.trackOrder(orderId.trim().toUpperCase());
+      setResult(order);
+    } catch {
+      setResult("not_found");
+    } finally { setLoading(false); }
   };
 
+  useEffect(() => { if (orderId) handleSearch(); }, []);
+
   const statusSteps = [
-    { key: "pending", label: "Order Placed", icon: Package, desc: "Your order has been confirmed" },
-    { key: "processing", label: "Processing", icon: Clock, desc: "Being packed and prepared" },
-    { key: "shipped", label: "Shipped", icon: Truck, desc: "On the way to you" },
-    { key: "delivered", label: "Delivered", icon: CheckCircle, desc: "Successfully delivered" },
+    { key: "placed",     label: "Order Placed",  icon: Package,      desc: "Your order has been confirmed" },
+    { key: "processing", label: "Processing",    icon: Clock,        desc: "Being packed and prepared" },
+    { key: "shipped",    label: "Shipped",       icon: Truck,        desc: "On the way to you" },
+    { key: "delivered",  label: "Delivered",     icon: CheckCircle,  desc: "Successfully delivered" },
   ];
 
   const getStepIndex = (status: string) => statusSteps.findIndex((s) => s.key === status);
@@ -40,8 +51,8 @@ const TrackOrder = () => {
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               className="h-12 text-base"
             />
-            <Button onClick={handleSearch} className="h-12 px-6 gap-2">
-              <Search className="h-4 w-4" /> Track
+            <Button onClick={handleSearch} disabled={loading} className="h-12 px-6 gap-2">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Track
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-3">Demo: try APC-001, APC-002, APC-004</p>
@@ -66,10 +77,10 @@ const TrackOrder = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <p className="font-serif font-bold text-xl">Order #{result.id}</p>
-                      <p className="text-sm text-muted-foreground">Placed on {result.date}</p>
+                      <p className="font-serif font-bold text-xl">Order #{result.order_number}</p>
+                      <p className="text-sm text-muted-foreground">Placed on {new Date(result.created_at).toLocaleDateString('en-IN')}</p>
                     </div>
-                    <Badge variant="default" className="capitalize">{result.status}</Badge>
+                    <Badge className="capitalize">{result.status}</Badge>
                   </div>
 
                   {/* Timeline */}
@@ -84,9 +95,7 @@ const TrackOrder = () => {
                             <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${isCompleted ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"} ${isCurrent ? "ring-4 ring-primary/20" : ""}`}>
                               <step.icon className="h-5 w-5" />
                             </div>
-                            {i < statusSteps.length - 1 && (
-                              <div className={`w-0.5 h-8 mt-1 ${i < currentIdx ? "bg-primary" : "bg-muted"}`} />
-                            )}
+                            {i < statusSteps.length - 1 && <div className={`w-0.5 h-8 mt-1 ${i < currentIdx ? "bg-primary" : "bg-muted"}`} />}
                           </div>
                           <div className="pt-1.5">
                             <p className={`font-medium text-sm ${isCompleted ? "text-foreground" : "text-muted-foreground"}`}>{step.label}</p>
@@ -96,33 +105,14 @@ const TrackOrder = () => {
                       );
                     })}
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardContent className="p-6 space-y-3">
-                  <h3 className="font-semibold">Order Details</h3>
-                  {result.items.map((item, i) => (
-                    <div key={i} className="flex justify-between text-sm">
-                      <span>{item.name} × {item.quantity}</span>
-                      <span className="font-medium">₹{item.price * item.quantity}</span>
-                    </div>
-                  ))}
-                  <div className="border-t pt-3 flex justify-between font-bold">
-                    <span>Total</span>
-                    <span>₹{result.total}</span>
-                  </div>
-                  {result.trackingId && (
-                    <div className="p-3 rounded-lg bg-primary/5 text-sm">
-                      <span className="text-muted-foreground">Tracking: </span>
-                      <span className="font-mono font-medium text-primary">{result.trackingId}</span>
-                      {result.courierPartner && <span className="text-muted-foreground ml-2">via {result.courierPartner}</span>}
+                  {result.tracking_id && (
+                    <div className="mt-4 p-3 rounded-lg bg-primary/5 text-sm flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-primary" />
+                      <span className="font-mono font-medium text-primary">{result.tracking_id}</span>
+                      {result.courier && <span className="text-muted-foreground">via {result.courier}</span>}
                     </div>
                   )}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span>{result.address}</span>
-                  </div>
                 </CardContent>
               </Card>
             </div>

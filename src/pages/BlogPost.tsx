@@ -1,26 +1,30 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Calendar, User, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Calendar, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import CustomerLayout from "@/components/CustomerLayout";
-import { blogPosts } from "@/data/mockData";
+import { api } from "@/lib/api";
 
 const BlogPost = () => {
   const { id } = useParams();
-  const post = blogPosts.find((p) => p.id === id);
-  const related = blogPosts.filter((p) => p.id !== id).slice(0, 2);
+  const [post, setPost] = useState<any>(null);
+  const [related, setRelated] = useState<any[]>([]);
 
-  if (!post) {
-    return (
-      <CustomerLayout>
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-2xl font-serif">Post not found</h1>
-          <Link to="/blog"><Button className="mt-4">Go Back</Button></Link>
-        </div>
-      </CustomerLayout>
-    );
-  }
+  useEffect(() => {
+    if (!id) return;
+    api.getPost(id).then(p => { setPost(p); api.getPosts({ status: 'published' }).then(all => setRelated(all.filter((r: any) => r.id !== p.id).slice(0, 2))).catch(() => {}); }).catch(() => {});
+  }, [id]);
+
+  if (!post) return (
+    <CustomerLayout>
+      <div className="container mx-auto px-4 py-16 text-center">
+        <h1 className="text-2xl font-serif">Post not found</h1>
+        <Link to="/blog"><Button className="mt-4">Go Back</Button></Link>
+      </div>
+    </CustomerLayout>
+  );
 
   return (
     <CustomerLayout>
@@ -34,8 +38,8 @@ const BlogPost = () => {
 
         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6">
           <span className="flex items-center gap-1"><User className="h-4 w-4" />{post.author}</span>
-          <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{post.date}</span>
-          <span className="flex items-center gap-1"><Clock className="h-4 w-4" />{post.readTime}</span>
+          <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{post.published_at ? new Date(post.published_at).toLocaleDateString("en-IN") : ""}</span>
+          <span className="flex items-center gap-1">5 min read</span>
         </div>
 
         <img src={post.image} alt={post.title} className="w-full rounded-2xl mb-8 aspect-video object-cover" />

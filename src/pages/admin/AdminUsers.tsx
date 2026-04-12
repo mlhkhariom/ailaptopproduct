@@ -1,236 +1,244 @@
-import { useState } from "react";
-import { Users, Shield, UserCheck, UserX, Search, Edit, Trash2, MoreHorizontal, Plus, Crown, Eye } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Plus, Edit, Trash2, RefreshCw, Shield, User, UserCheck, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import AdminLayout from "@/components/AdminLayout";
+import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface AppUser {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: "admin" | "manager" | "editor" | "customer";
-  status: "active" | "inactive" | "banned";
-  lastLogin: string;
-  joinDate: string;
-  orders: number;
-}
+const ROLES = ['admin', 'manager', 'editor', 'customer'];
+const ROLE_COLOR: Record<string, string> = {
+  superadmin: 'bg-yellow-100 text-yellow-800 border border-yellow-300',
+  admin: 'bg-red-100 text-red-700',
+  manager: 'bg-purple-100 text-purple-700',
+  editor: 'bg-blue-100 text-blue-700',
+  customer: 'bg-gray-100 text-gray-600',
+};
 
-const mockUsers: AppUser[] = [
-  { id: "1", name: "Dr. Prachi", email: "admin@apsoncure.com", phone: "+91 98765 43210", role: "admin", status: "active", lastLogin: "2024-01-22", joinDate: "2023-01-01", orders: 0 },
-  { id: "2", name: "Hariom Vishwkarma", email: "hariom@mlhk.in", phone: "+91 99999 88888", role: "admin", status: "active", lastLogin: "2024-01-22", joinDate: "2023-01-01", orders: 0 },
-  { id: "3", name: "Priya Sharma", email: "priya@email.com", phone: "+91 98765 43211", role: "customer", status: "active", lastLogin: "2024-01-21", joinDate: "2023-06-10", orders: 5 },
-  { id: "4", name: "Rajesh Kumar", email: "rajesh@email.com", phone: "+91 87654 32109", role: "customer", status: "active", lastLogin: "2024-01-20", joinDate: "2023-08-22", orders: 3 },
-  { id: "5", name: "Anita Desai", email: "anita@email.com", phone: "+91 76543 21098", role: "customer", status: "inactive", lastLogin: "2024-01-10", joinDate: "2023-11-05", orders: 2 },
-  { id: "6", name: "Vikram Singh", email: "vikram@email.com", phone: "+91 99887 76655", role: "editor", status: "active", lastLogin: "2024-01-19", joinDate: "2023-07-15", orders: 0 },
-  { id: "7", name: "Meera Patel", email: "meera@email.com", phone: "+91 88776 65544", role: "customer", status: "active", lastLogin: "2024-01-18", joinDate: "2024-01-08", orders: 1 },
-  { id: "8", name: "Arjun Nair", email: "arjun@email.com", phone: "+91 77665 54433", role: "customer", status: "banned", lastLogin: "2024-01-05", joinDate: "2023-09-20", orders: 0 },
-];
-
-const roleConfig: Record<string, { label: string; color: string; icon: typeof Shield }> = {
-  admin: { label: "Admin", color: "bg-red-500/10 text-red-600", icon: Crown },
-  manager: { label: "Manager", color: "bg-blue-500/10 text-blue-600", icon: Shield },
-  editor: { label: "Editor", color: "bg-purple-500/10 text-purple-600", icon: Edit },
-  customer: { label: "Customer", color: "bg-green-500/10 text-green-600", icon: UserCheck },
+const PERMISSIONS: Record<string, string[]> = {
+  admin:    ['Dashboard', 'Products', 'Orders', 'Payments', 'Customers', 'Blog', 'Social', 'Media', 'WhatsApp', 'CMS', 'Contacts', 'Users', 'Coupons', 'Reports', 'Settings'],
+  manager:  ['Dashboard', 'Products', 'Orders', 'Customers', 'Blog', 'Contacts', 'Reports'],
+  editor:   ['Dashboard', 'Products', 'Blog', 'CMS', 'Media'],
+  customer: ['Account', 'Orders'],
 };
 
 const AdminUsers = () => {
-  const [users, setUsers] = useState<AppUser[]>(mockUsers);
-  const [search, setSearch] = useState("");
-  const [filterRole, setFilterRole] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = (currentUser as any)?.role === 'superadmin';
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [dialog, setDialog] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'customer', is_active: true });
+  const [permDialog, setPermDialog] = useState<any>(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      // Get all users (customers + admins)
+      const [customers, me] = await Promise.all([
+        api.getCustomers(),
+        api.me(),
+      ]);
+      // Also fetch admin users via customers endpoint returns only customers
+      // We'll use customers list + current user
+      setUsers(customers);
+    } catch (e: any) { toast.error(e.message); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const f = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const openAdd = () => { setEditing(null); setForm({ name: '', email: '', password: '', role: 'customer', is_active: true }); setDialog(true); };
+  const openEdit = (u: any) => { setEditing(u); setForm({ name: u.name, email: u.email, password: '', role: u.role, is_active: !!u.is_active }); setDialog(true); };
+
+  const save = async () => {
+    if (!form.name || !form.email) return toast.error('Name and email required');
+    try {
+      if (editing) {
+        await api.updateCustomer(editing.id, { role: form.role, is_active: form.is_active });
+        toast.success('User updated!');
+      } else {
+        await api.register(form.name, form.email, form.password || 'changeme123');
+        toast.success('User created! Default password: changeme123');
+      }
+      setDialog(false); load();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const toggleActive = async (u: any) => {
+    await api.updateCustomer(u.id, { role: u.role, is_active: !u.is_active });
+    toast.success(u.is_active ? 'Deactivated' : 'Activated');
+    load();
+  };
+
+  const changeRole = async (u: any, role: string) => {
+    await api.updateCustomer(u.id, { role, is_active: u.is_active });
+    toast.success(`Role changed to ${role}`);
+    load();
+  };
 
   const filtered = users.filter(u => {
-    if (filterRole !== "all" && u.role !== filterRole) return false;
-    if (filterStatus !== "all" && u.status !== filterStatus) return false;
-    if (search && !u.name.toLowerCase().includes(search.toLowerCase()) && !u.email.toLowerCase().includes(search.toLowerCase())) return false;
+    if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+    if (search && !u.name?.toLowerCase().includes(search.toLowerCase()) && !u.email?.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
-  const stats = {
-    total: users.length,
-    admins: users.filter(u => u.role === "admin").length,
-    active: users.filter(u => u.status === "active").length,
-    customers: users.filter(u => u.role === "customer").length,
-  };
-
-  const changeRole = (id: string, role: AppUser["role"]) => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, role } : u));
-    toast.success("Role updated");
-  };
-
-  const changeStatus = (id: string, status: AppUser["status"]) => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, status } : u));
-    toast.success("Status updated");
-  };
+  const counts = { all: users.length, ...Object.fromEntries(ROLES.map(r => [r, users.filter(u => u.role === r).length])) };
 
   return (
     <AdminLayout>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-serif font-bold">User & Role Management</h1>
-          <p className="text-sm text-muted-foreground">Manage users, assign roles, and control access permissions</p>
+      <div className="p-4 md:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-serif font-bold">Users & Roles</h1>
+            <p className="text-sm text-muted-foreground">{users.length} users · {users.filter(u => u.is_active).length} active</p>
+          </div>
+          <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={openAdd}><Plus className="h-3.5 w-3.5" /> Add User</Button>
         </div>
-        <Button size="sm" className="gap-1.5 text-xs h-8"><Plus className="h-3.5 w-3.5" /> Add User</Button>
-      </div>
 
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        {[
-          { label: "Total Users", value: stats.total, icon: Users, color: "text-primary" },
-          { label: "Admins", value: stats.admins, icon: Crown, color: "text-red-500" },
-          { label: "Active Users", value: stats.active, icon: UserCheck, color: "text-green-500" },
-          { label: "Customers", value: stats.customers, icon: UserCheck, color: "text-blue-500" },
-        ].map(s => (
-          <Card key={s.label}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <s.icon className={`h-8 w-8 ${s.color}`} />
-              <div>
-                <p className="text-2xl font-bold">{s.value}</p>
-                <p className="text-[10px] text-muted-foreground">{s.label}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+        {/* Role Tabs */}
+        <Tabs value={roleFilter} onValueChange={setRoleFilter}>
+          <TabsList className="h-8">
+            <TabsTrigger value="all" className="text-xs h-7 px-3">All ({counts.all})</TabsTrigger>
+            {ROLES.map(r => <TabsTrigger key={r} value={r} className="text-xs h-7 px-3 capitalize">{r} ({(counts as any)[r] || 0})</TabsTrigger>)}
+          </TabsList>
+        </Tabs>
 
-      <div className="flex flex-wrap gap-3 mb-4">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-9 h-9" placeholder="Search users..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search users..." className="pl-8 h-9" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <Select value={filterRole} onValueChange={setFilterRole}>
-          <SelectTrigger className="h-9 w-32 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="manager">Manager</SelectItem>
-            <SelectItem value="editor">Editor</SelectItem>
-            <SelectItem value="customer">Customer</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="h-9 w-32 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="banned">Banned</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <table className="w-full text-sm">
-            <thead><tr className="border-b bg-muted/30 text-left">
-              <th className="p-3 text-xs font-medium text-muted-foreground">User</th>
-              <th className="p-3 text-xs font-medium text-muted-foreground">Role</th>
-              <th className="p-3 text-xs font-medium text-muted-foreground">Status</th>
-              <th className="p-3 text-xs font-medium text-muted-foreground">Last Login</th>
-              <th className="p-3 text-xs font-medium text-muted-foreground">Orders</th>
-              <th className="p-3 text-xs font-medium text-muted-foreground">Actions</th>
-            </tr></thead>
-            <tbody>
-              {filtered.map(user => {
-                const rc = roleConfig[user.role];
-                return (
-                  <tr key={user.id} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
-                    <td className="p-3">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-sm">{user.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{user.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <Select value={user.role} onValueChange={(v) => changeRole(user.id, v as AppUser["role"])}>
-                        <SelectTrigger className="h-7 w-28 text-[10px]">
-                          <Badge className={`text-[9px] border-0 ${rc.color}`}>{rc.label}</Badge>
-                        </SelectTrigger>
+        {/* Permissions Matrix */}
+        <Card className="bg-muted/30">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3"><Shield className="h-4 w-4 text-primary" /><p className="text-sm font-semibold">Role Permissions</p></div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {ROLES.map(role => (
+                <div key={role}>
+                  <Badge className={`${ROLE_COLOR[role]} mb-2 capitalize`}>{role}</Badge>
+                  <div className="space-y-0.5">
+                    {PERMISSIONS[role].map(p => <p key={p} className="text-[10px] text-muted-foreground">✓ {p}</p>)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Users List */}
+        {loading ? (
+          <div className="text-center py-12"><RefreshCw className="h-6 w-6 animate-spin mx-auto text-muted-foreground" /></div>
+        ) : (
+          <div className="space-y-2">
+            {filtered.map(u => (
+              <Card key={u.id} className="hover:shadow-sm transition-shadow">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
+                    {u.name?.charAt(0)?.toUpperCase() || '?'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium text-sm">{u.name}</p>
+                      <Badge className={`text-[10px] capitalize ${ROLE_COLOR[u.role] || ROLE_COLOR.customer}`}>{u.role}</Badge>
+                      <Badge className={`text-[10px] ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        {u.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{u.email}</p>
+                    <p className="text-xs text-muted-foreground">{u.order_count || 0} orders · ₹{(u.total_spent || 0).toLocaleString()} spent</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Role change — only superadmin */}
+                    {isSuperAdmin ? (
+                      <Select value={u.role} onValueChange={v => changeRole(u, v)}>
+                        <SelectTrigger className="h-7 w-24 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="admin" className="text-xs">👑 Admin</SelectItem>
-                          <SelectItem value="manager" className="text-xs">🛡 Manager</SelectItem>
-                          <SelectItem value="editor" className="text-xs">✏️ Editor</SelectItem>
-                          <SelectItem value="customer" className="text-xs">👤 Customer</SelectItem>
+                          {ROLES.map(r => <SelectItem key={r} value={r} className="text-xs capitalize">{r}</SelectItem>)}
                         </SelectContent>
                       </Select>
-                    </td>
-                    <td className="p-3">
-                      <Badge variant={user.status === "active" ? "default" : user.status === "banned" ? "destructive" : "secondary"} className="text-[9px] capitalize">
-                        {user.status}
-                      </Badge>
-                    </td>
-                    <td className="p-3 text-xs text-muted-foreground">{user.lastLogin}</td>
-                    <td className="p-3 text-xs font-medium">{user.orders}</td>
-                    <td className="p-3">
-                      <div className="flex gap-1">
-                        {user.status === "active" ? (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => changeStatus(user.id, "inactive")}><UserX className="h-3.5 w-3.5 text-muted-foreground" /></Button>
-                        ) : (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => changeStatus(user.id, "active")}><UserCheck className="h-3.5 w-3.5 text-green-500" /></Button>
-                        )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toast.info("User details modal — connect to Lovable Cloud for full data")}><Eye className="h-3.5 w-3.5 text-muted-foreground" /></Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+                    ) : (
+                      <Badge className={`text-[10px] capitalize ${ROLE_COLOR[u.role] || ROLE_COLOR.customer}`}>{u.role}</Badge>
+                    )}
+                    <button onClick={() => setPermDialog(u)} title="View permissions">
+                      <Shield className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                    </button>
+                    {/* Cannot deactivate superadmin or other admins (unless superadmin) */}
+                    {(isSuperAdmin || (u.role !== 'admin' && u.role !== 'superadmin')) && (
+                      <button onClick={() => toggleActive(u)}>
+                        {u.is_active ? <UserX className="h-4 w-4 text-red-400 hover:text-red-600" /> : <UserCheck className="h-4 w-4 text-green-500 hover:text-green-600" />}
+                      </button>
+                    )}
+                    {/* Edit — only superadmin can edit admins */}
+                    {(isSuperAdmin || (u.role !== 'admin' && u.role !== 'superadmin')) && (
+                      <button onClick={() => openEdit(u)}>
+                        <Edit className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                      </button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {filtered.length === 0 && <div className="text-center py-12 text-muted-foreground"><User className="h-10 w-10 mx-auto mb-2 opacity-30" /><p>No users found</p></div>}
+          </div>
+        )}
+      </div>
 
-      <Card className="mt-6">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Role Permissions Matrix</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <table className="w-full text-xs">
-            <thead><tr className="border-b">
-              <th className="p-2 text-left text-muted-foreground">Permission</th>
-              <th className="p-2 text-center">Admin</th>
-              <th className="p-2 text-center">Manager</th>
-              <th className="p-2 text-center">Editor</th>
-              <th className="p-2 text-center">Customer</th>
-            </tr></thead>
-            <tbody>
-              {[
-                { perm: "Dashboard Access", admin: true, manager: true, editor: true, customer: false },
-                { perm: "Manage Products", admin: true, manager: true, editor: true, customer: false },
-                { perm: "Manage Orders", admin: true, manager: true, editor: false, customer: false },
-                { perm: "View Payments", admin: true, manager: true, editor: false, customer: false },
-                { perm: "Manage Users", admin: true, manager: false, editor: false, customer: false },
-                { perm: "CMS / Content", admin: true, manager: true, editor: true, customer: false },
-                { perm: "Settings", admin: true, manager: false, editor: false, customer: false },
-                { perm: "Reports", admin: true, manager: true, editor: false, customer: false },
-                { perm: "Social Automation", admin: true, manager: true, editor: true, customer: false },
-                { perm: "Delete Data", admin: true, manager: false, editor: false, customer: false },
-              ].map(row => (
-                <tr key={row.perm} className="border-b last:border-0">
-                  <td className="p-2 font-medium">{row.perm}</td>
-                  <td className="p-2 text-center">{row.admin ? "✅" : "❌"}</td>
-                  <td className="p-2 text-center">{row.manager ? "✅" : "❌"}</td>
-                  <td className="p-2 text-center">{row.editor ? "✅" : "❌"}</td>
-                  <td className="p-2 text-center">{row.customer ? "✅" : "❌"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+      {/* Add/Edit Dialog */}
+      <Dialog open={dialog} onOpenChange={setDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>{editing ? 'Edit User' : 'Add User'}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label className="text-xs">Name *</Label><Input value={form.name} onChange={f('name')} className="mt-1 text-sm" disabled={!!editing} /></div>
+            <div><Label className="text-xs">Email *</Label><Input value={form.email} onChange={f('email')} className="mt-1 text-sm" disabled={!!editing} /></div>
+            {!editing && <div><Label className="text-xs">Password</Label><Input type="password" value={form.password} onChange={f('password')} className="mt-1 text-sm" placeholder="Default: changeme123" /></div>}
+            <div>
+              <Label className="text-xs">Role</Label>
+              <Select value={form.role} onValueChange={v => setForm(p => ({ ...p, role: v }))}>
+                <SelectTrigger className="mt-1 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>{ROLES.map(r => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={v => setForm(p => ({ ...p, is_active: v }))} /><Label className="text-xs">Active</Label></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialog(false)}>Cancel</Button>
+            <Button onClick={save}>{editing ? 'Update' : 'Create'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Permissions Dialog */}
+      <Dialog open={!!permDialog} onOpenChange={() => setPermDialog(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Shield className="h-4 w-4" /> {permDialog?.name}'s Permissions</DialogTitle></DialogHeader>
+          {permDialog && (
+            <div>
+              <Badge className={`${ROLE_COLOR[permDialog.role]} capitalize mb-3`}>{permDialog.role} Role</Badge>
+              <div className="grid grid-cols-2 gap-1.5">
+                {PERMISSIONS[permDialog.role]?.map(p => (
+                  <div key={p} className="flex items-center gap-1.5 text-xs bg-green-50 text-green-700 rounded px-2 py-1">
+                    <span className="text-green-500">✓</span> {p}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };

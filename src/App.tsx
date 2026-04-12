@@ -4,6 +4,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SiteSettingsProvider } from "@/contexts/SiteSettingsContext";
+import { MaintenanceGate } from "@/components/MaintenanceGate";
+import { AnalyticsScripts } from "@/components/AnalyticsScripts";
 import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Products from "./pages/Products";
@@ -22,6 +25,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Account from "./pages/Account";
 import TrackOrder from "./pages/TrackOrder";
+import OrderSuccess from "./pages/OrderSuccess";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
@@ -49,6 +53,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
+        <SiteSettingsProvider>
+        <AnalyticsScripts />
+        <MaintenanceGate>
         <BrowserRouter>
           <Routes>
             {/* Public */}
@@ -68,6 +75,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/track-order" element={<TrackOrder />} />
+            <Route path="/order-success" element={<OrderSuccess />} />
 
             {/* Protected Customer */}
             <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
@@ -93,6 +101,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+        </MaintenanceGate>
+        </SiteSettingsProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

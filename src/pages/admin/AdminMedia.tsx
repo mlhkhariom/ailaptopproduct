@@ -1,131 +1,268 @@
-import { useState } from "react";
-import { Upload, Search, Eye, Trash2, Download, Copy, MoreHorizontal } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Upload, Trash2, Copy, Search, Image, Video, FileText, RefreshCw, FolderOpen, X, Check, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import AdminLayout from "@/components/AdminLayout";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
 
-const mediaItems = [
-  { id: 1, name: "ashwagandha-hero.jpg", type: "image", url: "https://images.unsplash.com/photo-1611241893603-3c359704e0ee?w=300&h=300&fit=crop", size: "2.4 MB", date: "2024-01-15" },
-  { id: 2, name: "kumkumadi-product.jpg", type: "image", url: "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=300&h=300&fit=crop", size: "1.8 MB", date: "2024-01-14" },
-  { id: 3, name: "brand-reel-01.mp4", type: "video", url: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=300&h=300&fit=crop", size: "12.5 MB", date: "2024-01-13" },
-  { id: 4, name: "triphala-capsules.jpg", type: "image", url: "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=300&h=300&fit=crop", size: "1.2 MB", date: "2024-01-12" },
-  { id: 5, name: "chyawanprash-banner.jpg", type: "image", url: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=300&h=300&fit=crop", size: "3.1 MB", date: "2024-01-11" },
-  { id: 6, name: "skin-care-reel.mp4", type: "video", url: "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=300&h=300&fit=crop", size: "8.7 MB", date: "2024-01-10" },
-  { id: 7, name: "tulsi-tea-photo.jpg", type: "image", url: "https://images.unsplash.com/photo-1556881286-fc6915169721?w=300&h=300&fit=crop", size: "1.5 MB", date: "2024-01-09" },
-  { id: 8, name: "hair-oil-reel.mp4", type: "video", url: "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=300&h=300&fit=crop", size: "15.2 MB", date: "2024-01-08" },
-];
+const FOLDERS = ['general', 'products', 'blog', 'banners', 'reels'];
+const TYPE_ICON: any = { image: Image, video: Video, document: FileText };
+
+const formatSize = (bytes: number) => bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(0)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 const AdminMedia = () => {
-  const [filter, setFilter] = useState("all");
+  const [media, setMedia] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<number[]>([]);
+  const [folder, setFolder] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [preview, setPreview] = useState<any>(null);
+  const [editAlt, setEditAlt] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const filtered = mediaItems
-    .filter((m) => filter === "all" || m.type === filter)
-    .filter((m) => m.name.toLowerCase().includes(search.toLowerCase()));
+  const load = async () => {
+    setLoading(true);
+    const params: any = {};
+    if (folder !== 'all') params.folder = folder;
+    if (typeFilter !== 'all') params.type = typeFilter;
+    try {
+      const [m, s] = await Promise.all([api.getMedia(params), api.getMediaStats()]);
+      setMedia(m); setStats(s);
+    } catch (e: any) { toast.error(e.message); }
+    finally { setLoading(false); }
+  };
 
-  const totalSize = mediaItems.reduce((s, m) => s + parseFloat(m.size), 0).toFixed(1);
-  const imageCount = mediaItems.filter(m => m.type === "image").length;
-  const videoCount = mediaItems.filter(m => m.type === "video").length;
+  useEffect(() => { load(); }, [folder, typeFilter]);
+
+  const handleUpload = useCallback(async (files: FileList) => {
+    if (!files.length) return;
+    setUploading(true); setUploadProgress(0);
+    const interval = setInterval(() => setUploadProgress(p => Math.min(p + 15, 90)), 200);
+    try {
+      const uploaded = await api.uploadMedia(files, folder === 'all' ? 'general' : folder);
+      clearInterval(interval); setUploadProgress(100);
+      toast.success(`${uploaded.length} file(s) uploaded!`);
+      load();
+    } catch (e: any) { clearInterval(interval); toast.error(e.message); }
+    finally { setUploading(false); setTimeout(() => setUploadProgress(0), 1000); }
+  }, [folder]);
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragOver(false);
+    if (e.dataTransfer.files.length) handleUpload(e.dataTransfer.files);
+  };
+
+  const copyUrl = (url: string) => {
+    navigator.clipboard.writeText(`http://localhost:5000${url}`);
+    toast.success('URL copied!');
+  };
+
+  const remove = async (id: string) => {
+    await api.deleteMedia(id); toast.success('Deleted'); load();
+  };
+
+  const bulkDelete = async () => {
+    if (!confirm(`Delete ${selected.length} files?`)) return;
+    await Promise.all(selected.map(id => api.deleteMedia(id)));
+    setSelected([]); toast.success('Deleted'); load();
+  };
+
+  const saveAlt = async () => {
+    if (!preview) return;
+    await api.updateMedia(preview.id, { alt: editAlt, folder: preview.folder });
+    toast.success('Saved'); setPreview(null); load();
+  };
+
+  const toggleSelect = (id: string) => setSelected(p => p.includes(id) ? p.filter(s => s !== id) : [...p, id]);
+
+  const filtered = media.filter(m => m.original_name?.toLowerCase().includes(search.toLowerCase()) || m.alt?.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <AdminLayout>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-serif font-bold">Media Library</h1>
-          <p className="text-sm text-muted-foreground">{mediaItems.length} files • {totalSize} MB • {imageCount} images • {videoCount} videos</p>
+      <div className="p-4 md:p-6 space-y-4">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-serif font-bold">Media Library</h1>
+            <p className="text-sm text-muted-foreground">
+              {stats ? `${stats.total} files · ${formatSize(stats.totalSize)}` : 'Loading...'}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {selected.length > 0 && (
+              <Button variant="destructive" size="sm" className="h-8 gap-1.5 text-xs" onClick={bulkDelete}>
+                <Trash2 className="h-3.5 w-3.5" /> Delete ({selected.length})
+              </Button>
+            )}
+            <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={() => fileRef.current?.click()}>
+              <Upload className="h-3.5 w-3.5" /> Upload
+            </Button>
+            <input ref={fileRef} type="file" multiple accept="image/*,video/*,.pdf,.doc,.docx" className="hidden"
+              onChange={e => e.target.files && handleUpload(e.target.files)} />
+          </div>
         </div>
-        <Button size="sm" className="gap-1.5 text-xs h-8"><Upload className="h-3.5 w-3.5" /> Upload</Button>
-      </div>
 
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium">Storage Used</span>
-            <span className="text-xs text-muted-foreground">{totalSize} MB / 500 MB</span>
+        {/* Stats */}
+        {stats && (
+          <div className="grid grid-cols-3 gap-3">
+            {(stats.byType || []).map((t: any) => {
+              const Icon = TYPE_ICON[t.type] || FileText;
+              return (
+                <Card key={t.type} className="cursor-pointer hover:border-primary/50" onClick={() => setTypeFilter(typeFilter === t.type ? 'all' : t.type)}>
+                  <CardContent className="p-3 flex items-center gap-2">
+                    <Icon className="h-5 w-5 text-primary" />
+                    <div><p className="text-sm font-bold">{t.count}</p><p className="text-[10px] text-muted-foreground capitalize">{t.type}s</p></div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <div className="h-full bg-primary rounded-full" style={{ width: `${(parseFloat(totalSize) / 500) * 100}%` }} />
-          </div>
-        </CardContent>
-      </Card>
+        )}
 
-      {selected.length > 0 && (
-        <Card className="mb-4 border-primary/30 bg-primary/5">
-          <CardContent className="p-3 flex items-center justify-between">
-            <span className="text-sm font-medium">{selected.length} file(s) selected</span>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="text-xs h-7"><Download className="h-3 w-3 mr-1" /> Download</Button>
-              <Button size="sm" variant="destructive" className="text-xs h-7"><Trash2 className="h-3 w-3 mr-1" /> Delete</Button>
-              <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => setSelected([])}>Cancel</Button>
+        {/* Drag & Drop Upload */}
+        <div onDrop={onDrop} onDragOver={e => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)}
+          onClick={() => fileRef.current?.click()}
+          className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${dragOver ? 'border-primary bg-primary/5 scale-[1.01]' : 'border-border hover:border-primary/40 hover:bg-muted/20'}`}>
+          {uploading ? (
+            <div className="space-y-2 max-w-xs mx-auto">
+              <RefreshCw className="h-8 w-8 mx-auto text-primary animate-spin" />
+              <p className="text-sm font-medium">Uploading...</p>
+              <Progress value={uploadProgress} className="h-2" />
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <div>
+              <Upload className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+              <p className="text-sm font-medium">Drag & drop files here or click to browse</p>
+              <p className="text-xs text-muted-foreground mt-1">Images, Videos, Documents · Max 50MB each</p>
+            </div>
+          )}
+        </div>
 
-      <div className="flex flex-wrap gap-3 mb-6 items-center justify-between">
-        <div className="flex gap-2 flex-1">
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search files..." className="pl-8 h-8 text-xs" value={search} onChange={(e) => setSearch(e.target.value)} />
+        {/* Filters */}
+        <div className="flex gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-40">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Search files..." className="pl-8 h-9" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-32 h-8 text-xs"><SelectValue /></SelectTrigger>
+          <Select value={folder} onValueChange={setFolder}>
+            <SelectTrigger className="w-32 h-9 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All ({mediaItems.length})</SelectItem>
-              <SelectItem value="image">Images ({imageCount})</SelectItem>
-              <SelectItem value="video">Videos ({videoCount})</SelectItem>
+              <SelectItem value="all">All Folders</SelectItem>
+              {FOLDERS.map(f => <SelectItem key={f} value={f} className="capitalize">{f}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-28 h-9 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="image">Images</SelectItem>
+              <SelectItem value="video">Videos</SelectItem>
+              <SelectItem value="document">Docs</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm" className="h-9" onClick={load}><RefreshCw className="h-4 w-4" /></Button>
         </div>
+
+        {/* Folder tabs */}
+        <div className="flex gap-1 flex-wrap">
+          {['all', ...FOLDERS].map(f => (
+            <button key={f} onClick={() => setFolder(f)}
+              className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-medium transition-colors ${folder === f ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}>
+              <FolderOpen className="h-3 w-3" /> {f === 'all' ? 'All' : f}
+            </button>
+          ))}
+        </div>
+
+        {/* Grid */}
+        {loading ? (
+          <div className="text-center py-12 text-muted-foreground"><RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />Loading...</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground border-2 border-dashed rounded-xl">
+            <Image className="h-12 w-12 mx-auto mb-3 opacity-20" />
+            <p>No files found. Upload some!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+            {filtered.map(m => {
+              const isSelected = selected.includes(m.id);
+              const fullUrl = `http://localhost:5000${m.url}`;
+              return (
+                <div key={m.id} className={`group relative rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${isSelected ? 'border-primary' : 'border-transparent hover:border-muted-foreground/30'}`}
+                  onClick={() => toggleSelect(m.id)}>
+                  <div className="aspect-square bg-muted">
+                    {m.type === 'image'
+                      ? <img src={fullUrl} alt={m.alt || m.original_name} className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
+                      : m.type === 'video'
+                        ? <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-500/20 to-blue-500/20"><Video className="h-8 w-8 text-purple-500" /></div>
+                        : <div className="w-full h-full flex items-center justify-center bg-muted"><FileText className="h-8 w-8 text-muted-foreground" /></div>
+                    }
+                  </div>
+                  {/* Selected overlay */}
+                  {isSelected && <div className="absolute inset-0 bg-primary/20 flex items-center justify-center"><Check className="h-6 w-6 text-primary" /></div>}
+                  {/* Hover actions */}
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                    <button onClick={e => { e.stopPropagation(); setPreview(m); setEditAlt(m.alt || ''); }} className="h-7 w-7 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center"><Eye className="h-3.5 w-3.5 text-white" /></button>
+                    <button onClick={e => { e.stopPropagation(); copyUrl(m.url); }} className="h-7 w-7 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center"><Copy className="h-3.5 w-3.5 text-white" /></button>
+                    <button onClick={e => { e.stopPropagation(); remove(m.id); }} className="h-7 w-7 rounded-full bg-red-500/60 hover:bg-red-500 flex items-center justify-center"><Trash2 className="h-3.5 w-3.5 text-white" /></button>
+                  </div>
+                  {/* File info */}
+                  <div className="p-1.5">
+                    <p className="text-[10px] truncate text-muted-foreground">{m.original_name}</p>
+                    <p className="text-[9px] text-muted-foreground/60">{formatSize(m.size)}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        <Card className="border-2 border-dashed hover:border-primary/50 transition-colors cursor-pointer group">
-          <CardContent className="p-0 aspect-square flex flex-col items-center justify-center">
-            <Upload className="h-6 w-6 text-muted-foreground mb-2 group-hover:text-primary transition-colors" />
-            <p className="text-xs text-muted-foreground group-hover:text-primary">Upload</p>
-          </CardContent>
-        </Card>
-
-        {filtered.map((item) => (
-          <Card key={item.id} className={`group overflow-hidden cursor-pointer transition-all ${selected.includes(item.id) ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}>
-            <div className="relative aspect-square" onClick={() => setSelected(prev => prev.includes(item.id) ? prev.filter(s => s !== item.id) : [...prev, item.id])}>
-              <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
-              <div className={`absolute inset-0 transition-opacity ${selected.includes(item.id) ? 'bg-primary/20' : 'bg-foreground/0 group-hover:bg-foreground/30'}`}>
-                <div className="absolute top-2 left-2">
-                  <Checkbox checked={selected.includes(item.id)} className="bg-card/80" />
-                </div>
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="secondary" size="icon" className="h-6 w-6"><MoreHorizontal className="h-3 w-3" /></Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-32">
-                      <DropdownMenuItem className="text-xs"><Eye className="h-3 w-3 mr-2" /> View</DropdownMenuItem>
-                      <DropdownMenuItem className="text-xs"><Copy className="h-3 w-3 mr-2" /> Copy URL</DropdownMenuItem>
-                      <DropdownMenuItem className="text-xs"><Download className="h-3 w-3 mr-2" /> Download</DropdownMenuItem>
-                      <DropdownMenuItem className="text-xs text-destructive"><Trash2 className="h-3 w-3 mr-2" /> Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+      {/* Preview Dialog */}
+      <Dialog open={!!preview} onOpenChange={() => setPreview(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle className="text-sm truncate">{preview?.original_name}</DialogTitle></DialogHeader>
+          {preview && (
+            <div className="space-y-3">
+              {preview.type === 'image' && (
+                <img src={`http://localhost:5000${preview.url}`} alt={preview.alt} className="w-full rounded-lg max-h-64 object-contain bg-muted" />
+              )}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div><p className="text-muted-foreground">Type</p><p className="font-medium capitalize">{preview.type}</p></div>
+                <div><p className="text-muted-foreground">Size</p><p className="font-medium">{formatSize(preview.size)}</p></div>
+                <div><p className="text-muted-foreground">Folder</p><p className="font-medium capitalize">{preview.folder}</p></div>
+                <div><p className="text-muted-foreground">Uploaded</p><p className="font-medium">{new Date(preview.created_at).toLocaleDateString('en-IN')}</p></div>
+              </div>
+              <div>
+                <Label className="text-xs">URL</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input value={`http://localhost:5000${preview.url}`} readOnly className="text-xs font-mono" />
+                  <Button size="sm" variant="outline" onClick={() => copyUrl(preview.url)}><Copy className="h-3.5 w-3.5" /></Button>
                 </div>
               </div>
-              <div className="absolute bottom-2 right-2">
-                {item.type === "video" ? <Badge className="text-[8px] h-4 bg-red-500 border-0">🎥 VID</Badge> : <Badge className="text-[8px] h-4 bg-blue-500 border-0">🖼 IMG</Badge>}
+              <div>
+                <Label className="text-xs">Alt Text</Label>
+                <Input value={editAlt} onChange={e => setEditAlt(e.target.value)} className="mt-1 text-sm" placeholder="Describe this image..." />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={saveAlt} size="sm" className="flex-1">Save</Button>
+                <Button variant="destructive" size="sm" onClick={() => { remove(preview.id); setPreview(null); }}><Trash2 className="h-4 w-4" /></Button>
               </div>
             </div>
-            <CardContent className="p-2.5">
-              <p className="text-[10px] font-medium truncate">{item.name}</p>
-              <p className="text-[9px] text-muted-foreground">{item.size} • {item.date}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };

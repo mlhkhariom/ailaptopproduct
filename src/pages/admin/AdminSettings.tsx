@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Save, Eye, EyeOff, Globe, Phone, Mail, Shield, Key, Bell, Truck, CreditCard, Lock, Palette, Search, FileText, Users, Database, Webhook, AlertTriangle, CheckCircle, ExternalLink, Copy, RotateCcw, Download } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Save, Eye, EyeOff, Globe, Phone, Mail, Shield, Key, Bell, Truck, CreditCard, Lock, Palette, Search, FileText, Users, Database, Webhook, AlertTriangle, CheckCircle, ExternalLink, Copy, RotateCcw, Download, Wrench, Star, Package, MessageCircle, Play, Cookie, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,10 +13,48 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import AdminLayout from "@/components/AdminLayout";
+import { api } from "@/lib/api";
+import { SocialSettings } from "@/components/SocialSettings";
 
 const AdminSettings = () => {
   const [showMetaSecret, setShowMetaSecret] = useState(false);
   const [showRazorpaySecret, setShowRazorpaySecret] = useState(false);
+  const [siteFeatures, setSiteFeatures] = useState<Record<string, boolean>>({});
+  const [appSettings, setAppSettings] = useState<Record<string, string>>({});
+  const [savingFeatures, setSavingFeatures] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api.getSiteSettings().then(setSiteFeatures).catch(() => {});
+    api.getAppSettings().then(setAppSettings).catch(() => {});
+  }, []);
+
+  const saveFeatures = async () => {
+    setSavingFeatures(true);
+    try { await api.updateSiteSettings(siteFeatures); toast.success('Features saved!'); }
+    catch (e: any) { toast.error(e.message); }
+    finally { setSavingFeatures(false); }
+  };
+
+  const saveAppSettings = async (category: string) => {
+    setSaving(true);
+    try { await api.updateAppSettings(appSettings); toast.success(`${category} settings saved!`); }
+    catch (e: any) { toast.error(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const s = (key: string) => appSettings[key] || '';
+  const setS = (key: string, value: string) => setAppSettings(p => ({ ...p, [key]: value }));
+
+  const FEATURES = [
+    { key: 'maintenance_mode', label: 'Maintenance Mode', desc: 'Show "Coming Soon" to visitors (admins bypass)', icon: Wrench, danger: true },
+    { key: 'show_reviews', label: 'Show Product Reviews', desc: 'Display star ratings on product cards', icon: Star },
+    { key: 'show_stock_count', label: 'Show Stock Count', desc: 'Show remaining stock to customers', icon: Package },
+    { key: 'whatsapp_chat_button', label: 'WhatsApp Chat Button', desc: 'Floating chat button on frontend', icon: MessageCircle },
+    { key: 'show_hindi_names', label: 'Show Hindi Names', desc: 'Display Hindi product names', icon: Globe },
+    { key: 'enable_reels', label: 'Enable Reels on Products', desc: 'Show social reels on product pages', icon: Play },
+    { key: 'cookie_consent', label: 'Cookie Consent Banner', desc: 'Show cookie consent popup', icon: Cookie },
+  ];
 
   return (
     <AdminLayout>
@@ -37,6 +75,7 @@ const AdminSettings = () => {
           <TabsTrigger value="seo" className="text-xs gap-1"><Search className="h-3 w-3" /> SEO</TabsTrigger>
           <TabsTrigger value="notifications" className="text-xs gap-1"><Bell className="h-3 w-3" /> Alerts</TabsTrigger>
           <TabsTrigger value="security" className="text-xs gap-1"><Lock className="h-3 w-3" /> Security</TabsTrigger>
+          <TabsTrigger value="features" className="text-xs gap-1"><Wrench className="h-3 w-3" /> Features</TabsTrigger>
         </TabsList>
 
         {/* GENERAL */}
@@ -48,17 +87,16 @@ const AdminSettings = () => {
                 <CardDescription className="text-xs">Basic store details displayed across the website</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div><Label className="text-xs">Store Name *</Label><Input className="mt-1 h-9" defaultValue="Apsoncure PHC – Prachi Homeo Clinic" /></div>
-                <div><Label className="text-xs">Tagline</Label><Input className="mt-1 h-9" defaultValue="Nature's Power, Modern Science" /></div>
+                <div><Label className="text-xs">Store Name *</Label><Input className="mt-1 h-9" value={s('store_name')} onChange={e => setS('store_name', e.target.value)} /></div>
+                <div><Label className="text-xs">Tagline</Label><Input className="mt-1 h-9" value={s('store_tagline')} onChange={e => setS('store_tagline', e.target.value)} /></div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-xs flex items-center gap-1"><Mail className="h-3 w-3" /> Email</Label><Input className="mt-1 h-9" defaultValue="info@apsoncure.com" /></div>
-                  <div><Label className="text-xs flex items-center gap-1"><Phone className="h-3 w-3" /> Phone</Label><Input className="mt-1 h-9" defaultValue="+91 98765 43210" /></div>
+                  <div><Label className="text-xs flex items-center gap-1"><Mail className="h-3 w-3" /> Email</Label><Input className="mt-1 h-9" value={s('store_email')} onChange={e => setS('store_email', e.target.value)} /></div>
+                  <div><Label className="text-xs flex items-center gap-1"><Phone className="h-3 w-3" /> Phone</Label><Input className="mt-1 h-9" value={s('store_phone')} onChange={e => setS('store_phone', e.target.value)} /></div>
                 </div>
-                <div><Label className="text-xs flex items-center gap-1"><Globe className="h-3 w-3" /> Website URL</Label><Input className="mt-1 h-9" defaultValue="https://apsoncure.com" /></div>
-                <div><Label className="text-xs">Address</Label><Textarea className="mt-1 text-xs" rows={2} defaultValue="Prachi Homeo Clinic, Ayurvedic Wing, India" /></div>
-                <div><Label className="text-xs">Store Logo URL</Label><Input className="mt-1 h-9" placeholder="https://..." /></div>
-                <div><Label className="text-xs">Favicon URL</Label><Input className="mt-1 h-9" placeholder="https://..." /></div>
-                <Button className="gap-1.5 w-full" onClick={() => toast.success("Settings saved!")}><Save className="h-4 w-4" /> Save Changes</Button>
+                <div><Label className="text-xs flex items-center gap-1"><Globe className="h-3 w-3" /> Website URL</Label><Input className="mt-1 h-9" value={s('store_website')} onChange={e => setS('store_website', e.target.value)} /></div>
+                <div><Label className="text-xs">Address</Label><Textarea className="mt-1 text-xs" rows={2} value={s('store_address')} onChange={e => setS('store_address', e.target.value)} /></div>
+                <div><Label className="text-xs">Store Logo URL</Label><Input className="mt-1 h-9" value={s('store_logo')} onChange={e => setS('store_logo', e.target.value)} placeholder="https://..." /></div>
+                <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('General')}><Save className="h-4 w-4" /> Save Changes</Button>
               </CardContent>
             </Card>
 
@@ -94,37 +132,14 @@ const AdminSettings = () => {
         {/* API KEYS */}
         <TabsContent value="api">
           <div className="space-y-4">
+            <SocialSettings />
+
             <Card className="border-primary/30">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2"><Key className="h-4 w-4" /> API Keys & Secrets</CardTitle>
                 <CardDescription className="text-xs">⚠️ Keep these keys secure — never share with anyone</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="p-4 rounded-xl border bg-muted/20">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">📸</span>
-                    <div>
-                      <h3 className="font-medium text-sm">Meta Graph API (Instagram/Facebook)</h3>
-                      <p className="text-[10px] text-muted-foreground">Auto-publishing Reels, Videos & Stories</p>
-                    </div>
-                    <Badge variant="secondary" className="text-[9px] ml-auto">Integration Ready</Badge>
-                  </div>
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    <div><Label className="text-xs">Meta App ID</Label><Input className="mt-1 h-9 text-xs" placeholder="1234567890123456" /></div>
-                    <div>
-                      <Label className="text-xs">Meta App Secret</Label>
-                      <div className="relative mt-1">
-                        <Input className="h-9 text-xs pr-8" type={showMetaSecret ? "text" : "password"} placeholder="••••••••••••••••" />
-                        <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-9 w-9" onClick={() => setShowMetaSecret(!showMetaSecret)}>
-                          {showMetaSecret ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-2"><Label className="text-xs">Page Access Token</Label><Input className="mt-1 h-9 text-xs" type="password" placeholder="EAA..." /></div>
-                  <div className="mt-2"><Label className="text-xs">Instagram Business Account ID</Label><Input className="mt-1 h-9 text-xs" placeholder="17841..." /></div>
-                </div>
-
                 <div className="p-4 rounded-xl border bg-muted/20">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-lg">💳</span>
@@ -135,32 +150,39 @@ const AdminSettings = () => {
                     <Badge variant="default" className="text-[9px] ml-auto gap-1">✓ Connected</Badge>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-3">
-                    <div><Label className="text-xs">Razorpay Key ID</Label><Input className="mt-1 h-9 text-xs" placeholder="rzp_live_xxxxxxxxxx" /></div>
+                    <div><Label className="text-xs">Razorpay Key ID</Label><Input className="mt-1 h-9 text-xs" value={s('razorpay_key_id')} onChange={e => setS('razorpay_key_id', e.target.value)} placeholder="rzp_live_xxxxxxxxxx" /></div>
                     <div>
                       <Label className="text-xs">Razorpay Key Secret</Label>
                       <div className="relative mt-1">
-                        <Input className="h-9 text-xs pr-8" type={showRazorpaySecret ? "text" : "password"} placeholder="••••••••••••••••" />
+                        <Input className="h-9 text-xs pr-8" type={showRazorpaySecret ? "text" : "password"} value={s('razorpay_key_secret')} onChange={e => setS('razorpay_key_secret', e.target.value)} placeholder="••••••••••••••••" />
                         <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-9 w-9" onClick={() => setShowRazorpaySecret(!showRazorpaySecret)}>
                           {showRazorpaySecret ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                         </Button>
                       </div>
                     </div>
                   </div>
-                  <div className="mt-2"><Label className="text-xs">Webhook Secret</Label><Input className="mt-1 h-9 text-xs" type="password" placeholder="whsec_..." /></div>
+                  <div className="flex items-center gap-2 mt-3">
+                    <Switch checked={s('payment_razorpay') === 'true'} onCheckedChange={v => setS('payment_razorpay', String(v))} />
+                    <Label className="text-xs">Enable Razorpay</Label>
+                  </div>
                 </div>
 
                 <div className="p-4 rounded-xl border bg-muted/20">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">💬</span>
+                    <span className="text-lg">💙</span>
                     <div>
-                      <h3 className="font-medium text-sm">WhatsApp Business API</h3>
-                      <p className="text-[10px] text-muted-foreground">Order notifications, auto-reply, customer chat</p>
+                      <h3 className="font-medium text-sm">Paytm Payment Gateway</h3>
+                      <p className="text-[10px] text-muted-foreground">UPI, Wallet, Cards via Paytm</p>
                     </div>
                     <Badge variant="outline" className="text-[9px] ml-auto">Optional</Badge>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-3">
-                    <div><Label className="text-xs">Phone Number ID</Label><Input className="mt-1 h-9 text-xs" placeholder="1234567890" /></div>
-                    <div><Label className="text-xs">Access Token</Label><Input className="mt-1 h-9 text-xs" type="password" placeholder="EAA..." /></div>
+                    <div><Label className="text-xs">Merchant ID</Label><Input className="mt-1 h-9 text-xs" value={s('paytm_merchant_id')} onChange={e => setS('paytm_merchant_id', e.target.value)} placeholder="YourMerchantID" /></div>
+                    <div><Label className="text-xs">Merchant Key</Label><Input className="mt-1 h-9 text-xs" type="password" value={s('paytm_merchant_key')} onChange={e => setS('paytm_merchant_key', e.target.value)} placeholder="••••••••" /></div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-3">
+                    <Switch checked={s('payment_paytm') === 'true'} onCheckedChange={v => setS('payment_paytm', String(v))} />
+                    <Label className="text-xs">Enable Paytm</Label>
                   </div>
                 </div>
 
@@ -174,12 +196,13 @@ const AdminSettings = () => {
                     <Badge variant="outline" className="text-[9px] ml-auto">Optional</Badge>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-3">
-                    <div><Label className="text-xs">GA4 Measurement ID</Label><Input className="mt-1 h-9 text-xs" placeholder="G-XXXXXXXXXX" /></div>
-                    <div><Label className="text-xs">Search Console Verification</Label><Input className="mt-1 h-9 text-xs" placeholder="google-site-verification=..." /></div>
+                    <div><Label className="text-xs">GA4 Measurement ID</Label><Input className="mt-1 h-9 text-xs" value={s('ga4_measurement_id')} onChange={e => setS('ga4_measurement_id', e.target.value)} placeholder="G-XXXXXXXXXX" /></div>
+                    <div><Label className="text-xs">GTM Container ID</Label><Input className="mt-1 h-9 text-xs" value={s('gtm_id')} onChange={e => setS('gtm_id', e.target.value)} placeholder="GTM-XXXXXXX" /></div>
+                    <div className="sm:col-span-2"><Label className="text-xs">Search Console Verification</Label><Input className="mt-1 h-9 text-xs" value={s('search_console_verification')} onChange={e => setS('search_console_verification', e.target.value)} placeholder="google-site-verification=..." /></div>
                   </div>
                 </div>
 
-                <Button className="gap-1.5" onClick={() => toast.success("API keys saved!")}><Save className="h-4 w-4" /> Save API Keys</Button>
+                <Button className="gap-1.5" disabled={saving} onClick={() => saveAppSettings('API Keys')}><Save className="h-4 w-4" /> Save API Keys</Button>
               </CardContent>
             </Card>
           </div>
@@ -195,17 +218,17 @@ const AdminSettings = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-xs">Flat Rate Shipping (₹)</Label><Input type="number" className="mt-1 h-9" defaultValue="50" /></div>
-                  <div><Label className="text-xs">Free Shipping Above (₹)</Label><Input type="number" className="mt-1 h-9" defaultValue="499" /></div>
+                  <div><Label className="text-xs">Flat Rate Shipping (₹)</Label><Input type="number" className="mt-1 h-9" value={s('shipping_flat_rate')} onChange={e => setS('shipping_flat_rate', e.target.value)} /></div>
+                  <div><Label className="text-xs">Free Shipping Above (₹)</Label><Input type="number" className="mt-1 h-9" value={s('shipping_free_above')} onChange={e => setS('shipping_free_above', e.target.value)} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-xs">Express Shipping (₹)</Label><Input type="number" className="mt-1 h-9" defaultValue="150" /></div>
-                  <div><Label className="text-xs">COD Extra Charge (₹)</Label><Input type="number" className="mt-1 h-9" defaultValue="30" /></div>
+                  <div><Label className="text-xs">Express Shipping (₹)</Label><Input type="number" className="mt-1 h-9" value={s('shipping_express')} onChange={e => setS('shipping_express', e.target.value)} /></div>
+                  <div><Label className="text-xs">COD Extra Charge (₹)</Label><Input type="number" className="mt-1 h-9" value={s('shipping_cod_charge')} onChange={e => setS('shipping_cod_charge', e.target.value)} /></div>
                 </div>
                 <Separator />
                 <div>
                   <Label className="text-xs mb-2 block">Primary Courier Partner</Label>
-                  <Select defaultValue="dtdc">
+                  <Select value={s('shipping_courier') || 'dtdc'} onValueChange={v => setS('shipping_courier', v)}>
                     <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="dtdc">DTDC</SelectItem>
@@ -217,15 +240,7 @@ const AdminSettings = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label className="text-xs mb-2 block">Estimated Delivery Days</Label>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div><Label className="text-[10px] text-muted-foreground">Metro</Label><Input className="h-8 text-xs" defaultValue="3-5" /></div>
-                    <div><Label className="text-[10px] text-muted-foreground">Tier 2</Label><Input className="h-8 text-xs" defaultValue="5-7" /></div>
-                    <div><Label className="text-[10px] text-muted-foreground">Remote</Label><Input className="h-8 text-xs" defaultValue="7-10" /></div>
-                  </div>
-                </div>
-                <Button className="gap-1.5 w-full" onClick={() => toast.success("Shipping settings saved!")}><Save className="h-4 w-4" /> Save</Button>
+                <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Shipping')}><Save className="h-4 w-4" /> Save</Button>
               </CardContent>
             </Card>
 
@@ -268,18 +283,15 @@ const AdminSettings = () => {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Payment Methods</CardTitle>
-                <CardDescription className="text-xs">Enable/disable payment options</CardDescription>
+                <CardDescription className="text-xs">Enable/disable payment gateways</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {[
-                  { label: "UPI (GPay, PhonePe, Paytm)", desc: "Most popular in India", checked: true, icon: "📱" },
-                  { label: "Credit / Debit Card", desc: "Visa, Mastercard, Rupay", checked: true, icon: "💳" },
-                  { label: "Net Banking", desc: "All major banks", checked: true, icon: "🏦" },
-                  { label: "Wallet (Paytm, Mobikwik)", desc: "Digital wallet payments", checked: false, icon: "👛" },
-                  { label: "Cash on Delivery (COD)", desc: "₹30 handling fee applies", checked: true, icon: "💵" },
-                  { label: "EMI / Pay Later", desc: "Razorpay affordability widget", checked: false, icon: "📅" },
+                  { key: 'payment_razorpay', label: "Razorpay", desc: "UPI, Card, Net Banking, Wallets", icon: "💳" },
+                  { key: 'payment_paytm', label: "Paytm", desc: "UPI, Paytm Wallet, Cards", icon: "💙" },
+                  { key: 'payment_cod', label: "Cash on Delivery (COD)", desc: `+₹${s('shipping_cod_charge') || 30} handling fee`, icon: "💵" },
                 ].map((m) => (
-                  <div key={m.label} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/20 transition-colors">
+                  <div key={m.key} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/20 transition-colors">
                     <div className="flex items-center gap-3">
                       <span className="text-lg">{m.icon}</span>
                       <div>
@@ -287,7 +299,7 @@ const AdminSettings = () => {
                         <p className="text-[10px] text-muted-foreground">{m.desc}</p>
                       </div>
                     </div>
-                    <Switch defaultChecked={m.checked} />
+                    <Switch checked={s(m.key) === 'true'} onCheckedChange={v => setS(m.key, String(v))} />
                   </div>
                 ))}
               </CardContent>
@@ -299,32 +311,17 @@ const AdminSettings = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div><Label className="text-xs">Currency</Label>
-                  <Select defaultValue="INR">
+                  <Select value={s('currency') || 'INR'} onValueChange={v => setS('currency', v)}>
                     <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="INR">₹ INR (Indian Rupee)</SelectItem>
-                      <SelectItem value="USD">$ USD (US Dollar)</SelectItem>
+                      <SelectItem value="USD">$ USD</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div><Label className="text-xs">Min Order Amount (₹)</Label><Input type="number" className="mt-1 h-9" defaultValue="199" /></div>
-                <div><Label className="text-xs">Max COD Amount (₹)</Label><Input type="number" className="mt-1 h-9" defaultValue="5000" /></div>
-                <Separator />
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div>
-                    <p className="text-sm font-medium">Auto-capture Payments</p>
-                    <p className="text-[10px] text-muted-foreground">Automatically capture authorized payments</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div>
-                    <p className="text-sm font-medium">Send Payment Receipt</p>
-                    <p className="text-[10px] text-muted-foreground">Email receipt on successful payment</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <Button className="gap-1.5 w-full" onClick={() => toast.success("Payment settings saved!")}><Save className="h-4 w-4" /> Save</Button>
+                <div><Label className="text-xs">Min Order Amount (₹)</Label><Input type="number" className="mt-1 h-9" value={s('min_order') || '199'} onChange={e => setS('min_order', e.target.value)} /></div>
+                <div><Label className="text-xs">Max COD Amount (₹)</Label><Input type="number" className="mt-1 h-9" value={s('max_cod') || '5000'} onChange={e => setS('max_cod', e.target.value)} /></div>
+                <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Payments')}><Save className="h-4 w-4" /> Save</Button>
               </CardContent>
             </Card>
           </div>
@@ -338,26 +335,15 @@ const AdminSettings = () => {
                 <CardTitle className="text-base flex items-center gap-2"><Search className="h-4 w-4" /> Global SEO Settings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div><Label className="text-xs">Default Meta Title</Label><Input className="mt-1 h-9 text-xs" defaultValue="Apsoncure PHC | Authentic Ayurvedic Products Online" /><p className="text-[10px] text-muted-foreground mt-1">58/60 characters</p></div>
-                <div><Label className="text-xs">Default Meta Description</Label><Textarea className="mt-1 text-xs" rows={3} defaultValue="Shop authentic Ayurvedic products from Prachi Homeo Clinic. 100% natural herbs, skincare, hair care & immunity boosters. Free delivery ₹499+." /><p className="text-[10px] text-muted-foreground mt-1">148/160 characters</p></div>
-                <div><Label className="text-xs">Focus Keywords</Label><Input className="mt-1 h-9 text-xs" defaultValue="ayurvedic products, herbal medicine, natural remedies, apsoncure" /></div>
-                <div><Label className="text-xs">Canonical URL</Label><Input className="mt-1 h-9 text-xs" defaultValue="https://apsoncure.com" /></div>
+                <div><Label className="text-xs">Default Meta Title</Label><Input className="mt-1 h-9 text-xs" value={s('seo_title')} onChange={e => setS('seo_title', e.target.value)} /></div>
+                <div><Label className="text-xs">Default Meta Description</Label><Textarea className="mt-1 text-xs" rows={3} value={s('seo_description')} onChange={e => setS('seo_description', e.target.value)} /></div>
+                <div><Label className="text-xs">Focus Keywords</Label><Input className="mt-1 h-9 text-xs" value={s('seo_keywords')} onChange={e => setS('seo_keywords', e.target.value)} /></div>
                 <Separator />
                 <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div>
-                    <p className="text-sm font-medium">Auto-generate Sitemap</p>
-                    <p className="text-[10px] text-muted-foreground">sitemap.xml updated on product/blog changes</p>
-                  </div>
+                  <div><p className="text-sm font-medium">Auto-generate Sitemap</p><p className="text-[10px] text-muted-foreground">sitemap.xml updated on changes</p></div>
                   <Switch defaultChecked />
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <div>
-                    <p className="text-sm font-medium">JSON-LD Schema</p>
-                    <p className="text-[10px] text-muted-foreground">Structured data for products & organization</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <Button className="gap-1.5 w-full" onClick={() => toast.success("SEO settings saved!")}><Save className="h-4 w-4" /> Save</Button>
+                <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('SEO')}><Save className="h-4 w-4" /> Save</Button>
               </CardContent>
             </Card>
 
@@ -511,6 +497,37 @@ const AdminSettings = () => {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </TabsContent>
+
+        {/* FEATURES */}
+        <TabsContent value="features">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-muted-foreground">Toggle site features on/off instantly</p>
+              <Button size="sm" onClick={saveFeatures} disabled={savingFeatures} className="gap-1.5 h-8 text-xs">
+                {savingFeatures ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                Save Features
+              </Button>
+            </div>
+            {FEATURES.map(f => (
+              <Card key={f.key} className={siteFeatures[f.key] && f.danger ? 'border-red-300 bg-red-50/30' : ''}>
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${f.danger ? 'bg-red-100' : 'bg-primary/10'}`}>
+                    <f.icon className={`h-5 w-5 ${f.danger ? 'text-red-500' : 'text-primary'}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-sm font-semibold cursor-pointer" htmlFor={f.key}>{f.label}</Label>
+                      {f.danger && siteFeatures[f.key] && <Badge className="bg-red-100 text-red-700 text-[10px]">⚠ Active</Badge>}
+                      <Badge className={`text-[10px] ${siteFeatures[f.key] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{siteFeatures[f.key] ? 'ON' : 'OFF'}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{f.desc}</p>
+                  </div>
+                  <Switch id={f.key} checked={!!siteFeatures[f.key]} onCheckedChange={() => setSiteFeatures(s => ({ ...s, [f.key]: !s[f.key] }))} />
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </TabsContent>
       </Tabs>

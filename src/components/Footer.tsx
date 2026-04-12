@@ -2,10 +2,10 @@ import { Mail, Phone, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useCMSStore } from "@/store/cmsStore";
+import { useAppSettings } from "@/contexts/SiteSettingsContext";
 
 const Footer = () => {
-  const { siteSettings } = useCMSStore();
+  const appSettings = useAppSettings();
 
   return (
     <footer className="bg-primary text-primary-foreground">
@@ -15,12 +15,12 @@ const Footer = () => {
             <div className="flex items-center gap-2 mb-4">
               <div className="h-8 w-8 rounded-full bg-primary-foreground/20 flex items-center justify-center font-serif font-bold text-sm">A</div>
               <div>
-                <span className="text-lg font-serif font-bold block leading-none">{siteSettings.storeName.split(" ")[0]}</span>
-                <span className="text-[10px] opacity-70">{siteSettings.tagline}</span>
+                <span className="text-lg font-serif font-bold block leading-none">{appSettings.store_name.split(" ")[0]}</span>
+                <span className="text-[10px] opacity-70">{appSettings.store_tagline}</span>
               </div>
             </div>
-            <p className="text-sm opacity-80 mb-4">{siteSettings.footerText}</p>
-            <a href={`https://wa.me/${siteSettings.whatsappNumber}`} target="_blank" rel="noreferrer" className="inline-block text-xs bg-primary-foreground/10 px-3 py-1.5 rounded-full hover:bg-primary-foreground/20 transition-colors">
+            <p className="text-sm opacity-80 mb-4">{appSettings.store_tagline}</p>
+            <a href={`https://wa.me/${appSettings.whatsapp_number || '919876543210'}`} target="_blank" rel="noreferrer" className="inline-block text-xs bg-primary-foreground/10 px-3 py-1.5 rounded-full hover:bg-primary-foreground/20 transition-colors">
               💬 Chat on WhatsApp
             </a>
           </div>
@@ -50,9 +50,9 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Contact Us</h4>
             <div className="space-y-2 text-sm opacity-80">
-              <div className="flex items-center gap-2"><Phone className="h-4 w-4" /> {siteSettings.phone}</div>
-              <div className="flex items-center gap-2"><Mail className="h-4 w-4" /> {siteSettings.email}</div>
-              <div className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {siteSettings.address}</div>
+              <div className="flex items-center gap-2"><Phone className="h-4 w-4" /> {appSettings.store_phone}</div>
+              <div className="flex items-center gap-2"><Mail className="h-4 w-4" /> {appSettings.store_email}</div>
+              <div className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {appSettings.store_address}</div>
             </div>
             <div className="mt-4">
               <p className="text-xs opacity-70 mb-2">Newsletter</p>
@@ -65,7 +65,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-primary-foreground/20 mt-8 pt-6 flex flex-col md:flex-row items-center justify-between gap-2 text-sm opacity-60">
-          <span>© 2024 {siteSettings.storeName} – {siteSettings.tagline}. All rights reserved. Made with 🌿 in India.</span>
+          <span>© 2024 {appSettings.store_name} – {appSettings.store_tagline}. All rights reserved. Made with 🌿 in India.</span>
           <span className="text-[11px]">
             Developed by{" "}
             <a href="https://mlhk.in" target="_blank" rel="noreferrer" className="opacity-80 hover:opacity-100 underline underline-offset-2">

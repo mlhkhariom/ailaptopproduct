@@ -1,23 +1,23 @@
-import { useState } from "react";
-import { HelpCircle, Search, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { HelpCircle, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import CustomerLayout from "@/components/CustomerLayout";
-import { useCMSStore } from "@/store/cmsStore";
+import { api } from "@/lib/api";
 
 const FAQ = () => {
-  const { faqs, siteSettings } = useCMSStore();
-  const activeFaqs = faqs.filter((f) => f.active).sort((a, b) => a.order - b.order);
+  const [faqs, setFaqs] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
 
-  const categories = ["All", ...Array.from(new Set(activeFaqs.map((f) => f.category)))];
+  useEffect(() => { api.getCMS('faq').then(d => setFaqs(d.filter((f: any) => f.is_active))).catch(() => {}); }, []);
 
-  const filtered = activeFaqs
-    .filter((f) => category === "All" || f.category === category)
-    .filter((f) => f.question.toLowerCase().includes(search.toLowerCase()) || f.answer.toLowerCase().includes(search.toLowerCase()));
+  const categories = ["All", ...Array.from(new Set(faqs.map((f: any) => f.content?.category).filter(Boolean)))];
+
+  const filtered = faqs
+    .filter(f => category === "All" || f.content?.category === category)
+    .filter(f => f.content?.question?.toLowerCase().includes(search.toLowerCase()) || f.content?.answer?.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <CustomerLayout>
@@ -51,12 +51,12 @@ const FAQ = () => {
                 <AccordionItem key={faq.id} value={faq.id} className="border rounded-xl px-4 data-[state=open]:shadow-md transition-shadow">
                   <AccordionTrigger className="text-sm font-medium text-left hover:no-underline py-4">
                     <div className="flex items-center gap-3">
-                      <Badge variant="secondary" className="text-[9px] shrink-0">{faq.category}</Badge>
-                      {faq.question}
+                      <Badge variant="secondary" className="text-[9px] shrink-0">{faq.content?.category}</Badge>
+                      {faq.content?.question}
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-sm text-muted-foreground leading-relaxed pb-4">
-                    {faq.answer}
+                    {faq.content?.answer}
                   </AccordionContent>
                 </AccordionItem>
               ))}

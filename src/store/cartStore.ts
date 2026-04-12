@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { api } from "@/lib/api";
 import type { Product } from "@/data/mockData";
 
 interface CartItem {
@@ -15,7 +16,7 @@ interface CartStore {
   clearCart: () => void;
   appliedCoupon: string | null;
   discount: number;
-  applyCoupon: (code: string) => boolean;
+  applyCoupon: (code: string) => Promise<boolean>;
   removeCoupon: () => void;
   getSubtotal: () => number;
   getTotal: () => number;
@@ -56,14 +57,14 @@ export const useCartStore = create<CartStore>()(
 
       clearCart: () => set({ items: [], appliedCoupon: null, discount: 0 }),
 
-      applyCoupon: (code) => {
-        const coupon = COUPONS[code.toUpperCase()];
-        if (!coupon) return false;
-        const subtotal = get().getSubtotal();
-        if (subtotal < coupon.minOrder) return false;
-        const discount = coupon.type === "percent" ? Math.round(subtotal * coupon.value / 100) : coupon.value;
-        set({ appliedCoupon: code.toUpperCase(), discount });
-        return true;
+      applyCoupon: async (code) => {
+        try {
+          const { discount } = await api.validateCoupon(code, get().getSubtotal());
+          set({ appliedCoupon: code.toUpperCase(), discount });
+          return true;
+        } catch {
+          return false;
+        }
       },
 
       removeCoupon: () => set({ appliedCoupon: null, discount: 0 }),

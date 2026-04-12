@@ -1,20 +1,34 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { ArrowRight, Star, Play, Leaf, Award, Truck, HeartPulse, Shield, Heart, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import CustomerLayout from "@/components/CustomerLayout";
 import ProductCard from "@/components/ProductCard";
 import { useProductStore } from "@/store/productStore";
-import { useCMSStore } from "@/store/cmsStore";
+import { api } from "@/lib/api";
 
 const iconMap: Record<string, typeof Leaf> = { Leaf, Award, Truck, HeartPulse, Shield, Heart, Target, Star };
 
 const Index = () => {
-  const { heroBanners, benefits, testimonials, siteSettings } = useCMSStore();
-  const { products } = useProductStore();
-  const activeBanner = heroBanners.find((h) => h.active) || heroBanners[0];
-  const activeBenefits = benefits.filter((b) => b.active);
-  const activeTestimonials = testimonials.filter((t) => t.active);
+  const { products, fetchProducts } = useProductStore();
+  const [banners, setBanners] = useState<any[]>([]);
+  const [benefits, setBenefits] = useState<any[]>([]);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [settings, setSettings] = useState<any>({ whatsappNumber: '919876543210' });
+
+  useEffect(() => {
+    fetchProducts();
+    api.getCMS('banner').then(d => setBanners(d.map((i: any) => i.content))).catch(() => {});
+    api.getCMS('benefit').then(d => setBenefits(d.map((i: any) => i.content))).catch(() => {});
+    api.getCMS('testimonial').then(d => setTestimonials(d.map((i: any) => i.content))).catch(() => {});
+    api.getCMS('setting').then(d => { if (d[0]) setSettings(d[0].content); }).catch(() => {});
+  }, []);
+
+  const activeBanner = banners[0];
+  const activeBenefits = benefits;
+  const activeTestimonials = testimonials;
+  const siteSettings = settings;
 
   return (
     <CustomerLayout>
@@ -24,42 +38,14 @@ const Index = () => {
           <div className="container mx-auto px-4 py-16 md:py-24">
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
-                <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4">
-                  {activeBanner.tagline}
-                </span>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-foreground leading-tight mb-4">
-                  <span className="text-primary">{activeBanner.headingHighlight}</span> {activeBanner.heading}
+                  {activeBanner.title}
                 </h1>
-                <p className="text-lg text-muted-foreground mb-3 max-w-lg">{activeBanner.subtitle}</p>
-                {activeBanner.subtext && <p className="text-sm text-muted-foreground mb-6 max-w-lg">{activeBanner.subtext}</p>}
-                <div className="flex flex-wrap gap-3">
-                  {activeBanner.ctaLink.startsWith("http") ? (
-                    <a href={activeBanner.ctaLink} target="_blank" rel="noreferrer"><Button size="lg" className="gap-2">{activeBanner.ctaText} <ArrowRight className="h-4 w-4" /></Button></a>
-                  ) : (
-                    <Link to={activeBanner.ctaLink}><Button size="lg" className="gap-2">{activeBanner.ctaText} <ArrowRight className="h-4 w-4" /></Button></Link>
-                  )}
-                  {activeBanner.secondaryCtaText && (
-                    activeBanner.secondaryCtaLink.startsWith("http") ? (
-                      <a href={activeBanner.secondaryCtaLink} target="_blank" rel="noreferrer"><Button size="lg" variant="outline" className="gap-2">{activeBanner.secondaryCtaText}</Button></a>
-                    ) : (
-                      <Link to={activeBanner.secondaryCtaLink}><Button size="lg" variant="outline" className="gap-2">{activeBanner.secondaryCtaText}</Button></Link>
-                    )
-                  )}
-                </div>
+                <p className="text-lg text-muted-foreground mb-6 max-w-lg">{activeBanner.subtitle}</p>
+                <Link to="/products"><Button size="lg" className="gap-2">{activeBanner.cta || 'Shop Now'} <ArrowRight className="h-4 w-4" /></Button></Link>
               </div>
               <div className="relative">
                 <img src={activeBanner.image} alt="Apsoncure" className="rounded-2xl shadow-2xl w-full object-cover max-h-[420px]" />
-                {activeBanner.badgeText && (
-                  <div className="absolute -bottom-4 -left-4 bg-card rounded-xl shadow-lg p-4 flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Star className="h-5 w-5 text-primary fill-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold">{activeBanner.badgeText}</p>
-                      <p className="text-xs text-muted-foreground">{activeBanner.badgeSubtext}</p>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -114,11 +100,10 @@ const Index = () => {
               <Link to={`/products/${p.id}`} key={p.id}>
                 <Card className="group overflow-hidden cursor-pointer">
                   <div className="relative aspect-[9/16] bg-muted">
-                    <img src={p.reels[0]?.thumbnail || p.image} alt={`${p.name} Reel`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent flex flex-col justify-end p-3">
                       <Play className="h-8 w-8 text-primary-foreground mb-2 opacity-80" />
-                      <p className="text-primary-foreground text-xs font-medium line-clamp-2">{p.reels[0]?.title}</p>
-                      <p className="text-primary-foreground/70 text-[10px] mt-1">👁 {p.reels[0]?.views} views</p>
+                      <p className="text-primary-foreground text-xs font-medium line-clamp-2">{p.name}</p>
                     </div>
                   </div>
                 </Card>
