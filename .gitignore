@@ -28,3 +28,11 @@ backend/node_modules
 backend/.env
 # Keep DB file for deployment
 !backend/data/apsoncure.db
+
+# WhatsApp session (sensitive + large)
+backend/data/whatsapp-session/
+data/whatsapp-session/
+backend/.wwebjs_cache/
+backend/data/*.db-shm
+backend/data/*.db-wal
+uploads/
