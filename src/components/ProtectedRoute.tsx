@@ -9,9 +9,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!user) return <Navigate to="/login?redirect=admin" replace />;
-  if (!isAdmin) return <Navigate to="/" replace />;
+  const role = (user as any).role;
+  if (role !== 'admin' && role !== 'superadmin') return <Navigate to="/" replace />;
   return <>{children}</>;
 }

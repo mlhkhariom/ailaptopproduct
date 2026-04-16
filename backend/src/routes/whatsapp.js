@@ -3,7 +3,8 @@ import { v4 as uuid } from 'uuid';
 import db from '../db/database.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { adminOnly } from '../middleware/adminOnly.js';
-import { initWhatsApp, getStatus, getQR, getClient, disconnectWhatsApp, sendMessage, getChats, getChatMessages, sendSeen, sendTyping, pinChat, archiveChat, markUnread } from '../whatsapp/client.js';
+import { initWhatsApp, getStatus, getQR, getClient, disconnectWhatsApp, sendMessage, sendSeen, sendTyping, pinChat, archiveChat, markUnread } from '../whatsapp/client.js';
+import { fetchChatMessages, fetchAllChats } from '../whatsapp/chatHelper.js';
 
 const router = Router();
 
@@ -40,6 +41,12 @@ router.post('/send', authMiddleware, adminOnly, async (req, res) => {
   }
 });
 
+// DELETE /api/whatsapp/messages/:phone/clear — clear chat history from DB
+router.delete('/messages/:phone/clear', authMiddleware, adminOnly, (req, res) => {
+  db.prepare('DELETE FROM whatsapp_messages WHERE from_phone = ? OR to_phone = ?').run(decodeURIComponent(req.params.phone), decodeURIComponent(req.params.phone));
+  res.json({ message: 'Cleared' });
+});
+
 // GET /api/whatsapp/messages/:phone
 router.get('/messages/:phone', authMiddleware, adminOnly, (req, res) => {
   const msgs = db.prepare('SELECT * FROM whatsapp_messages WHERE from_phone = ? OR to_phone = ? ORDER BY created_at ASC')
@@ -50,17 +57,17 @@ router.get('/messages/:phone', authMiddleware, adminOnly, (req, res) => {
 // GET /api/whatsapp/chats — real chats from WhatsApp
 router.get('/chats', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const chats = await getChats();
+    const chats = await fetchAllChats(30);
     res.json(chats);
   } catch (e) {
-    res.json([]);
+    res.status(500).json({ error: e.message });
   }
 });
 
 // GET /api/whatsapp/chats/:chatId/messages — real messages
 router.get('/chats/:chatId/messages', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const messages = await getChatMessages(req.params.chatId, 50);
+    const messages = await fetchChatMessages(decodeURIComponent(req.params.chatId), 50);
     res.json(messages);
   } catch (e) {
     res.status(500).json({ error: e.message });

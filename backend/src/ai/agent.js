@@ -114,7 +114,11 @@ const callLLM = async (s, messages) => {
 
   const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+  if (!res.ok || data.error) {
+    const errMsg = data.error?.message || data.error || JSON.stringify(data).slice(0, 200);
+    console.error('LLM full error:', JSON.stringify(data).slice(0, 500));
+    throw new Error(`${s.llm_provider} error: ${errMsg}`);
+  }
   return data.choices?.[0]?.message?.content || '';
 };
 
@@ -122,11 +126,13 @@ const callLLM = async (s, messages) => {
 export const processAgentMessage = async (contactId, contactName, message) => {
   const s = getAgentSettings();
 
+  console.log(`🤖 Agent check: enabled=${s.enabled}, api_key=${s.api_key?.length > 0}, businessHours=${isWithinBusinessHours(s)}, dailyLimit=${checkDailyLimit(contactId, s.daily_limit)}, contactEnabled=${isAgentEnabledForContact(contactId)}`);
+
   // Checks
-  if (!isAgentEnabledForContact(contactId)) return null;
-  if (!isWithinBusinessHours(s)) return null;
-  if (!checkDailyLimit(contactId, s.daily_limit)) return null;
-  if (!s.api_key) return null;
+  if (!isAgentEnabledForContact(contactId)) { console.log('🤖 Skipped: contact disabled'); return null; }
+  if (!isWithinBusinessHours(s)) { console.log('🤖 Skipped: outside business hours'); return null; }
+  if (!checkDailyLimit(contactId, s.daily_limit)) { console.log('🤖 Skipped: daily limit reached'); return null; }
+  if (!s.api_key) { console.log('🤖 Skipped: no api key'); return null; }
 
   // Human handoff check
   if (s.feature_human_handoff) {

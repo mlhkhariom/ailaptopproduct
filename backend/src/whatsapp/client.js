@@ -155,17 +155,23 @@ export const initWhatsApp = () => {
     // AI Agent processing
     if (msg.body && msg.type === 'chat') {
       try {
-        const { processAgentMessage } = await import('./agent.js');
-        const { getAgentSettings } = await import('./agent.js');
+        const { processAgentMessage } = await import('../ai/agent.js');
+        const { getAgentSettings } = await import('../ai/agent.js');
         const agentSettings = getAgentSettings();
 
+        console.log(`🤖 AI Agent: processing msg from ${msg.from}, enabled=${agentSettings.enabled}, api_key_len=${agentSettings.api_key?.length}`);
+
         const result = await processAgentMessage(msg.from, contact.pushname || contact.name || msg.from.split('@')[0], msg.body);
+
+        console.log(`🤖 AI Agent result:`, result ? `reply="${result.reply?.slice(0,50)}..."` : 'null (skipped)');
 
         if (result?.reply) {
           // Typing indicator
           if (agentSettings.feature_typing_indicator) {
-            const chat = await msg.getChat();
-            await chat.sendStateTyping();
+            try {
+              const chat = await client.getChatById(msg.from);
+              await chat.sendStateTyping();
+            } catch {}
           }
 
           // Random delay (human feel)
@@ -175,11 +181,18 @@ export const initWhatsApp = () => {
 
           // Stop typing
           if (agentSettings.feature_typing_indicator) {
-            const chat = await msg.getChat();
-            await chat.clearState();
+            try {
+              const chat = await client.getChatById(msg.from);
+              await chat.clearState();
+            } catch {}
           }
 
-          await msg.reply(result.reply);
+          // Send reply — use msg.reply() for quoted reply, fallback to sendMessage
+          try {
+            await msg.reply(result.reply);
+          } catch {
+            await client.sendMessage(msg.from, result.reply);
+          }
 
           // Save AI reply to DB
           db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
@@ -235,17 +248,8 @@ export const initWhatsApp = () => {
     emit('whatsapp:call', { from: call.from, isVideo: call.isVideo });
   });
 
-  client.on('message_create', (msg) => {
-    if (!msg.fromMe) return;
-    emit('whatsapp:message_sent', {
-      id: msg.id._serialized,
-      to: msg.to,
-      body: msg.body,
-      time: new Date(msg.timestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-      fromMe: true,
-      status: 'sent',
-    });
-  });
+  // message_create disabled — manual sends handled in sendMessage(), AI sends emitted in message handler
+  // client.on('message_create', ...) removed to prevent duplicate messages
 
   client.on('message_ack', (msg, ack) => {
     // ack: 1=sent, 2=delivered, 3=read
@@ -354,47 +358,31 @@ export const getChats = async () => {
 };
 
 export const getChatMessages = async (chatId, limit = 50) => {
-  if (!client || status !== 'ready') {
-    return db.prepare('SELECT * FROM whatsapp_messages WHERE (from_phone = ? OR to_phone = ?) ORDER BY created_at ASC LIMIT ?')
-      .all(chatId, chatId, limit)
-      .map(m => ({ id: m.id, body: m.body, fromMe: m.direction === 'outgoing', time: new Date(m.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }), ack: 3 }));
-  }
+  if (!client || status !== 'ready') return [];
   try {
-    const chat = await client.getChatById(chatId);
-    await new Promise(r => setTimeout(r, 1500));
+    // Use getChats to find the chat (more reliable than getChatById)
+    const chats = await client.getChats();
+    const chat = chats.find(c => c.id._serialized === chatId);
+    if (!chat) return [];
     const messages = await chat.fetchMessages({ limit });
-
-    // Save all to DB including bot/auto-reply messages
+    // Save to DB for AI memory
     const insert = db.prepare('INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)');
-    const saveMany = db.transaction((msgs) => {
+    db.transaction((msgs) => {
       for (const m of msgs) {
-        try {
-          insert.run(
-            m.id._serialized,
-            m.fromMe ? 'me' : chatId,
-            m.fromMe ? chatId : 'me',
-            m.body || `[${m.type}]`,
-            m.fromMe ? 'outgoing' : 'incoming'
-          );
-        } catch {}
+        try { insert.run(m.id._serialized, m.fromMe ? 'me' : chatId, m.fromMe ? chatId : 'me', m.body || `[${m.type}]`, m.fromMe ? 'outgoing' : 'incoming'); } catch {}
       }
-    });
-    saveMany(messages);
-
+    })(messages);
     return messages.map(m => ({
       id: m.id._serialized,
       body: m.body || (m.type !== 'chat' ? `[${m.type}]` : ''),
       fromMe: m.fromMe,
       time: new Date(m.timestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-      type: m.type,
-      ack: m.ack,
-      hasMedia: m.hasMedia,
+      date: new Date(m.timestamp * 1000).toISOString(),
+      type: m.type, ack: m.ack, hasMedia: m.hasMedia,
     }));
   } catch (e) {
     console.error('getChatMessages error:', e.message);
-    return db.prepare('SELECT * FROM whatsapp_messages WHERE (from_phone = ? OR to_phone = ?) ORDER BY created_at ASC LIMIT ?')
-      .all(chatId, chatId, limit)
-      .map(m => ({ id: m.id, body: m.body, fromMe: m.direction === 'outgoing', time: new Date(m.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }), ack: 3 }));
+    return [];
   }
 };
 

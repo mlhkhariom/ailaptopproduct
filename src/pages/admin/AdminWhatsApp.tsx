@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import AdminLayout from "@/components/AdminLayout";
+import { WhatsAppChatPanel } from "@/components/WhatsAppChatPanel";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -63,7 +64,11 @@ const AdminWhatsApp = () => {
   const [testMsg, setTestMsg] = useState('');
   const [testResult, setTestResult] = useState<any>(null);
   const [aiMemory, setAiMemory] = useState<any[]>([]);
+  const [showContactInfo, setShowContactInfo] = useState(false);
+  const [contactInfo, setContactInfo] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const activeChatRef = useRef<any>(null);
+  useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
 
   useEffect(() => {
     const s = io(API_URL, { transports: ['websocket', 'polling'] });
@@ -76,19 +81,26 @@ const AdminWhatsApp = () => {
     s.on('whatsapp:qr', ({ qr: qrData }: any) => { setQr(qrData); setStatus('qr'); });
     s.on('whatsapp:chats', (chatList: any[]) => { setChats(chatList); });
     s.on('whatsapp:message', (msg: any) => {
-      setMessages(prev => {
-        if (prev.some(m => m.id === msg.id)) return prev;
-        return [...prev, msg];
-      });
-      setChats(prev => prev.map(c => c.id === msg.from ? { ...c, lastMsg: msg.body, unread: (c.unread || 0) + 1 } : c));
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+      const msgChatId = msg.fromMe ? msg.to : msg.from;
+      // Update chat list
+      setChats(prev => prev.map(c => c.id === msgChatId ? { ...c, lastMsg: msg.body, unread: msg.fromMe ? c.unread : (c.unread || 0) + 1 } : c));
+      // Only add to messages if belongs to active chat
+      if (activeChatRef.current?.id === msgChatId) {
+        setMessages(prev => {
+          if (prev.some(m => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+      }
     });
     s.on('whatsapp:message_sent', (msg: any) => {
-      setMessages(prev => {
-        if (prev.some(m => m.id === msg.id)) return prev;
-        return [...prev, msg];
-      });
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+      if (activeChatRef.current?.id === msg.to) {
+        setMessages(prev => {
+          if (prev.some(m => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+      }
     });
     s.on('whatsapp:ack', ({ id, ack }: any) => {
       setMessages(prev => prev.map(m => m.id === id ? { ...m, ack } : m));
@@ -109,7 +121,7 @@ const AdminWhatsApp = () => {
     api.waStatus().then(({ status: st, qr: qrData }: any) => {
       setStatus(st);
       if (qrData) setQr(qrData);
-      if (st === 'ready') loadChats();
+      if (st === 'ready') { loadChats(); setQr(null); }
     }).catch(() => {});
 
     loadRules();
@@ -124,24 +136,28 @@ const AdminWhatsApp = () => {
     try { setChats(await api.waChats()); } catch {}
   };
 
+  const loadAIMemory = async (contactId: string) => {
+    const mem = await api.getAIMemory(contactId).catch(() => []);
+    setAiMemory(mem);
+  };
+
   const loadMessages = async (chat: any) => {
     setActiveChat(chat);
     setMessages([]);
     setShowMobile(true);
     setChats(prev => prev.map(c => c.id === chat.id ? { ...c, unread: 0 } : c));
     loadContactAI(chat.id);
-    loadAIMemory(chat.id);
     const token = localStorage.getItem('apsoncure_token');
-    fetch(`${API_URL}/api/whatsapp/chats/${encodeURIComponent(chat.id)}/seen`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+    fetch(API_URL + '/api/whatsapp/chats/' + encodeURIComponent(chat.id) + '/seen', { method: 'POST', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
     try {
-      const res = await fetch(`${API_URL}/api/whatsapp/chats/${encodeURIComponent(chat.id)}/messages`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetch(API_URL + '/api/whatsapp/chats/' + encodeURIComponent(chat.id) + '/messages', { headers: { Authorization: 'Bearer ' + token } });
       const msgs = await res.json();
-      setMessages(Array.isArray(msgs) ? msgs : []);
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      if (Array.isArray(msgs) && msgs.length > 0) {
+        setMessages(msgs);
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      }
     } catch {}
-  };
+  }
 
   const sendMsg = async () => {
     if (!message.trim() || !activeChat) return;
@@ -208,9 +224,27 @@ const AdminWhatsApp = () => {
     setContactAI(p => ({ ...p, [contactId]: r.agent_enabled }));
   };
 
-  const loadAIMemory = async (contactId: string) => {
-    const mem = await api.getAIMemory(contactId).catch(() => []);
-    setAiMemory(mem);
+  const openContactInfo = async () => {
+    if (!activeChat) return;
+    setShowContactInfo(true);
+    try {
+      const token = localStorage.getItem('apsoncure_token');
+      const res = await fetch(`${API_URL}/api/whatsapp/contact/${encodeURIComponent(activeChat.id)}`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      setContactInfo({ ...activeChat, ...data });
+    } catch { setContactInfo(activeChat); }
+  };
+
+  const clearChat = async () => {
+    if (!activeChat || !confirm('Clear all messages for this contact?')) return;
+    const token = localStorage.getItem('apsoncure_token');
+    // Clear from DB
+    await fetch(`${API_URL}/api/whatsapp/messages/${encodeURIComponent(activeChat.id)}/clear`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+    // Clear AI memory
+    await api.clearAIMemory(activeChat.id).catch(() => {});
+    setMessages([]);
+    toast.success('Chat cleared');
+    setShowContactInfo(false);
   };
 
   const msgAction = async (action: string, msg: any, extra?: any) => {
@@ -263,159 +297,38 @@ const AdminWhatsApp = () => {
                 </div>
                 <p className="font-semibold">WhatsApp pe QR scan karo</p>
                 <p className="text-sm text-muted-foreground text-center">WhatsApp → Linked Devices → Link a Device → Scan QR</p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
+                <div className="flex items-center gap-2 text.xs text-muted-foreground animate-pulse">
                   <RefreshCw className="h-3.5 w-3.5" /> Waiting for scan...
                 </div>
               </div>
             )}
-            {/* Loading */}
             {['initializing','loading','authenticated'].includes(status) && (
               <div className="flex-1 flex flex-col items-center justify-center gap-3">
                 <RefreshCw className="h-10 w-10 text-green-500 animate-spin" />
                 <p className="font-medium capitalize">{status}...</p>
               </div>
             )}
-            {/* Disconnected */}
             {status === 'disconnected' && (
               <div className="flex-1 flex flex-col items-center justify-center gap-4">
                 <div className="h-20 w-20 rounded-full bg-green-50 flex items-center justify-center">
                   <MessageCircle className="h-10 w-10 text-green-500/40" />
                 </div>
                 <p className="font-semibold">WhatsApp Connected nahi hai</p>
-                <p className="text-sm text-muted-foreground">Connect karo aur QR scan karo</p>
                 <Button onClick={connect} className="gap-2 bg-green-600 hover:bg-green-700"><QrCode className="h-4 w-4" /> Connect WhatsApp</Button>
               </div>
             )}
-            {/* Ready */}
-            {status === 'ready' && (
-              <div className="flex flex-1 overflow-hidden">
-                {/* Sidebar */}
-                <div className={`w-full md:w-72 lg:w-80 border-r flex flex-col shrink-0 ${showMobile ? 'hidden md:flex' : 'flex'}`}>
-                  <div className="p-2 border-b">
-                    <div className="relative">
-                      <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="Search..." className="pl-8 h-8 text-sm" value={search} onChange={e => setSearch(e.target.value)} />
-                    </div>
-                  </div>
-                  <div className="flex-1 overflow-y-auto">
-                    {filteredChats.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Button size="sm" variant="outline" onClick={loadChats} className="gap-1 text-xs"><RefreshCw className="h-3.5 w-3.5" /> Load Chats</Button>
-                      </div>
-                    ) : filteredChats.map(chat => (
-                      <div key={chat.id} onClick={() => loadMessages(chat)}
-                        className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-muted/50 border-b transition-colors ${activeChat?.id === chat.id ? 'bg-green-50 dark:bg-green-950/20' : ''}`}>
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-400 to-teal-500 flex items-center justify-center text-white text-sm font-bold shrink-0 overflow-hidden">
-                          {chat.profilePic
-                            ? <img src={chat.profilePic} alt={chat.name} className="w-full h-full object-cover"
-                                onError={e => { e.currentTarget.style.display='none'; e.currentTarget.nextElementSibling?.removeAttribute('style'); }}
-                              />
-                            : null}
-                          <span style={chat.profilePic ? {display:'none'} : {}}>
-                            {chat.isGroup ? <Users className="h-5 w-5" /> : (chat.name?.charAt(0)?.toUpperCase() || '?')}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium truncate">{chat.name || chat.id.split('@')[0]}</p>
-                            <div className="flex items-center gap-1 shrink-0 ml-1">
-                              {chat.pinned && <span className="text-[9px] text-muted-foreground">📌</span>}
-                              {chat.isMuted && <span className="text-[9px] text-muted-foreground">🔇</span>}
-                              <span className="text-[10px] text-muted-foreground">{chat.lastMsgTime}</span>
-                            </div>
-                          </div>
-                          <p className="text-xs text-muted-foreground truncate">{chat.lastMsg}</p>
-                        </div>
-                        {chat.unread > 0 && (
-                          <div className="h-5 w-5 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">{chat.unread}</div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Chat Window */}
-                <div className={`flex-1 flex flex-col overflow-hidden ${!showMobile ? 'hidden md:flex' : 'flex'}`}>
-                  {!activeChat ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
-                      <MessageCircle className="h-16 w-16 opacity-10" />
-                      <p className="text-sm">Select a chat to start messaging</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-3 px-4 py-2.5 border-b bg-card shrink-0">
-                        <button onClick={() => setShowMobile(false)} className="md:hidden mr-1"><ArrowLeft className="h-5 w-5" /></button>
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-green-400 to-teal-500 flex items-center justify-center text-white text-sm font-bold shrink-0 overflow-hidden">
-                          {activeChat.profilePic
-                            ? <img src={activeChat.profilePic} alt={activeChat.name} className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
-                            : (activeChat.name?.charAt(0)?.toUpperCase() || '?')
-                          }
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-sm">{activeChat.name || activeChat.id.split('@')[0]}</p>
-                          <p className="text-[10px] text-green-600">{activeChat.about || (status === 'ready' ? 'Online' : '')}</p>
-                        </div>
-                        {/* AI Toggle per contact */}
-                        <div className="flex items-center gap-1.5 bg-purple-50 border border-purple-200 rounded-full px-2.5 py-1 shrink-0">
-                          <Sparkles className="h-3 w-3 text-purple-500" />
-                          <span className="text-[10px] font-medium text-purple-700">AI</span>
-                          <Switch checked={contactAI[activeChat.id] !== false} onCheckedChange={v => toggleContactAI(activeChat.id, v)} className="scale-75" />
-                        </div>
-                        <Button size="icon" variant="ghost" className="h-8 w-8"><Phone className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
-                      </div>
-
-                      <div className="flex-1 overflow-y-auto p-4 space-y-1.5"
-                        style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%23e5ddd5' opacity='0.3'/%3E%3C/svg%3E\")" }}>
-                        {messages.map((msg, i) => (
-                          <div key={i} className={`flex ${msg.fromMe ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[72%] rounded-2xl px-3 py-2 shadow-sm text-sm ${msg.fromMe ? (msg.isAI ? 'rounded-tr-none' : 'bg-[#d9fdd3] rounded-tr-none') : 'bg-white rounded-tl-none'}`}
-                              style={msg.isAI ? { backgroundColor: msg.bubbleColor || aiSettings.agent_bubble_color || '#e8d5ff' } : {}}>
-                              {msg.isAI && <p className="text-[9px] text-purple-600 font-semibold mb-0.5 flex items-center gap-1"><Sparkles className="h-2.5 w-2.5" /> AI Agent</p>}
-                              {msg.media?.mimetype?.startsWith('image') && (
-                                <img src={`data:${msg.media.mimetype};base64,${msg.media.data}`} alt="media" className="rounded-lg max-w-full mb-1 max-h-48 object-cover" />
-                              )}
-                              {msg.media?.mimetype?.startsWith('video') && (
-                                <video controls className="rounded-lg max-w-full mb-1 max-h-48"><source src={`data:${msg.media.mimetype};base64,${msg.media.data}`} /></video>
-                              )}
-                              {msg.media?.mimetype && !msg.media.mimetype.startsWith('image') && !msg.media.mimetype.startsWith('video') && (
-                                <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-2 mb-1 text-xs"><span>📎</span><span>{msg.media.filename || 'File'}</span></div>
-                              )}
-                              <p className={`text-gray-800 whitespace-pre-wrap break-words ${msg.revoked ? 'italic text-gray-400' : ''}`}>{msg.body}</p>
-                              {msg.edited && <span className="text-[9px] text-gray-400 italic"> (edited)</span>}
-                              {msg.reaction && <span className="text-sm ml-1">{msg.reaction}</span>}
-                              <div className="flex items-center justify-end gap-1 mt-0.5">
-                                <span className="text-[10px] text-gray-500">{msg.time}</span>
-                                {msg.fromMe && <AckIcon ack={msg.ack || 1} />}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        <div ref={messagesEndRef} />
-                      </div>
-
-                      <div className="px-3 py-2 border-t bg-[#f0f2f5] flex items-center gap-2 shrink-0">
-                        <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0 text-gray-500"><Smile className="h-5 w-5" /></Button>
-                        <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0 text-gray-500"><Paperclip className="h-5 w-5" /></Button>
-                        <Input value={message} onChange={e => {
-                          setMessage(e.target.value);
-                          if (activeChat) {
-                            const token = localStorage.getItem('apsoncure_token');
-                            fetch(`${API_URL}/api/whatsapp/chats/${encodeURIComponent(activeChat.id)}/typing`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ typing: e.target.value.length > 0 }) }).catch(() => {});
-                          }
-                        }}
-                          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMsg()}
-                          placeholder="Type a message" className="flex-1 h-9 text-sm rounded-full bg-white border-0 shadow-sm" />
-                        <Button size="icon" className="h-9 w-9 rounded-full shrink-0 bg-green-500 hover:bg-green-600 border-0" onClick={sendMsg} disabled={!message.trim()}>
-                          <Send className="h-4 w-4 text-white" />
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
+            {(status === 'ready' || status === 'authenticated') && (
+              <WhatsAppChatPanel
+                socket={socket}
+                status={status}
+                aiSettings={aiSettings}
+                contactAI={contactAI}
+                onToggleAI={toggleContactAI}
+                onOpenContactInfo={openContactInfo}
+              />
             )}
           </TabsContent>
+
 
           {/* AUTOMATION */}
           <TabsContent value="automation" className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -510,10 +423,8 @@ const AdminWhatsApp = () => {
               </div>
             )}
           </TabsContent>
-        </Tabs>
-      </div>
 
-      {/* AGENT TAB */}
+          {/* AGENT TAB */}
           <TabsContent value="agent" className="flex-1 overflow-y-auto p-4 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -689,6 +600,58 @@ const AdminWhatsApp = () => {
               {savingAI ? 'Saving...' : 'Save AI Agent Settings'}
             </Button>
           </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Contact Info Dialog */}
+      <Dialog open={showContactInfo} onOpenChange={setShowContactInfo}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Contact Info</DialogTitle></DialogHeader>
+          {(contactInfo || activeChat) && (() => {
+            const c = contactInfo || activeChat;
+            return (
+              <div className="space-y-4">
+                {/* DP + Name */}
+                <div className="flex flex-col items-center gap-3 py-2">
+                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-green-400 to-teal-500 flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
+                    {c.profilePic
+                      ? <img src={c.profilePic} alt={c.name} className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
+                      : (c.name?.charAt(0)?.toUpperCase() || '?')
+                    }
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-lg">{c.name || c.pushname || c.id?.split('@')[0]}</p>
+                    {c.formattedNumber && <p className="text-sm text-muted-foreground">{c.formattedNumber}</p>}
+                    {c.about && <p className="text-xs text-muted-foreground mt-1 italic">"{c.about}"</p>}
+                  </div>
+                </div>
+
+                {/* Details */}
+                <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Phone</span><span className="font-medium">{c.id?.split('@')[0]}</span></div>
+                  {c.isBusiness && <div className="flex justify-between"><span className="text-muted-foreground">Type</span><Badge className="text-[10px]">Business</Badge></div>}
+                  <div className="flex justify-between"><span className="text-muted-foreground">AI Agent</span>
+                    <Switch checked={contactAI[c.id] !== false} onCheckedChange={v => toggleContactAI(c.id, v)} />
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="grid grid-cols-2 gap-2">
+                  <a href={`https://wa.me/${c.id?.split('@')[0]}`} target="_blank" rel="noreferrer">
+                    <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs text-green-600"><Phone className="h-3.5 w-3.5" /> WhatsApp</Button>
+                  </a>
+                  <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs" onClick={() => { api.clearAIMemory(c.id); toast.success('AI memory cleared'); }}>
+                    <Sparkles className="h-3.5 w-3.5" /> Clear AI Memory
+                  </Button>
+                </div>
+                <Button variant="destructive" size="sm" className="w-full gap-1.5 text-xs" onClick={clearChat}>
+                  <Trash2 className="h-3.5 w-3.5" /> Clear Chat History
+                </Button>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       {/* Rule Dialog */}
       <Dialog open={ruleDialog} onOpenChange={setRuleDialog}>
