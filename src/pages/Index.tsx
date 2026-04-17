@@ -15,7 +15,7 @@ const Index = () => {
   const [banners, setBanners] = useState<any[]>([]);
   const [benefits, setBenefits] = useState<any[]>([]);
   const [testimonials, setTestimonials] = useState<any[]>([]);
-  const [settings, setSettings] = useState<any>({ whatsappNumber: '919876543210' });
+  const [settings, setSettings] = useState<any>({ whatsappNumber: '919893496163' });
 
   useEffect(() => {
     fetchProducts();

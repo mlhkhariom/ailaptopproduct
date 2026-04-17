@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 
 const contactInfo = [
-  { icon: Phone, title: "Phone", value: "+91 98765 43210", link: "tel:+919876543210" },
+  { icon: Phone, title: "Phone", value: "+91 98934 96163", link: "tel:+919893496163" },
   { icon: Mail, title: "Email", value: "hello@ailaptopwala.com", link: "mailto:hello@ailaptopwala.com" },
   { icon: MapPin, title: "Address", value: "AI Laptop Wala Store, India", link: "#" },
   { icon: Clock, title: "Hours", value: "Mon-Sat: 9 AM – 7 PM", link: "#" },
@@ -61,7 +61,7 @@ const Contact = () => {
                 </a>
               ))}
             </div>
-            <a href="https://wa.me/919876543210?text=Hi! I have a query." target="_blank" rel="noreferrer">
+            <a href="https://wa.me/919893496163?text=Hi! I have a query." target="_blank" rel="noreferrer">
               <Button className="w-full gap-2" size="lg">
                 <MessageCircle className="h-5 w-5" /> Chat on WhatsApp
               </Button>

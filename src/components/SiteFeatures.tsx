@@ -6,7 +6,7 @@ export const WhatsAppButton = () => {
   const { whatsapp_chat_button } = useSiteSettings();
   const { store_phone } = useAppSettings();
   const [visible, setVisible] = useState(false);
-  const phone = store_phone?.replace(/[^0-9]/g, '') || '919876543210';
+  const phone = store_phone?.replace(/[^0-9]/g, '') || '919893496163';
 
   useEffect(() => { setTimeout(() => setVisible(true), 2000); }, []);
 
