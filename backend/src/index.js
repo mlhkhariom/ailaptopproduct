@@ -26,6 +26,9 @@ import appSettingsRoutes from './routes/appSettings.js';
 import categoryRoutes from './routes/categories.js';
 import socialRoutes from './routes/social.js';
 import reelsRoutes from './routes/reels.js';
+import servicesRoutes from './routes/services.js';
+import invoiceRoutes from './routes/invoice.js';
+import { startNotificationProcessor } from './whatsapp/notifications.js';
 import { setIO } from './whatsapp/client.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -71,6 +74,8 @@ app.use('/api/site-settings', siteSettingsRoutes);
 app.use('/api/app-settings', appSettingsRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/services', servicesRoutes);
+app.use('/api/invoice', invoiceRoutes);
 app.use('/uploads', express.static(path.resolve(__dirname, '../../uploads')));
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportRoutes);
@@ -90,4 +95,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, () => console.log(`✅ AI Laptop Wala Backend running on http://localhost:${PORT}`));
+httpServer.listen(PORT, () => {
+  console.log(`✅ AI Laptop Wala Backend running on http://localhost:${PORT}`);
+  startNotificationProcessor();
+});

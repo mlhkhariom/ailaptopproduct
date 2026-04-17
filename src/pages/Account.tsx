@@ -184,7 +184,7 @@ const Account = () => {
                           <Link to={`/track-order?order=${order.order_number}`}>
                             <Button size="sm" variant="outline" className="h-7 text-xs gap-1"><Eye className="h-3 w-3" /> Track</Button>
                           </Link>
-                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => printInvoice(order)}>
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => window.open(api.getInvoiceUrl(order.order_number), '_blank')}>
                             <FileText className="h-3 w-3" /> Invoice
                           </Button>
                         </div>

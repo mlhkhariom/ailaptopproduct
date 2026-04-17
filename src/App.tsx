@@ -26,6 +26,7 @@ import Register from "./pages/Register";
 import Account from "./pages/Account";
 import TrackOrder from "./pages/TrackOrder";
 import OrderSuccess from "./pages/OrderSuccess";
+import Services from "./pages/Services";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
@@ -76,6 +77,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/track-order" element={<TrackOrder />} />
             <Route path="/order-success" element={<OrderSuccess />} />
+            <Route path="/services" element={<Services />} />
 
             {/* Protected Customer */}
             <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />

@@ -3,33 +3,35 @@ import { v4 as uuid } from 'uuid';
 import db from '../db/database.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { adminOnly } from '../middleware/adminOnly.js';
+import { notifyOrderPlaced, notifyOrderShipped, notifyOrderDelivered, notifyInvoiceReady } from '../whatsapp/notifications.js';
 
 const router = Router();
 
 // POST /api/orders — place order (auth required)
 router.post('/', authMiddleware, (req, res) => {
-  const { items, subtotal, discount, total, coupon_code, payment_method, address } = req.body;
+  const { items, subtotal, discount, total, coupon_code, payment_method, address, payment_status } = req.body;
   if (!items || !total) return res.status(400).json({ error: 'items and total required' });
 
   const id = uuid();
-  const order_number = 'APC-' + Date.now().toString().slice(-6);
+  const order_number = 'ALW-' + Date.now().toString().slice(-6);
 
-  db.prepare(`INSERT INTO orders (id, order_number, user_id, items, subtotal, discount, total, coupon_code, payment_method, address)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .run(id, order_number, req.user.id, JSON.stringify(items), subtotal, discount || 0, total, coupon_code, payment_method, JSON.stringify(address));
+  db.prepare(`INSERT INTO orders (id, order_number, user_id, items, subtotal, discount, total, coupon_code, payment_method, payment_status, address)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(id, order_number, req.user.id, JSON.stringify(items), subtotal, discount || 0, total, coupon_code, payment_method, payment_status || 'pending', JSON.stringify(address));
 
-  // Update coupon usage
   if (coupon_code) db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE code = ?').run(coupon_code);
-
-  // Update stock
   items.forEach(item => {
     db.prepare('UPDATE products SET stock = MAX(0, stock - ?), in_stock = CASE WHEN stock - ? <= 0 THEN 0 ELSE 1 END WHERE id = ?')
       .run(item.quantity, item.quantity, item.id);
   });
-
-  // Notification
   db.prepare('INSERT INTO notifications (id, type, title, message, link) VALUES (?, ?, ?, ?, ?)')
     .run(uuid(), 'order', 'New Order', `Order ${order_number} placed for ₹${total}`, `/admin/orders`);
+
+  // WhatsApp notification + admin alert
+  const order = db.prepare('SELECT * FROM orders WHERE id=?').get(id);
+  const user = db.prepare('SELECT name, phone FROM users WHERE id=?').get(req.user.id);
+  if (user?.phone) notifyOrderPlaced(order, user.phone, user.name || 'Customer');
+  db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)').run(uuid(), 'order', 'New Order', `Order ${order_number} placed for ₹${total}`, '/admin/orders');
 
   res.status(201).json({ order_number, id });
 });
@@ -65,6 +67,16 @@ router.get('/', authMiddleware, adminOnly, (req, res) => {
 router.put('/:id/status', authMiddleware, adminOnly, (req, res) => {
   const { status, tracking_id, courier } = req.body;
   db.prepare('UPDATE orders SET status = ?, tracking_id = ?, courier = ? WHERE id = ?').run(status, tracking_id, courier, req.params.id);
+
+  // WhatsApp notification on status change
+  const order = db.prepare('SELECT o.*, u.name as uname, u.phone as uphone FROM orders o LEFT JOIN users u ON o.user_id=u.id WHERE o.id=?').get(req.params.id);
+  if (order?.uphone) {
+    if (status === 'shipped') notifyOrderShipped({ ...order, tracking_id, courier }, order.uphone, order.uname || 'Customer');
+    if (status === 'delivered') {
+      notifyOrderDelivered(order, order.uphone, order.uname || 'Customer');
+      notifyInvoiceReady(order, order.uphone, order.uname || 'Customer');
+    }
+  }
   res.json({ message: 'Status updated' });
 });
 

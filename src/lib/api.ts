@@ -34,6 +34,18 @@ export const api = {
   createRazorpayOrder: (amount: number) => req('POST', '/payment/razorpay/create-order', { amount }),
   verifyRazorpay: (data: unknown) => req('POST', '/payment/razorpay/verify', data),
 
+  // Services
+  getServices: (category?: string) => req('GET', '/services' + (category ? `?category=${category}` : '')),
+  createService: (data: unknown) => req('POST', '/services', data),
+  updateService: (id: string, data: unknown) => req('PUT', `/services/${id}`, data),
+  deleteService: (id: string) => req('DELETE', `/services/${id}`),
+  bookService: (data: unknown) => req('POST', '/services/book', data),
+  getServiceBookings: (status?: string) => req('GET', '/services/bookings' + (status ? `?status=${status}` : '')),
+  updateServiceBooking: (id: string, data: unknown) => req('PUT', `/services/bookings/${id}`, data),
+
+  // Invoice
+  getInvoiceUrl: (orderNumber: string) => `${BASE.replace('/api', '')}/api/invoice/${orderNumber}`,
+
   // Site Settings
   getSiteSettings: () => req('GET', '/site-settings'),
   updateSiteSettings: (data: unknown) => req('PUT', '/site-settings', data),
