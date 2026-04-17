@@ -446,7 +446,7 @@ CREATE POLICY "Authenticated users can manage rules"
 
 ### Migration Steps
 
-1. Create tables above via Lovable Cloud migration tool
+1. Create tables above via Node.js Backend migration tool
 2. Replace `useState` for contacts/messages with `useQuery`/`useMutation` from `@tanstack/react-query`
 3. Replace `useWhatsAppStore` for rules with Supabase queries
 4. Add realtime subscription for `whatsapp_messages` to get live updates
