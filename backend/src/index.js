@@ -90,4 +90,4 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, () => console.log(`✅ Apsoncure Backend running on http://localhost:${PORT}`));
+httpServer.listen(PORT, () => console.log(`✅ AI Laptop Wala Backend running on http://localhost:${PORT}`));

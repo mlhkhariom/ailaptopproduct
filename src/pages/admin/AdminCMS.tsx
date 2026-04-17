@@ -276,7 +276,7 @@ const FAQsTab = () => {
 // ── Site Settings ─────────────────────────────────────────
 const SettingsTab = () => {
   const { items, loading, save, add } = useCMSSection('setting');
-  const [form, setForm] = useState({ siteName: 'Apsoncure PHC', tagline: 'Prachi Homeo Clinic', phone: '', email: '', address: '', whatsappNumber: '' });
+  const [form, setForm] = useState({ siteName: 'AI Laptop Wala', tagline: 'AI Laptop Wala Store', phone: '', email: '', address: '', whatsappNumber: '' });
   const f = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: e.target.value }));
 
   useEffect(() => {

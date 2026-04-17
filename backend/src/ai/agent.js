@@ -108,8 +108,8 @@ const callLLM = async (s, messages) => {
   }
 
   if (s.llm_provider === 'openrouter') {
-    headers['HTTP-Referer'] = 'https://apsoncure.com';
-    headers['X-Title'] = 'Apsoncure PHC';
+    headers['HTTP-Referer'] = 'https://ailaptopwala.com';
+    headers['X-Title'] = 'AI Laptop Wala';
   }
 
   const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });

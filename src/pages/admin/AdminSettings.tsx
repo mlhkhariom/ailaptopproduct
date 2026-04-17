@@ -254,7 +254,7 @@ const AdminSettings = () => {
                   <div><Label className="text-xs">GST Rate (%)</Label><Input type="number" className="mt-1 h-9" defaultValue="8" /></div>
                   <div><Label className="text-xs">GSTIN Number</Label><Input className="mt-1 h-9" placeholder="22AAAAA0000A1Z5" /></div>
                 </div>
-                <div><Label className="text-xs">Legal Business Name</Label><Input className="mt-1 h-9" defaultValue="Prachi Homeo Clinic Pvt Ltd" /></div>
+                <div><Label className="text-xs">Legal Business Name</Label><Input className="mt-1 h-9" defaultValue="AI Laptop Wala Store Pvt Ltd" /></div>
                 <div><Label className="text-xs">PAN Number</Label><Input className="mt-1 h-9" placeholder="ABCDE1234F" /></div>
                 <Separator />
                 <div className="flex items-center justify-between p-3 rounded-lg border">
@@ -352,9 +352,9 @@ const AdminSettings = () => {
                 <CardTitle className="text-base">Social Media & OG Tags</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div><Label className="text-xs">OG Title</Label><Input className="mt-1 h-9 text-xs" defaultValue="Apsoncure – Ancient Ayurvedic Wisdom" /></div>
-                <div><Label className="text-xs">OG Description</Label><Textarea className="mt-1 text-xs" rows={2} defaultValue="Authentic Ayurvedic products for modern health. Shop now!" /></div>
-                <div><Label className="text-xs">OG Image URL</Label><Input className="mt-1 h-9 text-xs" placeholder="https://apsoncure.com/og-image.jpg" /></div>
+                <div><Label className="text-xs">OG Title</Label><Input className="mt-1 h-9 text-xs" defaultValue="AI Laptop Wala – Ancient Laptop Wisdom" /></div>
+                <div><Label className="text-xs">OG Description</Label><Textarea className="mt-1 text-xs" rows={2} defaultValue="Authentic Laptop products for modern health. Shop now!" /></div>
+                <div><Label className="text-xs">OG Image URL</Label><Input className="mt-1 h-9 text-xs" placeholder="https://ailaptopwala.com/og-image.jpg" /></div>
                 <Separator />
                 <div><Label className="text-xs">Twitter Card Type</Label>
                   <Select defaultValue="summary_large_image">
@@ -365,9 +365,9 @@ const AdminSettings = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div><Label className="text-xs">Twitter Handle</Label><Input className="mt-1 h-9 text-xs" defaultValue="@apsoncure" /></div>
+                <div><Label className="text-xs">Twitter Handle</Label><Input className="mt-1 h-9 text-xs" defaultValue="@ailaptopwala" /></div>
                 <Separator />
-                <div><Label className="text-xs">robots.txt Content</Label><Textarea className="mt-1 text-xs font-mono" rows={4} defaultValue={"User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: https://apsoncure.com/sitemap.xml"} /></div>
+                <div><Label className="text-xs">robots.txt Content</Label><Textarea className="mt-1 text-xs font-mono" rows={4} defaultValue={"User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: https://ailaptopwala.com/sitemap.xml"} /></div>
                 <Button className="gap-1.5 w-full" onClick={() => toast.success("OG settings saved!")}><Save className="h-4 w-4" /> Save</Button>
               </CardContent>
             </Card>

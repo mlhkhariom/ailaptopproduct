@@ -17,7 +17,7 @@ const platformIcon: any = { instagram: Instagram, youtube: Youtube, facebook: Fa
 
 const mockReviews = [
   { id: 1, name: "Priya S.", rating: 5, text: "Amazing product! Saw results in just 2 weeks.", date: "2024-01-15" },
-  { id: 2, name: "Rahul V.", rating: 4, text: "Good quality, authentic Ayurvedic product.", date: "2024-01-10" },
+  { id: 2, name: "Rahul V.", rating: 4, text: "Good quality, authentic Laptop product.", date: "2024-01-10" },
   { id: 3, name: "Anita D.", rating: 5, text: "Been using this for a month now, excellent results!", date: "2024-01-08" },
 ];
 
@@ -185,7 +185,7 @@ const ProductDetail = () => {
 
             <a href={`https://wa.me/919876543210?text=Hi! I'd like to know more about ${product.name}`} target="_blank" rel="noreferrer">
               <Button variant="outline" className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/5">
-                <MessageCircle className="h-4 w-4" /> Ask Dr. Prachi on WhatsApp
+                <MessageCircle className="h-4 w-4" /> Ask AI Laptop Wala on WhatsApp
               </Button>
             </a>
           </div>

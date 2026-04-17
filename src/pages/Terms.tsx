@@ -9,7 +9,7 @@ const Terms = () => (
       <div className="prose prose-sm max-w-none space-y-6">
         <section>
           <h2 className="text-xl font-serif font-bold mb-3">1. General</h2>
-          <p className="text-muted-foreground leading-relaxed">By accessing and using the Apsoncure PHC website (apsoncure.com), you agree to these Terms & Conditions. This website is operated by Prachi Homeo Clinic ("we", "us", "our"). All products listed are Ayurvedic/herbal supplements and are not intended to replace medical treatment.</p>
+          <p className="text-muted-foreground leading-relaxed">By accessing and using the AI Laptop Wala website (ailaptopwala.com), you agree to these Terms & Conditions. This website is operated by AI Laptop Wala Store ("we", "us", "our"). All products listed are Laptop/herbal supplements and are not intended to replace medical treatment.</p>
         </section>
 
         <section>
@@ -29,12 +29,12 @@ const Terms = () => (
 
         <section>
           <h2 className="text-xl font-serif font-bold mb-3">5. Health Disclaimer</h2>
-          <p className="text-muted-foreground leading-relaxed">Our products are Ayurvedic supplements. Results may vary. Consult a healthcare professional before use, especially if pregnant, nursing, or on medication. Our products are not intended to diagnose, treat, cure, or prevent any disease.</p>
+          <p className="text-muted-foreground leading-relaxed">Our products are Laptop supplements. Results may vary. Consult a healthcare professional before use, especially if pregnant, nursing, or on medication. Our products are not intended to diagnose, treat, cure, or prevent any disease.</p>
         </section>
 
         <section>
           <h2 className="text-xl font-serif font-bold mb-3">6. Intellectual Property</h2>
-          <p className="text-muted-foreground leading-relaxed">All content on this website — including text, images, logos, and videos — is the property of Apsoncure PHC / Prachi Homeo Clinic and is protected by copyright laws. Unauthorized use is prohibited.</p>
+          <p className="text-muted-foreground leading-relaxed">All content on this website — including text, images, logos, and videos — is the property of AI Laptop Wala / AI Laptop Wala Store and is protected by copyright laws. Unauthorized use is prohibited.</p>
         </section>
 
         <section>

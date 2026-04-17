@@ -147,7 +147,7 @@ const AdminWhatsApp = () => {
     setShowMobile(true);
     setChats(prev => prev.map(c => c.id === chat.id ? { ...c, unread: 0 } : c));
     loadContactAI(chat.id);
-    const token = localStorage.getItem('apsoncure_token');
+    const token = localStorage.getItem('ailaptopwala_token');
     fetch(API_URL + '/api/whatsapp/chats/' + encodeURIComponent(chat.id) + '/seen', { method: 'POST', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
     try {
       const res = await fetch(API_URL + '/api/whatsapp/chats/' + encodeURIComponent(chat.id) + '/messages', { headers: { Authorization: 'Bearer ' + token } });
@@ -228,7 +228,7 @@ const AdminWhatsApp = () => {
     if (!activeChat) return;
     setShowContactInfo(true);
     try {
-      const token = localStorage.getItem('apsoncure_token');
+      const token = localStorage.getItem('ailaptopwala_token');
       const res = await fetch(`${API_URL}/api/whatsapp/contact/${encodeURIComponent(activeChat.id)}`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setContactInfo({ ...activeChat, ...data });
@@ -237,7 +237,7 @@ const AdminWhatsApp = () => {
 
   const clearChat = async () => {
     if (!activeChat || !confirm('Clear all messages for this contact?')) return;
-    const token = localStorage.getItem('apsoncure_token');
+    const token = localStorage.getItem('ailaptopwala_token');
     // Clear from DB
     await fetch(`${API_URL}/api/whatsapp/messages/${encodeURIComponent(activeChat.id)}/clear`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
     // Clear AI memory
@@ -248,7 +248,7 @@ const AdminWhatsApp = () => {
   };
 
   const msgAction = async (action: string, msg: any, extra?: any) => {
-    const token = localStorage.getItem('apsoncure_token');
+    const token = localStorage.getItem('ailaptopwala_token');
     const base = `${API_URL}/api/whatsapp/message/${encodeURIComponent(msg.id)}`;
     try {
       if (action === 'react') await fetch(`${base}/react`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ emoji: extra }) });

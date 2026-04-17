@@ -42,7 +42,7 @@ const Login = () => {
             </div>
           </Link>
           <h1 className="text-3xl font-serif font-bold">Welcome Back</h1>
-          <p className="text-muted-foreground mt-1">Sign in to your Apsoncure account</p>
+          <p className="text-muted-foreground mt-1">Sign in to your AI Laptop Wala account</p>
         </div>
 
         <Card className="shadow-xl border-border/50">
@@ -85,9 +85,9 @@ const Login = () => {
             <div className="p-3 rounded-xl bg-muted/50 border space-y-2">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Demo Credentials</p>
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => { setEmail("admin@apsoncure.com"); setPassword("admin123"); }} className="text-left p-2 rounded-lg border hover:bg-muted/50 transition-colors">
+                <button onClick={() => { setEmail("admin@ailaptopwala.com"); setPassword("admin123"); }} className="text-left p-2 rounded-lg border hover:bg-muted/50 transition-colors">
                   <Badge variant="default" className="text-[8px] mb-1">Admin</Badge>
-                  <p className="text-[10px] text-muted-foreground">admin@apsoncure.com</p>
+                  <p className="text-[10px] text-muted-foreground">admin@ailaptopwala.com</p>
                 </button>
                 <button onClick={() => { setEmail("priya@email.com"); setPassword("user123"); }} className="text-left p-2 rounded-lg border hover:bg-muted/50 transition-colors">
                   <Badge variant="secondary" className="text-[8px] mb-1">Customer</Badge>

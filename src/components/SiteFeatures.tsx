@@ -13,7 +13,7 @@ export const WhatsAppButton = () => {
   if (!whatsapp_chat_button || !visible) return null;
 
   return (
-    <a href={`https://wa.me/${phone}?text=Hi! I need help with Apsoncure products.`}
+    <a href={`https://wa.me/${phone}?text=Hi! I need help with AI Laptop Wala products.`}
       target="_blank" rel="noreferrer"
       className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-green-500 hover:bg-green-600 shadow-lg flex items-center justify-center transition-all hover:scale-110 group">
       <MessageCircle className="h-7 w-7 text-white fill-white" />

@@ -9,11 +9,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Vercel: copy pre-seeded DB to /tmp (writable), else use local path
 let dbPath;
 if (process.env.VERCEL) {
-  const srcDb = path.resolve(__dirname, '../../data/apsoncure.db');
-  dbPath = '/tmp/apsoncure.db';
+  const srcDb = path.resolve(__dirname, '../../data/ailaptopwala.db');
+  dbPath = '/tmp/ailaptopwala.db';
   if (!fs.existsSync(dbPath)) fs.copyFileSync(srcDb, dbPath);
 } else {
-  dbPath = path.resolve(__dirname, '../../', process.env.DB_PATH || 'data/apsoncure.db');
+  dbPath = path.resolve(__dirname, '../../', process.env.DB_PATH || 'data/ailaptopwala.db');
 }
 
 const db = new Database(dbPath);
@@ -218,13 +218,13 @@ db.exec(`
 
 // ── SEED DEFAULT DATA ────────────────────────────────────
 
-const adminExists = db.prepare('SELECT id FROM users WHERE email = ?').get('admin@apsoncure.com');
+const adminExists = db.prepare('SELECT id FROM users WHERE email = ?').get('admin@ailaptopwala.com');
 if (!adminExists) {
   const { v4: uuidv4 } = await import('uuid');
   const { default: bcrypt } = await import('bcryptjs');
   const hash = bcrypt.hashSync('admin123', 10);
   db.prepare(`INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)`)
-    .run(uuidv4(), 'Admin', 'admin@apsoncure.com', hash, 'admin');
+    .run(uuidv4(), 'Admin', 'admin@ailaptopwala.com', hash, 'admin');
 
   const custHash = bcrypt.hashSync('user123', 10);
   db.prepare(`INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)`)
@@ -240,11 +240,11 @@ if (!adminExists) {
 
   // Default WhatsApp rules
   const rules = [
-    { name: 'Greeting', keywords: JSON.stringify(['hello','hi','namaste','helo']), template: 'Namaste! 🙏 Apsoncure PHC mein aapka swagat hai. Hum aapki kaise madad kar sakte hain?', type: 'greeting' },
-    { name: 'Price Inquiry', keywords: JSON.stringify(['price','kitna','cost','rate','dam']), template: '{{product_name}} ki kimat ₹{{price}} hai. (MRP: {{original_price_info}}) 🌿\nOrder: apsoncure.com/products/{{slug}}', type: 'product' },
+    { name: 'Greeting', keywords: JSON.stringify(['hello','hi','namaste','helo']), template: 'Namaste! 🙏 AI Laptop Wala mein aapka swagat hai. Hum aapki kaise madad kar sakte hain?', type: 'greeting' },
+    { name: 'Price Inquiry', keywords: JSON.stringify(['price','kitna','cost','rate','dam']), template: '{{product_name}} ki kimat ₹{{price}} hai. (MRP: {{original_price_info}}) 🌿\nOrder: ailaptopwala.com/products/{{slug}}', type: 'product' },
     { name: 'Order Status', keywords: JSON.stringify(['order','status','kahan','track','delivery']), template: 'Apna Order ID batayein, hum turant status check karenge! 📦', type: 'order' },
     { name: 'Stock Check', keywords: JSON.stringify(['available','stock','milega','hai kya']), template: '{{product_name}} abhi {{stock_status}} hai. {{stock_info}} 🌿', type: 'product' },
-    { name: 'Thank You', keywords: JSON.stringify(['thanks','thank you','shukriya','dhanyawad']), template: 'Bahut shukriya! 🙏 Apsoncure PHC pe aapka vishwas hamare liye bahut mayne rakhta hai.', type: 'greeting' },
+    { name: 'Thank You', keywords: JSON.stringify(['thanks','thank you','shukriya','dhanyawad']), template: 'Bahut shukriya! 🙏 AI Laptop Wala pe aapka vishwas hamare liye bahut mayne rakhta hai.', type: 'greeting' },
   ];
   const insertRule = db.prepare(`INSERT INTO whatsapp_rules (id, name, keywords, response_template, type, is_active, match_count) VALUES (?, ?, ?, ?, ?, 1, 0)`);
   rules.forEach(r => insertRule.run(uuidv4(), r.name, r.keywords, r.template, r.type));

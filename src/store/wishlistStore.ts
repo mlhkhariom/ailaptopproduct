@@ -25,6 +25,6 @@ export const useWishlistStore = create<WishlistStore>()(
       },
       isInWishlist: (productId) => get().items.includes(productId),
     }),
-    { name: "apsoncure-wishlist" }
+    { name: "ailaptopwala-wishlist" }
   )
 );

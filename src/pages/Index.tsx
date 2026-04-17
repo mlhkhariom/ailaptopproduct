@@ -45,7 +45,7 @@ const Index = () => {
                 <Link to="/products"><Button size="lg" className="gap-2">{activeBanner.cta || 'Shop Now'} <ArrowRight className="h-4 w-4" /></Button></Link>
               </div>
               <div className="relative">
-                <img src={activeBanner.image} alt="Apsoncure" className="rounded-2xl shadow-2xl w-full object-cover max-h-[420px]" />
+                <img src={activeBanner.image} alt="AI Laptop Wala" className="rounded-2xl shadow-2xl w-full object-cover max-h-[420px]" />
               </div>
             </div>
           </div>
@@ -145,9 +145,9 @@ const Index = () => {
       {/* WhatsApp CTA */}
       <section className="py-12 bg-primary/5">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl font-serif font-bold mb-2">🙏 Free Consultation with Dr. Prachi</h2>
-          <p className="text-muted-foreground mb-6">Chat on WhatsApp now — personalized Ayurvedic guidance</p>
-          <a href={`https://wa.me/${siteSettings.whatsappNumber}?text=Hi Doctor! I need Ayurvedic consultation.`} target="_blank" rel="noreferrer">
+          <h2 className="text-2xl font-serif font-bold mb-2">🙏 Free Consultation with AI Laptop Wala</h2>
+          <p className="text-muted-foreground mb-6">Chat on WhatsApp now — personalized Laptop guidance</p>
+          <a href={`https://wa.me/${siteSettings.whatsappNumber}?text=Hi Doctor! I need Laptop consultation.`} target="_blank" rel="noreferrer">
             <Button size="lg" className="gap-2 text-base px-8">💬 Chat on WhatsApp</Button>
           </a>
         </div>

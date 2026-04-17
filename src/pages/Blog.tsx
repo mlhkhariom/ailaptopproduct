@@ -21,7 +21,7 @@ const Blog = () => {
   return (
     <CustomerLayout>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-serif font-bold mb-1">Ayurvedic Wisdom</h1>
+        <h1 className="text-3xl font-serif font-bold mb-1">Laptop Wisdom</h1>
         <p className="text-muted-foreground mb-6">Health tips, guides and knowledge from ancient Ayurveda</p>
         <div className="relative mb-8 max-w-md">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

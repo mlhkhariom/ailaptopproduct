@@ -15,7 +15,7 @@ const Refund = () => (
         <section>
           <h2 className="text-xl font-serif font-bold mb-3">2. How to Request a Return</h2>
           <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-            <li>Contact us via WhatsApp (+91 98765 43210) or email (hello@apsoncure.com)</li>
+            <li>Contact us via WhatsApp (+91 98765 43210) or email (hello@ailaptopwala.com)</li>
             <li>Share your Order ID and photos of the damaged/incorrect product</li>
             <li>Our team will review and respond within 24-48 hours</li>
           </ul>
@@ -43,7 +43,7 @@ const Refund = () => (
 
         <section>
           <h2 className="text-xl font-serif font-bold mb-3">6. Contact for Returns</h2>
-          <p className="text-muted-foreground leading-relaxed">Email: hello@apsoncure.com | WhatsApp: +91 98765 43210 | Working Hours: Mon-Sat, 9 AM – 7 PM</p>
+          <p className="text-muted-foreground leading-relaxed">Email: hello@ailaptopwala.com | WhatsApp: +91 98765 43210 | Working Hours: Mon-Sat, 9 AM – 7 PM</p>
         </section>
       </div>
     </div>

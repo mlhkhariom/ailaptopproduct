@@ -17,7 +17,7 @@ const Privacy = () => (
           <ul className="list-disc pl-5 text-muted-foreground space-y-1">
             <li>Process and fulfill your orders</li>
             <li>Send order confirmations and shipping updates via WhatsApp/SMS/Email</li>
-            <li>Provide personalized Ayurvedic health recommendations</li>
+            <li>Provide personalized Laptop health recommendations</li>
             <li>Improve our website and product offerings</li>
             <li>Send promotional offers (only with your consent)</li>
           </ul>
@@ -35,12 +35,12 @@ const Privacy = () => (
 
         <section>
           <h2 className="text-xl font-serif font-bold mb-3">5. Your Rights</h2>
-          <p className="text-muted-foreground leading-relaxed">You can request access, correction, or deletion of your personal data at any time by contacting us at hello@apsoncure.com. You can unsubscribe from marketing emails using the link in any email.</p>
+          <p className="text-muted-foreground leading-relaxed">You can request access, correction, or deletion of your personal data at any time by contacting us at hello@ailaptopwala.com. You can unsubscribe from marketing emails using the link in any email.</p>
         </section>
 
         <section>
           <h2 className="text-xl font-serif font-bold mb-3">6. Contact</h2>
-          <p className="text-muted-foreground leading-relaxed">For privacy-related queries, email us at hello@apsoncure.com or call +91 98765 43210.</p>
+          <p className="text-muted-foreground leading-relaxed">For privacy-related queries, email us at hello@ailaptopwala.com or call +91 98765 43210.</p>
         </section>
       </div>
     </div>

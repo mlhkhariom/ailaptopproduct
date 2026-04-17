@@ -27,7 +27,7 @@ const orders = [
 const blogPosts = [
   { id:"b1", title:"अश्वगंधा के चमत्कारी फायदे", slug:"ashwagandha-benefits", excerpt:"जानिए कैसे यह शक्तिशाली जड़ी-बूटी 3000 सालों से तनाव कम करने में काम आ रही है।", content:"अश्वगंधा, आयुर्वेद की सबसे महत्वपूर्ण जड़ी-बूटियों में से एक है...", image:"https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=800&h=400&fit=crop", author:"डॉ. प्राची", category:"जड़ी-बूटी", status:"published", tags:["ashwagandha","stress","ayurveda"], published_at:"2024-01-15T00:00:00" },
   { id:"b2", title:"दिनचर्या – Morning Rituals for Modern Life", slug:"dincharya-morning-rituals", excerpt:"आयुर्वेदिक सुबह की दिनचर्या को अपनी व्यस्त ज़िंदगी में कैसे शामिल करें।", content:"दिनचर्या आयुर्वेदिक जीवनशैली की नींव है...", image:"https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=400&fit=crop", author:"डॉ. प्राची", category:"जीवनशैली", status:"published", tags:["lifestyle","morning","routine"], published_at:"2024-01-10T00:00:00" },
-  { id:"b3", title:"आयुर्वेदिक स्किनकेयर गाइड", slug:"ayurvedic-skincare-guide", excerpt:"समय-परीक्षित आयुर्वेदिक सामग्रियों से पाएं निखरी और स्वस्थ त्वचा।", content:"आयुर्वेदिक स्किनकेयर सतही उपचार से कहीं आगे है...", image:"https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=800&h=400&fit=crop", author:"वैद्य मीरा जोशी", category:"त्वचा देखभाल", status:"published", tags:["skincare","kumkumadi","natural"], published_at:"2024-01-05T00:00:00" },
+  { id:"b3", title:"आयुर्वेदिक स्किनकेयर गाइड", slug:"laptop-skincare-guide", excerpt:"समय-परीक्षित आयुर्वेदिक सामग्रियों से पाएं निखरी और स्वस्थ त्वचा।", content:"आयुर्वेदिक स्किनकेयर सतही उपचार से कहीं आगे है...", image:"https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=800&h=400&fit=crop", author:"वैद्य मीरा जोशी", category:"त्वचा देखभाल", status:"published", tags:["skincare","kumkumadi","natural"], published_at:"2024-01-05T00:00:00" },
 ];
 
 // ── CATEGORIES ───────────────────────────────────────────
@@ -43,16 +43,16 @@ const cats = [
 
 // ── CMS CONTENT ──────────────────────────────────────────
 const cmsItems = [
-  { section:"banner", content:{ title:"प्रकृति की शक्ति, आपके द्वार", subtitle:"100% Authentic Ayurvedic Products", cta:"Shop Now", image:"https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=1200&h=500&fit=crop" }, sort_order:1 },
-  { section:"banner", content:{ title:"Dr. Prachi की विशेष सिफारिश", subtitle:"Trusted by 10,000+ Customers", cta:"View Products", image:"https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1200&h=500&fit=crop" }, sort_order:2 },
+  { section:"banner", content:{ title:"प्रकृति की शक्ति, आपके द्वार", subtitle:"100% Authentic Laptop Products", cta:"Shop Now", image:"https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=1200&h=500&fit=crop" }, sort_order:1 },
+  { section:"banner", content:{ title:"AI Laptop Wala की विशेष सिफारिश", subtitle:"Trusted by 10,000+ Customers", cta:"View Products", image:"https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1200&h=500&fit=crop" }, sort_order:2 },
   { section:"benefit", content:{ icon:"Leaf", title:"100% Natural", description:"No chemicals, no preservatives" }, sort_order:1 },
   { section:"benefit", content:{ icon:"Shield", title:"GMP Certified", description:"Quality assured manufacturing" }, sort_order:2 },
   { section:"benefit", content:{ icon:"Truck", title:"Free Shipping", description:"On orders above ₹500" }, sort_order:3 },
-  { section:"testimonial", content:{ name:"प्रिया शर्मा", text:"Apsoncure का अश्वगंधा पाउडर कमाल का है!", rating:5, avatar:"प्रि", location:"मुंबई" }, sort_order:1 },
+  { section:"testimonial", content:{ name:"प्रिया शर्मा", text:"AI Laptop Wala का अश्वगंधा पाउडर कमाल का है!", rating:5, avatar:"प्रि", location:"मुंबई" }, sort_order:1 },
   { section:"testimonial", content:{ name:"राजेश कुमार", text:"कुमकुमादि तेल ने सिर्फ 3 हफ्तों में मेरी त्वचा बदल दी।", rating:5, avatar:"रा", location:"दिल्ली" }, sort_order:2 },
   { section:"faq", content:{ question:"क्या ये products 100% natural हैं?", answer:"हाँ, सभी products शुद्ध आयुर्वेदिक सामग्री से बने हैं।", category:"Products" }, sort_order:1 },
   { section:"faq", content:{ question:"Delivery कितने दिन में होती है?", answer:"3-7 business days. Express delivery भी available है।", category:"Shipping" }, sort_order:2 },
-  { section:"setting", content:{ siteName:"Apsoncure PHC", tagline:"Prachi Homeo Clinic", phone:"+91 98765 43210", email:"hello@apsoncure.com", address:"Indore, Madhya Pradesh" }, sort_order:1 },
+  { section:"setting", content:{ siteName:"AI Laptop Wala", tagline:"AI Laptop Wala Store", phone:"+91 98765 43210", email:"hello@ailaptopwala.com", address:"Indore, Madhya Pradesh" }, sort_order:1 },
 ];
 
 // ── SEED ─────────────────────────────────────────────────

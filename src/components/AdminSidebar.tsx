@@ -72,7 +72,7 @@ export function AdminSidebar() {
           <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-ring flex items-center justify-center text-sidebar-primary-foreground font-serif font-bold text-sm shrink-0 shadow-lg">A</div>
           {!collapsed && (
             <div className="leading-tight flex-1">
-              <span className="font-serif font-bold text-sidebar-foreground block text-sm leading-none">Apsoncure</span>
+              <span className="font-serif font-bold text-sidebar-foreground block text-sm leading-none">AI Laptop Wala</span>
               <span className="text-[10px] text-sidebar-foreground/50 flex items-center gap-1 mt-0.5"><Zap className="h-2.5 w-2.5" /> Admin Console</span>
             </div>
           )}

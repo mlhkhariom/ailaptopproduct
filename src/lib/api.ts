@@ -1,7 +1,7 @@
 // Central API client — all backend calls go through here
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-const getToken = () => localStorage.getItem('apsoncure_token');
+const getToken = () => localStorage.getItem('ailaptopwala_token');
 
 const req = async (method: string, path: string, body?: unknown) => {
   const res = await fetch(`${BASE}${path}`, {

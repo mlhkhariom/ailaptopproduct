@@ -41,7 +41,7 @@ const Header = () => {
             : <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-serif font-bold text-sm">A</div>
           }
           <div className="leading-tight">
-            <span className="text-lg font-serif font-bold text-foreground block leading-none">{appSettings.store_name?.split(" ")[0] || 'Apsoncure'}</span>
+            <span className="text-lg font-serif font-bold text-foreground block leading-none">{appSettings.store_name?.split(" ")[0] || 'AI Laptop Wala'}</span>
             <span className="text-[10px] text-muted-foreground leading-none">{appSettings.store_tagline}</span>
           </div>
         </Link>

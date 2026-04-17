@@ -72,8 +72,8 @@ const Checkout = () => {
         key: key_id,
         amount,
         currency: 'INR',
-        name: 'Apsoncure PHC',
-        description: 'Ayurvedic Products',
+        name: 'AI Laptop Wala',
+        description: 'Laptop Products',
         order_id,
         prefill: { name: `${addr.firstName} ${addr.lastName}`, email: addr.email, contact: addr.phone },
         handler: async (response: any) => {

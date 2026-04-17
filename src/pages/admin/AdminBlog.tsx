@@ -13,7 +13,7 @@ import AdminLayout from "@/components/AdminLayout";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
-const emptyForm = { title: '', slug: '', excerpt: '', content: '', image: '', category: '', author: 'Dr. Prachi', status: 'draft', tags: '', seo_title: '', seo_description: '' };
+const emptyForm = { title: '', slug: '', excerpt: '', content: '', image: '', category: '', author: 'AI Laptop Wala', status: 'draft', tags: '', seo_title: '', seo_description: '' };
 
 const AdminBlog = () => {
   const [posts, setPosts] = useState<any[]>([]);
@@ -47,7 +47,7 @@ const AdminBlog = () => {
   const openAdd = () => { setEditing(null); setForm({ ...emptyForm }); setDialog(true); };
   const openEdit = (p: any) => {
     setEditing(p);
-    setForm({ title: p.title, slug: p.slug || '', excerpt: p.excerpt || '', content: p.content || '', image: p.image || '', category: p.category || '', author: p.author || 'Dr. Prachi', status: p.status, tags: Array.isArray(p.tags) ? p.tags.join(', ') : p.tags || '', seo_title: p.seo_title || '', seo_description: p.seo_description || '' });
+    setForm({ title: p.title, slug: p.slug || '', excerpt: p.excerpt || '', content: p.content || '', image: p.image || '', category: p.category || '', author: p.author || 'AI Laptop Wala', status: p.status, tags: Array.isArray(p.tags) ? p.tags.join(', ') : p.tags || '', seo_title: p.seo_title || '', seo_description: p.seo_description || '' });
     setDialog(true);
   };
 

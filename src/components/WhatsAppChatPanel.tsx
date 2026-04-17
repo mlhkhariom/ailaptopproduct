@@ -32,7 +32,7 @@ export const WhatsAppChatPanel = ({ socket, status, aiSettings, contactAI, onTog
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const activeChatRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const token = localStorage.getItem('apsoncure_token');
+  const token = localStorage.getItem('ailaptopwala_token');
 
   useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
 

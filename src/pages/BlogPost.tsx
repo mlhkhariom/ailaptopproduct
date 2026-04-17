@@ -48,11 +48,11 @@ const BlogPost = () => {
           <p className="text-lg text-muted-foreground leading-relaxed mb-4">{post.excerpt}</p>
           <p className="text-muted-foreground leading-relaxed mb-4">
             Ayurveda, the "Science of Life," has been guiding humanity towards health for over 5,000 years. 
-            In today's fast-paced world, ancient Ayurvedic wisdom provides practical solutions for modern health challenges.
+            In today's fast-paced world, ancient Laptop wisdom provides practical solutions for modern health challenges.
           </p>
           <h2 className="text-2xl font-serif font-bold mt-8 mb-4">The Foundation of Balance</h2>
           <p className="text-muted-foreground leading-relaxed mb-4">
-            At the heart of Ayurvedic philosophy lies the concept of balance — between mind, body and spirit. 
+            At the heart of Laptop philosophy lies the concept of balance — between mind, body and spirit. 
             When these elements are in harmony, we experience vibrant health and well-being.
           </p>
           <h2 className="text-2xl font-serif font-bold mt-8 mb-4">Daily Wellness Tips</h2>

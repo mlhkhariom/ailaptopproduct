@@ -77,7 +77,7 @@ const Account = () => {
       @media print{button{display:none}}</style></head>
       <body>
         <div class="header">
-          <div><h1>🌿 Apsoncure PHC</h1><p>Prachi Homeo Clinic</p></div>
+          <div><h1>🌿 AI Laptop Wala</h1><p>AI Laptop Wala Store</p></div>
           <div style="text-align:right"><h2>INVOICE</h2><p>#${order.order_number}</p><p>${new Date(order.created_at).toLocaleDateString('en-IN')}</p></div>
         </div>
         <hr/>
@@ -92,7 +92,7 @@ const Account = () => {
           <p class="total">Total: ₹${order.total}</p>
           <p>Payment: ${order.payment_method} | ${order.payment_status}</p>
         </div>
-        <hr/><p style="text-align:center;color:#666;font-size:12px">Thank you for shopping with Apsoncure PHC 🙏</p>
+        <hr/><p style="text-align:center;color:#666;font-size:12px">Thank you for shopping with AI Laptop Wala 🙏</p>
         <button onclick="window.print()" style="margin-top:20px;padding:10px 20px;background:#2d6a4f;color:white;border:none;cursor:pointer;border-radius:4px">Print Invoice</button>
       </body></html>
     `);

@@ -30,9 +30,9 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   scheduled: { label: "Scheduled", color: "bg-blue-500" },
 };
 
-const SUGGESTED_HASHTAGS = ["#ayurveda", "#naturalhealth", "#herbalremedies", "#apsoncure", "#ayurvedicmedicine", "#holistichealth", "#organiclife", "#wellness", "#healthylifestyle", "#naturalremedies"];
+const SUGGESTED_HASHTAGS = ["#ayurveda", "#naturalhealth", "#herbalremedies", "#ailaptopwala", "#laptopmedicine", "#holistichealth", "#organiclife", "#wellness", "#healthylifestyle", "#naturalremedies"];
 
-const defaultForm = { title: "", caption: "", hashtags: "#ayurveda #apsoncure", thumbnail: "", video_path: "", platform: "instagram", product_id: "__none__", scheduled_at: "" };
+const defaultForm = { title: "", caption: "", hashtags: "#ayurveda #ailaptopwala", thumbnail: "", video_path: "", platform: "instagram", product_id: "__none__", scheduled_at: "" };
 
 const AdminSocial = () => {
   const { products, fetchProducts } = useProductStore();
@@ -430,7 +430,7 @@ const AdminSocial = () => {
                   <div className="border rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 max-w-[260px] mx-auto shadow-xl">
                     <div className="flex items-center gap-2 p-2.5 border-b">
                       <div className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">A</div>
-                      <div className="flex-1"><p className="text-xs font-semibold">apsoncure_phc</p><p className="text-[9px] text-muted-foreground">Sponsored</p></div>
+                      <div className="flex-1"><p className="text-xs font-semibold">ailaptopwala_phc</p><p className="text-[9px] text-muted-foreground">Sponsored</p></div>
                     </div>
                     <div className="aspect-square bg-muted relative">
                       {form.thumbnail ? <img src={form.thumbnail} alt="" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
@@ -439,7 +439,7 @@ const AdminSocial = () => {
                     </div>
                     <div className="p-2.5 space-y-1.5">
                       <div className="flex gap-3 text-muted-foreground"><Heart className="h-5 w-5" /><MessageCircle className="h-5 w-5" /><Share2 className="h-5 w-5" /></div>
-                      <p className="text-[10px]"><span className="font-semibold">apsoncure_phc</span> {form.caption || 'Caption...'}</p>
+                      <p className="text-[10px]"><span className="font-semibold">ailaptopwala_phc</span> {form.caption || 'Caption...'}</p>
                       <p className="text-[9px] text-primary/70">{form.hashtags}</p>
                       {linkedProduct && <div className="flex items-center gap-2 p-1.5 rounded-lg bg-muted border mt-1"><img src={linkedProduct.image} className="h-7 w-7 rounded object-cover" /><div><p className="text-[9px] font-medium">{linkedProduct.name}</p><p className="text-[9px] text-primary">₹{linkedProduct.price}</p></div></div>}
                     </div>
@@ -448,7 +448,7 @@ const AdminSocial = () => {
                   <div className="border rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 max-w-[260px] mx-auto shadow-xl">
                     <div className="flex items-center gap-2 p-2.5 border-b">
                       <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">A</div>
-                      <div><p className="text-xs font-semibold">Apsoncure PHC</p><p className="text-[9px] text-muted-foreground">Just now · 🌐</p></div>
+                      <div><p className="text-xs font-semibold">AI Laptop Wala</p><p className="text-[9px] text-muted-foreground">Just now · 🌐</p></div>
                     </div>
                     <p className="text-[10px] px-2.5 py-2">{form.caption || 'Caption...'}</p>
                     <div className="aspect-video bg-muted relative">

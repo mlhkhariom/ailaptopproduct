@@ -36,7 +36,7 @@ const defaultRules: AutoReplyRule[] = [
     id: "1",
     name: "Greeting",
     keywords: ["hello", "hi", "namaste", "नमस्ते", "हैलो"],
-    responseTemplate: "नमस्ते! 🙏 Apsoncure PHC में आपका स्वागत है। हम आयुर्वेदिक उत्पादों के विशेषज्ञ हैं। कैसे मदद कर सकते हैं?",
+    responseTemplate: "नमस्ते! 🙏 AI Laptop Wala में आपका स्वागत है। हम आयुर्वेदिक उत्पादों के विशेषज्ञ हैं। कैसे मदद कर सकते हैं?",
     isActive: true,
     type: "greeting",
     matchCount: 45,
@@ -45,7 +45,7 @@ const defaultRules: AutoReplyRule[] = [
     id: "2",
     name: "Price Inquiry",
     keywords: ["price", "rate", "kitna", "कीमत", "दाम", "cost"],
-    responseTemplate: "{{product_name}} की कीमत ₹{{price}} है। {{original_price_info}} 🌿\n\nऑर्डर करने के लिए यहां क्लिक करें: apsoncure.com/products/{{slug}}",
+    responseTemplate: "{{product_name}} की कीमत ₹{{price}} है। {{original_price_info}} 🌿\n\nऑर्डर करने के लिए यहां क्लिक करें: ailaptopwala.com/products/{{slug}}",
     isActive: true,
     type: "product",
     matchCount: 32,
@@ -72,7 +72,7 @@ const defaultRules: AutoReplyRule[] = [
     id: "5",
     name: "Thank You",
     keywords: ["thank", "thanks", "धन्यवाद", "शुक्रिया", "shukriya"],
-    responseTemplate: "आपका धन्यवाद! 🙏 Apsoncure PHC के साथ जुड़े रहने के लिए शुक्रिया। कोई और मदद चाहिए तो बताइए! 🌿",
+    responseTemplate: "आपका धन्यवाद! 🙏 AI Laptop Wala के साथ जुड़े रहने के लिए शुक्रिया। कोई और मदद चाहिए तो बताइए! 🌿",
     isActive: true,
     type: "greeting",
     matchCount: 22,
@@ -131,6 +131,6 @@ export const useWhatsAppStore = create<WhatsAppStore>()(
 
       clearSimulation: () => set({ simulatedMessages: [] }),
     }),
-    { name: "apsoncure-whatsapp" }
+    { name: "ailaptopwala-whatsapp" }
   )
 );

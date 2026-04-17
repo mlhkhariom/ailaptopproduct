@@ -53,7 +53,7 @@ const Products = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-serif font-bold mb-1">Our Products</h1>
-            <p className="text-muted-foreground">Explore our complete range of authentic Ayurvedic products</p>
+            <p className="text-muted-foreground">Explore our complete range of authentic Laptop products</p>
           </div>
           <div className="flex items-center gap-2">
             <div className="relative">

@@ -11,8 +11,8 @@ import { api } from "@/lib/api";
 
 const contactInfo = [
   { icon: Phone, title: "Phone", value: "+91 98765 43210", link: "tel:+919876543210" },
-  { icon: Mail, title: "Email", value: "hello@apsoncure.com", link: "mailto:hello@apsoncure.com" },
-  { icon: MapPin, title: "Address", value: "Prachi Homeo Clinic, India", link: "#" },
+  { icon: Mail, title: "Email", value: "hello@ailaptopwala.com", link: "mailto:hello@ailaptopwala.com" },
+  { icon: MapPin, title: "Address", value: "AI Laptop Wala Store, India", link: "#" },
   { icon: Clock, title: "Hours", value: "Mon-Sat: 9 AM – 7 PM", link: "#" },
 ];
 
@@ -77,7 +77,7 @@ const Contact = () => {
               <div className="text-center">
                 <Globe className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
                 <p className="text-xs text-muted-foreground">Google Maps embed will appear here</p>
-                <p className="text-[10px] text-muted-foreground">Prachi Homeo Clinic, India</p>
+                <p className="text-[10px] text-muted-foreground">AI Laptop Wala Store, India</p>
               </div>
             </div>
           </div>

@@ -32,7 +32,7 @@ const Register = () => {
     const result = await register(name.trim(), email.trim(), password, phone.trim() || undefined);
     setLoading(false);
     if (result.success) {
-      toast.success("Account created! Welcome to Apsoncure 🌿");
+      toast.success("Account created! Welcome to AI Laptop Wala 🌿");
       navigate("/");
     } else {
       toast.error(result.error || "Registration failed");
@@ -49,7 +49,7 @@ const Register = () => {
             </div>
           </Link>
           <h1 className="text-3xl font-serif font-bold">Create Account</h1>
-          <p className="text-muted-foreground mt-1">Join the Apsoncure wellness family</p>
+          <p className="text-muted-foreground mt-1">Join the AI Laptop Wala wellness family</p>
         </div>
 
         <Card className="shadow-xl border-border/50">

@@ -73,6 +73,6 @@ export const useCartStore = create<CartStore>()(
       getTotal: () => Math.max(0, get().getSubtotal() - get().discount),
       getItemCount: () => get().items.reduce((s, i) => s + i.qty, 0),
     }),
-    { name: "apsoncure-cart" }
+    { name: "ailaptopwala-cart" }
   )
 );

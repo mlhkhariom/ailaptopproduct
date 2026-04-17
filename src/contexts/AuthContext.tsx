@@ -26,9 +26,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('apsoncure_token');
+    const token = localStorage.getItem('ailaptopwala_token');
     if (token) {
-      api.me().then(setUser).catch(() => localStorage.removeItem('apsoncure_token')).finally(() => setIsLoading(false));
+      api.me().then(setUser).catch(() => localStorage.removeItem('ailaptopwala_token')).finally(() => setIsLoading(false));
     } else {
       setIsLoading(false);
     }
@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const { token, user } = await api.login(email, password);
-      localStorage.setItem('apsoncure_token', token);
+      localStorage.setItem('ailaptopwala_token', token);
       setUser(user);
       return { success: true };
     } catch (e: any) {
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (name: string, email: string, password: string, phone?: string) => {
     try {
       const { token, user } = await api.register(name, email, password, phone);
-      localStorage.setItem('apsoncure_token', token);
+      localStorage.setItem('ailaptopwala_token', token);
       setUser(user);
       return { success: true };
     } catch (e: any) {
@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('apsoncure_token');
+    localStorage.removeItem('ailaptopwala_token');
     setUser(null);
   };
 

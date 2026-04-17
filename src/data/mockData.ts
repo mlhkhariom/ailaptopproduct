@@ -132,7 +132,7 @@ export const products: Product[] = [
     benefits: ["तनाव और चिंता कम करे", "ऊर्जा और स्टैमिना बढ़ाये", "इम्युनिटी मजबूत करे", "नींद में सुधार"],
     usage: "आधा चम्मच गर्म दूध या पानी में मिलाकर दिन में दो बार लें।",
     precautions: "गर्भवती महिलाएं चिकित्सक की सलाह से लें।",
-    metaTitle: "Ashwagandha Powder – Buy Organic | Apsoncure PHC",
+    metaTitle: "Ashwagandha Powder – Buy Organic | AI Laptop Wala",
     metaDescription: "शुद्ध जैविक अश्वगंधा चूर्ण। तनाव, ऊर्जा, इम्युनिटी के लिए।",
     focusKeywords: ["ashwagandha", "अश्वगंधा", "stress relief"],
     inStock: true, reels: makeReels("Ashwagandha", 1515377905703),
@@ -256,19 +256,19 @@ export const blogPosts: BlogPost[] = [
     excerpt: "जानिए कैसे यह शक्तिशाली जड़ी-बूटी 3000 सालों से तनाव कम करने और ताकत बढ़ाने में काम आ रही है।",
     content: "अश्वगंधा, आयुर्वेद की सबसे महत्वपूर्ण जड़ी-बूटियों में से एक है...",
     image: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=800&h=400&fit=crop",
-    author: "डॉ. प्राची (Dr. Prachi)", date: "2024-01-15", category: "जड़ी-बूटी", readTime: "5 मिनट", status: "published",
-    metaTitle: "अश्वगंधा के फायदे | Apsoncure PHC Blog", linkedProducts: ["1"],
+    author: "डॉ. प्राची (AI Laptop Wala)", date: "2024-01-15", category: "जड़ी-बूटी", readTime: "5 मिनट", status: "published",
+    metaTitle: "अश्वगंधा के फायदे | AI Laptop Wala Blog", linkedProducts: ["1"],
   },
   {
     id: "2", title: "दिनचर्या – Morning Rituals for Modern Life", slug: "dincharya-morning-rituals",
     excerpt: "आयुर्वेदिक सुबह की दिनचर्या को अपनी व्यस्त ज़िंदगी में कैसे शामिल करें।",
     content: "दिनचर्या आयुर्वेदिक जीवनशैली की नींव है...",
     image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=400&fit=crop",
-    author: "डॉ. प्राची (Dr. Prachi)", date: "2024-01-10", category: "जीवनशैली", readTime: "7 मिनट", status: "published",
+    author: "डॉ. प्राची (AI Laptop Wala)", date: "2024-01-10", category: "जीवनशैली", readTime: "7 मिनट", status: "published",
     linkedProducts: ["5", "7"],
   },
   {
-    id: "3", title: "आयुर्वेदिक स्किनकेयर – चमकती त्वचा का प्राकृतिक रास्ता", slug: "ayurvedic-skincare-guide",
+    id: "3", title: "आयुर्वेदिक स्किनकेयर – चमकती त्वचा का प्राकृतिक रास्ता", slug: "laptop-skincare-guide",
     excerpt: "समय-परीक्षित आयुर्वेदिक सामग्रियों से पाएं निखरी और स्वस्थ त्वचा।",
     content: "आयुर्वेदिक स्किनकेयर सतही उपचार से कहीं आगे है...",
     image: "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=800&h=400&fit=crop",
@@ -280,7 +280,7 @@ export const blogPosts: BlogPost[] = [
     excerpt: "आयुर्वेद के अनुसार अपनी शरीर प्रकृति (दोष) को समझने की पूरी गाइड।",
     content: "आयुर्वेद में हर व्यक्ति की एक अद्वितीय प्रकृति होती है...",
     image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&h=400&fit=crop",
-    author: "डॉ. प्राची (Dr. Prachi)", date: "2024-01-01", category: "शिक्षा", readTime: "8 मिनट", status: "draft",
+    author: "डॉ. प्राची (AI Laptop Wala)", date: "2024-01-01", category: "शिक्षा", readTime: "8 मिनट", status: "draft",
   },
 ];
 
@@ -293,7 +293,7 @@ export const socialPosts: SocialPost[] = [
 ];
 
 export const testimonials: Testimonial[] = [
-  { id: "1", name: "प्रिया शर्मा", text: "Apsoncure का अश्वगंधा पाउडर कमाल का है! मेरा तनाव बहुत कम हो गया!", rating: 5, avatar: "प्रि", location: "मुंबई" },
+  { id: "1", name: "प्रिया शर्मा", text: "AI Laptop Wala का अश्वगंधा पाउडर कमाल का है! मेरा तनाव बहुत कम हो गया!", rating: 5, avatar: "प्रि", location: "मुंबई" },
   { id: "2", name: "राजेश कुमार", text: "कुमकुमादि तेल ने सिर्फ 3 हफ्तों में मेरी त्वचा बदल दी। बहुत प्रीमियम क्वालिटी!", rating: 5, avatar: "रा", location: "दिल्ली" },
   { id: "3", name: "अनन्या पटेल", text: "त्रिफला कैप्सूल 2 महीने से ले रही हूं, पाचन में गजब का सुधार हुआ।", rating: 4, avatar: "अ", location: "बैंगलोर" },
   { id: "4", name: "विक्रम देसाई", text: "च्यवनप्राश बिल्कुल दादी-नानी वाला स्वाद! असली और शुद्ध।", rating: 5, avatar: "वि", location: "पुणे" },

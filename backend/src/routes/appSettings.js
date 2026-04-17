@@ -16,12 +16,12 @@ db.exec(`CREATE TABLE IF NOT EXISTS app_settings (
 // Seed defaults
 const defaults = [
   // General
-  ['store_name', 'Apsoncure PHC – Prachi Homeo Clinic', 'general'],
+  ['store_name', 'AI Laptop Wala – AI Laptop Wala Store', 'general'],
   ['store_tagline', "Nature's Power, Modern Science", 'general'],
-  ['store_email', 'info@apsoncure.com', 'general'],
+  ['store_email', 'info@ailaptopwala.com', 'general'],
   ['store_phone', '+91 98765 43210', 'general'],
-  ['store_website', 'https://apsoncure.com', 'general'],
-  ['store_address', 'Prachi Homeo Clinic, Ayurvedic Wing, India', 'general'],
+  ['store_website', 'https://ailaptopwala.com', 'general'],
+  ['store_address', 'AI Laptop Wala Store, Laptop Wing, India', 'general'],
   // Shipping
   ['shipping_flat_rate', '50', 'shipping'],
   ['shipping_free_above', '499', 'shipping'],
@@ -41,12 +41,12 @@ const defaults = [
   ['payment_cod', 'true', 'payments'],
   ['payment_emi', 'false', 'payments'],
   // SEO
-  ['seo_title', 'Apsoncure PHC | Authentic Ayurvedic Products Online', 'seo'],
-  ['seo_description', 'Shop authentic Ayurvedic products from Prachi Homeo Clinic.', 'seo'],
-  ['seo_keywords', 'ayurvedic products, herbal medicine, natural remedies', 'seo'],
-  ['og_title', 'Apsoncure – Ancient Ayurvedic Wisdom', 'seo'],
-  ['og_description', 'Authentic Ayurvedic products for modern health.', 'seo'],
-  ['twitter_handle', '@apsoncure', 'seo'],
+  ['seo_title', 'AI Laptop Wala | Authentic Laptop Products Online', 'seo'],
+  ['seo_description', 'Shop authentic Laptop products from AI Laptop Wala Store.', 'seo'],
+  ['seo_keywords', 'laptop products, herbal medicine, natural remedies', 'seo'],
+  ['og_title', 'AI Laptop Wala – Ancient Laptop Wisdom', 'seo'],
+  ['og_description', 'Authentic Laptop products for modern health.', 'seo'],
+  ['twitter_handle', '@ailaptopwala', 'seo'],
 ];
 
 const insertDefault = db.prepare('INSERT OR IGNORE INTO app_settings (key, value, category) VALUES (?,?,?)');
