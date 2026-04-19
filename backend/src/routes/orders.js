@@ -27,11 +27,17 @@ router.post('/', authMiddleware, (req, res) => {
   db.prepare('INSERT INTO notifications (id, type, title, message, link) VALUES (?, ?, ?, ?, ?)')
     .run(uuid(), 'order', 'New Order', `Order ${order_number} placed for ₹${total}`, `/admin/orders`);
 
-  // WhatsApp notification + admin alert
+  // WhatsApp notification — phone from user profile OR checkout address
   const order = db.prepare('SELECT * FROM orders WHERE id=?').get(id);
   const user = db.prepare('SELECT name, phone FROM users WHERE id=?').get(req.user.id);
-  if (user?.phone) notifyOrderPlaced(order, user.phone, user.name || 'Customer');
-  db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)').run(uuid(), 'order', 'New Order', `Order ${order_number} placed for ₹${total}`, '/admin/orders');
+  const addr = JSON.parse(order.address || '{}');
+  const phone = user?.phone || addr.phone || addr.mobile;
+  const name = user?.name || addr.name || 'Customer';
+  if (phone) {
+    notifyOrderPlaced(order, phone, name);
+    // Save phone to user profile if missing
+    if (!user?.phone && phone) db.prepare('UPDATE users SET phone=? WHERE id=?').run(phone, req.user.id);
+  }
 
   res.status(201).json({ order_number, id });
 });
@@ -70,11 +76,16 @@ router.put('/:id/status', authMiddleware, adminOnly, (req, res) => {
 
   // WhatsApp notification on status change
   const order = db.prepare('SELECT o.*, u.name as uname, u.phone as uphone FROM orders o LEFT JOIN users u ON o.user_id=u.id WHERE o.id=?').get(req.params.id);
-  if (order?.uphone) {
-    if (status === 'shipped') notifyOrderShipped({ ...order, tracking_id, courier }, order.uphone, order.uname || 'Customer');
-    if (status === 'delivered') {
-      notifyOrderDelivered(order, order.uphone, order.uname || 'Customer');
-      notifyInvoiceReady(order, order.uphone, order.uname || 'Customer');
+  if (order) {
+    const addr = JSON.parse(order.address || '{}');
+    const phone = order.uphone || addr.phone || addr.mobile;
+    const name = order.uname || addr.name || 'Customer';
+    if (phone) {
+      if (status === 'shipped') notifyOrderShipped({ ...order, tracking_id, courier }, phone, name);
+      if (status === 'delivered') {
+        notifyOrderDelivered(order, phone, name);
+        notifyInvoiceReady(order, phone, name);
+      }
     }
   }
   res.json({ message: 'Status updated' });
