@@ -19,17 +19,21 @@ const SITE = {
   logo: "https://ailaptopwala.com/favicon.png",
   phone: "+91-98934-96163",
   email: "contact@ailaptopwala.com",
-  address: "LG-21, B-Block, Silver Mall, RNT Marg, Indore, MP 452001",
+  address: "LB-21, Block-B, Silver Mall, 8-A, RNT Marg, South Tukoganj, Indore, MP 452001",
   founder: "Bhagwan Das Asati",
   company: "Asati Infotech",
   since: "2011",
   rating: "4.8",
   reviews: "5000",
   social: {
-    instagram: "https://instagram.com/Ailaptopwala",
-    facebook: "https://facebook.com/Ailaptopwala",
-    youtube: "https://youtube.com/@Ailaptopwala",
+    instagram: "https://www.instagram.com/ailaptopwala",
+    facebook: "https://www.facebook.com/profile.php?id=61563386652422",
+    youtube: "https://www.youtube.com/@AiLaptopwalaindore",
     whatsapp: "https://wa.me/919893496163",
+    justdial1: "https://www.justdial.com/Indore/Ai-Laptop-Wala/0731PX731-X731-251014151403-Y2S4_BZDET",
+    justdial2: "https://www.justdial.com/Indore/Ai-Laptopwala-Rnt-Road/0731PX731-X731-260220122854-E9T8_BZDET",
+    justdial3: "https://www.justdial.com/Indore/Asati-Infotech-Silver-Mall-Near-Shrimaya-Hotel-Rnt-Road/0731PX731-X731-111212153207-K3X8_BZDET",
+    indiamart: "https://www.indiamart.com/asati-infotech",
   },
 };
 
@@ -41,7 +45,7 @@ const globalSchema = [
     "@id": `${SITE.url}/#business`,
     "name": SITE.name,
     "legalName": SITE.company,
-    "description": "Indore's most trusted laptop store since 2011. Buy certified refurbished laptops, MacBooks, gaming laptops. Expert repair & upgrade services at Silver Mall, RNT Marg.",
+    "description": "AI Laptop Wala — Indore's most trusted laptop store since 2011. Buy certified refurbished laptops, open-box MacBooks, gaming laptops, desktops & accessories. Expert laptop repair, screen replacement, battery, SSD/RAM upgrade, virus removal, motherboard repair. Home service available across Indore. Two branches: Silver Mall & Bangali Chouraha.",
     "url": SITE.url,
     "logo": { "@type": "ImageObject", "url": SITE.logo, "width": 200, "height": 200 },
     "image": SITE.logo,
@@ -51,45 +55,90 @@ const globalSchema = [
     "founder": { "@type": "Person", "name": SITE.founder },
     "address": {
       "@type": "PostalAddress",
-      "streetAddress": "LG-21, B-Block, Silver Mall, RNT Marg",
+      "streetAddress": "LB-21, Block-B, Silver Mall, 8-A, RNT Marg, South Tukoganj",
       "addressLocality": "Indore",
       "addressRegion": "Madhya Pradesh",
       "postalCode": "452001",
       "addressCountry": "IN"
     },
-    "geo": { "@type": "GeoCoordinates", "latitude": "22.7196", "longitude": "75.8577" },
-    "hasMap": "https://maps.google.com/?q=Silver+Mall+Indore",
+    "geo": { "@type": "GeoCoordinates", "latitude": "22.7166372", "longitude": "75.8737741" },
+    "hasMap": "https://maps.app.goo.gl/Z4e1Z91HVKwjm5xp9",
     "openingHoursSpecification": [
       { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"], "opens": "10:00", "closes": "20:00" }
     ],
     "priceRange": "₹₹",
     "currenciesAccepted": "INR",
-    "paymentAccepted": "Cash, Credit Card, Debit Card, UPI, Net Banking",
+    "paymentAccepted": "Cash, Credit Card, Debit Card, UPI, Net Banking, EMI",
     "aggregateRating": { "@type": "AggregateRating", "ratingValue": SITE.rating, "reviewCount": SITE.reviews, "bestRating": "5", "worstRating": "1" },
-    "sameAs": Object.values(SITE.social),
+    "sameAs": [
+      SITE.social.instagram,
+      SITE.social.facebook,
+      SITE.social.youtube,
+      SITE.social.whatsapp,
+      SITE.social.justdial1,
+      SITE.social.justdial2,
+      SITE.social.justdial3,
+      SITE.social.indiamart,
+    ],
     "contactPoint": [
       { "@type": "ContactPoint", "telephone": SITE.phone, "contactType": "sales", "areaServed": "IN", "availableLanguage": ["Hindi", "English"] },
-      { "@type": "ContactPoint", "telephone": SITE.phone, "contactType": "customer service", "areaServed": "IN", "availableLanguage": ["Hindi", "English"] }
+      { "@type": "ContactPoint", "telephone": SITE.phone, "contactType": "customer service", "areaServed": "IN", "availableLanguage": ["Hindi", "English"] },
+      { "@type": "ContactPoint", "telephone": SITE.phone, "contactType": "technical support", "areaServed": "IN", "availableLanguage": ["Hindi", "English"] }
+    ],
+    "department": [
+      {
+        "@type": "LocalBusiness",
+        "name": "AI Laptop Wala — Silver Mall Branch",
+        "address": { "@type": "PostalAddress", "streetAddress": "LB-21, Block-B, Silver Mall, 8-A, RNT Marg, South Tukoganj", "addressLocality": "Indore", "addressRegion": "MP", "postalCode": "452001", "addressCountry": "IN" },
+        "geo": { "@type": "GeoCoordinates", "latitude": "22.7166372", "longitude": "75.8737741" },
+        "hasMap": "https://maps.app.goo.gl/Z4e1Z91HVKwjm5xp9",
+        "telephone": SITE.phone,
+      },
+      {
+        "@type": "LocalBusiness",
+        "name": "AI Laptop Wala — Bangali Chouraha Branch",
+        "address": { "@type": "PostalAddress", "streetAddress": "21, G3, Sai Residency, Ashish Nagar, Near Bangali Chouraha", "addressLocality": "Indore", "addressRegion": "MP", "postalCode": "452016", "addressCountry": "IN" },
+        "geo": { "@type": "GeoCoordinates", "latitude": "22.7161819", "longitude": "75.9079282" },
+        "hasMap": "https://maps.app.goo.gl/drVLkuS9tGjEmwUF7",
+        "telephone": SITE.phone,
+      }
     ],
     "hasOfferCatalog": {
       "@type": "OfferCatalog",
-      "name": "Laptops & Repair Services",
+      "name": "Laptops, Desktops, Accessories & Repair Services",
       "itemListElement": [
         { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Certified Refurbished Laptops" } },
-        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Laptop Repair Services" } },
         { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Open-Box MacBooks" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Gaming Laptops" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Refurbished Desktops" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Laptop Accessories" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Laptop Screen Replacement" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Battery Replacement" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "SSD & RAM Upgrade" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Virus Removal & OS Installation" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Home Laptop Repair Indore" } },
       ]
     },
-    "knowsAbout": ["Laptop Repair", "Refurbished Laptops", "MacBook", "Gaming Laptops", "SSD Upgrade", "RAM Upgrade", "Screen Replacement", "Battery Replacement"],
-    "areaServed": { "@type": "City", "name": "Indore", "sameAs": "https://en.wikipedia.org/wiki/Indore" },
+    "knowsAbout": [
+      "Refurbished Laptops", "MacBook", "Gaming Laptops", "Desktops", "Laptop Accessories",
+      "Laptop Repair", "Screen Replacement", "Battery Replacement", "SSD Upgrade", "RAM Upgrade",
+      "Virus Removal", "OS Installation", "Motherboard Repair", "Data Recovery",
+      "Home Laptop Service Indore", "Laptop Buying Guide"
+    ],
+    "areaServed": [
+      { "@type": "City", "name": "Indore", "sameAs": "https://en.wikipedia.org/wiki/Indore" },
+      { "@type": "State", "name": "Madhya Pradesh" }
+    ],
+    "slogan": "Buy, Sell & Repair Laptops — Indore's Most Trusted Since 2011",
   },
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "@id": `${SITE.url}/#website`,
     "name": SITE.name,
+    "alternateName": ["AI Laptop Wala Indore", "Asati Infotech", "ailaptopwala"],
     "url": SITE.url,
-    "description": "Buy certified refurbished laptops, MacBooks, gaming laptops in Indore. Expert repair services.",
+    "description": "Buy certified refurbished laptops, MacBooks, gaming laptops, desktops in Indore. Expert repair & home service.",
     "publisher": { "@id": `${SITE.url}/#business` },
     "potentialAction": {
       "@type": "SearchAction",
@@ -184,12 +233,15 @@ const SEOHead = ({
       {/* GEO / AEO — for AI search engines (ChatGPT, Perplexity, Gemini) */}
       <meta name="geo.region" content="IN-MP" />
       <meta name="geo.placename" content="Indore, Madhya Pradesh, India" />
-      <meta name="geo.position" content="22.7196;75.8577" />
-      <meta name="ICBM" content="22.7196, 75.8577" />
+      <meta name="geo.position" content="22.7166372;75.8737741" />
+      <meta name="ICBM" content="22.7166372, 75.8737741" />
       <meta name="DC.title" content={fullTitle} />
       <meta name="DC.description" content={fullDesc} />
-      <meta name="DC.subject" content="Laptop Store, Computer Repair, Refurbished Laptops" />
+      <meta name="DC.subject" content="Laptop Store, Computer Repair, Refurbished Laptops, Desktop, Accessories" />
       <meta name="DC.coverage" content="Indore, Madhya Pradesh, India" />
+      <meta name="DC.creator" content="Bhagwan Das Asati — Asati Infotech" />
+      <meta name="DC.publisher" content="AI Laptop Wala" />
+      <meta name="DC.rights" content={`© ${new Date().getFullYear()} Asati Infotech`} />
 
       {/* Schema.org JSON-LD */}
       {allSchemas.map((schema, i) => (
