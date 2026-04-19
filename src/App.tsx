@@ -28,6 +28,7 @@ import TrackOrder from "./pages/TrackOrder";
 import OrderSuccess from "./pages/OrderSuccess";
 import Services from "./pages/Services";
 import Wishlist from "./pages/Wishlist";
+import Repair from "./pages/Repair";
 import AdminServices from "./pages/admin/AdminServices";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
@@ -81,6 +82,7 @@ const App = () => (
             <Route path="/track-order" element={<TrackOrder />} />
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/services" element={<Services />} />
+            <Route path="/repair" element={<Repair />} />
             <Route path="/wishlist" element={<Wishlist />} />
 
             {/* Protected Customer */}

@@ -104,10 +104,12 @@ export const useCMSStore = create<CMSStore>((set) => ({
     { id: "4", icon: "Wrench", title: "Expert Repair", description: "Same day repair for all brands. Screen, battery, keyboard & more.", active: true },
   ],
   testimonials: [
-    { id: "1", name: "Amit Sharma", text: "Bought a Dell Latitude from AI Laptop Wala. Excellent condition, works like new! Great service by Bhagwan Das ji.", rating: 5, avatar: "AS", location: "Indore", active: true },
-    { id: "2", name: "Priya Verma", text: "Got my MacBook Pro screen replaced in just 2 hours. Very professional team and reasonable price.", rating: 5, avatar: "PV", location: "Indore", active: true },
-    { id: "3", name: "Rahul Patel", text: "Best place to buy refurbished laptops in Indore. Trusted shop at Silver Mall. Highly recommended!", rating: 5, avatar: "RP", location: "Indore", active: true },
-    { id: "4", name: "Neha Joshi", text: "SSD upgrade done in 30 minutes. Laptop is super fast now. Very happy with the service!", rating: 4, avatar: "NJ", location: "Indore", active: true },
+    { id: "1", name: "Rahul Sharma", text: "MacBook Pro open-box liya AI Laptop Wala se — bilkul naya condition mein mila at 40% discount! Best deal ever. Highly recommended!", rating: 5, avatar: "RS", location: "Indore", active: true },
+    { id: "2", name: "Priya Patel", text: "Refurbished laptop liya budget mein — ekdum smooth chalti hai. Nitin bhaiya ne bahut acha guide kiya. Thank you AI Laptop Wala!", rating: 5, avatar: "PP", location: "Indore", active: true },
+    { id: "3", name: "Amit Verma", text: "Office ke liye 5 laptops liye bulk mein. Sabka condition excellent tha aur price bhi market se kaafi kam. After-sales support bhi zabardast!", rating: 5, avatar: "AV", location: "Indore", active: true },
+    { id: "4", name: "Sneha Joshi", text: "Gaming laptop liya content creation ke liye — RTX wala. Performance outstanding hai aur Bhagwan Das Asati ji ne personally setup karke diya.", rating: 5, avatar: "SJ", location: "Indore", active: true },
+    { id: "5", name: "Vikram Singh", text: "Home repair service use ki — screen replacement ke liye. Technician ghar aaya, 1 ghante mein fix kar diya. Very professional service!", rating: 5, avatar: "VS", location: "Indore", active: true },
+    { id: "6", name: "Anita Gupta", text: "Refurbished desktop liya online classes ke liye. Bahut smooth run hota hai. Price bhi pocket-friendly tha. Thank you team!", rating: 4, avatar: "AG", location: "Indore", active: true },
   ],
   faqs: [
     { id: "1", question: "Are refurbished laptops reliable?", answer: "Yes! All our laptops are thoroughly tested, cleaned and certified before sale. We provide 6 month warranty on every product. Grade A quality guaranteed.", category: "Products", active: true, order: 1 },
