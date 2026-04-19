@@ -8,7 +8,6 @@ const CustomerLayout = ({ children }: { children: React.ReactNode }) => (
     <main className="flex-1">{children}</main>
     <Footer />
     <WhatsAppWidget />
-    <CookieConsent />
   </div>
 );
 
