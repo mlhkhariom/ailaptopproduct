@@ -174,6 +174,7 @@ export const api = {
   updateReel: (id: string, data: unknown) => req('PUT', `/reels/${id}`, data),
   deleteReel: (id: string) => req('DELETE', `/reels/${id}`),
   fetchInstagramReel: (url: string) => req('POST', '/reels/instagram', { url }),
+  fetchInstagramProfile: () => req('GET', '/reels/fetch-profile'),
 
   // Customers
   getCustomers: () => req('GET', '/customers'),

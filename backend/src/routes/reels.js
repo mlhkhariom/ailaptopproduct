@@ -46,16 +46,14 @@ router.post('/instagram', authMiddleware, adminOnly, async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: 'url required' });
 
-  // Extract shortcode from Instagram URL
   const match = url.match(/instagram\.com\/(?:p|reel)\/([A-Za-z0-9_-]+)/);
   if (!match) return res.status(400).json({ error: 'Invalid Instagram URL' });
 
   const shortcode = match[1];
-  // Use oEmbed API (no auth needed)
   try {
-    const oembedUrl = `https://www.instagram.com/oembed/?url=${encodeURIComponent(url)}`;
-    const response = await fetch(oembedUrl);
-    if (!response.ok) throw new Error('Instagram oEmbed failed');
+    const oembedUrl = `https://www.instagram.com/oembed/?url=${encodeURIComponent(url)}&omitscript=true`;
+    const response = await fetch(oembedUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    if (!response.ok) throw new Error('oEmbed failed');
     const data = await response.json();
     res.json({
       title: data.title || 'Instagram Reel',
@@ -65,13 +63,44 @@ router.post('/instagram', authMiddleware, adminOnly, async (req, res) => {
       author: data.author_name,
     });
   } catch {
-    // Fallback — return basic info
-    res.json({
-      title: 'Instagram Reel',
-      thumbnail: `https://www.instagram.com/p/${shortcode}/media/?size=l`,
-      video_url: url,
-      platform: 'instagram',
-    });
+    res.json({ title: 'Instagram Reel', thumbnail: null, video_url: url, platform: 'instagram' });
+  }
+});
+
+// GET /api/reels/fetch-profile — fetch latest reels from Instagram profile via Graph API
+router.get('/fetch-profile', authMiddleware, adminOnly, async (req, res) => {
+  const s = db.prepare("SELECT meta_access_token, meta_ig_account_id FROM social_settings WHERE id='main'").get();
+
+  if (!s?.meta_access_token || !s?.meta_ig_account_id) {
+    return res.status(400).json({ error: 'Instagram credentials not configured. Go to Social Media → API Settings.' });
+  }
+
+  try {
+    // Fetch media from Instagram Graph API
+    const url = `https://graph.facebook.com/v18.0/${s.meta_ig_account_id}/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp&limit=12&access_token=${s.meta_access_token}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.error) throw new Error(data.error.message);
+
+    // Filter only REELS and VIDEO
+    const reels = (data.data || []).filter((m: any) => m.media_type === 'VIDEO' || m.media_type === 'REEL');
+
+    // Auto-save to DB if not already exists
+    const insertReel = db.prepare('INSERT OR IGNORE INTO reels (id, title, thumbnail, video_url, platform, views, is_active) VALUES (?,?,?,?,?,?,1)');
+    let added = 0;
+    for (const reel of reels) {
+      const existing = db.prepare('SELECT id FROM reels WHERE video_url = ?').get(reel.permalink);
+      if (!existing) {
+        const { v4: uuid } = await import('uuid');
+        insertReel.run(uuid(), reel.caption?.slice(0, 100) || 'Instagram Reel', reel.thumbnail_url || reel.media_url, reel.permalink, 'instagram', '0');
+        added++;
+      }
+    }
+
+    res.json({ fetched: reels.length, added, reels });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
   }
 });
 

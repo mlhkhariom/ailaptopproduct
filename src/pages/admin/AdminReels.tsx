@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Edit, Instagram, Youtube, Facebook, Link2, ExternalLink, Loader2, Play, CheckCircle } from "lucide-react";
+import { Plus, Trash2, Edit, Instagram, Youtube, Facebook, Link2, ExternalLink, Loader2, Play, CheckCircle, RefreshCw, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +25,18 @@ const AdminReels = () => {
   const [fetching, setFetching] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const load = () => api.getReels().then(setReels).catch(() => {});
+  const [fetchingProfile, setFetchingProfile] = useState(false);
+
+  const fetchFromProfile = async () => {
+    setFetchingProfile(true);
+    try {
+      const result = await api.fetchInstagramProfile();
+      toast.success(`Fetched ${result.fetched} reels, ${result.added} new added!`);
+      load();
+    } catch (e: any) {
+      toast.error(e.message || 'Configure Instagram credentials in Social Media → API Settings');
+    } finally { setFetchingProfile(false); }
+  };
   useEffect(() => {
     load();
     api.getProducts().then(setProducts).catch(() => {});
@@ -96,7 +107,22 @@ const AdminReels = () => {
             <h1 className="text-2xl font-bold">Reels & Videos</h1>
             <p className="text-sm text-muted-foreground">Manage Instagram/YouTube reels — link to products, show on homepage</p>
           </div>
-          <Button onClick={openAdd} className="gap-2"><Plus className="h-4 w-4" /> Add Reel</Button>
+          <div className="flex gap-2">
+            <Button onClick={fetchFromProfile} disabled={fetchingProfile} variant="outline" className="gap-2">
+              {fetchingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Fetch from Instagram
+            </Button>
+            <Button onClick={openAdd} className="gap-2"><Plus className="h-4 w-4" /> Add Reel</Button>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2 text-sm">
+          <AlertCircle className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-blue-700">Auto-fetch from Instagram</p>
+            <p className="text-blue-600 text-xs mt-0.5">Configure Instagram credentials in <strong>Social Media → API Settings</strong> → then click "Fetch from Instagram" to auto-import latest reels.</p>
+          </div>
         </div>
 
         {/* Stats */}
