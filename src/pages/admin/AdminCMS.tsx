@@ -20,7 +20,7 @@ const useCMSSection = (section: string) => {
 
   const load = async () => {
     setLoading(true);
-    try { setItems(await api.getCMS(section)); } catch {}
+    try { setItems(await api.getCMS(section + '?admin=1')); } catch {}
     finally { setLoading(false); }
   };
 
@@ -117,7 +117,7 @@ const BenefitsTab = () => {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ icon: 'Leaf', title: '', description: '' });
   const f = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: e.target.value }));
-  const ICONS = ['Leaf', 'Award', 'Truck', 'HeartPulse', 'Shield', 'Heart', 'Star'];
+  const ICONS = ['Laptop', 'Shield', 'Wrench', 'Truck', 'Award', 'Star', 'CheckCircle', 'Phone'];
 
   const openAdd = () => { setEditing(null); setForm({ icon: 'Leaf', title: '', description: '' }); setDialog(true); };
   const openEdit = (item: any) => { setEditing(item); setForm({ icon: item.content.icon || 'Leaf', title: item.content.title || '', description: item.content.description || '' }); setDialog(true); };
@@ -134,7 +134,7 @@ const BenefitsTab = () => {
           {items.map(item => (
             <Card key={item.id}>
               <CardContent className="p-3 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-lg shrink-0">🌿</div>
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-lg shrink-0">💻</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{item.content.title}</p>
                   <p className="text-xs text-muted-foreground truncate">{item.content.description}</p>

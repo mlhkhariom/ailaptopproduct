@@ -6,9 +6,13 @@ import { adminOnly } from '../middleware/adminOnly.js';
 
 const router = Router();
 
-// GET /api/cms/:section — public
+// GET /api/cms/:section — public (active only)
 router.get('/:section', (req, res) => {
-  const items = db.prepare('SELECT * FROM cms_content WHERE section = ? AND is_active = 1 ORDER BY sort_order ASC').all(req.params.section)
+  const isAdmin = req.query.admin === '1';
+  let q = 'SELECT * FROM cms_content WHERE section = ?';
+  if (!isAdmin) q += ' AND is_active = 1';
+  q += ' ORDER BY sort_order ASC';
+  const items = db.prepare(q).all(req.params.section)
     .map(i => ({ ...i, content: JSON.parse(i.content) }));
   res.json(items);
 });
