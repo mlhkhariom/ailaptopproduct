@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Download, IndianRupee, CreditCard, Smartphone, Banknote, TrendingUp, CheckCircle, XCircle, Clock, ArrowUpRight, ArrowDownRight, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,16 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminLayout from "@/components/AdminLayout";
-
-const payments = [
-  { id: "pay_N1x2y3z4A5B6C7", orderId: "APC-001", customer: "Priya Sharma", amount: 1294, method: "Razorpay", type: "UPI", status: "captured", date: "2024-01-15", time: "10:23 AM" },
-  { id: "pay_M9x8y7z6W5V4", orderId: "APC-002", customer: "Rahul Verma", amount: 2098, method: "Razorpay", type: "UPI", status: "captured", date: "2024-01-18", time: "2:45 PM" },
-  { id: "COD-003", orderId: "APC-003", customer: "Anita Desai", amount: 643, method: "COD", type: "Cash", status: "pending", date: "2024-01-20", time: "11:10 AM" },
-  { id: "pay_K5x4y3z2Q1P0", orderId: "APC-004", customer: "Vikram Singh", amount: 1347, method: "Razorpay", type: "Card", status: "captured", date: "2024-01-21", time: "4:15 PM" },
-  { id: "pay_J8x7y6z5R4S3", orderId: "APC-006", customer: "Arjun Nair", amount: 1078, method: "Razorpay", type: "Net Banking", status: "captured", date: "2024-01-19", time: "9:50 AM" },
-  { id: "pay_FAIL_007", orderId: "APC-007", customer: "Sunita Gupta", amount: 1833, method: "Razorpay", type: "UPI", status: "failed", date: "2024-01-22", time: "6:30 PM" },
-  { id: "pay_REF_001", orderId: "APC-008", customer: "Karan Mehta", amount: 599, method: "Razorpay", type: "Card", status: "refunded", date: "2024-01-12", time: "1:20 PM" },
-];
+import { api } from "@/lib/api";
 
 const statusConfig: Record<string, { label: string; color: string; icon: typeof CheckCircle }> = {
   captured: { label: "Captured", color: "bg-green-100 text-green-700 border-green-300", icon: CheckCircle },
@@ -26,9 +17,28 @@ const statusConfig: Record<string, { label: string; color: string; icon: typeof 
 };
 
 const AdminPayments = () => {
+  const [payments, setPayments] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [methodFilter, setMethodFilter] = useState("all");
+
+  useEffect(() => {
+    api.getOrders().then((orders: any[]) => {
+      // Build payment rows from orders
+      const rows = orders.map((o: any) => ({
+        id: o.razorpay_id || o.payment_id || `COD-${o.order_number}`,
+        orderId: o.order_number,
+        customer: o.customer_name || 'Customer',
+        amount: o.total,
+        method: o.payment_method || 'COD',
+        type: o.payment_method === 'COD' ? 'Cash' : 'Online',
+        status: o.payment_status === 'paid' ? 'captured' : o.payment_status || 'pending',
+        date: new Date(o.created_at).toLocaleDateString('en-IN'),
+        time: new Date(o.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      }));
+      setPayments(rows);
+    }).catch(() => {});
+  }, []);
 
   const filtered = payments
     .filter((p) => statusFilter === "all" || p.status === statusFilter)

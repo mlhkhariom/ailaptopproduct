@@ -49,7 +49,7 @@ const Register = () => {
             </div>
           </Link>
           <h1 className="text-3xl font-serif font-bold">Create Account</h1>
-          <p className="text-muted-foreground mt-1">Join the AI Laptop Wala wellness family</p>
+          <p className="text-muted-foreground mt-1">Create your AI Laptop Wala account</p>
         </div>
 
         <Card className="shadow-xl border-border/50">

@@ -29,8 +29,8 @@ const routeNames: Record<string, string> = {
 };
 
 const notifications = [
-  { id: 1, text: "New order APC-007 received", time: "2 min ago", read: false },
-  { id: 2, text: "Ashwagandha stock running low", time: "1 hour ago", read: false },
+  { id: 1, text: "New order received", time: "2 min ago", read: false },
+  { id: 2, text: "Check admin panel for updates", time: "1 hour ago", read: false },
   { id: 3, text: "Instagram reel published successfully", time: "3 hours ago", read: true },
 ];
 

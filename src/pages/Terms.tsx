@@ -9,7 +9,7 @@ const Terms = () => (
       <div className="prose prose-sm max-w-none space-y-6">
         <section>
           <h2 className="text-xl font-serif font-bold mb-3">1. General</h2>
-          <p className="text-muted-foreground leading-relaxed">By accessing and using the AI Laptop Wala website (ailaptopwala.com), you agree to these Terms & Conditions. This website is operated by AI Laptop Wala Store ("we", "us", "our"). All products listed are Laptop/herbal supplements and are not intended to replace medical treatment.</p>
+          <p className="text-muted-foreground leading-relaxed">By accessing and using the AI Laptop Wala website (ailaptopwala.com), you agree to these Terms & Conditions. This website is operated by AI Laptop Wala Store ("we", "us", "our"). All products listed are laptops and accessories. All sales are subject to availability and our return policy.</p>
         </section>
 
         <section>

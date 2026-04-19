@@ -24,10 +24,10 @@ interface CartStore {
 }
 
 const COUPONS: Record<string, { type: "percent" | "flat"; value: number; minOrder: number }> = {
-  "AYUR10": { type: "percent", value: 10, minOrder: 499 },
-  "FLAT100": { type: "flat", value: 100, minOrder: 999 },
-  "WELCOME20": { type: "percent", value: 20, minOrder: 299 },
-  "FREESHIP": { type: "flat", value: 50, minOrder: 0 },
+  "ALW10": { type: "percent", value: 10, minOrder: 999 },
+  "FLAT200": { type: "flat", value: 200, minOrder: 1999 },
+  "WELCOME15": { type: "percent", value: 15, minOrder: 999 },
+  "FREESHIP": { type: "flat", value: 150, minOrder: 0 },
 };
 
 export const useCartStore = create<CartStore>()(

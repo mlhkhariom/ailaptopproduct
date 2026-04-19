@@ -364,7 +364,7 @@ const AdminWhatsApp = () => {
                   <Button size="sm" onClick={simulate} className="shrink-0">Test</Button>
                 </div>
                 <div className="flex gap-1.5 flex-wrap">
-                  {['Hello', 'Ashwagandha price', 'Order status', 'Stock check', 'Thanks'].map(t => (
+                  {['Hello', 'Laptop price', 'Order status', 'Repair booking', 'Thanks'].map(t => (
                     <button key={t} onClick={() => setSimInput(t)} className="text-xs px-2.5 py-1 rounded-full bg-muted hover:bg-primary hover:text-primary-foreground transition-colors">{t}</button>
                   ))}
                 </div>

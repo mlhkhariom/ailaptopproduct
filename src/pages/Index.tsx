@@ -80,7 +80,7 @@ const Index = () => {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-3xl font-serif font-bold">Our Bestsellers</h2>
-              <p className="text-muted-foreground mt-1">Handpicked products for your wellness journey</p>
+              <p className="text-muted-foreground mt-1">Certified refurbished laptops at best prices</p>
             </div>
             <Link to="/products"><Button variant="outline" className="gap-2">View All <ArrowRight className="h-4 w-4" /></Button></Link>
           </div>

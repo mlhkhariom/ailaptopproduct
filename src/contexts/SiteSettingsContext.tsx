@@ -40,11 +40,11 @@ const defaults: SettingsCtx = {
   },
   app: {
     store_name: 'AI Laptop Wala', store_tagline: "Nature's Power, Modern Science",
-    store_email: 'info@ailaptopwala.com', store_phone: '+91 98765 43210',
+    store_email: 'contact@ailaptopwala.com', store_phone: '+91 98934 96163',
     store_website: 'https://ailaptopwala.com', store_address: 'AI Laptop Wala Store, India',
     store_logo: '', shipping_flat_rate: '50', shipping_free_above: '499',
     shipping_cod_charge: '30', seo_title: 'AI Laptop Wala | Authentic Laptop Products',
-    seo_description: 'Shop authentic Laptop products.', seo_keywords: 'laptop, herbal',
+    seo_description: 'Buy certified refurbished laptops in Indore. Expert repair services.', seo_keywords: 'refurbished laptop indore, laptop repair indore, macbook indore',
   }
 };
 
