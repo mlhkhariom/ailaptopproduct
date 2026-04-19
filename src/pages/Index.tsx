@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowRight, Star, Play, Leaf, Award, Truck, HeartPulse, Shield, Heart, Target } from "lucide-react";
+import { ArrowRight, Star, Laptop, Shield, Wrench, Truck, CheckCircle, Phone, MessageCircle, Zap, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import CustomerLayout from "@/components/CustomerLayout";
@@ -9,66 +9,105 @@ import ProductCard from "@/components/ProductCard";
 import BusinessDetails from "@/components/BusinessDetails";
 import { useProductStore } from "@/store/productStore";
 import { api } from "@/lib/api";
+import logo from "@/assets/logo.jpeg";
+import refurbishedImg from "@/assets/refurbished-laptop.jpg";
+import homeRepairImg from "@/assets/homeservies.jpeg";
 
-const iconMap: Record<string, typeof Leaf> = { Leaf, Award, Truck, HeartPulse, Shield, Heart, Target, Star };
+const iconMap: Record<string, any> = { Laptop, Shield, Wrench, Truck, CheckCircle, Star };
 
 const Index = () => {
   const { products, fetchProducts } = useProductStore();
-  const [banners, setBanners] = useState<any[]>([]);
   const [benefits, setBenefits] = useState<any[]>([]);
   const [testimonials, setTestimonials] = useState<any[]>([]);
-  const [settings, setSettings] = useState<any>({ whatsappNumber: '919893496163' });
 
   useEffect(() => {
     fetchProducts();
-    api.getCMS('banner').then(d => setBanners(d.map((i: any) => i.content))).catch(() => {});
     api.getCMS('benefit').then(d => setBenefits(d.map((i: any) => i.content))).catch(() => {});
     api.getCMS('testimonial').then(d => setTestimonials(d.map((i: any) => i.content))).catch(() => {});
-    api.getCMS('setting').then(d => { if (d[0]) setSettings(d[0].content); }).catch(() => {});
   }, []);
-
-  const activeBanner = banners[0];
-  const activeBenefits = benefits;
-  const activeTestimonials = testimonials;
-  const siteSettings = settings;
 
   return (
     <CustomerLayout>
       <SEOHead canonical="/" />
-      {/* Hero */}
-      {activeBanner && (
-        <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/10">
-          <div className="container mx-auto px-4 py-16 md:py-24">
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              <div>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-foreground leading-tight mb-4">
-                  {activeBanner.title}
-                </h1>
-                <p className="text-lg text-muted-foreground mb-6 max-w-lg">{activeBanner.subtitle}</p>
-                <Link to="/products"><Button size="lg" className="gap-2">{activeBanner.cta || 'Shop Now'} <ArrowRight className="h-4 w-4" /></Button></Link>
-              </div>
-              <div className="relative">
-                <img src={activeBanner.image} alt="AI Laptop Wala" className="rounded-2xl shadow-2xl w-full object-cover max-h-[420px]" />
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
 
-      {/* Benefits */}
-      {activeBenefits.length > 0 && (
-        <section className="py-12 bg-card border-y">
+      {/* ── HERO ─────────────────────────────────────────── */}
+      <section className="relative min-h-[90svh] flex items-center justify-center overflow-hidden"
+        style={{ background: "linear-gradient(135deg, hsl(30 40% 8%) 0%, hsl(32 60% 14%) 40%, hsl(35 50% 18%) 70%, hsl(30 40% 6%) 100%)" }}>
+        {/* Glow blobs */}
+        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
+        <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-secondary/8 blur-[100px] pointer-events-none" />
+        {/* Grid overlay */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
+
+        <div className="relative z-10 container mx-auto px-4 text-center max-w-4xl pt-20 pb-12">
+          {/* Logo */}
+          <div className="relative inline-block mb-5">
+            <div className="absolute inset-0 blur-3xl bg-primary/20 rounded-full scale-[2]" />
+            <img src={logo} alt="AI Laptop Wala" className="relative h-20 md:h-28 w-auto mx-auto drop-shadow-2xl rounded-xl" />
+          </div>
+
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold text-orange-300 border border-primary/25 bg-primary/10 backdrop-blur-sm mb-6">
+            <Zap size={12} className="text-yellow-400" /> Powered by Asati Infotech — Since 2011
+          </div>
+
+          {/* Heading */}
+          <h1 className="text-[2rem] sm:text-4xl md:text-5xl lg:text-[3.5rem] font-black leading-[1.1] mb-4 tracking-tight">
+            <span className="text-white">Your Trusted </span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-yellow-400 to-orange-500">Laptop Partner</span>
+            <br />
+            <span className="text-white text-[1.5rem] sm:text-3xl md:text-4xl">in Indore</span>
+          </h1>
+
+          <p className="text-white/60 text-sm md:text-base mb-8 max-w-xl mx-auto">
+            Buy certified refurbished laptops, MacBooks & gaming laptops. Expert repair & home service across Indore.
+          </p>
+
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10">
+            <Link to="/products">
+              <Button size="lg" className="gap-2 px-8 h-12 text-base font-bold shadow-lg shadow-primary/30">
+                <Laptop size={18} /> Shop Laptops <ArrowRight size={16} />
+              </Button>
+            </Link>
+            <Link to="/services">
+              <Button size="lg" variant="outline" className="gap-2 px-8 h-12 text-base font-bold border-white/20 text-white hover:bg-white/10">
+                <Wrench size={18} /> Book Repair
+              </Button>
+            </Link>
+            <a href="https://wa.me/919893496163" target="_blank" rel="noreferrer">
+              <Button size="lg" variant="ghost" className="gap-2 px-6 h-12 text-[#25D366] hover:bg-[#25D366]/10 border border-[#25D366]/30">
+                <MessageCircle size={18} /> WhatsApp
+              </Button>
+            </a>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4 max-w-sm mx-auto">
+            {[["5000+","Happy Customers"],["15+","Years Experience"],["4.8★","Google Rating"]].map(([v,l]) => (
+              <div key={l} className="text-center">
+                <p className="text-2xl md:text-3xl font-black text-primary">{v}</p>
+                <p className="text-[10px] md:text-xs text-white/50 mt-0.5">{l}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── BENEFITS ─────────────────────────────────────── */}
+      {benefits.length > 0 && (
+        <section className="py-10 bg-card border-y">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {activeBenefits.map((b) => {
-                const Icon = iconMap[b.icon] || Leaf;
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              {benefits.map((b) => {
+                const Icon = iconMap[b.icon] || Laptop;
                 return (
-                  <div key={b.id} className="flex flex-col items-center text-center gap-2">
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <div key={b.id} className="flex flex-col items-center text-center gap-2 p-3">
+                    <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                       <Icon className="h-6 w-6 text-primary" />
                     </div>
-                    <h3 className="font-semibold text-sm">{b.title}</h3>
-                    <p className="text-xs text-muted-foreground">{b.description}</p>
+                    <h3 className="font-bold text-sm">{b.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed hidden sm:block">{b.description}</p>
                   </div>
                 );
               })}
@@ -77,63 +116,92 @@ const Index = () => {
         </section>
       )}
 
-      {/* Featured Products */}
+      {/* ── FEATURED PRODUCTS ────────────────────────────── */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-serif font-bold">Our Bestsellers</h2>
-              <p className="text-muted-foreground mt-1">Certified refurbished laptops at best prices</p>
+              <h2 className="text-2xl md:text-3xl font-black">Featured <span className="gradient-text">Laptops</span></h2>
+              <div className="section-divider mt-2 mx-0" />
             </div>
-            <Link to="/products"><Button variant="outline" className="gap-2">View All <ArrowRight className="h-4 w-4" /></Button></Link>
+            <Link to="/products">
+              <Button variant="outline" size="sm" className="gap-1.5">View All <ChevronRight size={14} /></Button>
+            </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
             {products.slice(0, 4).map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         </div>
       </section>
 
-      {/* Video Reels */}
-      <section className="py-16 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-serif font-bold text-center mb-2">Watch Our Reels</h2>
-          <p className="text-muted-foreground text-center mb-8">Latest videos from our Instagram & YouTube</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {products.slice(0, 4).map((p) => (
-              <Link to={`/products/${p.id}`} key={p.id}>
-                <Card className="group overflow-hidden cursor-pointer">
-                  <div className="relative aspect-[9/16] bg-muted">
-                    <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent flex flex-col justify-end p-3">
-                      <Play className="h-8 w-8 text-primary-foreground mb-2 opacity-80" />
-                      <p className="text-primary-foreground text-xs font-medium line-clamp-2">{p.name}</p>
-                    </div>
+      {/* ── HOME REPAIR BANNER ───────────────────────────── */}
+      <section className="py-16 bg-muted/40">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <div className="grid md:grid-cols-2 gap-6 md:gap-10 items-center">
+            <div className="rounded-2xl overflow-hidden shadow-xl">
+              <img src={homeRepairImg} alt="Home Repair Service Indore" className="w-full h-56 md:h-72 object-cover" />
+            </div>
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary px-3 py-1.5 rounded-full text-xs font-semibold">
+                <Phone size={12} /> Home Service Available
+              </div>
+              <h2 className="text-2xl md:text-3xl font-black">Expert Repair <span className="gradient-text">at Your Doorstep</span></h2>
+              <p className="text-muted-foreground text-sm leading-relaxed">Screen replacement, battery, keyboard, SSD/RAM upgrade, virus removal — all at your home or office in Indore.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {["Screen Replacement","Battery Replacement","SSD/RAM Upgrade","Virus Removal","OS Installation","Motherboard Repair"].map(s => (
+                  <div key={s} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <CheckCircle size={12} className="text-primary shrink-0" /> {s}
                   </div>
-                </Card>
-              </Link>
-            ))}
+                ))}
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Link to="/services"><Button className="gap-2"><Wrench size={14} /> Book Service</Button></Link>
+                <a href="https://wa.me/919893496163?text=Hi, I need laptop repair service" target="_blank" rel="noreferrer">
+                  <Button variant="outline" className="gap-2 border-green-500 text-green-600 hover:bg-green-50"><MessageCircle size={14} /> WhatsApp</Button>
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      {activeTestimonials.length > 0 && (
+      {/* ── MORE PRODUCTS ────────────────────────────────── */}
+      {products.length > 4 && (
         <section className="py-16">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-serif font-bold text-center mb-2">What Our Customers Say</h2>
-            <p className="text-muted-foreground text-center mb-8">Real people, real experiences</p>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {activeTestimonials.map((t) => (
-                <Card key={t.id} className="border-border/50">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-1 mb-3">
-                      {Array.from({ length: t.rating }).map((_, i) => <Star key={i} className="h-4 w-4 fill-gold text-gold" />)}
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-black">More <span className="gradient-text">Laptops</span></h2>
+                <div className="section-divider mt-2 mx-0" />
+              </div>
+              <Link to="/products"><Button variant="outline" size="sm" className="gap-1.5">View All <ChevronRight size={14} /></Button></Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
+              {products.slice(4, 8).map((p) => <ProductCard key={p.id} product={p} />)}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── TESTIMONIALS ─────────────────────────────────── */}
+      {testimonials.length > 0 && (
+        <section className="py-16 bg-muted/40">
+          <div className="container mx-auto px-4">
+            <h2 className="text-2xl md:text-3xl font-black text-center mb-2">Happy <span className="gradient-text">Customers</span></h2>
+            <p className="text-muted-foreground text-center text-sm mb-3">5000+ satisfied customers trust AI Laptop Wala</p>
+            <div className="section-divider mb-10" />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {testimonials.slice(0, 6).map((t) => (
+                <Card key={t.id} className="border-border/50 hover:shadow-md transition-shadow">
+                  <CardContent className="p-5">
+                    <div className="flex gap-0.5 mb-3">
+                      {Array.from({ length: t.rating }).map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />)}
                     </div>
                     <p className="text-sm text-muted-foreground mb-4 leading-relaxed">"{t.text}"</p>
                     <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">{t.avatar}</div>
+                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">{t.avatar}</div>
                       <div>
-                        <p className="text-sm font-medium">{t.name}</p>
+                        <p className="text-sm font-semibold">{t.name}</p>
                         <p className="text-xs text-muted-foreground">{t.location}</p>
                       </div>
                     </div>
@@ -145,16 +213,26 @@ const Index = () => {
         </section>
       )}
 
-      {/* WhatsApp CTA */}
-      <section className="py-12 bg-primary/5">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl font-serif font-bold mb-2">🙏 Free Consultation with AI Laptop Wala</h2>
-          <p className="text-muted-foreground mb-6">Chat on WhatsApp now — personalized Laptop guidance</p>
-          <a href={`https://wa.me/${siteSettings.whatsappNumber}?text=Hi Doctor! I need Laptop consultation.`} target="_blank" rel="noreferrer">
-            <Button size="lg" className="gap-2 text-base px-8">💬 Chat on WhatsApp</Button>
-          </a>
+      {/* ── WHATSAPP CTA ─────────────────────────────────── */}
+      <section className="py-14 bg-gradient-to-br from-primary/5 to-secondary/5">
+        <div className="container mx-auto px-4 text-center max-w-2xl">
+          <h2 className="text-2xl md:text-3xl font-black mb-2">Need Help Choosing a Laptop?</h2>
+          <p className="text-muted-foreground text-sm mb-6">Chat with our expert on WhatsApp — free consultation, instant reply!</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a href="https://wa.me/919893496163?text=Hi, I need help choosing a laptop" target="_blank" rel="noreferrer">
+              <Button size="lg" className="gap-2 bg-[#25D366] hover:bg-[#20b858] text-white px-8">
+                <MessageCircle size={18} /> Chat on WhatsApp
+              </Button>
+            </a>
+            <a href="tel:+919893496163">
+              <Button size="lg" variant="outline" className="gap-2 px-8">
+                <Phone size={18} /> Call Now
+              </Button>
+            </a>
+          </div>
         </div>
       </section>
+
       <BusinessDetails />
     </CustomerLayout>
   );
