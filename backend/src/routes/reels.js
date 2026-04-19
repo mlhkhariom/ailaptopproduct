@@ -84,7 +84,7 @@ router.get('/fetch-profile', authMiddleware, adminOnly, async (req, res) => {
     if (data.error) throw new Error(data.error.message);
 
     // Filter only REELS and VIDEO
-    const reels = (data.data || []).filter((m: any) => m.media_type === 'VIDEO' || m.media_type === 'REEL');
+    const reels = (data.data || []).filter(m => m.media_type === 'VIDEO' || m.media_type === 'REEL');
 
     // Auto-save to DB if not already exists
     const insertReel = db.prepare('INSERT OR IGNORE INTO reels (id, title, thumbnail, video_url, platform, views, is_active) VALUES (?,?,?,?,?,?,1)');
@@ -99,7 +99,7 @@ router.get('/fetch-profile', authMiddleware, adminOnly, async (req, res) => {
     }
 
     res.json({ fetched: reels.length, added, reels });
-  } catch (e: any) {
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
