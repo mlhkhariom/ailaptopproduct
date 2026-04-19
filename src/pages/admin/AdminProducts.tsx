@@ -21,6 +21,7 @@ const emptyForm = {
   name: "", name_hi: "", price: 0, original_price: 0, image: "",
   category: "", description: "", ingredients: "", benefits: "", usage: "",
   sku: "", slug: "", stock: 10, in_stock: true, status: "active",
+  meta_title: "", meta_description: "", focus_keywords: "",
 };
 
 const AdminProducts = () => {
@@ -58,6 +59,8 @@ const AdminProducts = () => {
       benefits: Array.isArray(p.benefits) ? p.benefits.join("\n") : p.benefits || "",
       usage: p.usage || "", sku: p.sku, slug: p.slug,
       stock: p.stock, in_stock: p.in_stock, status: p.status,
+      meta_title: p.meta_title || "", meta_description: p.meta_description || "",
+      focus_keywords: Array.isArray(p.focus_keywords) ? p.focus_keywords.join(', ') : p.focus_keywords || "",
     });
     setEditingId(p.id);
     setDialogOpen(true);
@@ -77,6 +80,9 @@ const AdminProducts = () => {
       ingredients: form.ingredients.split("\n").filter(Boolean),
       benefits: form.benefits.split("\n").filter(Boolean),
       usage: form.usage,
+      meta_title: form.meta_title || null,
+      meta_description: form.meta_description || null,
+      focus_keywords: form.focus_keywords ? form.focus_keywords.split(',').map((k: string) => k.trim()).filter(Boolean) : [],
     };
     try {
       if (editingId) { await updateProduct(editingId, payload); toast.success("Product updated!"); }
@@ -274,6 +280,23 @@ const AdminProducts = () => {
               <div>
                 <Label className="text-xs">Stock Quantity</Label>
                 <Input type="number" className="mt-1 h-9" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} min={0} />
+              </div>
+            </div>
+
+            {/* SEO Section */}
+            <div className="border-t pt-4 space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">🔍 SEO Settings (optional)</p>
+              <div>
+                <Label className="text-xs">Meta Title <span className="text-muted-foreground">(auto-generated if empty)</span></Label>
+                <Input className="mt-1 h-9 text-sm" value={form.meta_title} onChange={(e) => setForm({ ...form, meta_title: e.target.value })} placeholder={`${form.name || 'Product'} | Buy Online – AI Laptop Wala Indore`} />
+              </div>
+              <div>
+                <Label className="text-xs">Meta Description</Label>
+                <textarea className="mt-1 w-full text-sm border rounded-md p-2 resize-none h-16 bg-background" value={form.meta_description} onChange={(e) => setForm({ ...form, meta_description: e.target.value })} placeholder="Short description for Google search results (150-160 chars)" />
+              </div>
+              <div>
+                <Label className="text-xs">Focus Keywords <span className="text-muted-foreground">(comma separated)</span></Label>
+                <Input className="mt-1 h-9 text-sm" value={form.focus_keywords} onChange={(e) => setForm({ ...form, focus_keywords: e.target.value })} placeholder="dell laptop indore, refurbished laptop, buy laptop indore" />
               </div>
             </div>
           </div>
