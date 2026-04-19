@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mail, Phone, MapPin, Clock, MessageCircle, Navigation } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, MessageCircle, Navigation, Globe } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
