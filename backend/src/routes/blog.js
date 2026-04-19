@@ -11,18 +11,21 @@ router.get('/', (req, res) => {
   const { category, status } = req.query;
   let query = 'SELECT * FROM blog_posts WHERE 1=1';
   const params = [];
-  if (category) { query += ' AND category = ?'; params.push(category); }
+const parseTags = (tags) => {
+  if (!tags) return [];
+  try { return JSON.parse(tags); } catch { return tags.split(',').map(t => t.trim()).filter(Boolean); }
+};
   query += ` AND status = ?`;
   params.push(status || 'published');
   query += ' ORDER BY published_at DESC';
-  res.json(db.prepare(query).all(...params).map(p => ({ ...p, tags: JSON.parse(p.tags || '[]') })));
+  res.json(db.prepare(query).all(...params).map(p => ({ ...p, tags: parseTags(p.tags) })));
 });
 
 // GET /api/blog/:slug — public
 router.get('/:slug', (req, res) => {
   const post = db.prepare('SELECT * FROM blog_posts WHERE slug = ? OR id = ?').get(req.params.slug, req.params.slug);
   if (!post) return res.status(404).json({ error: 'Post not found' });
-  res.json({ ...post, tags: JSON.parse(post.tags || '[]') });
+  res.json({ ...post, tags: parseTags(post.tags) });
 });
 
 // POST /api/blog — admin
