@@ -28,6 +28,7 @@ import socialRoutes from './routes/social.js';
 import reelsRoutes from './routes/reels.js';
 import servicesRoutes from './routes/services.js';
 import invoiceRoutes from './routes/invoice.js';
+import reviewsRoutes from './routes/reviews.js';
 import { startNotificationProcessor } from './whatsapp/notifications.js';
 import { setIO } from './whatsapp/client.js';
 
@@ -76,6 +77,7 @@ app.use('/api/media', mediaRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/services', servicesRoutes);
 app.use('/api/invoice', invoiceRoutes);
+app.use('/api/reviews', reviewsRoutes);
 app.use('/uploads', express.static(path.resolve(__dirname, '../../uploads')));
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportRoutes);

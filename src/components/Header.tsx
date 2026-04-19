@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, Menu, X, Search, User, LogIn, Heart, Bell, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const appSettings = useAppSettings();
   const { user, logout, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const cartCount = useCartStore((s) => s.getItemCount());
   const wishlistCount = useWishlistStore((s) => s.items.length);
 
@@ -55,7 +56,8 @@ const Header = () => {
         <div className="hidden md:flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search..." className="pl-8 w-40 h-9 text-sm" />
+            <Input placeholder="Search laptops..." className="pl-8 w-40 h-9 text-sm"
+              onKeyDown={(e) => { if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) navigate(`/products?q=${encodeURIComponent((e.target as HTMLInputElement).value.trim())}`); }} />
           </div>
 
           <Link to="/wishlist">

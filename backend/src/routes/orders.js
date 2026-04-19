@@ -23,6 +23,11 @@ router.post('/', authMiddleware, (req, res) => {
   items.forEach(item => {
     db.prepare('UPDATE products SET stock = MAX(0, stock - ?), in_stock = CASE WHEN stock - ? <= 0 THEN 0 ELSE 1 END WHERE id = ?')
       .run(item.quantity, item.quantity, item.id);
+    // Low stock alert
+    const p = db.prepare('SELECT name, stock FROM products WHERE id=?').get(item.id);
+    if (p && p.stock <= 3) {
+      db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)').run(uuid(), 'stock', '⚠️ Low Stock Alert', `${p.name} — only ${p.stock} left`, '/admin/products');
+    }
   });
   db.prepare('INSERT INTO notifications (id, type, title, message, link) VALUES (?, ?, ?, ?, ?)')
     .run(uuid(), 'order', 'New Order', `Order ${order_number} placed for ₹${total}`, `/admin/orders`);
