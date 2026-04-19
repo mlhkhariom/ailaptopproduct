@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { HelpCircle, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import CustomerLayout from "@/components/CustomerLayout";
 import SEOHead from "@/components/SEOHead";
@@ -83,7 +84,7 @@ const FAQ = () => {
           <div className="mt-12 text-center p-8 rounded-2xl bg-primary/5 border">
             <h3 className="text-xl font-serif font-bold mb-2">Still have questions?</h3>
             <p className="text-sm text-muted-foreground mb-4">Our team is here to help. Reach out via WhatsApp for instant support.</p>
-            <a href={`https://wa.me/${siteSettings.whatsappNumber}?text=Hi! I have a question.`} target="_blank" rel="noreferrer">
+            <a href="https://wa.me/919893496163?text=Hi! I have a question." target="_blank" rel="noreferrer">
               <Button className="gap-2">💬 Ask on WhatsApp</Button>
             </a>
           </div>
