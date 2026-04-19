@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Wrench, Clock, CheckCircle, Phone, Calendar, Loader2 } from "lucide-react";
+import { Wrench, Clock, CheckCircle, Phone, Calendar, Loader2, MessageCircle, Home, MapPin, Wifi, Gauge, Monitor, Battery } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,23 @@ import { toast } from "sonner";
 
 const CATEGORIES = ['all', 'repair', 'upgrade', 'software', 'recovery', 'maintenance'];
 
+const qualityChecks = [
+  { icon: Monitor, title: "Screen & Display", desc: "No dead pixels, scratches, or color bleeding." },
+  { icon: Battery, title: "Battery Health", desc: "Minimum 80% capacity guaranteed." },
+  { icon: Gauge, title: "Performance Stress", desc: "CPU & GPU stress tested for stability." },
+  { icon: Wifi, title: "Connectivity", desc: "All ports, Wi-Fi, and Bluetooth verified." },
+];
+
+const repairFaqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "What is the home visit charge for laptop repair in Indore?", "acceptedAnswer": { "@type": "Answer", "text": "Home visit charges start from ₹199. This covers engineer visit and checkup. Parts are charged separately." } },
+    { "@type": "Question", "name": "Do you provide No Fix No Charge service?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, AI Laptop Wala follows a No Fix No Charge policy. If we cannot fix your laptop, you don't pay anything." } },
+    { "@type": "Question", "name": "How to book home laptop repair service in Indore?", "acceptedAnswer": { "@type": "Answer", "text": "Call or WhatsApp at +91 98934 96163 or book online at ailaptopwala.com/services." } },
+  ]
+};
+
 const Services = () => {
   const [services, setServices] = useState<any[]>([]);
   const [category, setCategory] = useState('all');
@@ -28,7 +45,6 @@ const Services = () => {
   }, [category]);
 
   const f = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: e.target.value }));
-
   const openBook = (service: any) => { setSelectedService(service); setBookDialog(true); };
 
   const submitBooking = async () => {
@@ -44,43 +60,42 @@ const Services = () => {
   };
 
   const serviceSchema = services.length > 0 ? {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    "name": "Laptop Repair Services — AI Laptop Wala Indore",
+    "@context": "https://schema.org", "@type": "ItemList",
+    "name": "Laptop Repair & Services — AI Laptop Wala Indore",
     "itemListElement": services.map((s, i) => ({
-      "@type": "ListItem",
-      "position": i + 1,
-      "item": {
-        "@type": "Service",
-        "name": s.name,
-        "description": s.description,
-        "offers": { "@type": "Offer", "price": s.price, "priceCurrency": "INR" },
-        "provider": { "@type": "LocalBusiness", "name": "AI Laptop Wala", "address": "Silver Mall, RNT Marg, Indore" },
-        "areaServed": "Indore",
-        "serviceType": s.category,
-      }
+      "@type": "ListItem", "position": i + 1,
+      "item": { "@type": "Service", "name": s.name, "description": s.description, "offers": { "@type": "Offer", "price": s.price, "priceCurrency": "INR" }, "provider": { "@type": "LocalBusiness", "name": "AI Laptop Wala" }, "areaServed": "Indore" }
     }))
   } : null;
 
   return (
     <CustomerLayout>
-      <SEOHead title="Laptop Repair Services Indore — AI Laptop Wala" description="Expert laptop repair in Indore. Screen replacement, battery, keyboard, SSD/RAM upgrade, virus removal. Same day service at Silver Mall." canonical="/services" breadcrumbs={[{name:"Services"}]} jsonLd={serviceSchema || undefined} />
+      <SEOHead
+        title="Laptop Repair & Services Indore — AI Laptop Wala | Home Service Available"
+        description="Expert laptop repair & services in Indore. Screen replacement, battery, keyboard, SSD/RAM upgrade, virus removal. Same day service. Home pickup available. Book online or WhatsApp."
+        canonical="/services"
+        keywords="laptop repair Indore, home laptop repair Indore, laptop screen repair Indore, battery replacement Indore, SSD upgrade Indore, doorstep laptop repair Indore, laptop service booking Indore"
+        breadcrumbs={[{ name: "Repair & Services" }]}
+        jsonLd={[serviceSchema, repairFaqSchema].filter(Boolean)}
+      />
+
       {/* Hero */}
-      <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/5 py-16">
-        <div className="container mx-auto px-4 text-center">
-          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Wrench className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="text-4xl font-bold mb-3">Laptop Repair & Services</h1>
-          <p className="text-muted-foreground text-lg max-w-xl mx-auto">Expert repair for all laptop brands. Same day service available in Indore.</p>
-          <div className="flex items-center justify-center gap-6 mt-6 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1"><CheckCircle className="h-4 w-4 text-green-500" /> 6 Month Warranty</span>
-            <span className="flex items-center gap-1"><Clock className="h-4 w-4 text-primary" /> Same Day Service</span>
-            <span className="flex items-center gap-1"><Phone className="h-4 w-4 text-secondary" /> Free Pickup Indore</span>
+      <section className="bg-gradient-to-br from-foreground to-foreground/90 text-background py-16">
+        <div className="container mx-auto px-4 text-center max-w-3xl">
+          <h1 className="text-3xl md:text-5xl font-black mb-3">
+            Laptop <span className="text-primary">Repair & Services</span>
+          </h1>
+          <p className="text-background/60 mb-6">Expert repair for all brands — Doorstep service in Indore</p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <span className="flex items-center gap-1.5 bg-primary/20 border border-primary/30 text-primary px-4 py-2 rounded-full text-xs font-semibold"><CheckCircle className="h-3.5 w-3.5" /> 6 Month Warranty</span>
+            <span className="flex items-center gap-1.5 bg-white/10 border border-white/20 text-background/80 px-4 py-2 rounded-full text-xs font-semibold"><Clock className="h-3.5 w-3.5" /> Same Day Service</span>
+            <span className="flex items-center gap-1.5 bg-white/10 border border-white/20 text-background/80 px-4 py-2 rounded-full text-xs font-semibold"><Home className="h-3.5 w-3.5" /> Free Home Pickup</span>
+            <span className="flex items-center gap-1.5 bg-white/10 border border-white/20 text-background/80 px-4 py-2 rounded-full text-xs font-semibold"><MapPin className="h-3.5 w-3.5" /> All Over Indore</span>
           </div>
         </div>
       </section>
 
+      {/* Services */}
       <section className="py-12">
         <div className="container mx-auto px-4">
           {/* Category Filter */}
@@ -93,20 +108,19 @@ const Services = () => {
             ))}
           </div>
 
-          {/* Services Grid */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {services.map(s => (
               <Card key={s.id} className="hover:shadow-lg transition-shadow group">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between mb-3">
-                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                       <Wrench className="h-5 w-5 text-primary" />
                     </div>
                     <Badge variant="outline" className="text-[10px] capitalize">{s.category}</Badge>
                   </div>
                   <h3 className="font-semibold mb-1">{s.name}</h3>
                   <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{s.description}</p>
-                  <div className="flex items-center gap-2 mb-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5 mb-4 text-xs text-muted-foreground">
                     <Clock className="h-3.5 w-3.5" /> {s.duration}
                   </div>
                   <div className="flex items-center justify-between">
@@ -114,13 +128,67 @@ const Services = () => {
                       <p className="text-xl font-bold text-primary">₹{s.price.toLocaleString()}</p>
                       <p className="text-[10px] text-muted-foreground">Starting price</p>
                     </div>
-                    <Button size="sm" onClick={() => openBook(s)} className="gap-1.5">
-                      <Calendar className="h-3.5 w-3.5" /> Book Now
-                    </Button>
+                    <div className="flex gap-2">
+                      <a href={`https://wa.me/919893496163?text=Hi, I need ${encodeURIComponent(s.name)} service`} target="_blank" rel="noreferrer">
+                        <Button size="sm" variant="outline" className="gap-1 border-green-500 text-green-600 hover:bg-green-50 h-8 px-2">
+                          <MessageCircle className="h-3.5 w-3.5" />
+                        </Button>
+                      </a>
+                      <Button size="sm" onClick={() => openBook(s)} className="gap-1.5 h-8">
+                        <Calendar className="h-3.5 w-3.5" /> Book
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Our Promise */}
+      <section className="py-10 bg-muted/50">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <h2 className="text-xl font-bold text-center mb-6">हमारा वादा — Our Promise</h2>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {["⚡ Fast Service", "✅ Genuine Parts", "💰 Transparent Pricing", "🔧 No Fix – No Charge", "👨‍🔧 Trusted Engineers"].map(item => (
+              <div key={item} className="bg-card border rounded-xl p-3 text-center text-xs font-semibold">{item}</div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 40-Step Quality Check */}
+      <section className="py-12">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <h2 className="text-xl font-bold text-center mb-2">Our 40-Step <span className="text-primary">Quality Check</span></h2>
+          <p className="text-muted-foreground text-center text-sm mb-8">Every repaired device goes through rigorous testing before delivery.</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {qualityChecks.map(q => (
+              <Card key={q.title}>
+                <CardContent className="p-5 text-center">
+                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                    <q.icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <h3 className="font-bold text-sm mb-1">{q.title}</h3>
+                  <p className="text-xs text-muted-foreground">{q.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-12 bg-primary/5 text-center">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <h2 className="text-2xl font-bold mb-2">Need a Repair?</h2>
+          <p className="text-muted-foreground text-sm mb-6">Call us or WhatsApp for instant booking. Our engineer will visit your home/office in Indore.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a href="tel:+919893496163"><Button size="lg" className="gap-2 w-full sm:w-auto"><Phone className="h-4 w-4" /> Call Now</Button></a>
+            <a href="https://wa.me/919893496163?text=Hi, I need laptop repair service" target="_blank" rel="noreferrer">
+              <Button size="lg" variant="outline" className="gap-2 w-full sm:w-auto border-green-500 text-green-600 hover:bg-green-50"><MessageCircle className="h-4 w-4" /> WhatsApp Us</Button>
+            </a>
           </div>
         </div>
       </section>
@@ -155,7 +223,7 @@ const Services = () => {
                 </Select>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">📱 You will receive WhatsApp confirmation after booking.</p>
+            <p className="text-xs text-muted-foreground">📱 WhatsApp confirmation milegi booking ke baad.</p>
             <Button onClick={submitBooking} disabled={loading} className="w-full gap-2">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calendar className="h-4 w-4" />}
               {loading ? 'Booking...' : 'Confirm Booking'}
