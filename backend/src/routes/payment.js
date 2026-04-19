@@ -124,4 +124,83 @@ router.post('/paytm/callback', (req, res) => {
   }
 });
 
+// POST /api/payment/create-link — create Razorpay Payment Link (for WhatsApp sharing)
+router.post('/create-link', async (req, res) => {
+  const keyId = getSetting('razorpay_key_id');
+  const keySecret = getSetting('razorpay_key_secret');
+  const { amount, description, customer_name, customer_phone, customer_email, order_number } = req.body;
+
+  if (!keyId || !keySecret) {
+    return res.status(400).json({ error: 'Razorpay not configured. Add keys in Admin → Settings.' });
+  }
+
+  try {
+    const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+    const payload = {
+      amount: Math.round(amount * 100), // paise
+      currency: 'INR',
+      description: description || `AI Laptop Wala Order ${order_number || ''}`,
+      customer: {
+        name: customer_name || 'Customer',
+        contact: customer_phone ? customer_phone.replace(/[^0-9]/g, '') : undefined,
+        email: customer_email || undefined,
+      },
+      notify: { sms: true, email: !!customer_email },
+      reminder_enable: true,
+      notes: { order_number: order_number || '', source: 'whatsapp_agent' },
+      callback_url: `${getSetting('store_website') || 'https://ailaptopwala.com'}/order-success`,
+      callback_method: 'get',
+    };
+
+    const response = await fetch('https://api.razorpay.com/v1/payment_links', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${auth}` },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.description || 'Payment link creation failed');
+
+    res.json({ payment_link: data.short_url, link_id: data.id, amount: data.amount / 100 });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/payment/razorpay/webhook — payment success webhook
+router.post('/razorpay/webhook', async (req, res) => {
+  const secret = getSetting('razorpay_webhook_secret');
+  try {
+    if (secret) {
+      const crypto = await import('crypto');
+      const sig = req.headers['x-razorpay-signature'];
+      const expected = crypto.createHmac('sha256', secret).update(JSON.stringify(req.body)).digest('hex');
+      if (sig !== expected) return res.status(400).json({ error: 'Invalid signature' });
+    }
+
+    const event = req.body.event;
+    const payload = req.body.payload;
+
+    if (event === 'payment_link.paid' || event === 'payment.captured') {
+      const notes = payload?.payment_link?.entity?.notes || payload?.payment?.entity?.notes || {};
+      const orderNumber = notes.order_number;
+      const paymentId = payload?.payment?.entity?.id || payload?.payment_link?.entity?.id;
+      const phone = payload?.payment_link?.entity?.customer?.contact || payload?.payment?.entity?.contact;
+
+      if (orderNumber) {
+        db.prepare("UPDATE orders SET payment_status='paid', razorpay_id=? WHERE order_number=?").run(paymentId, orderNumber);
+
+        // WhatsApp notification
+        if (phone) {
+          const { notifyPaymentSuccess } = await import('../whatsapp/notifications.js');
+          const order = db.prepare('SELECT * FROM orders WHERE order_number=?').get(orderNumber);
+          if (order) notifyPaymentSuccess(order, phone, 'Customer', paymentId);
+        }
+      }
+    }
+    res.json({ status: 'ok' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 export default router;

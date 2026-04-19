@@ -6,6 +6,60 @@ export const getAgentSettings = () => {
   return db.prepare('SELECT * FROM ai_agent_settings WHERE id = ?').get('main') || {};
 };
 
+// ── Create order + payment link ───────────────────────────
+export const createOrderWithPaymentLink = async (contactPhone, productId, customerName) => {
+  const product = db.prepare('SELECT * FROM products WHERE id=? OR slug=?').get(productId, productId);
+  if (!product) return null;
+
+  const order_number = 'ALW-' + Date.now().toString().slice(-6);
+  const orderId = uuid();
+  const phone = contactPhone.replace('@c.us', '').replace(/[^0-9]/g, '');
+
+  // Create order
+  db.prepare(`INSERT INTO orders (id,order_number,items,subtotal,total,payment_method,payment_status,address) VALUES (?,?,?,?,?,'razorpay','pending','{}')`)
+    .run(orderId, order_number, JSON.stringify([{ id: product.id, name: product.name, quantity: 1, price: product.price }]), product.price, product.price);
+
+  // Create Razorpay payment link
+  const keyId = db.prepare("SELECT value FROM app_settings WHERE key='razorpay_key_id'").get()?.value;
+  const keySecret = db.prepare("SELECT value FROM app_settings WHERE key='razorpay_key_secret'").get()?.value;
+
+  if (!keyId || !keySecret) {
+    return { order_number, product, payment_link: null, message: `Order ${order_number} created! Pay ₹${product.price.toLocaleString('en-IN')} via UPI/Cash on delivery.\n\nTrack: ailaptopwala.com/track-order?order=${order_number}` };
+  }
+
+  try {
+    const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+    const res = await fetch('https://api.razorpay.com/v1/payment_links', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${auth}` },
+      body: JSON.stringify({
+        amount: Math.round(product.price * 100),
+        currency: 'INR',
+        description: `${product.name} - AI Laptop Wala`,
+        customer: { name: customerName || 'Customer', contact: phone },
+        notify: { sms: true },
+        notes: { order_number, product_id: product.id, source: 'whatsapp_agent' },
+        callback_url: `https://ailaptopwala.com/order-success?order=${order_number}`,
+      }),
+    });
+    const data = await res.json();
+    const payLink = data.short_url || null;
+
+    if (payLink) {
+      db.prepare("UPDATE orders SET payment_status='link_sent' WHERE id=?").run(orderId);
+    }
+
+    return { order_number, product, payment_link: payLink };
+  } catch {
+    return { order_number, product, payment_link: null };
+  }
+};
+
+// ── Get settings ──────────────────────────────────────────
+export const getAgentSettings = () => {
+  return db.prepare('SELECT * FROM ai_agent_settings WHERE id = ?').get('main') || {};
+};
+
 // ── Check if agent enabled for contact ───────────────────
 export const isAgentEnabledForContact = (contactId) => {
   const s = getAgentSettings();
@@ -69,6 +123,10 @@ const lookupOrder = (query) => {
 const BOOKING_KEYWORDS = ['repair', 'fix', 'broken', 'screen', 'battery', 'keyboard', 'virus', 'slow', 'hang', 'book', 'service', 'thik', 'kharab', 'toot', 'band', 'nahi chal', 'booking', 'appointment', 'upgrade', 'ssd', 'ram'];
 const isBookingIntent = (msg) => BOOKING_KEYWORDS.some(k => msg.toLowerCase().includes(k));
 
+// ── Order/buy intent detection ────────────────────────────
+const BUY_KEYWORDS = ['khareedna', 'kharidna', 'buy', 'order', 'purchase', 'lena', 'chahiye', 'price', 'kitna', 'available', 'stock', 'confirm', 'book karo', 'order karo', 'le lena'];
+const isBuyIntent = (msg) => BUY_KEYWORDS.some(k => msg.toLowerCase().includes(k));
+
 // ── Build context for LLM ─────────────────────────────────
 const buildContext = (s, message) => {
   const parts = [];
@@ -78,8 +136,11 @@ const buildContext = (s, message) => {
     const products = searchProducts(message);
     if (products.length > 0) {
       parts.push('AVAILABLE PRODUCTS:\n' + products.map(p =>
-        `- ${p.name}: ₹${p.price}${p.original_price ? ` (MRP: ₹${p.original_price})` : ''} | ${p.in_stock ? `In Stock (${p.stock})` : 'Out of Stock'} | ${p.description?.slice(0, 80)}`
+        `- ${p.name}: ₹${p.price}${p.original_price ? ` (MRP: ₹${p.original_price})` : ''} | ${p.in_stock ? `In Stock (${p.stock})` : 'Out of Stock'} | ID: ${p.id} | ${p.description?.slice(0, 80)}`
       ).join('\n'));
+      if (isBuyIntent(message)) {
+        parts.push('BUY INTENT DETECTED: User wants to buy. If they confirm a specific product, you can create an order. Reply with product details and ask: "Kya aap [product name] order karna chahte hain? Haan/Yes bolein toh main payment link bhej deta hoon."');
+      }
     }
   }
 
@@ -183,7 +244,41 @@ export const processAgentMessage = async (contactId, contactName, message) => {
   if (s.feature_human_handoff) {
     const handoffKeywords = ['human', 'agent', 'person', 'staff', 'manager', 'insaan', 'banda', 'koi insaan'];
     if (handoffKeywords.some(k => message.toLowerCase().includes(k))) {
-      return { reply: '🙋 I\'ll connect you with our team shortly. Please wait a moment.', isHandoff: true };
+      return { reply: '🙋 Hum aapko apni team se connect kar rahe hain. Thoda wait karein!', isHandoff: true };
+    }
+  }
+
+  // ── ORDER CONFIRMATION FLOW ───────────────────────────────
+  // Check if user is confirming an order from memory
+  const confirmKeywords = ['haan', 'yes', 'ha', 'ok', 'okay', 'confirm', 'order karo', 'le lena', 'book karo', 'chahiye'];
+  const isConfirming = confirmKeywords.some(k => message.toLowerCase().trim() === k || message.toLowerCase().includes(k));
+
+  if (isConfirming) {
+    // Check last AI message for pending order context
+    const lastMsgs = getMemory(contactId, 4);
+    const lastAiMsg = [...lastMsgs].reverse().find(m => m.role === 'assistant');
+    if (lastAiMsg?.content) {
+      // Extract product ID from context if AI mentioned a product
+      const productMatch = lastAiMsg.content.match(/ID:\s*([a-zA-Z0-9-]+)/);
+      if (productMatch) {
+        const productId = productMatch[1];
+        console.log(`🛒 Creating order for product: ${productId}`);
+        const result = await createOrderWithPaymentLink(contactId, productId, contactName);
+        if (result) {
+          let reply;
+          if (result.payment_link) {
+            reply = `✅ *Order Confirmed!*\n\n*Order ID:* ${result.order_number}\n*Product:* ${result.product.name}\n*Amount:* ₹${result.product.price.toLocaleString('en-IN')}\n\n💳 *Payment Link:*\n${result.payment_link}\n\nLink pe click karke payment karein. Payment hone ke baad WhatsApp pe confirmation milegi! 🎉\n\n📞 Help: +91 98934 96163`;
+          } else {
+            reply = `✅ *Order Confirmed!*\n\n*Order ID:* ${result.order_number}\n*Product:* ${result.product.name}\n*Amount:* ₹${result.product.price.toLocaleString('en-IN')}\n\nHamari team aapko payment details ke liye contact karegi.\n📞 +91 98934 96163\n\nTrack: ailaptopwala.com/track-order?order=${result.order_number}`;
+          }
+          saveMemory(contactId, 'user', message);
+          saveMemory(contactId, 'assistant', reply);
+          incrementDailyCount(contactId);
+          // Admin notification
+          db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)').run(uuid(), 'order', '🛒 WhatsApp Order', `${contactName} ordered ${result.product.name} via WhatsApp`, '/admin/orders');
+          return { reply, isAI: true, isOrder: true, order_number: result.order_number };
+        }
+      }
     }
   }
 
