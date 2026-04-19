@@ -1,47 +1,29 @@
 import CustomerLayout from "@/components/CustomerLayout";
+import SEOHead from "@/components/SEOHead";
+
+const sections = [
+  { title: "Information We Collect", content: "We collect information you provide when creating an account, placing orders, or contacting us: name, email, phone number, shipping address, and payment information (processed securely via Razorpay). We also collect device/browser data for analytics." },
+  { title: "How We Use Your Information", content: "We use your information to: process and fulfill orders, send order confirmations and updates via WhatsApp/email, provide customer support, improve our website and services, send promotional offers (you can opt out anytime)." },
+  { title: "Information Sharing", content: "We do not sell or rent your personal information. We share data only with: payment processors (Razorpay), shipping partners for order delivery, and as required by law. All third parties are bound by confidentiality agreements." },
+  { title: "Data Security", content: "We implement industry-standard security measures including SSL encryption, secure payment processing via Razorpay, and restricted access to personal data. However, no internet transmission is 100% secure." },
+  { title: "Cookies", content: "We use cookies to maintain your session, remember cart items, and analyze website traffic. You can disable cookies in your browser settings, though some features may not work properly." },
+  { title: "Your Rights", content: "You have the right to access, correct, or delete your personal data. To exercise these rights, contact us at contact@ailaptopwala.com or WhatsApp +91 98934 96163." },
+  { title: "Contact Us", content: "For privacy concerns: AI Laptop Wala (Asati Infotech), LB-21, Block-B, Silver Mall, RNT Marg, Indore, MP 452001. Email: contact@ailaptopwala.com | Phone: +91 98934 96163" },
+];
 
 const Privacy = () => (
   <CustomerLayout>
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
-      <h1 className="text-4xl font-serif font-bold mb-2">Privacy Policy</h1>
-      <p className="text-sm text-muted-foreground mb-8">Last updated: January 2024</p>
-
-      <div className="prose prose-sm max-w-none space-y-6">
-        <section>
-          <h2 className="text-xl font-serif font-bold mb-3">1. Information We Collect</h2>
-          <p className="text-muted-foreground leading-relaxed">We collect information you provide directly — such as your name, email, phone number, shipping address, and payment details when you place an order. We also collect usage data like browser type, IP address, and pages visited through cookies and analytics tools.</p>
-        </section>
-
-        <section>
-          <h2 className="text-xl font-serif font-bold mb-3">2. How We Use Your Information</h2>
-          <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-            <li>Process and fulfill your orders</li>
-            <li>Send order confirmations and shipping updates via WhatsApp/SMS/Email</li>
-            <li>Provide personalized Laptop health recommendations</li>
-            <li>Improve our website and product offerings</li>
-            <li>Send promotional offers (only with your consent)</li>
-          </ul>
-        </section>
-
-        <section>
-          <h2 className="text-xl font-serif font-bold mb-3">3. Data Security</h2>
-          <p className="text-muted-foreground leading-relaxed">We use industry-standard encryption (SSL/TLS) to protect your data. Payment processing is handled securely through Razorpay. We never store your full credit/debit card details on our servers.</p>
-        </section>
-
-        <section>
-          <h2 className="text-xl font-serif font-bold mb-3">4. Sharing of Information</h2>
-          <p className="text-muted-foreground leading-relaxed">We do not sell your personal data. We share information only with trusted service providers (shipping partners, payment gateways) necessary to fulfill your orders. We may disclose data if required by law.</p>
-        </section>
-
-        <section>
-          <h2 className="text-xl font-serif font-bold mb-3">5. Your Rights</h2>
-          <p className="text-muted-foreground leading-relaxed">You can request access, correction, or deletion of your personal data at any time by contacting us at hello@ailaptopwala.com. You can unsubscribe from marketing emails using the link in any email.</p>
-        </section>
-
-        <section>
-          <h2 className="text-xl font-serif font-bold mb-3">6. Contact</h2>
-          <p className="text-muted-foreground leading-relaxed">For privacy-related queries, email us at hello@ailaptopwala.com or call +91 98765 43210.</p>
-        </section>
+    <SEOHead title="Privacy Policy — AI Laptop Wala" canonical="/privacy" noindex />
+    <div className="container mx-auto px-4 py-12 max-w-3xl">
+      <h1 className="text-3xl font-black mb-2">Privacy Policy</h1>
+      <p className="text-muted-foreground text-sm mb-8">Last updated: April 2026 | AI Laptop Wala (Asati Infotech)</p>
+      <div className="space-y-6">
+        {sections.map(s => (
+          <div key={s.title}>
+            <h2 className="text-lg font-bold mb-2">{s.title}</h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">{s.content}</p>
+          </div>
+        ))}
       </div>
     </div>
   </CustomerLayout>

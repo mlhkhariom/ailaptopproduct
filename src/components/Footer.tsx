@@ -5,7 +5,7 @@ import logo from "@/assets/logo.jpeg";
 const Footer = () => (
   <footer className="bg-foreground text-background py-12 md:py-16">
     <div className="container mx-auto px-5">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 md:gap-8 mb-10">
 
         {/* Brand */}
         <div>
@@ -42,6 +42,7 @@ const Footer = () => (
               { label: "Blog", to: "/blog" },
               { label: "Contact Us", to: "/contact" },
               { label: "Track Order", to: "/track-order" },
+              { label: "Wishlist", to: "/wishlist" },
             ].map(l => (
               <li key={l.to}><Link to={l.to} className="text-sm text-background/60 hover:text-primary transition-colors">{l.label}</Link></li>
             ))}
@@ -54,6 +55,22 @@ const Footer = () => (
           <ul className="space-y-2.5">
             {["Screen Replacement", "Battery Replacement", "Keyboard Repair", "SSD/RAM Upgrade", "OS Installation", "Motherboard Repair", "Data Recovery", "Virus Removal"].map(s => (
               <li key={s}><Link to="/services" className="text-sm text-background/60 hover:text-primary transition-colors">{s}</Link></li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Policies */}
+        <div>
+          <h4 className="font-heading font-bold text-sm mb-4 text-background">Policies</h4>
+          <ul className="space-y-2.5 mb-6">
+            {[
+              { label: "Privacy Policy", to: "/privacy" },
+              { label: "Terms & Conditions", to: "/terms" },
+              { label: "Refund & Returns", to: "/refund" },
+              { label: "Shipping Policy", to: "/shipping" },
+              { label: "FAQ", to: "/faq" },
+            ].map(l => (
+              <li key={l.to}><Link to={l.to} className="text-sm text-background/60 hover:text-primary transition-colors">{l.label}</Link></li>
             ))}
           </ul>
         </div>
