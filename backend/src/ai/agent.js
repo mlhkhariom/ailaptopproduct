@@ -51,7 +51,13 @@ const saveMemory = (contactId, role, content) => {
 // ── Product search ────────────────────────────────────────
 const searchProducts = (query) => {
   const q = `%${query}%`;
-  return db.prepare('SELECT name, price, original_price, description, slug, in_stock, stock FROM products WHERE (name LIKE ? OR name_hi LIKE ? OR description LIKE ?) AND status = ? LIMIT 3').all(q, q, q, 'active');
+  return db.prepare('SELECT name, price, original_price, description, slug, in_stock, stock FROM products WHERE (name LIKE ? OR description LIKE ?) AND status = ? LIMIT 3').all(q, q, 'active');
+};
+
+// ── Services search ───────────────────────────────────────
+const searchServices = (query) => {
+  const q = `%${query}%`;
+  return db.prepare('SELECT name, price, duration, description, category FROM services WHERE (name LIKE ? OR description LIKE ? OR category LIKE ?) AND is_active = 1 LIMIT 4').all(q, q, q);
 };
 
 // ── Order lookup ──────────────────────────────────────────
@@ -59,27 +65,42 @@ const lookupOrder = (query) => {
   return db.prepare('SELECT order_number, status, total, tracking_id, courier, created_at FROM orders WHERE order_number LIKE ? LIMIT 1').get(`%${query}%`);
 };
 
+// ── Booking intent detection ──────────────────────────────
+const BOOKING_KEYWORDS = ['repair', 'fix', 'broken', 'screen', 'battery', 'keyboard', 'virus', 'slow', 'hang', 'book', 'service', 'thik', 'kharab', 'toot', 'band', 'nahi chal', 'booking', 'appointment', 'upgrade', 'ssd', 'ram'];
+const isBookingIntent = (msg) => BOOKING_KEYWORDS.some(k => msg.toLowerCase().includes(k));
+
 // ── Build context for LLM ─────────────────────────────────
-const buildContext = (s, message, contactId) => {
+const buildContext = (s, message) => {
   const parts = [];
 
-  // Product search context
+  // Product search
   if (s.feature_product_search) {
     const products = searchProducts(message);
     if (products.length > 0) {
       parts.push('AVAILABLE PRODUCTS:\n' + products.map(p =>
-        `- ${p.name}: ₹${p.price}${p.original_price ? ` (MRP: ₹${p.original_price})` : ''} | ${p.in_stock ? `In Stock (${p.stock} units)` : 'Out of Stock'} | ${p.description?.slice(0, 100)}`
+        `- ${p.name}: ₹${p.price}${p.original_price ? ` (MRP: ₹${p.original_price})` : ''} | ${p.in_stock ? `In Stock (${p.stock})` : 'Out of Stock'} | ${p.description?.slice(0, 80)}`
       ).join('\n'));
     }
   }
 
-  // Order status context
+  // Services search
+  if (isBookingIntent(message)) {
+    const services = searchServices(message);
+    const allServices = services.length > 0 ? services : db.prepare('SELECT name, price, duration FROM services WHERE is_active=1 LIMIT 6').all();
+    if (allServices.length > 0) {
+      parts.push('REPAIR SERVICES:\n' + allServices.map(s =>
+        `- ${s.name}: ₹${s.price} | ${s.duration}`
+      ).join('\n') + '\nBook at: ailaptopwala.com/services');
+    }
+  }
+
+  // Order status
   if (s.feature_order_status) {
-    const orderMatch = message.match(/APC-\d+/i) || message.match(/order\s*#?\s*(\w+)/i);
+    const orderMatch = message.match(/ALW-\d+/i) || message.match(/APC-\d+/i) || message.match(/order[:\s#]*([A-Z0-9-]+)/i);
     if (orderMatch) {
-      const order = lookupOrder(orderMatch[0]);
+      const order = lookupOrder(orderMatch[1] || orderMatch[0]);
       if (order) {
-        parts.push(`ORDER INFO: ${order.order_number} | Status: ${order.status} | Total: ₹${order.total}${order.tracking_id ? ` | Tracking: ${order.tracking_id} via ${order.courier}` : ''}`);
+        parts.push(`ORDER: ${order.order_number} | Status: ${order.status} | ₹${order.total}${order.tracking_id ? ` | Tracking: ${order.tracking_id} (${order.courier})` : ''}`);
       }
     }
   }
@@ -143,7 +164,7 @@ export const processAgentMessage = async (contactId, contactName, message) => {
   }
 
   // Build context
-  const context = buildContext(s, message, contactId);
+  const context = buildContext(s, message);
 
   // Get memory
   const memory = getMemory(contactId, s.memory_messages);

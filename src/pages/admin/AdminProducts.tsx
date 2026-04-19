@@ -71,7 +71,7 @@ const AdminProducts = () => {
       image: form.image || "https://images.unsplash.com/photo-1611241893603-3c359704e0ee?w=400&h=400&fit=crop",
       category: form.category, rating: 4.5, reviews: 0, stock: Number(form.stock),
       in_stock: form.in_stock, status: form.status,
-      sku: form.sku || `APC-${Date.now()}`,
+      sku: form.sku || `ALW-${Date.now()}`,
       slug: form.slug || form.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
       description: form.description,
       ingredients: form.ingredients.split("\n").filter(Boolean),

@@ -45,7 +45,7 @@ const TrackOrder = () => {
           <p className="text-muted-foreground mb-8">Enter your order ID to check the delivery status</p>
           <div className="flex gap-3 max-w-md mx-auto">
             <Input
-              placeholder="e.g. APC-001"
+              placeholder="e.g. ALW-001"
               value={orderId}
               onChange={(e) => setOrderId(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -55,7 +55,7 @@ const TrackOrder = () => {
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Track
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-3">Demo: try APC-001, APC-002, APC-004</p>
+          <p className="text-xs text-muted-foreground mt-3">Demo: try ALW-001, ALW-002</p>
         </div>
       </section>
 
