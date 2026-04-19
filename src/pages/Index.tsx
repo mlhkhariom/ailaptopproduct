@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import CustomerLayout from "@/components/CustomerLayout";
 import SEOHead from "@/components/SEOHead";
 import ProductCard from "@/components/ProductCard";
+import BusinessDetails from "@/components/BusinessDetails";
 import { useProductStore } from "@/store/productStore";
 import { api } from "@/lib/api";
 
@@ -154,6 +155,7 @@ const Index = () => {
           </a>
         </div>
       </section>
+      <BusinessDetails />
     </CustomerLayout>
   );
 };

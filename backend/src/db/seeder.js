@@ -35,6 +35,7 @@ export const runSeeder = async (db) => {
     ['whatsapp_number','919893496163'],['store_founded','2011'],
     ['store_customers','5000+'],['store_rating','4.8'],
     ['store_founder','Bhagwan Das Asati'],['store_company','Asati Infotech'],
+    ['store_ceo','Nitin Asati'],['store_gst','23ATNPA4415H1Z2'],
     ['shipping_free_above','5000'],['shipping_flat_rate','150'],
     ['razorpay_key_id',''],['razorpay_key_secret',''],
     ['seo_title','AI Laptop Wala Indore – Best Laptop Shop | MacBook, Gaming, Refurbished'],

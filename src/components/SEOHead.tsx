@@ -53,6 +53,8 @@ const globalSchema = [
     "email": SITE.email,
     "foundingDate": SITE.since,
     "founder": { "@type": "Person", "name": SITE.founder },
+    "employee": { "@type": "Person", "name": "Nitin Asati", "jobTitle": "CEO & Manager" },
+    "taxID": "23ATNPA4415H1Z2",
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "LB-21, Block-B, Silver Mall, 8-A, RNT Marg, South Tukoganj",
