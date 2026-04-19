@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import CustomerLayout from "@/components/CustomerLayout";
+import SEOHead from "@/components/SEOHead";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 
@@ -36,6 +37,25 @@ const Contact = () => {
 
   return (
     <CustomerLayout>
+      <SEOHead
+        title="Contact Us — AI Laptop Wala Indore"
+        description="Contact AI Laptop Wala. Visit us at Silver Mall, RNT Marg, Indore. Call +91 98934 96163. Open Mon-Sat 10AM-8PM. WhatsApp available."
+        canonical="/contact"
+        breadcrumbs={[{name:"Contact"}]}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "ContactPage",
+          "name": "Contact AI Laptop Wala",
+          "url": "https://ailaptopwala.com/contact",
+          "mainEntity": {
+            "@type": "LocalBusiness",
+            "name": "AI Laptop Wala",
+            "telephone": "+91-98934-96163",
+            "email": "contact@ailaptopwala.com",
+            "address": { "@type": "PostalAddress", "streetAddress": "LG-21, B-Block, Silver Mall, RNT Marg", "addressLocality": "Indore", "addressRegion": "MP", "postalCode": "452001", "addressCountry": "IN" }
+          }
+        }}
+      />
     <section className="bg-gradient-to-br from-primary/5 via-background to-accent/10 py-16">
       <div className="container mx-auto px-4 text-center max-w-3xl">
         <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">Contact Us</h1>

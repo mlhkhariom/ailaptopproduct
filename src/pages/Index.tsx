@@ -4,6 +4,7 @@ import { ArrowRight, Star, Play, Leaf, Award, Truck, HeartPulse, Shield, Heart, 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import CustomerLayout from "@/components/CustomerLayout";
+import SEOHead from "@/components/SEOHead";
 import ProductCard from "@/components/ProductCard";
 import { useProductStore } from "@/store/productStore";
 import { api } from "@/lib/api";
@@ -32,6 +33,7 @@ const Index = () => {
 
   return (
     <CustomerLayout>
+      <SEOHead canonical="/" />
       {/* Hero */}
       {activeBanner && (
         <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/10">

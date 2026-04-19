@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import CustomerLayout from "@/components/CustomerLayout";
+import SEOHead from "@/components/SEOHead";
 
 const values = [
   { icon: Laptop, title: "Certified Refurbished", desc: "Every laptop is tested, cleaned and certified before sale. Grade A quality guaranteed." },
@@ -26,6 +27,7 @@ const stats = [
 
 const About = () => (
   <CustomerLayout>
+      <SEOHead title="About Us — AI Laptop Wala Indore" description="AI Laptop Wala — Indore most trusted laptop store since 2011. Founded by Bhagwan Das Asati (Asati Infotech). 5000+ happy customers at Silver Mall, RNT Marg." canonical="/about" breadcrumbs={[{name:"About Us"}]} />
     {/* Hero */}
     <section className="bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-16">
       <div className="container mx-auto px-4 text-center max-w-3xl">

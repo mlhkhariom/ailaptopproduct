@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import CustomerLayout from "@/components/CustomerLayout";
+import SEOHead from "@/components/SEOHead";
 import { api } from "@/lib/api";
 
 const BlogPost = () => {
@@ -26,8 +27,33 @@ const BlogPost = () => {
     </CustomerLayout>
   );
 
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": post.title,
+    "description": post.excerpt,
+    "image": post.image,
+    "author": { "@type": "Person", "name": post.author || "AI Laptop Wala Team" },
+    "publisher": { "@type": "Organization", "name": "AI Laptop Wala", "logo": { "@type": "ImageObject", "url": "https://ailaptopwala.com/favicon.png" } },
+    "datePublished": post.published_at || post.created_at,
+    "dateModified": post.updated_at || post.published_at || post.created_at,
+    "mainEntityOfPage": { "@type": "WebPage", "@id": `https://ailaptopwala.com/blog/${post.slug}` },
+    "articleSection": post.category,
+    "inLanguage": "en-IN",
+  };
+
   return (
     <CustomerLayout>
+      <SEOHead
+        title={post.meta_title || post.title}
+        description={post.meta_description || post.excerpt}
+        canonical={`/blog/${post.slug}`}
+        image={post.image}
+        type="article"
+        article={{ publishedTime: post.published_at, modifiedTime: post.updated_at, author: post.author, section: post.category }}
+        breadcrumbs={[{ name: "Blog", url: "/blog" }, { name: post.title }]}
+        jsonLd={articleSchema}
+      />
       <article className="container mx-auto px-4 py-8 max-w-3xl">
         <Link to="/blog" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-6">
           <ArrowLeft className="h-4 w-4" /> Back to Blog

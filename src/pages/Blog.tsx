@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import CustomerLayout from "@/components/CustomerLayout";
+import SEOHead from "@/components/SEOHead";
 import { api } from "@/lib/api";
 
 const Blog = () => {
@@ -20,6 +21,7 @@ const Blog = () => {
 
   return (
     <CustomerLayout>
+      <SEOHead title="Blog — Laptop Tips & Guides | AI Laptop Wala" description="Laptop buying guides, repair tips, tech news from AI Laptop Wala Indore. Expert advice on refurbished laptops, MacBooks and more." canonical="/blog" breadcrumbs={[{name:"Blog"}]} />
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-serif font-bold mb-1">Laptop Wisdom</h1>
         <p className="text-muted-foreground mb-6">Health tips, guides and knowledge from ancient Ayurveda</p>

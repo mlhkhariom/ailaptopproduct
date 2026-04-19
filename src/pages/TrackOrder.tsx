@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CustomerLayout from "@/components/CustomerLayout";
+import SEOHead from "@/components/SEOHead";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -39,6 +40,7 @@ const TrackOrder = () => {
 
   return (
     <CustomerLayout>
+      <SEOHead title="Track Your Order — AI Laptop Wala" canonical="/track-order" noindex={true} />
       <section className="bg-gradient-to-br from-primary/5 via-background to-accent/10 py-16">
         <div className="container mx-auto px-4 text-center max-w-2xl">
           <h1 className="text-4xl font-serif font-bold mb-4">Track Your Order</h1>

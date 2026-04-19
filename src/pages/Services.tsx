@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import CustomerLayout from "@/components/CustomerLayout";
+import SEOHead from "@/components/SEOHead";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -42,8 +43,28 @@ const Services = () => {
     finally { setLoading(false); }
   };
 
+  const serviceSchema = services.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Laptop Repair Services — AI Laptop Wala Indore",
+    "itemListElement": services.map((s, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "item": {
+        "@type": "Service",
+        "name": s.name,
+        "description": s.description,
+        "offers": { "@type": "Offer", "price": s.price, "priceCurrency": "INR" },
+        "provider": { "@type": "LocalBusiness", "name": "AI Laptop Wala", "address": "Silver Mall, RNT Marg, Indore" },
+        "areaServed": "Indore",
+        "serviceType": s.category,
+      }
+    }))
+  } : null;
+
   return (
     <CustomerLayout>
+      <SEOHead title="Laptop Repair Services Indore — AI Laptop Wala" description="Expert laptop repair in Indore. Screen replacement, battery, keyboard, SSD/RAM upgrade, virus removal. Same day service at Silver Mall." canonical="/services" breadcrumbs={[{name:"Services"}]} jsonLd={serviceSchema || undefined} />
       {/* Hero */}
       <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/5 py-16">
         <div className="container mx-auto px-4 text-center">

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import CustomerLayout from "@/components/CustomerLayout";
+import SEOHead from "@/components/SEOHead";
 import { api } from "@/lib/api";
 
 const FAQ = () => {
@@ -19,8 +20,19 @@ const FAQ = () => {
     .filter(f => category === "All" || f.content?.category === category)
     .filter(f => f.content?.question?.toLowerCase().includes(search.toLowerCase()) || f.content?.answer?.toLowerCase().includes(search.toLowerCase()));
 
+  const faqSchema = filtered.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": filtered.map(f => ({
+      "@type": "Question",
+      "name": f.content?.question,
+      "acceptedAnswer": { "@type": "Answer", "text": f.content?.answer }
+    }))
+  } : null;
+
   return (
     <CustomerLayout>
+      <SEOHead title="FAQ — AI Laptop Wala Indore" description="Frequently asked questions about buying refurbished laptops, repair services, warranty, delivery and returns at AI Laptop Wala Indore." canonical="/faq" breadcrumbs={[{name:"FAQ"}]} jsonLd={faqSchema || undefined} />
       <section className="bg-gradient-to-br from-primary/5 via-background to-accent/10 py-16">
         <div className="container mx-auto px-4 text-center max-w-3xl">
           <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">

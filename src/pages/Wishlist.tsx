@@ -1,6 +1,7 @@
 import { Heart, ShoppingCart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CustomerLayout from "@/components/CustomerLayout";
+import SEOHead from "@/components/SEOHead";
 import ProductCard from "@/components/ProductCard";
 import { useWishlistStore } from "@/store/wishlistStore";
 import { useCartStore } from "@/store/cartStore";
@@ -19,6 +20,7 @@ const Wishlist = () => {
 
   return (
     <CustomerLayout>
+      <SEOHead title="My Wishlist — AI Laptop Wala" canonical="/wishlist" noindex={true} />
       <div className="container mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">

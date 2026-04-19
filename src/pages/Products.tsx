@@ -8,6 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LayoutGrid, List, Search, SlidersHorizontal, X } from "lucide-react";
 import CustomerLayout from "@/components/CustomerLayout";
+import SEOHead from "@/components/SEOHead";
 import ProductCard from "@/components/ProductCard";
 import { useProductStore } from "@/store/productStore";
 import { api } from "@/lib/api";
@@ -51,6 +52,12 @@ const Products = () => {
 
   return (
     <CustomerLayout>
+      <SEOHead
+        title={search ? `"${search}" Laptops in Indore` : "Buy Laptops in Indore — Refurbished, MacBook, Gaming"}
+        description={`Buy certified refurbished laptops in Indore. ${search ? `Search results for "${search}". ` : ""}MacBooks, gaming laptops, business laptops at best prices. AI Laptop Wala — Silver Mall, Indore.`}
+        canonical="/products"
+        breadcrumbs={[{ name: "Products", url: "/products" }]}
+      />
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
