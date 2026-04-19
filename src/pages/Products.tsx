@@ -22,7 +22,7 @@ const Products = () => {
   const [search, setSearch] = useState(searchParams.get('q') || "");
   useEffect(() => { setSearch(searchParams.get('q') || ""); }, [searchParams]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [priceRange, setPriceRange] = useState([0, 2000]);
+  const [priceRange, setPriceRange] = useState([0, 200000]);
   const [showFilters, setShowFilters] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
 
