@@ -30,9 +30,9 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   scheduled: { label: "Scheduled", color: "bg-blue-500" },
 };
 
-const SUGGESTED_HASHTAGS = ["#ayurveda", "#naturalhealth", "#herbalremedies", "#ailaptopwala", "#laptopmedicine", "#holistichealth", "#organiclife", "#wellness", "#healthylifestyle", "#naturalremedies"];
+const SUGGESTED_HASHTAGS = ["#laptopindore", "#refurbishedlaptop", "#ailaptopwala", "#laptoprepair", "#macbookindore", "#gaminglaptop", "#indorelaptop", "#techindore", "#laptopdeals", "#asatiinfotech"];
 
-const defaultForm = { title: "", caption: "", hashtags: "#ayurveda #ailaptopwala", thumbnail: "", video_path: "", platform: "instagram", product_id: "__none__", scheduled_at: "" };
+const defaultForm = { title: "", caption: "", hashtags: "#laptopindore #ailaptopwala", thumbnail: "", video_path: "", platform: "instagram", product_id: "__none__", scheduled_at: "" };
 
 const AdminSocial = () => {
   const { products, fetchProducts } = useProductStore();

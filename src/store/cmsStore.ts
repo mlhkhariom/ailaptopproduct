@@ -82,10 +82,10 @@ export const useCMSStore = create<CMSStore>((set) => ({
   heroBanners: [
     {
       id: "1",
-      tagline: "🌿 प्राचीन आयुर्वेद, आधुनिक स्वास्थ्य",
+      tagline: "💻 Indore's Most Trusted Laptop Store Since 2011",
       heading: "– प्रकृति से स्वास्थ्य",
       headingHighlight: "AI Laptop Wala",
-      subtitle: "Authentic Laptop products by AI Laptop Wala Store. 5000 years of wisdom in pure, natural products.",
+      subtitle: "Certified refurbished laptops, MacBooks, gaming laptops & expert repair services in Indore.",
       subtext: "Transform your health naturally with certified Laptop remedies.",
       ctaText: "Shop Now",
       ctaLink: "/products",

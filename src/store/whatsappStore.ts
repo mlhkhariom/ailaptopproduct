@@ -36,7 +36,7 @@ const defaultRules: AutoReplyRule[] = [
     id: "1",
     name: "Greeting",
     keywords: ["hello", "hi", "namaste", "नमस्ते", "हैलो"],
-    responseTemplate: "नमस्ते! 🙏 AI Laptop Wala में आपका स्वागत है। हम आयुर्वेदिक उत्पादों के विशेषज्ञ हैं। कैसे मदद कर सकते हैं?",
+    responseTemplate: "Namaste! 🙏 AI Laptop Wala mein aapka swagat hai! Laptop khareedna, repair ya koi bhi help ke liye batayein.",
     isActive: true,
     type: "greeting",
     matchCount: 45,

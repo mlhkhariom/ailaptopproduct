@@ -239,7 +239,7 @@ const AdminProducts = () => {
           <div className="space-y-4 mt-2">
             <div className="grid grid-cols-2 gap-4">
               <div><Label className="text-xs">Product Name *</Label><Input className="mt-1 h-9" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ashwagandha Powder" /></div>
-              <div><Label className="text-xs">Hindi Name</Label><Input className="mt-1 h-9" value={form.name_hi} onChange={(e) => setForm({ ...form, nameHi: e.target.value })} placeholder="अश्वगंधा चूर्ण" /></div>
+              <div><Label className="text-xs">Hindi Name</Label><Input className="mt-1 h-9" value={form.name_hi} onChange={(e) => setForm({ ...form, nameHi: e.target.value })} placeholder="Dell Latitude (Hindi name)" /></div>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div><Label className="text-xs">Price (₹) *</Label><Input type="number" className="mt-1 h-9" value={form.price || ""} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} /></div>

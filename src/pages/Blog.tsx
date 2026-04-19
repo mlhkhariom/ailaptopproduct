@@ -24,7 +24,7 @@ const Blog = () => {
       <SEOHead title="Blog — Laptop Tips & Guides | AI Laptop Wala" description="Laptop buying guides, repair tips, tech news from AI Laptop Wala Indore. Expert advice on refurbished laptops, MacBooks and more." canonical="/blog" breadcrumbs={[{name:"Blog"}]} />
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-serif font-bold mb-1">Laptop Wisdom</h1>
-        <p className="text-muted-foreground mb-6">Health tips, guides and knowledge from ancient Ayurveda</p>
+        <p className="text-muted-foreground mb-6">Laptop buying guides, repair tips and tech news from AI Laptop Wala</p>
         <div className="relative mb-8 max-w-md">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search articles..." className="pl-8" value={search} onChange={e => setSearch(e.target.value)} />

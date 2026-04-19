@@ -147,7 +147,7 @@ const AdminBlog = () => {
             <div><Label className="text-xs">Title *</Label><Input value={form.title} onChange={f('title')} className="mt-1 text-sm" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-xs">Slug</Label><Input value={form.slug} onChange={f('slug')} className="mt-1 text-sm font-mono" placeholder="auto-generated" /></div>
-              <div><Label className="text-xs">Category</Label><Input value={form.category} onChange={f('category')} className="mt-1 text-sm" placeholder="जड़ी-बूटी" /></div>
+              <div><Label className="text-xs">Category</Label><Input value={form.category} onChange={f('category')} className="mt-1 text-sm" placeholder="Laptop Tips" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-xs">Author</Label><Input value={form.author} onChange={f('author')} className="mt-1 text-sm" /></div>
@@ -166,7 +166,7 @@ const AdminBlog = () => {
             {form.image && <img src={form.image} alt="" className="w-full h-32 object-cover rounded-lg" onError={e => (e.currentTarget.style.display = 'none')} />}
             <div><Label className="text-xs">Excerpt</Label><Textarea value={form.excerpt} onChange={f('excerpt')} className="mt-1 text-sm resize-none" rows={2} /></div>
             <div><Label className="text-xs">Content</Label><Textarea value={form.content} onChange={f('content')} className="mt-1 text-sm resize-none font-mono" rows={8} placeholder="Write your article here..." /></div>
-            <div><Label className="text-xs">Tags (comma separated)</Label><Input value={form.tags} onChange={f('tags')} className="mt-1 text-sm" placeholder="ayurveda, health, herbs" /></div>
+            <div><Label className="text-xs">Tags (comma separated)</Label><Input value={form.tags} onChange={f('tags')} className="mt-1 text-sm" placeholder="laptop, repair, indore" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-xs">SEO Title</Label><Input value={form.seo_title} onChange={f('seo_title')} className="mt-1 text-sm" /></div>
               <div><Label className="text-xs">SEO Description</Label><Input value={form.seo_description} onChange={f('seo_description')} className="mt-1 text-sm" /></div>

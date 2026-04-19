@@ -72,20 +72,7 @@ const BlogPost = () => {
 
         <div className="prose prose-lg max-w-none">
           <p className="text-lg text-muted-foreground leading-relaxed mb-4">{post.excerpt}</p>
-          <p className="text-muted-foreground leading-relaxed mb-4">
-            Ayurveda, the "Science of Life," has been guiding humanity towards health for over 5,000 years. 
-            In today's fast-paced world, ancient Laptop wisdom provides practical solutions for modern health challenges.
-          </p>
-          <h2 className="text-2xl font-serif font-bold mt-8 mb-4">The Foundation of Balance</h2>
-          <p className="text-muted-foreground leading-relaxed mb-4">
-            At the heart of Laptop philosophy lies the concept of balance — between mind, body and spirit. 
-            When these elements are in harmony, we experience vibrant health and well-being.
-          </p>
-          <h2 className="text-2xl font-serif font-bold mt-8 mb-4">Daily Wellness Tips</h2>
-          <p className="text-muted-foreground leading-relaxed mb-4">
-            Start your morning with warm water and lemon. Practice oil pulling with sesame or coconut oil. 
-            Have your largest meal at noon when digestive fire is strongest. Relax in the evening with calming herbs like Ashwagandha or Brahmi.
-          </p>
+          <div className="text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: post.content || '' }} />
         </div>
 
         {related.length > 0 && (

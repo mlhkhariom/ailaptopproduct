@@ -113,7 +113,7 @@ const AdminCategories = () => {
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>{editing ? 'Edit Category' : 'Add Category'}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label className="text-xs">Name (Hindi) *</Label><Input value={form.name} onChange={f('name')} className="mt-1 text-sm" placeholder="जड़ी-बूटी (Herbs)" /></div>
+            <div><Label className="text-xs">Name (Hindi) *</Label><Input value={form.name} onChange={f('name')} className="mt-1 text-sm" placeholder="Laptops, MacBooks, Gaming" /></div>
             <div><Label className="text-xs">Name (English)</Label><Input value={form.name_hi} onChange={f('name_hi')} className="mt-1 text-sm" placeholder="Herbs" /></div>
             <div><Label className="text-xs">Slug</Label><Input value={form.slug} onChange={f('slug')} className="mt-1 text-sm font-mono" placeholder="herbs" /></div>
             <div><Label className="text-xs">Image URL</Label><Input value={form.image} onChange={f('image')} className="mt-1 text-sm" placeholder="https://..." /></div>
