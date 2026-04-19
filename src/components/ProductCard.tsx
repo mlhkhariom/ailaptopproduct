@@ -17,8 +17,8 @@ const ProductCard = ({ product }: { product: any }) => {
   const isLowStock = product.stock > 0 && product.stock <= 5;
 
   const addItem = useCartStore((s) => s.addItem);
-  const { toggleItem, isInWishlist } = useWishlistStore();
-  const wishlisted = isInWishlist(product.id);
+  const { toggleItem, hasItem } = useWishlistStore();
+  const wishlisted = hasItem(product.id);
 
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50">
@@ -55,7 +55,7 @@ const ProductCard = ({ product }: { product: any }) => {
           </div>
           <div className="flex items-center gap-1">
             <Button size="icon" variant="ghost" className="h-8 w-8"
-              onClick={(e) => { e.preventDefault(); toggleItem(product.id); toast(wishlisted ? "Removed from wishlist" : "Added to wishlist"); }}>
+              onClick={(e) => { e.preventDefault(); toggleItem(product); toast(wishlisted ? "Removed from wishlist" : "Added to wishlist"); }}>
               <Heart className={`h-4 w-4 ${wishlisted ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
             </Button>
             <Button size="icon" variant="ghost" className="h-8 w-8 text-primary hover:bg-primary hover:text-primary-foreground"

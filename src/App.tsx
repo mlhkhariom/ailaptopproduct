@@ -27,6 +27,8 @@ import Account from "./pages/Account";
 import TrackOrder from "./pages/TrackOrder";
 import OrderSuccess from "./pages/OrderSuccess";
 import Services from "./pages/Services";
+import Wishlist from "./pages/Wishlist";
+import AdminServices from "./pages/admin/AdminServices";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
@@ -78,6 +80,7 @@ const App = () => (
             <Route path="/track-order" element={<TrackOrder />} />
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/services" element={<Services />} />
+            <Route path="/wishlist" element={<Wishlist />} />
 
             {/* Protected Customer */}
             <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
@@ -92,6 +95,7 @@ const App = () => (
             <Route path="/admin/social" element={<AdminRoute><AdminSocial /></AdminRoute>} />
             <Route path="/admin/media" element={<AdminRoute><AdminMedia /></AdminRoute>} />
             <Route path="/admin/whatsapp" element={<AdminRoute><AdminWhatsApp /></AdminRoute>} />
+            <Route path="/admin/services" element={<AdminRoute><AdminServices /></AdminRoute>} />
             <Route path="/admin/customers" element={<AdminRoute><AdminCustomers /></AdminRoute>} />
             <Route path="/admin/categories" element={<AdminRoute><AdminCategories /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />

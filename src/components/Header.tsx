@@ -58,7 +58,7 @@ const Header = () => {
             <Input placeholder="Search..." className="pl-8 w-40 h-9 text-sm" />
           </div>
 
-          <Link to="/account">
+          <Link to="/wishlist">
             <Button variant="ghost" size="icon" className="relative">
               <Heart className="h-5 w-5" />
               {wishlistCount > 0 && <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center">{wishlistCount}</span>}

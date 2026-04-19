@@ -23,6 +23,7 @@ const routeNames: Record<string, string> = {
   "/admin/social": "Social Automation",
   "/admin/media": "Media Library",
   "/admin/whatsapp": "WhatsApp",
+  "/admin/services": "Service Bookings",
   "/admin/settings": "Settings",
 };
 
