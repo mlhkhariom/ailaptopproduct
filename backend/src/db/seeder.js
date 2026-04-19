@@ -6,10 +6,15 @@ export const runSeeder = async (db) => {
   console.log('🌱 Running seeder...');
 
   // ── USERS ──────────────────────────────────────────────
-  if (!db.prepare("SELECT id FROM users WHERE email='admin@ailaptopwala.com'").get()) {
+  if (!db.prepare("SELECT id FROM users WHERE email='admin@mlhk.in'").get()) {
     const hash = bcrypt.hashSync('HarioM9165', 10);
-    db.prepare("INSERT INTO users (id,name,email,password,role,phone) VALUES (?,?,?,?,?,?)").run(uuid(),'Super Admin','admin@ailaptopwala.com',hash,'admin','+91 98934 96163');
-    console.log('✅ Admin user created');
+    db.prepare("INSERT INTO users (id,name,email,password,role,phone) VALUES (?,?,?,?,?,?)").run(uuid(),'Super Admin','admin@mlhk.in',hash,'superadmin','+91 98934 96163');
+    console.log('✅ Super Admin created: admin@mlhk.in');
+  }
+  if (!db.prepare("SELECT id FROM users WHERE email='admin@ailaptopwala.com'").get()) {
+    const hash = bcrypt.hashSync('Laptop@9165', 10);
+    db.prepare("INSERT INTO users (id,name,email,password,role,phone) VALUES (?,?,?,?,?,?)").run(uuid(),'Admin','admin@ailaptopwala.com',hash,'admin','+91 98934 96163');
+    console.log('✅ Admin created: admin@ailaptopwala.com');
   }
 
   // ── APP SETTINGS ───────────────────────────────────────
