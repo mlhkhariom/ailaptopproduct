@@ -2,30 +2,55 @@ import db from '../db/database.js';
 import { v4 as uuid } from 'uuid';
 import { getClient, getStatus } from '../whatsapp/client.js';
 
+// Normalize phone → 91XXXXXXXXXX format
+const normalizePhone = (phone) => {
+  let p = String(phone).replace(/[^0-9]/g, '');
+  if (p.startsWith('0')) p = p.slice(1);           // remove leading 0
+  if (p.length === 10) p = '91' + p;               // add India code
+  if (p.length === 12 && !p.startsWith('91')) p = '91' + p.slice(-10); // fix wrong prefix
+  return p + '@c.us';
+};
+
 // Queue a WhatsApp notification
 export const queueNotification = (phone, message, type = 'general') => {
+  if (!phone) return;
   try {
     db.prepare('INSERT INTO whatsapp_notifications (id, type, phone, message) VALUES (?,?,?,?)')
-      .run(uuid(), type, phone, message);
+      .run(uuid(), type, String(phone).trim(), message);
   } catch (e) {
     console.error('Queue notification error:', e.message);
   }
 };
 
-// Send pending notifications
+// Send pending notifications (retry failed ones after 5 min)
 export const sendPendingNotifications = async () => {
   const client = getClient();
   if (!client || getStatus() !== 'ready') return;
 
-  const pending = db.prepare("SELECT * FROM whatsapp_notifications WHERE status='pending' LIMIT 5").all();
+  const pending = db.prepare(`
+    SELECT * FROM whatsapp_notifications 
+    WHERE status='pending' 
+       OR (status='failed' AND (sent_at IS NULL OR sent_at < datetime('now', '-5 minutes')))
+    ORDER BY created_at ASC LIMIT 5
+  `).all();
+
   for (const n of pending) {
     try {
-      const phone = n.phone.replace(/[^0-9]/g, '') + '@c.us';
-      await client.sendMessage(phone, n.message);
+      const chatId = normalizePhone(n.phone);
+      // Check number exists on WhatsApp
+      const isRegistered = await client.isRegisteredUser(chatId).catch(() => true);
+      if (!isRegistered) {
+        console.warn(`📵 Not on WhatsApp: ${n.phone}`);
+        db.prepare("UPDATE whatsapp_notifications SET status='not_registered' WHERE id=?").run(n.id);
+        continue;
+      }
+      await client.sendMessage(chatId, n.message);
       db.prepare("UPDATE whatsapp_notifications SET status='sent', sent_at=datetime('now') WHERE id=?").run(n.id);
-      await new Promise(r => setTimeout(r, 1000));
+      console.log(`✅ WhatsApp sent to ${n.phone}`);
+      await new Promise(r => setTimeout(r, 1500));
     } catch (e) {
-      db.prepare("UPDATE whatsapp_notifications SET status='failed' WHERE id=?").run(n.id);
+      console.error(`❌ WhatsApp send failed to ${n.phone}:`, e.message);
+      db.prepare("UPDATE whatsapp_notifications SET status='failed', sent_at=datetime('now') WHERE id=?").run(n.id);
     }
   }
 };
