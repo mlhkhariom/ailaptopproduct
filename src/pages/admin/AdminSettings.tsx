@@ -95,7 +95,17 @@ const AdminSettings = () => {
                 </div>
                 <div><Label className="text-xs flex items-center gap-1"><Globe className="h-3 w-3" /> Website URL</Label><Input className="mt-1 h-9" value={s('store_website')} onChange={e => setS('store_website', e.target.value)} /></div>
                 <div><Label className="text-xs">Address</Label><Textarea className="mt-1 text-xs" rows={2} value={s('store_address')} onChange={e => setS('store_address', e.target.value)} /></div>
-                <div><Label className="text-xs">Store Logo URL</Label><Input className="mt-1 h-9" value={s('store_logo')} onChange={e => setS('store_logo', e.target.value)} placeholder="https://..." /></div>
+                <div>
+                  <Label className="text-xs">Store Logo URL</Label>
+                  <Input className="mt-1 h-9" value={s('store_logo')} onChange={e => setS('store_logo', e.target.value)} placeholder="https://... or /assets/logo.jpeg" />
+                  {s('store_logo') && <img src={s('store_logo')} alt="Logo preview" className="mt-2 h-12 w-auto rounded-lg border" />}
+                  <p className="text-[10px] text-muted-foreground mt-1">Default: <code>/assets/logo.jpeg</code> (already uploaded)</p>
+                </div>
+                <div>
+                  <Label className="text-xs">Favicon URL</Label>
+                  <Input className="mt-1 h-9" value={s('store_favicon')} onChange={e => setS('store_favicon', e.target.value)} placeholder="/favicon.png" />
+                  <p className="text-[10px] text-muted-foreground mt-1">Default favicon already set. Change URL to update.</p>
+                </div>
                 <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('General')}><Save className="h-4 w-4" /> Save Changes</Button>
               </CardContent>
             </Card>

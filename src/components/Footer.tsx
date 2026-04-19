@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAppSettings } from "@/contexts/SiteSettingsContext";
+import logo from "@/assets/logo.jpeg";
 
 const Footer = () => {
   const appSettings = useAppSettings();
@@ -13,9 +14,9 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="h-8 w-8 rounded-full bg-primary-foreground/20 flex items-center justify-center font-serif font-bold text-sm">A</div>
+              <img src={appSettings.store_logo || logo} alt="AI Laptop Wala" className="h-10 w-auto rounded-lg" />
               <div>
-                <span className="text-lg font-serif font-bold block leading-none">{appSettings.store_name.split(" ")[0]}</span>
+                <span className="text-base font-bold block leading-none">{appSettings.store_name}</span>
                 <span className="text-[10px] opacity-70">{appSettings.store_tagline}</span>
               </div>
             </div>
