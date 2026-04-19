@@ -108,24 +108,28 @@ const buildContext = (s, message) => {
   return parts.join('\n\n');
 };
 
-// ── Call LLM ──────────────────────────────────────────────
-const callLLM = async (s, messages) => {
+// ── Call LLM with timeout + retry ────────────────────────
+const callLLM = async (s, messages, retries = 2) => {
   const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s.api_key}` };
   const body = { model: s.llm_model, messages, temperature: s.temperature, max_tokens: s.max_tokens };
 
   let url = 'https://openrouter.ai/api/v1/chat/completions';
+
   if (s.llm_provider === 'gemini') {
     url = `https://generativelanguage.googleapis.com/v1beta/models/${s.llm_model}:generateContent?key=${s.api_key}`;
-    // Gemini format
     const geminiBody = {
       contents: messages.filter(m => m.role !== 'system').map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
       systemInstruction: { parts: [{ text: messages.find(m => m.role === 'system')?.content || '' }] },
       generationConfig: { temperature: s.temperature, maxOutputTokens: s.max_tokens },
     };
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(geminiBody) });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(geminiBody), signal: controller.signal });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } finally { clearTimeout(timeout); }
   }
 
   if (s.llm_provider === 'openrouter') {
@@ -133,14 +137,34 @@ const callLLM = async (s, messages) => {
     headers['X-Title'] = 'AI Laptop Wala';
   }
 
-  const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
-  const data = await res.json();
-  if (!res.ok || data.error) {
-    const errMsg = data.error?.message || data.error || JSON.stringify(data).slice(0, 200);
-    console.error('LLM full error:', JSON.stringify(data).slice(0, 500));
-    throw new Error(`${s.llm_provider} error: ${errMsg}`);
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000); // 20s timeout
+    try {
+      const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal: controller.signal });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        const errMsg = data.error?.message || data.error || JSON.stringify(data).slice(0, 200);
+        console.error(`LLM error (attempt ${attempt + 1}):`, errMsg);
+        if (attempt < retries) { await new Promise(r => setTimeout(r, 2000)); continue; }
+        throw new Error(`${s.llm_provider} error: ${errMsg}`);
+      }
+      return data.choices?.[0]?.message?.content || '';
+    } catch (e) {
+      clearTimeout(timeout);
+      if (e.name === 'AbortError') {
+        console.error(`LLM timeout (attempt ${attempt + 1})`);
+        if (attempt < retries) { await new Promise(r => setTimeout(r, 1000)); continue; }
+        throw new Error('LLM request timed out after 20s');
+      }
+      if (attempt < retries && e.message.includes('fetch')) {
+        console.error(`LLM fetch failed (attempt ${attempt + 1}), retrying...`);
+        await new Promise(r => setTimeout(r, 2000));
+        continue;
+      }
+      throw e;
+    } finally { clearTimeout(timeout); }
   }
-  return data.choices?.[0]?.message?.content || '';
 };
 
 // ── Main agent function ───────────────────────────────────
