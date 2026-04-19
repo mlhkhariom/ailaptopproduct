@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -25,6 +25,7 @@ const toolsMenu = [
   { title: "Media Library", url: "/admin/media", icon: Image, badge: "" },
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageCircle, badge: "" },
   { title: "Services", url: "/admin/services", icon: Wrench, badge: "" },
+  { title: "Reviews", url: "/admin/reviews", icon: Star, badge: "" },
   { title: "CMS / Pages", url: "/admin/cms", icon: Palette, badge: "NEW" },
   { title: "Contact Queries", url: "/admin/contacts", icon: Mail, badge: "3" },
   { title: "Coupons", url: "/admin/coupons", icon: Ticket, badge: "NEW" },

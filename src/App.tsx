@@ -37,6 +37,7 @@ import AdminBlog from "./pages/admin/AdminBlog";
 import AdminSocial from "./pages/admin/AdminSocial";
 import AdminMedia from "./pages/admin/AdminMedia";
 import AdminWhatsApp from "./pages/admin/AdminWhatsApp";
+import AdminReviews from "./pages/admin/AdminReviews";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminCategories from "./pages/admin/AdminCategories";
 import AdminSettings from "./pages/admin/AdminSettings";
@@ -96,6 +97,7 @@ const App = () => (
             <Route path="/admin/media" element={<AdminRoute><AdminMedia /></AdminRoute>} />
             <Route path="/admin/whatsapp" element={<AdminRoute><AdminWhatsApp /></AdminRoute>} />
             <Route path="/admin/services" element={<AdminRoute><AdminServices /></AdminRoute>} />
+            <Route path="/admin/reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
             <Route path="/admin/customers" element={<AdminRoute><AdminCustomers /></AdminRoute>} />
             <Route path="/admin/categories" element={<AdminRoute><AdminCategories /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />

@@ -15,11 +15,7 @@ import { toast } from "sonner";
 
 const platformIcon: any = { instagram: Instagram, youtube: Youtube, facebook: Facebook };
 
-const mockReviews = [
-  { id: 1, name: "Priya S.", rating: 5, text: "Amazing product! Saw results in just 2 weeks.", date: "2024-01-15" },
-  { id: 2, name: "Rahul V.", rating: 4, text: "Good quality, authentic Laptop product.", date: "2024-01-10" },
-  { id: 3, name: "Anita D.", rating: 5, text: "Been using this for a month now, excellent results!", date: "2024-01-08" },
-];
+import ReviewsSection from "@/components/ReviewsSection";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -43,7 +39,7 @@ const ProductDetail = () => {
   const [showZoom, setShowZoom] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const addItem = useCartStore((s) => s.addItem);
-  const { toggleItem, isInWishlist } = useWishlistStore();
+  const { toggleItem, hasItem } = useWishlistStore();
 
   // Recently viewed
   const [recentlyViewed] = useState(() => {
@@ -69,17 +65,9 @@ const ProductDetail = () => {
 
   const related = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
   const discount = product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
-  const wishlisted = isInWishlist(product.id);
+  const wishlisted = hasItem(product.id);
 
   const allImages = [product.image];
-
-  const ratingBreakdown = [
-    { stars: 5, percent: 68 },
-    { stars: 4, percent: 20 },
-    { stars: 3, percent: 8 },
-    { stars: 2, percent: 3 },
-    { stars: 1, percent: 1 },
-  ];
 
   const handleZoomMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -175,7 +163,7 @@ const ProductDetail = () => {
             </div>
 
             <div className="flex gap-2 mb-6">
-              <Button variant="outline" className="flex-1 gap-2" onClick={() => { toggleItem(product.id); toast(wishlisted ? "Removed from wishlist" : "Added to wishlist ❤️"); }}>
+              <Button variant="outline" className="flex-1 gap-2" onClick={() => { toggleItem(product); toast(wishlisted ? "Removed from wishlist" : "Added to wishlist ❤️"); }}>
                 <Heart className={`h-4 w-4 ${wishlisted ? "fill-destructive text-destructive" : ""}`} /> {wishlisted ? "Wishlisted" : "Wishlist"}
               </Button>
               <Button variant="outline" className="gap-2" onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success("Link copied!"); }}>
@@ -257,54 +245,7 @@ const ProductDetail = () => {
             <p className="text-sm text-muted-foreground leading-relaxed">{product.usage}</p>
           </TabsContent>
           <TabsContent value="reviews" className="mt-4">
-            <div className="grid md:grid-cols-2 gap-8 mb-8">
-              <div>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="text-center">
-                    <p className="text-4xl font-bold">{product.rating}</p>
-                    <div className="flex items-center gap-0.5 mt-1">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} className={`h-3.5 w-3.5 ${i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-border"}`} />
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">{product.reviews} reviews</p>
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    {ratingBreakdown.map((r) => (
-                      <div key={r.stars} className="flex items-center gap-2">
-                        <span className="text-xs w-3">{r.stars}</span>
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        <Progress value={r.percent} className="h-2 flex-1" />
-                        <span className="text-xs text-muted-foreground w-8">{r.percent}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              {mockReviews.map((review) => (
-                <Card key={review.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">{review.name[0]}</div>
-                        <div>
-                          <p className="text-sm font-medium">{review.name}</p>
-                          <div className="flex items-center gap-0.5">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star key={i} className={`h-3 w-3 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-border"}`} />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <span className="text-xs text-muted-foreground">{review.date}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{review.text}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <ReviewsSection productId={product.id} rating={product.rating} reviewCount={product.reviews} />
           </TabsContent>
         </Tabs>
 
