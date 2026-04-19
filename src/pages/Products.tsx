@@ -2,11 +2,8 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
-import { LayoutGrid, List, Search, SlidersHorizontal, X } from "lucide-react";
+import { LayoutGrid, List, Search, X } from "lucide-react";
 import CustomerLayout from "@/components/CustomerLayout";
 import SEOHead from "@/components/SEOHead";
 import ProductCard from "@/components/ProductCard";
@@ -17,21 +14,17 @@ const Products = () => {
   const { products, fetchProducts } = useProductStore();
   const [categories, setCategories] = useState<string[]>(["All"]);
   const [category, setCategory] = useState("All");
-  const [sort, setSort] = useState("popular");
+  const [sort, setSort] = useState("newest");
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('q') || "");
   useEffect(() => { setSearch(searchParams.get('q') || ""); }, [searchParams]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [priceRange, setPriceRange] = useState([0, 200000]);
-  const [showFilters, setShowFilters] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
 
   useEffect(() => {
     fetchProducts();
     api.getCategories().then((cats: any[]) => setCategories(["All", ...cats.map((c: any) => c.name)])).catch(() => {});
   }, []);
-
-  const maxPrice = Math.max(...products.map(p => p.price), 200000);
 
   const filtered = products
     .filter((p) => p.status === "active")
