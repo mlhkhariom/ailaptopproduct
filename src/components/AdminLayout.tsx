@@ -25,6 +25,7 @@ const routeNames: Record<string, string> = {
   "/admin/whatsapp": "WhatsApp",
   "/admin/services": "Service Bookings",
   "/admin/reviews": "Product Reviews",
+  "/admin/reels": "Reels & Videos",
   "/admin/settings": "Settings",
 };
 
