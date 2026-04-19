@@ -25,6 +25,8 @@ const AdminReels = () => {
   const [fetching, setFetching] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const load = () => api.getReels().then(setReels).catch(() => {});
+
   const [fetchingProfile, setFetchingProfile] = useState(false);
 
   const fetchFromProfile = async () => {
@@ -37,6 +39,7 @@ const AdminReels = () => {
       toast.error(e.message || 'Configure Instagram credentials in Social Media → API Settings');
     } finally { setFetchingProfile(false); }
   };
+
   useEffect(() => {
     load();
     api.getProducts().then(setProducts).catch(() => {});
