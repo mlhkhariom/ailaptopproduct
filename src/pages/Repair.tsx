@@ -93,9 +93,12 @@ const Repair = () => (
                 <p className="text-xs text-muted-foreground mb-3">{s.desc}</p>
                 <p className="text-sm font-bold text-primary mb-3">Starting {s.price}</p>
                 <a href={`https://wa.me/919893496163?text=Hi, I need ${encodeURIComponent(s.title)} service`} target="_blank" rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline">
-                  <MessageCircle size={11} /> Book on WhatsApp
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline mr-3">
+                  <MessageCircle size={11} /> WhatsApp
                 </a>
+                <Link to={`/services`} className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary hover:underline">
+                  Book Online →
+                </Link>
               </CardContent>
             </Card>
           ))}
