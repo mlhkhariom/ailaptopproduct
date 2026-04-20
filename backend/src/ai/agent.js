@@ -99,8 +99,24 @@ const saveMemory = (contactId, role, content) => {
 
 // ── Product search ────────────────────────────────────────
 const searchProducts = (query) => {
-  const q = `%${query}%`;
-  return db.prepare('SELECT name, price, original_price, description, slug, in_stock, stock FROM products WHERE (name LIKE ? OR description LIKE ?) AND status = ? LIMIT 3').all(q, q, 'active');
+  // Extract meaningful keywords (remove common Hindi/English stop words)
+  const stopWords = ['ka', 'ki', 'ke', 'hai', 'kya', 'mujhe', 'chahiye', 'price', 'kitna', 'karo', 'do', 'the', 'is', 'are', 'what', 'how', 'much', 'cost', 'rate', 'bata', 'batao'];
+  const words = query.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
+  
+  // Try full query first
+  const fullQ = `%${query}%`;
+  const full = db.prepare("SELECT name, price, original_price, description, slug, in_stock, stock, id FROM products WHERE (name LIKE ? OR description LIKE ?) AND status='active' LIMIT 3").all(fullQ, fullQ);
+  if (full.length > 0) return full;
+  
+  // Try each keyword
+  for (const word of words) {
+    const q = `%${word}%`;
+    const results = db.prepare("SELECT name, price, original_price, description, slug, in_stock, stock, id FROM products WHERE (name LIKE ? OR description LIKE ? OR category LIKE ?) AND status='active' LIMIT 3").all(q, q, q);
+    if (results.length > 0) return results;
+  }
+  
+  // Return all products if no match (so AI knows what we have)
+  return db.prepare("SELECT name, price, original_price, description, slug, in_stock, stock, id FROM products WHERE status='active' ORDER BY price ASC LIMIT 5").all();
 };
 
 // ── Services search ───────────────────────────────────────
