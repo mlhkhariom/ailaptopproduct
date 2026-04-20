@@ -3,6 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import db from './db/database.js';
 import { runSeeder } from './db/seeder.js';
 import path from 'path';
@@ -60,7 +62,19 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.options('*', cors());
-app.use(express.json());
+
+// Security headers
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+
+// Rate limiting
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false });
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'Too many login attempts. Try again in 15 minutes.' } });
+app.use('/api/', limiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);

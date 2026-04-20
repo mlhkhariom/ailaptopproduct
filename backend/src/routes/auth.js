@@ -26,11 +26,16 @@ router.post('/register', (req, res) => {
 // POST /api/auth/login
 router.post('/login', (req, res) => {
   const { email, password } = req.body;
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  // Input validation
+  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  if (typeof email !== 'string' || email.length > 100) return res.status(400).json({ error: 'Invalid email' });
+  if (typeof password !== 'string' || password.length > 100) return res.status(400).json({ error: 'Invalid password' });
+
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase().trim());
   if (!user || !bcrypt.compareSync(password, user.password)) return res.status(401).json({ error: 'Invalid credentials' });
   if (!user.is_active) return res.status(403).json({ error: 'Account deactivated' });
 
-  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '7d' });
   const { password: _, ...safeUser } = user;
   res.json({ token, user: safeUser });
 });

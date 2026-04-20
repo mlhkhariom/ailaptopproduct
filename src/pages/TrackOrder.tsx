@@ -57,7 +57,7 @@ const TrackOrder = () => {
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Track
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-3">Demo: try ALW-001, ALW-002</p>
+          <p className="text-xs text-muted-foreground mt-3">Enter your Order ID (format: ALW-XXXXXX)</p>
         </div>
       </section>
 

@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -82,18 +81,11 @@ const Login = () => {
               </p>
             </div>
 
-            <div className="p-3 rounded-xl bg-muted/50 border space-y-2">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Demo Credentials</p>
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => { setEmail("admin@ailaptopwala.com"); setPassword("admin123"); }} className="text-left p-2 rounded-lg border hover:bg-muted/50 transition-colors">
-                  <Badge variant="default" className="text-[8px] mb-1">Admin</Badge>
-                  <p className="text-[10px] text-muted-foreground">admin@ailaptopwala.com</p>
-                </button>
-                <button onClick={() => { setEmail("priya@email.com"); setPassword("user123"); }} className="text-left p-2 rounded-lg border hover:bg-muted/50 transition-colors">
-                  <Badge variant="secondary" className="text-[8px] mb-1">Customer</Badge>
-                  <p className="text-[10px] text-muted-foreground">priya@email.com</p>
-                </button>
-              </div>
+            <div className="p-3 rounded-xl bg-primary/5 border text-center">
+              <p className="text-xs text-muted-foreground">
+                💻 <strong>AI Laptop Wala</strong> — Indore's trusted laptop store since 2011
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-1">Silver Mall, RNT Marg | +91 98934 96163</p>
             </div>
           </CardContent>
         </Card>
