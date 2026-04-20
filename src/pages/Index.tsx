@@ -23,8 +23,8 @@ const Index = () => {
 
   useEffect(() => {
     fetchProducts();
-    api.getCMS('benefit').then(d => setBenefits(d.map((i: any) => i.content))).catch(() => {});
-    api.getCMS('testimonial').then(d => setTestimonials(d.map((i: any) => i.content))).catch(() => {});
+    api.getCMS('benefit').then(d => setBenefits(d.map((i: any) => ({ ...i.content, _id: i.id })))).catch(() => {});
+    api.getCMS('testimonial').then(d => setTestimonials(d.map((i: any) => ({ ...i.content, _id: i.id })))).catch(() => {});
   }, []);
 
   return (
@@ -103,7 +103,7 @@ const Index = () => {
               {benefits.map((b) => {
                 const Icon = iconMap[b.icon] || Laptop;
                 return (
-                  <div key={b.id} className="flex flex-col items-center text-center gap-2 p-3">
+                  <div key={b._id || b.title} className="flex flex-col items-center text-center gap-2 p-3">
                     <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                       <Icon className="h-6 w-6 text-primary" />
                     </div>
@@ -193,7 +193,7 @@ const Index = () => {
             <div className="section-divider mb-10" />
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {testimonials.slice(0, 6).map((t) => (
-                <Card key={t.id} className="border-border/50 hover:shadow-md transition-shadow">
+                <Card key={t._id || t.name} className="border-border/50 hover:shadow-md transition-shadow">
                   <CardContent className="p-5">
                     <div className="flex gap-0.5 mb-3">
                       {Array.from({ length: t.rating }).map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />)}
