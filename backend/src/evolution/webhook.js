@@ -55,7 +55,7 @@ export const handleWebhook = async (instanceName, event, data) => {
           const pushName = msg.pushName || '';
           const msgType = Object.keys(msg.message || {})[0] || 'text';
 
-          const parsed = { id: msg.key.id, remoteJid, fromMe, body, pushName, type: msgType, timestamp: msg.messageTimestamp };
+          const parsed = { id: msg.key.id, remoteJid, fromMe, body, pushName, type: msgType, timestamp: msg.messageTimestamp, remoteJidAlt: msg.key.remoteJidAlt || null };
 
           saveMessage(instanceName, parsed);
           if (!fromMe) upsertChat(instanceName, remoteJid, pushName, body, new Date().toISOString());
@@ -64,11 +64,17 @@ export const handleWebhook = async (instanceName, event, data) => {
           emit('evolution:message', { instanceName, ...parsed, time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) });
 
           // AI Agent — only for incoming text messages
-          if (!fromMe && body && msgType === 'conversation' || msgType === 'extendedTextMessage') {
+          if (!fromMe && body && (msgType === 'conversation' || msgType === 'extendedTextMessage')) {
             try {
-              const result = await processAgentMessage(remoteJid, pushName, body);
+              // Use @s.whatsapp.net format for AI agent (consistent with contact settings)
+              const agentContactId = remoteJid.includes('@lid')
+                ? (parsed.remoteJidAlt || remoteJid)
+                : remoteJid;
+              const result = await processAgentMessage(agentContactId, pushName, body);
               if (result?.reply) {
-                await sendText(instanceName, remoteJid.replace('@s.whatsapp.net', ''), result.reply);
+                // Send to the actual JID (could be @lid or @s.whatsapp.net)
+                const sendNumber = remoteJid.replace('@s.whatsapp.net','').replace('@lid','').replace(/[^0-9]/g,'');
+                await sendText(instanceName, sendNumber, result.reply);
                 saveMessage(instanceName, { id: uuid(), remoteJid, fromMe: true, body: result.reply, type: 'text', timestamp: Date.now() });
                 emit('evolution:message', { instanceName, remoteJid, fromMe: true, body: result.reply, isAI: true, time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) });
               }

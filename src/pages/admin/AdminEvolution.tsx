@@ -261,14 +261,12 @@ const ChatsTab = () => {
   useEffect(() => {
     if (activeChat && activeInstance) {
       req('GET', `/instances/${activeInstance}/messages/${encodeURIComponent(activeChat.remoteJid)}`).then(data => {
-        // Sort oldest first (ascending timestamp)
-        const sorted = [...(Array.isArray(data) ? data : [])].sort((a, b) => {
-          const ta = a.messageTimestamp || a.timestamp || 0;
-          const tb = b.messageTimestamp || b.timestamp || 0;
-          return ta - tb;
-        });
+        const sorted = [...(Array.isArray(data) ? data : [])].sort((a, b) => (a.messageTimestamp||a.timestamp||0) - (b.messageTimestamp||b.timestamp||0));
         setMessages(sorted);
       }).catch(() => {});
+      // Load per-contact AI setting
+      fetch(`${API}/ai/contact/${encodeURIComponent(activeChat.remoteJid)}`, { headers: { Authorization: `Bearer ${token()}` } })
+        .then(r => r.json()).then(d => setContactAiMap(p => ({ ...p, [activeChat.remoteJid]: !!d.agent_enabled }))).catch(() => {});
     }
   }, [activeChat?.remoteJid, activeInstance]);
 
