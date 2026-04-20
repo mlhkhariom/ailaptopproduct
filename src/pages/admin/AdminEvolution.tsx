@@ -281,21 +281,28 @@ const ChatsTab = () => {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
-            {messages.map((msg, i) => {
+            {[...messages].sort((a, b) => {
+              const ta = a.messageTimestamp || a.timestamp || 0;
+              const tb = b.messageTimestamp || b.timestamp || 0;
+              return ta - tb;
+            }).map((msg, i) => {
               const isMe = msg.fromMe || msg.from_me || msg.key?.fromMe;
               const body = extractBody(msg);
               const time = msg.time || (msg.messageTimestamp ? new Date(msg.messageTimestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '');
-              const senderName = !isMe ? (msg.pushName || activeChat.name) : '';
+              const status = msg.status;
               return (
-                <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[65%] rounded-lg px-3 py-2 shadow-sm relative ${isMe ? 'bg-[#d9fdd3]' : 'bg-white'}`}
+                <div key={i} className={`flex group ${isMe ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[65%] relative ${isMe ? 'bg-[#d9fdd3]' : 'bg-white'} shadow-sm px-3 py-1.5`}
                     style={{ borderRadius: isMe ? '8px 0 8px 8px' : '0 8px 8px 8px' }}>
                     {msg.isAI && <p className="text-[10px] text-purple-600 font-semibold mb-0.5 flex items-center gap-1"><Zap className="h-3 w-3" />AI Agent</p>}
-                    {senderName && <p className="text-[11px] font-semibold text-[#06cf9c] mb-0.5">{senderName}</p>}
-                    <p className="text-[14px] text-[#111b21] break-words leading-relaxed">{body}</p>
-                    <div className="flex items-center justify-end gap-1 mt-0.5">
+                    <p className="text-[14.2px] text-[#111b21] break-words leading-[1.4] pr-12">{body}</p>
+                    <div className="flex items-center justify-end gap-1 mt-0.5 -mb-0.5">
                       <span className="text-[11px] text-[#667781]">{time}</span>
-                      {isMe && <CheckCheck className="h-3.5 w-3.5 text-[#53bdeb]" />}
+                      {isMe && (
+                        status === 'READ' ? <CheckCheck className="h-3.5 w-3.5 text-[#53bdeb]" /> :
+                        status === 'DELIVERY_ACK' ? <CheckCheck className="h-3.5 w-3.5 text-[#667781]" /> :
+                        <CheckCheck className="h-3.5 w-3.5 text-[#667781]" />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -304,15 +311,21 @@ const ChatsTab = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
+          {/* Input — WhatsApp exact */}
           <div className="px-3 py-2 bg-[#f0f2f5] flex items-center gap-2">
-            <div className="flex-1 bg-white rounded-lg flex items-center px-3 gap-2">
+            <button className="text-[#54656f] hover:text-[#111b21] p-2">
+              <svg viewBox="0 0 24 24" className="h-6 w-6 fill-current"><path d="M9.153 11.603c.795 0 1.439-.879 1.439-1.962s-.644-1.962-1.439-1.962-1.439.879-1.439 1.962.644 1.962 1.439 1.962zm-3.204 1.362c-.026-.307-.131 5.218 6.063 5.551 6.066-.25 6.066-5.551 6.066-5.551-6.078 1.416-12.129 0-12.129 0zm11.363 1.108s-.669 1.959-5.051 1.959c-3.505 0-5.388-1.164-5.607-1.959 0 0 5.912 1.055 10.658 0zM11.804 1.011C5.609 1.011.978 6.033.978 12.228s4.826 10.761 11.021 10.761S23.02 18.423 23.02 12.228c0-6.195-5.026-11.217-11.216-11.217zM12 21.354c-5.273 0-9.381-3.886-9.381-9.126s3.942-9.124 9.215-9.124 9.38 3.884 9.38 9.124-3.942 9.126-9.214 9.126zm3.108-9.751c.795 0 1.439-.879 1.439-1.962s-.644-1.962-1.439-1.962-1.439.879-1.439 1.962.644 1.962 1.439 1.962z"/></svg>
+            </button>
+            <button className="text-[#54656f] hover:text-[#111b21] p-2">
+              <svg viewBox="0 0 24 24" className="h-6 w-6 fill-current"><path d="M1.816 15.556v.002c0 1.502.584 2.912 1.646 3.972s2.472 1.647 3.974 1.647a5.58 5.58 0 0 0 3.972-1.645l9.547-9.548c.769-.768 1.147-1.767 1.058-2.817-.079-.968-.548-1.927-1.319-2.698-1.594-1.592-4.068-1.711-5.517-.262l-7.916 7.915c-.881.881-.792 2.25.214 3.261.959.958 2.423 1.053 3.263.215l5.511-5.512c.28-.28.267-.722.053-.936l-.244-.244c-.191-.191-.567-.349-.957.04l-5.506 5.506c-.18.18-.635.127-.976-.214-.098-.097-.576-.613-.213-.973l7.915-7.917c.818-.817 2.267-.699 3.23.262.5.501.802 1.1.849 1.685.051.573-.156 1.111-.589 1.543l-9.547 9.549a3.97 3.97 0 0 1-2.829 1.171 3.975 3.975 0 0 1-2.83-1.173 3.973 3.973 0 0 1-1.172-2.828c0-1.071.415-2.076 1.172-2.83l7.209-7.211c.157-.157.264-.579.028-.814L11.5 4.36a.572.572 0 0 0-.834.018L3.456 11.59a5.58 5.58 0 0 0-1.64 3.966z"/></svg>
+            </button>
+            <div className="flex-1 bg-white rounded-3xl flex items-center px-4 min-h-[42px]">
               <input value={message} onChange={e => setMessage(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMsg()}
-                placeholder="Type a message" className="flex-1 py-2.5 text-[15px] outline-none text-[#111b21] placeholder:text-[#8696a0]" />
+                placeholder="Type a message" className="flex-1 py-2 text-[15px] outline-none text-[#111b21] placeholder:text-[#8696a0] bg-transparent" />
             </div>
             <button onClick={sendMsg} disabled={!message.trim()}
-              className="h-10 w-10 rounded-full bg-[#00a884] hover:bg-[#017561] flex items-center justify-center disabled:opacity-40 transition-colors">
+              className="h-10 w-10 rounded-full bg-[#00a884] hover:bg-[#017561] flex items-center justify-center disabled:opacity-40 transition-colors shrink-0">
               <Send className="h-4 w-4 text-white" />
             </button>
           </div>
