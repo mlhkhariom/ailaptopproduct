@@ -209,9 +209,9 @@ router.get('/instances/:name/messages/:jid', authMiddleware, async (req, res) =>
         timestamp: m.messageTimestamp,
         time: m.messageTimestamp ? new Date(m.messageTimestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '',
         status: m.status,
-        // Include thumbnail for images
         thumbnail: m.message?.imageMessage?.jpegThumbnail || m.message?.videoMessage?.jpegThumbnail || null,
-        mediaUrl: m.message?.imageMessage?.url || m.message?.videoMessage?.url || m.message?.documentMessage?.url || null,
+        // WhatsApp encrypted URLs need Evolution API to decrypt - use thumbnail only
+        mediaUrl: null, // encrypted, can't open directly
       })));
     }
   } catch (e) {
@@ -258,6 +258,19 @@ router.post('/instances/:name/contacts/check', authMiddleware, async (req, res) 
 });
 
 // ── Webhook (public — Evolution API calls this) ───────────
+
+// POST /api/evolution/instances/:name/media/download — download encrypted WhatsApp media
+router.post('/instances/:name/media/download', authMiddleware, async (req, res) => {
+  const { messageId, remoteJid } = req.body;
+  try {
+    const data = await evolutionFetch(`/chat/getBase64FromMediaMessage/${req.params.name}`, 'POST', {
+      message: { key: { id: messageId, remoteJid }, messageType: 'imageMessage' },
+      convertToMp4: false,
+    });
+    if (data?.base64) return res.json({ base64: data.base64, mimetype: data.mimetype || 'image/jpeg' });
+    res.status(404).json({ error: 'Media not found' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 // POST /api/evolution/webhook/:instanceName
 router.post('/webhook/:instanceName', async (req, res) => {

@@ -449,11 +449,31 @@ const ChatsTab = () => {
                     {msg.isAI && <p className="text-[10px] text-purple-600 font-semibold mb-0.5 flex items-center gap-1"><Zap className="h-3 w-3" />AI Agent</p>}
                     {/* Media rendering */}
                     {msg.messageType === 'imageMessage' && (
-                      <div className="rounded-lg overflow-hidden mb-1 max-w-[200px] cursor-pointer" onClick={() => msg.mediaUrl && window.open(msg.mediaUrl, '_blank')}>
-                        {msg.thumbnail
-                          ? <img src={`data:image/jpeg;base64,${msg.thumbnail}`} alt="image" className="w-full object-cover max-h-48" />
-                          : <div className="bg-black/10 flex items-center justify-center h-32 w-40"><svg className="h-8 w-8 text-[#54656f]" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></div>
-                        }
+                      <div className="rounded-lg overflow-hidden mb-1 max-w-[220px] cursor-pointer"
+                        onClick={async () => {
+                          // Download full image via Evolution API
+                          try {
+                            const jid = activeChat?.remoteJid || '';
+                            const data = await req('POST', `/instances/${activeInstance}/media/download`, { messageId: msg.id, remoteJid: jid });
+                            if (data?.base64) {
+                              const w = window.open();
+                              if (w) w.document.write(`<img src="data:${data.mimetype || 'image/jpeg'};base64,${data.base64}" style="max-width:100%">`);
+                            }
+                          } catch {}
+                        }}>
+                        {msg.thumbnail ? (
+                          <img
+                            src={msg.thumbnail.startsWith('/9j/') || msg.thumbnail.startsWith('iVBOR')
+                              ? `data:image/jpeg;base64,${msg.thumbnail}`
+                              : msg.thumbnail}
+                            alt="image"
+                            className="w-full object-cover max-h-52 rounded-lg"
+                          />
+                        ) : (
+                          <div className="bg-black/10 flex items-center justify-center h-32 w-40 rounded-lg">
+                            <svg className="h-8 w-8 text-[#54656f]" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                          </div>
+                        )}
                         {msg.body && msg.body !== '[imageMessage]' && <p className="text-xs text-[#111b21] px-1 py-0.5">{msg.body}</p>}
                       </div>
                     )}
