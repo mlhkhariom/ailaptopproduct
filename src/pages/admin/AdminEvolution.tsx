@@ -160,71 +160,66 @@ const ChatsTab = () => {
     if (!activeInstance) return;
     let sock: any = null;
 
-    req('GET', '/settings').then(settings => {
-      if (!settings.api_url) return;
-      // Unmask API key from backend
-      req('POST', '/settings/test').then(() => {}).catch(() => {});
+    const evoUrl = import.meta.env.VITE_EVOLUTION_URL || 'http://localhost:8081';
+    const apiKey = import.meta.env.VITE_EVOLUTION_KEY || 'ailaptopwala2026';
 
-      import('socket.io-client').then(({ io }) => {
-        // Get real API key from settings
-        const apiKey = settings.api_key || 'ailaptopwala2026';
-        const evoUrl = settings.api_url || 'http://localhost:8081';
+    import('socket.io-client').then(({ io }) => {
+      sock = io(evoUrl, {
+        transports: ['websocket', 'polling'],
+        query: { apikey: apiKey },
+        reconnection: true,
+        reconnectionAttempts: 10,
+        reconnectionDelay: 2000,
+      });
 
-        sock = io(evoUrl, {
-          transports: ['websocket', 'polling'],
-          query: { apikey: apiKey },
-          reconnection: true,
-          reconnectionAttempts: 5,
-        });
+      sock.on('connect', () => {
+        console.log('✅ Evolution WS connected:', sock.id);
+        toast.success('Evolution API connected!', { duration: 2000 });
+      });
+      sock.on('connect_error', (e: any) => console.warn('Evolution WS error:', e.message));
+      sock.on('disconnect', () => console.log('Evolution WS disconnected'));
 
-        sock.on('connect', () => {
-          console.log('✅ Evolution WS connected');
-          // Subscribe to instance events
-          sock.emit('subscribe', { instanceName: activeInstance });
-        });
-        sock.on('connect_error', (e: any) => console.warn('Evolution WS error:', e.message));
-
-        sock.on('messages.upsert', (data: any) => {
-          const msgs = Array.isArray(data) ? data : [data];
-          msgs.forEach((msg: any) => {
-            if (!msg?.key) return;
-            const remoteJid = msg.key.remoteJid;
-            const fromMe = msg.key.fromMe;
-            const body = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || `[${msg.messageType || 'media'}]`;
-            const time = msg.messageTimestamp ? new Date(msg.messageTimestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-            const newMsg = { id: msg.key.id, body, fromMe, from_me: fromMe ? 1 : 0, messageTimestamp: msg.messageTimestamp, time, status: msg.status };
-            if (activeChatRef.current?.remoteJid === remoteJid) {
-              setMessages(p => p.some(m => m.id === msg.key.id) ? p : [...p, newMsg]);
-            }
-            setChats(p => p.map(c => (c.remoteJid === remoteJid || c.id === remoteJid) ? { ...c, lastMessage: msg, unreadCount: fromMe ? c.unreadCount : (c.unreadCount || 0) + 1 } : c));
-          });
-        });
-
-        sock.on('messages.update', (data: any) => {
-          const updates = Array.isArray(data) ? data : [data];
-          updates.forEach((u: any) => setMessages(p => p.map(m => m.id === u.key?.id ? { ...m, status: u.update?.status } : m)));
-        });
-
-        sock.on('presence.update', (data: any) => {
-          if (data?.presences) {
-            const jid = Object.keys(data.presences)[0];
-            const presence = data.presences[jid]?.lastKnownPresence;
-            const chatJid = activeChatRef.current?.remoteJid || '';
-            if (chatJid.includes(jid.split('@')[0])) {
-              setTyping(presence === 'composing');
-              if (presence === 'composing') setTimeout(() => setTyping(false), 5000);
-            }
+      sock.on('messages.upsert', (data: any) => {
+        const msgs = Array.isArray(data) ? data : [data];
+        msgs.forEach((msg: any) => {
+          if (!msg?.key) return;
+          const remoteJid = msg.key.remoteJid;
+          const fromMe = msg.key.fromMe;
+          const body = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || `[${msg.messageType || 'media'}]`;
+          const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+          const newMsg = { id: msg.key.id || Date.now(), body, fromMe, from_me: fromMe ? 1 : 0, messageTimestamp: msg.messageTimestamp, time, status: msg.status };
+          if (activeChatRef.current?.remoteJid === remoteJid) {
+            setMessages(p => p.some(m => m.id === newMsg.id) ? p : [...p, newMsg]);
           }
+          setChats(p => p.map(c => (c.remoteJid === remoteJid || c.id === remoteJid)
+            ? { ...c, lastMessage: msg, unreadCount: fromMe ? (c.unreadCount || 0) : (c.unreadCount || 0) + 1 }
+            : c));
         });
+      });
 
-        sock.on('qrcode.updated', (data: any) => {
-          if (data?.qrcode?.base64) setQrDialog((p: any) => p ? { ...p, qr: data.qrcode.base64 } : null);
-        });
+      sock.on('messages.update', (data: any) => {
+        const updates = Array.isArray(data) ? data : [data];
+        updates.forEach((u: any) => setMessages(p => p.map(m => m.id === u.key?.id ? { ...m, status: u.update?.status } : m)));
+      });
 
-        sock.on('connection.update', () => loadInstances());
-        setEvoSocket(sock);
-      }).catch(e => console.warn('socket.io-client load error:', e));
-    }).catch(() => {});
+      sock.on('presence.update', (data: any) => {
+        if (!data?.presences) return;
+        const jid = Object.keys(data.presences)[0];
+        const presence = data.presences[jid]?.lastKnownPresence;
+        const chatJid = activeChatRef.current?.remoteJid || '';
+        if (chatJid.includes(jid.split('@')[0])) {
+          setTyping(presence === 'composing');
+          if (presence === 'composing') setTimeout(() => setTyping(false), 5000);
+        }
+      });
+
+      sock.on('qrcode.updated', (data: any) => {
+        if (data?.qrcode?.base64) setQrDialog((p: any) => p ? { ...p, qr: data.qrcode.base64 } : null);
+      });
+
+      sock.on('connection.update', () => loadInstances());
+      setEvoSocket(sock);
+    }).catch(e => console.warn('socket.io-client error:', e));
 
     return () => { if (sock) sock.disconnect(); };
   }, [activeInstance]);
