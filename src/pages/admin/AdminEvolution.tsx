@@ -174,48 +174,52 @@ const ChatsTab = () => {
 
       // Evolution API v2 wraps events as: { event, instance, data }
       // Listen to ALL events and route them
+      // Evolution API v2: payload = { event, instance, data, ... }
+      // data IS the message object (not wrapped in array)
       sock.onAny((eventName: string, payload: any) => {
         const instance = payload?.instance;
-        const data = payload?.data || payload;
+        const data = payload?.data;  // actual message/event data
         const event = payload?.event || eventName;
 
-        // Filter by active instance
         if (instance && instance !== activeInstance) return;
+        if (!data) return;
 
-        if (event === 'messages.upsert' || event === 'MESSAGES_UPSERT' || event === 'send.message') {
-          const msgs = Array.isArray(data) ? data : [data];
-          msgs.forEach((msg: any) => {
-            if (!msg?.key) return;
-            const remoteJid = msg.key.remoteJid || msg.key.remoteJidAlt;
-            const fromMe = msg.key.fromMe;
-            const body = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || msg.message?.videoMessage?.caption || msg.message?.documentMessage?.title || `[${msg.messageType || 'media'}]`;
-            const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-            const mediaUrl = msg.message?.imageMessage?.url || msg.message?.videoMessage?.url || msg.message?.documentMessage?.url || null;
-            const newMsg = { id: msg.key.id || Date.now(), body, fromMe, from_me: fromMe ? 1 : 0, messageTimestamp: msg.messageTimestamp, time, status: msg.status, mediaUrl, messageType: msg.messageType };
-            if (activeChatRef.current?.remoteJid === remoteJid || activeChatRef.current?.remoteJid?.includes(remoteJid?.split('@')[0])) {
-              setMessages(p => {
-                if (p.some(m => m.id === newMsg.id)) return p;
-                // Insert in correct position by timestamp
-                const inserted = [...p, newMsg].sort((a, b) => (a.messageTimestamp || 0) - (b.messageTimestamp || 0));
-                return inserted;
-              });
-            }
-            setChats(p => p.map(c => (c.remoteJid === remoteJid || c.id === remoteJid || c.remoteJid?.includes(remoteJid?.split('@')[0]))
-              ? { ...c, lastMessage: { ...msg, message: msg.message }, unreadCount: fromMe ? (c.unreadCount || 0) : (c.unreadCount || 0) + 1 }
-              : c));
-          });
+        if (event === 'messages.upsert' || event === 'send.message') {
+          const msg = data; // data IS the message
+          if (!msg?.key) return;
+          const remoteJid = msg.key.remoteJid;
+          const fromMe = msg.key.fromMe;
+          const body = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || msg.message?.videoMessage?.caption || `[${msg.messageType || 'media'}]`;
+          const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+          const mediaUrl = msg.message?.imageMessage?.url || msg.message?.videoMessage?.url || null;
+          const newMsg = { id: msg.key.id, body, fromMe, from_me: fromMe ? 1 : 0, messageTimestamp: msg.messageTimestamp || Date.now()/1000, time, status: msg.status, mediaUrl, messageType: msg.messageType };
+
+          const activeJid = activeChatRef.current?.remoteJid || '';
+          if (activeJid && activeJid.split('@')[0] === remoteJid.split('@')[0]) {
+            setMessages(p => {
+              if (p.some(m => m.id === newMsg.id)) return p;
+              return [...p, newMsg].sort((a, b) => (a.messageTimestamp||0) - (b.messageTimestamp||0));
+            });
+          }
+          setChats(p => p.map(c => {
+            const cPhone = (c.remoteJid || c.id || '').split('@')[0];
+            const mPhone = remoteJid.split('@')[0];
+            if (cPhone === mPhone) return { ...c, lastMessage: msg, unreadCount: fromMe ? (c.unreadCount||0) : (c.unreadCount||0)+1 };
+            return c;
+          }));
         }
 
-        if (event === 'messages.update' || event === 'MESSAGES_UPDATE') {
-          const updates = Array.isArray(data) ? data : [data];
-          updates.forEach((u: any) => setMessages(p => p.map(m => m.id === u.key?.id ? { ...m, status: u.update?.status || u.status } : m)));
+        if (event === 'messages.update') {
+          // data = { keyId, remoteJid, fromMe, status, messageId }
+          const msgId = data.keyId || data.messageId;
+          if (msgId) setMessages(p => p.map(m => m.id === msgId ? { ...m, status: data.status } : m));
         }
 
-        if (event === 'presence.update' || event === 'PRESENCE_UPDATE') {
-          const presences = data?.presences || data;
-          if (presences && typeof presences === 'object') {
+        if (event === 'presence.update') {
+          const presences = data?.presences;
+          if (presences) {
             const jid = Object.keys(presences)[0];
-            const presence = presences[jid]?.lastKnownPresence || presences[jid];
+            const presence = presences[jid]?.lastKnownPresence;
             if (activeChatRef.current?.remoteJid?.includes(jid?.split('@')[0])) {
               setTyping(presence === 'composing');
               if (presence === 'composing') setTimeout(() => setTyping(false), 5000);
@@ -223,12 +227,12 @@ const ChatsTab = () => {
           }
         }
 
-        if (event === 'qrcode.updated' || event === 'QRCODE_UPDATED') {
+        if (event === 'qrcode.updated') {
           const qr = data?.qrcode?.base64 || data?.base64;
           if (qr) setQrDialog((p: any) => p ? { ...p, qr } : null);
         }
 
-        if (event === 'connection.update' || event === 'CONNECTION_UPDATE') loadInstances();
+        if (event === 'connection.update') loadInstances();
       });
 
       setEvoSocket(sock);
