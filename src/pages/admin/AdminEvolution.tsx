@@ -148,12 +148,29 @@ const ChatsTab = () => {
   const [searchChat, setSearchChat] = useState('');
   const [typing, setTyping] = useState(false);
   const [evoSocket, setEvoSocket] = useState<any>(null);
+  const [aiGlobal, setAiGlobal] = useState(false);
+  const [contactAiMap, setContactAiMap] = useState<Record<string, boolean>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const activeChatRef = useRef<any>(null);
   useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
 
   const loadInstances = () => req('GET', '/instances').then(d => { setInstances(d); if (d.length > 0 && !activeInstance) setActiveInstance(d[0].instance_name); }).catch(() => {});
   useEffect(() => { loadInstances(); }, []);
+
+  // Load global AI + per-contact settings
+  useEffect(() => {
+    fetch(`${API}/ai/settings`, { headers: { Authorization: `Bearer ${token()}` } })
+      .then(r => r.json()).then(d => setAiGlobal(!!d.enabled)).catch(() => {});
+  }, []);
+
+  const toggleContactAI = async (contactId: string, val: boolean) => {
+    setContactAiMap(p => ({ ...p, [contactId]: val }));
+    await fetch(`${API}/ai/contact/${encodeURIComponent(contactId)}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+      body: JSON.stringify({ agent_enabled: val }),
+    }).catch(() => {});
+    toast.success(val ? '🤖 AI Agent ON' : '🤖 AI Agent OFF');
+  };
 
   // Connect to Evolution API WebSocket for real-time events
   useEffect(() => {
@@ -370,6 +387,15 @@ const ChatsTab = () => {
             className="flex-1 text-sm bg-transparent font-semibold text-[#111b21] outline-none cursor-pointer">
             {instances.map(i => <option key={i.id} value={i.instance_name}>{i.instance_name} {i.connectionStatus === 'open' ? '🟢' : '🔴'}</option>)}
           </select>
+          {/* Global AI toggle */}
+          <div className="flex items-center gap-1" title={aiGlobal ? 'AI Agent ON' : 'AI Agent OFF'}>
+            <Zap className={`h-3.5 w-3.5 ${aiGlobal ? 'text-purple-500' : 'text-[#8696a0]'}`} />
+            <Switch checked={aiGlobal} onCheckedChange={async v => {
+              setAiGlobal(v);
+              await fetch(`${API}/ai/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` }, body: JSON.stringify({ enabled: v }) }).catch(() => {});
+              toast.success(v ? '🤖 AI Agent globally ON' : '🤖 AI Agent globally OFF');
+            }} className="scale-75" />
+          </div>
           <button onClick={() => setNewInstanceDialog(true)} className="text-[#54656f] hover:text-[#111b21]"><Plus className="h-4 w-4" /></button>
           <button onClick={loadInstances} className="text-[#54656f] hover:text-[#111b21]"><RefreshCw className="h-3.5 w-3.5" /></button>
           {!isConnected && <button onClick={() => getQR(activeInstance)} className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full flex items-center gap-1"><QrCode className="h-3 w-3" />QR</button>}
@@ -429,6 +455,15 @@ const ChatsTab = () => {
               <p className="text-xs text-[#667781]">{typing ? <span className="text-[#25d366]">typing...</span> : (activeChat.displayPhone || activeChat.phone)}</p>
             </div>
             <div className="flex items-center gap-3 text-[#54656f]">
+              {/* AI Agent toggle for this contact */}
+              <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                <Zap className={`h-4 w-4 ${(contactAiMap[activeChat.remoteJid] ?? aiGlobal) ? 'text-purple-500' : 'text-[#8696a0]'}`} />
+                <Switch
+                  checked={contactAiMap[activeChat.remoteJid] ?? aiGlobal}
+                  onCheckedChange={v => toggleContactAI(activeChat.remoteJid, v)}
+                  className="scale-75"
+                />
+              </div>
               <button onClick={e => { e.stopPropagation(); req('GET', `/instances/${activeInstance}/messages/${encodeURIComponent(activeChat.remoteJid)}`).then(setMessages).catch(() => {}); }}>
                 <RefreshCw className="h-4 w-4" />
               </button>
