@@ -297,10 +297,36 @@ const ChatsTab = () => {
     catch (e: any) { toast.error(e.message); }
   };
 
-  const filteredChats = chats.filter(c => {
-    const p = parseChat(c);
-    return p.name.toLowerCase().includes(searchChat.toLowerCase()) || p.phone.includes(searchChat);
-  });
+  const filteredChats = (() => {
+    // Deduplicate by phone number — same contact can have @lid and @s.whatsapp.net JIDs
+    const seen = new Map<string, any>();
+    chats.forEach(chat => {
+      const p = parseChat(chat);
+      const key = p.phone || p.jid; // group by phone number
+      if (!seen.has(key)) {
+        seen.set(key, chat);
+      } else {
+        // Prefer @s.whatsapp.net over @lid, and prefer one with more info
+        const existing = seen.get(key);
+        const existingJid = existing.remoteJid || existing.id || '';
+        const thisJid = chat.remoteJid || chat.id || '';
+        // Prefer s.whatsapp.net
+        if (thisJid.includes('@s.whatsapp.net') && !existingJid.includes('@s.whatsapp.net')) {
+          seen.set(key, chat);
+        }
+        // Prefer one with pushName
+        else if (!parseChat(existing).name.startsWith('+') && parseChat(chat).name.startsWith('+')) {
+          // keep existing (has real name)
+        } else if (parseChat(existing).name.startsWith('+') && !parseChat(chat).name.startsWith('+')) {
+          seen.set(key, chat);
+        }
+      }
+    });
+    return Array.from(seen.values()).filter(c => {
+      const p = parseChat(c);
+      return p.name.toLowerCase().includes(searchChat.toLowerCase()) || p.phone.includes(searchChat);
+    });
+  })();
 
   const instStatus = instances.find(i => i.instance_name === activeInstance);
   const isConnected = instStatus?.connectionStatus === 'open' || instStatus?.status === 'connected';
