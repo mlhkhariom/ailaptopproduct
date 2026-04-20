@@ -179,5 +179,13 @@ addColumnIfMissing('orders', 'payment_id', 'TEXT');
 addColumnIfMissing('orders', 'payment_status', "TEXT DEFAULT 'pending'");
 addColumnIfMissing('app_settings', 'category', "TEXT DEFAULT 'general'");
 addColumnIfMissing('app_settings', 'updated_at', "TEXT DEFAULT (datetime('now'))");
+addColumnIfMissing('ai_agent_settings', 'reply_delay_min', 'REAL DEFAULT 1');
+addColumnIfMissing('ai_agent_settings', 'reply_delay_max', 'REAL DEFAULT 3');
+addColumnIfMissing('ai_agent_settings', 'feature_typing_indicator', 'INTEGER DEFAULT 1');
+addColumnIfMissing('ai_agent_settings', 'feature_greeting', 'INTEGER DEFAULT 1');
+addColumnIfMissing('ai_agent_settings', 'feature_faq', 'INTEGER DEFAULT 1');
+addColumnIfMissing('ai_agent_settings', 'feature_cart_suggest', 'INTEGER DEFAULT 0');
+addColumnIfMissing('ai_agent_settings', 'fallback_message', 'TEXT');
+addColumnIfMissing('ai_agent_settings', 'agent_bubble_color', "TEXT DEFAULT '#e8d5ff'");
 
 export default db;
