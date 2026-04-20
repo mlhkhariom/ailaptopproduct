@@ -20,8 +20,11 @@ const getSettings = () => db.prepare("SELECT * FROM evolution_settings WHERE id=
 // GET /api/evolution/settings
 router.get('/settings', authMiddleware, superAdminOnly, (req, res) => {
   const s = getSettings();
-  if (s.api_key) s.api_key = s.api_key.replace(/.(?=.{4})/g, '•');
-  res.json(s);
+  // Return masked key for display, but also provide ws_url for frontend WebSocket
+  const masked = { ...s };
+  if (masked.api_key) masked.api_key_masked = masked.api_key.replace(/.(?=.{4})/g, '•');
+  // Don't mask for WebSocket connection
+  res.json({ ...masked, ws_url: s.api_url });
 });
 
 // PUT /api/evolution/settings
