@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Settings, MessageCircle, Plus, Trash2, RefreshCw, Wifi, WifiOff, QrCode, Eye, EyeOff, Send, Phone, Loader2, CheckCircle, XCircle, Zap, Cloud } from "lucide-react";
+import { Settings, MessageCircle, Plus, Trash2, RefreshCw, Wifi, WifiOff, QrCode, Eye, EyeOff, Send, Phone, Loader2, CheckCircle, XCircle, Zap, Cloud, Search, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
