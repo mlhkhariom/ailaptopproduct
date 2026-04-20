@@ -138,254 +138,254 @@ const ChatsTab = () => {
   const [activeInstance, setActiveInstance] = useState('');
   const [chats, setChats] = useState<any[]>([]);
   const [activeChat, setActiveChat] = useState<any>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
   const [message, setMessage] = useState('');
   const [qrDialog, setQrDialog] = useState<any>(null);
   const [newInstanceDialog, setNewInstanceDialog] = useState(false);
   const [newForm, setNewForm] = useState({ instance_name: '', connection_type: 'baileys', cloud_phone_id: '', cloud_access_token: '' });
   const [loading, setLoading] = useState(false);
+  const [searchChat, setSearchChat] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const loadInstances = () => req('GET', '/instances').then(setInstances).catch(() => {});
-
+  const loadInstances = () => req('GET', '/instances').then(d => { setInstances(d); if (d.length > 0 && !activeInstance) setActiveInstance(d[0].instance_name); }).catch(() => {});
   useEffect(() => { loadInstances(); }, []);
-
-  useEffect(() => {
-    if (activeInstance) req('GET', `/instances/${activeInstance}/chats`).then(setChats).catch(() => {});
-  }, [activeInstance]);
-
+  useEffect(() => { if (activeInstance) req('GET', `/instances/${activeInstance}/chats`).then(setChats).catch(() => {}); }, [activeInstance]);
   useEffect(() => {
     if (activeChat && activeInstance) {
-      req('GET', `/instances/${activeInstance}/messages/${encodeURIComponent(activeChat.remoteJid || activeChat.remote_jid)}`).then(setMessages).catch(() => {});
+      req('GET', `/instances/${activeInstance}/messages/${encodeURIComponent(activeChat.remoteJid)}`).then(setMessages).catch(() => {});
     }
-  }, [activeChat, activeInstance]);
+  }, [activeChat?.remoteJid, activeInstance]);
+  useEffect(() => { setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50); }, [messages]);
 
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  const typeLabels: Record<string,string> = { imageMessage:'📷 Image', videoMessage:'🎥 Video', audioMessage:'🎵 Audio', documentMessage:'📄 Document', stickerMessage:'🎭 Sticker', protocolMessage:'🔄 System', reactionMessage:'👍 Reaction', locationMessage:'📍 Location', contactMessage:'👤 Contact' };
+
+  const extractBody = (msg: any): string => {
+    const b = msg.body || msg.message;
+    if (typeof b === 'string' && b) return b;
+    const m = (typeof b === 'object' ? b : msg.message) || {};
+    const type = msg.messageType || Object.keys(m).find(k => k !== 'messageContextInfo') || '';
+    return m.conversation || m.extendedTextMessage?.text || m.imageMessage?.caption || m.videoMessage?.caption || typeLabels[type] || (type ? `[${type}]` : '');
+  };
+
+  const parseChat = (chat: any) => {
+    const jid = chat.remoteJid || chat.id || '';
+    const realJid = chat.lastMessage?.key?.remoteJidAlt || jid;
+    const phone = realJid.replace('@s.whatsapp.net','').replace('@lid','').replace(/[^0-9]/g,'');
+    const displayPhone = phone ? `+${phone}` : '';
+    const name = chat.pushName || chat.lastMessage?.pushName || chat.name || displayPhone || 'Unknown';
+    const lm = chat.lastMessage;
+    const lastMsg = lm ? extractBody({ body: null, message: lm.message, messageType: lm.messageType }) : '';
+    const lastTime = lm?.messageTimestamp ? new Date(lm.messageTimestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+    return { jid, realJid, phone, displayPhone, name, pic: chat.profilePicUrl, lastMsg, lastTime, unread: chat.unreadCount || 0 };
+  };
 
   const sendMsg = async () => {
     if (!message.trim() || !activeChat || !activeInstance) return;
-    const jid = activeChat.remoteJid || activeChat.remote_jid;
-    const number = jid.replace('@s.whatsapp.net', '').replace('@g.us', '');
-    const body = message;
-    setMessage('');
-    try {
-      await req('POST', `/instances/${activeInstance}/send/text`, { number, text: body });
-      setMessages(p => [...p, { id: Date.now(), body, fromMe: true, from_me: 1, time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) }]);
-    } catch (e: any) { toast.error(e.message); }
+    const number = (activeChat.realJid || activeChat.remoteJid).replace('@s.whatsapp.net','').replace('@lid','').replace(/[^0-9]/g,'');
+    const body = message; setMessage('');
+    const tmpMsg = { id: Date.now(), body, fromMe: true, time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) };
+    setMessages(p => [...p, tmpMsg]);
+    try { await req('POST', `/instances/${activeInstance}/send/text`, { number, text: body }); }
+    catch (e: any) { toast.error(e.message); }
   };
 
-  const getQR = async (instanceName: string) => {
-    try {
-      const data = await req('GET', `/instances/${instanceName}/qr`);
-      setQrDialog({ instanceName, qr: data.base64 || data.qrcode?.base64 });
-    } catch (e: any) { toast.error(e.message); }
+  const getQR = async (name: string) => {
+    try { const d = await req('GET', `/instances/${name}/qr`); setQrDialog({ name, qr: d.base64 || d.qrcode?.base64 }); }
+    catch (e: any) { toast.error(e.message); }
   };
 
-  const createInstance = async () => {
-    setLoading(true);
-    try {
-      await req('POST', '/instances', newForm);
-      toast.success('Instance created!');
-      setNewInstanceDialog(false);
-      loadInstances();
-    } catch (e: any) { toast.error(e.message); }
-    finally { setLoading(false); }
-  };
+  const filteredChats = chats.filter(c => {
+    const p = parseChat(c);
+    return p.name.toLowerCase().includes(searchChat.toLowerCase()) || p.phone.includes(searchChat);
+  });
 
-  const deleteInst = async (name: string) => {
-    if (!confirm(`Delete instance "${name}"?`)) return;
-    await req('DELETE', `/instances/${name}`).catch(() => {});
-    loadInstances();
-    if (activeInstance === name) setActiveInstance('');
-  };
+  const instStatus = instances.find(i => i.instance_name === activeInstance);
+  const isConnected = instStatus?.connectionStatus === 'open' || instStatus?.status === 'connected';
 
   return (
-    <div className="flex gap-4 h-[calc(100vh-200px)]">
-      {/* Instances sidebar */}
-      <div className="w-48 shrink-0 space-y-2">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase">Instances</p>
-          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setNewInstanceDialog(true)}><Plus className="h-3.5 w-3.5" /></Button>
+    <div className="flex h-[calc(100vh-180px)] rounded-xl overflow-hidden border shadow-sm" style={{ fontFamily: 'Segoe UI, sans-serif' }}>
+
+      {/* ── LEFT: Instance + Chat List ── */}
+      <div className="w-[340px] shrink-0 flex flex-col bg-white border-r">
+        {/* Instance selector */}
+        <div className="px-3 py-2 bg-[#f0f2f5] border-b flex items-center gap-2">
+          <select value={activeInstance} onChange={e => setActiveInstance(e.target.value)}
+            className="flex-1 text-sm bg-transparent font-semibold text-[#111b21] outline-none cursor-pointer">
+            {instances.map(i => <option key={i.id} value={i.instance_name}>{i.instance_name} {i.connectionStatus === 'open' ? '🟢' : '🔴'}</option>)}
+          </select>
+          <button onClick={() => setNewInstanceDialog(true)} className="text-[#54656f] hover:text-[#111b21]"><Plus className="h-4 w-4" /></button>
+          <button onClick={loadInstances} className="text-[#54656f] hover:text-[#111b21]"><RefreshCw className="h-3.5 w-3.5" /></button>
+          {!isConnected && <button onClick={() => getQR(activeInstance)} className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full flex items-center gap-1"><QrCode className="h-3 w-3" />QR</button>}
         </div>
-        {instances.map(inst => (
-          <div key={inst.id} onClick={() => setActiveInstance(inst.instance_name)}
-            className={`p-2.5 rounded-xl border cursor-pointer transition-colors ${activeInstance === inst.instance_name ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}>
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs font-semibold truncate">{inst.instance_name}</p>
-              <button onClick={e => { e.stopPropagation(); deleteInst(inst.instance_name); }} className="text-muted-foreground hover:text-destructive">
-                <Trash2 className="h-3 w-3" />
-              </button>
-            </div>
-            <StatusBadge status={inst.status || inst.remote_status || 'unknown'} />
-            <div className="flex gap-1 mt-2">
-              {(inst.status === 'disconnected' || inst.status === 'qr_code') && (
-                <button onClick={e => { e.stopPropagation(); getQR(inst.instance_name); }} className="text-[10px] text-primary hover:underline flex items-center gap-0.5">
-                  <QrCode className="h-3 w-3" /> QR
-                </button>
-              )}
-            </div>
+
+        {/* Search */}
+        <div className="px-3 py-2 bg-[#f0f2f5]">
+          <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-1.5">
+            <Search className="h-4 w-4 text-[#54656f]" />
+            <input value={searchChat} onChange={e => setSearchChat(e.target.value)} placeholder="Search or start new chat"
+              className="flex-1 text-sm outline-none text-[#111b21] placeholder:text-[#8696a0]" />
           </div>
-        ))}
-        {instances.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No instances</p>}
+        </div>
+
+        {/* Chat list */}
+        <div className="flex-1 overflow-y-auto">
+          {filteredChats.map((chat, i) => {
+            const p = parseChat(chat);
+            const isActive = activeChat?.remoteJid === p.jid;
+            return (
+              <div key={i} onClick={() => setActiveChat({ ...chat, ...p, remoteJid: p.jid })}
+                className={`flex items-center gap-3 px-3 py-3 cursor-pointer border-b border-[#f0f2f5] transition-colors ${isActive ? 'bg-[#f0f2f5]' : 'hover:bg-[#f5f6f6]'}`}>
+                <div className="relative shrink-0">
+                  {p.pic
+                    ? <img src={p.pic} alt="" className="h-12 w-12 rounded-full object-cover" onError={e => { (e.target as any).src = ''; }} />
+                    : <div className="h-12 w-12 rounded-full bg-[#dfe5e7] flex items-center justify-center text-lg font-bold text-[#54656f]">{p.name[0]?.toUpperCase()}</div>
+                  }
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <p className="text-[15px] font-normal text-[#111b21] truncate">{p.name}</p>
+                    <p className={`text-[11px] shrink-0 ml-2 ${p.unread > 0 ? 'text-[#25d366] font-medium' : 'text-[#667781]'}`}>{p.lastTime}</p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[13px] text-[#667781] truncate">{p.lastMsg}</p>
+                    {p.unread > 0 && <span className="ml-2 shrink-0 h-5 min-w-5 rounded-full bg-[#25d366] text-white text-[11px] font-medium flex items-center justify-center px-1.5">{p.unread}</span>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {filteredChats.length === 0 && <p className="text-sm text-[#8696a0] text-center py-10">No chats found</p>}
+        </div>
       </div>
 
-      {/* Chat area */}
-      <div className="flex-1 flex gap-3 min-w-0">
-        {/* Chat list */}
-        <div className="w-72 shrink-0 border rounded-xl overflow-hidden flex flex-col bg-white">
-          <div className="px-4 py-3 bg-[#f0f2f5] border-b flex items-center justify-between">
-            <p className="text-sm font-semibold text-[#111b21]">{activeInstance || 'Select instance'}</p>
-            <span className="text-xs text-[#667781]">{chats.length} chats</span>
+      {/* ── RIGHT: Chat Window ── */}
+      {activeChat ? (
+        <div className="flex-1 flex flex-col" style={{ background: '#efeae2' }}>
+          {/* Header */}
+          <div className="px-4 py-2 bg-[#f0f2f5] border-b flex items-center gap-3 cursor-pointer" onClick={() => setProfileOpen(true)}>
+            {activeChat.pic
+              ? <img src={activeChat.pic} alt="" className="h-10 w-10 rounded-full object-cover" />
+              : <div className="h-10 w-10 rounded-full bg-[#dfe5e7] flex items-center justify-center text-base font-bold text-[#54656f]">{activeChat.name?.[0]?.toUpperCase()}</div>
+            }
+            <div className="flex-1 min-w-0">
+              <p className="text-[15px] font-medium text-[#111b21]">{activeChat.name}</p>
+              <p className="text-xs text-[#667781]">{activeChat.displayPhone || activeChat.phone}</p>
+            </div>
+            <div className="flex items-center gap-3 text-[#54656f]">
+              <button onClick={e => { e.stopPropagation(); req('GET', `/instances/${activeInstance}/messages/${encodeURIComponent(activeChat.remoteJid)}`).then(setMessages).catch(() => {}); }}>
+                <RefreshCw className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            {chats.map((chat, i) => {
-              const jid = chat.remoteJid || chat.id || '';
-              const realJid = chat.lastMessage?.key?.remoteJidAlt || jid;
-              const phone = realJid.split('@')[0].replace(/[^0-9]/g, '');
-              const name = chat.pushName || chat.lastMessage?.pushName || chat.name || (phone ? `+${phone}` : 'Unknown');
-              const pic = chat.profilePicUrl;
-              const typeLabels: Record<string,string> = { imageMessage:'📷 Image', videoMessage:'🎥 Video', audioMessage:'🎵 Audio', documentMessage:'📄 Document', stickerMessage:'🎭 Sticker', protocolMessage:'🔄 System', reactionMessage:'👍 Reaction', locationMessage:'📍 Location' };
-              const lastMsg = (() => {
-                const lm = chat.lastMessage;
-                if (!lm) return '';
-                const m = lm.message || {};
-                const type = lm.messageType || '';
-                return m.conversation || m.extendedTextMessage?.text || m.imageMessage?.caption || typeLabels[type] || (type ? `[${type}]` : '');
-              })();
-              const lastTime = chat.lastMessage?.messageTimestamp ? new Date(chat.lastMessage.messageTimestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
-              const unread = chat.unreadCount || 0;
-              const isActive = activeChat?.remoteJid === jid;
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
+            {messages.map((msg, i) => {
+              const isMe = msg.fromMe || msg.from_me || msg.key?.fromMe;
+              const body = extractBody(msg);
+              const time = msg.time || (msg.messageTimestamp ? new Date(msg.messageTimestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '');
+              const senderName = !isMe ? (msg.pushName || activeChat.name) : '';
               return (
-                <div key={i} onClick={() => setActiveChat({ ...chat, remoteJid: jid, realJid, displayName: name, pic })}
-                  className={`flex items-center gap-3 px-3 py-3 cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition-colors ${isActive ? 'bg-[#f0f2f5]' : ''}`}>
-                  {/* Avatar */}
-                  <div className="relative shrink-0">
-                    {pic ? <img src={pic} alt={name} className="h-11 w-11 rounded-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} /> : null}
-                    <div className={`h-11 w-11 rounded-full bg-[#dfe5e7] flex items-center justify-center text-base font-bold text-[#54656f] ${pic ? 'hidden' : ''}`}>{name[0]?.toUpperCase()}</div>
-                  </div>
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-[#111b21] truncate">{name}</p>
-                      <p className="text-[11px] text-[#667781] shrink-0 ml-1">{lastTime}</p>
-                    </div>
-                    <div className="flex items-center justify-between mt-0.5">
-                      <p className="text-xs text-[#667781] truncate">{lastMsg}</p>
-                      {unread > 0 && <span className="ml-1 shrink-0 h-5 min-w-5 rounded-full bg-[#25d366] text-white text-[10px] font-bold flex items-center justify-center px-1">{unread}</span>}
+                <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[65%] rounded-lg px-3 py-2 shadow-sm relative ${isMe ? 'bg-[#d9fdd3]' : 'bg-white'}`}
+                    style={{ borderRadius: isMe ? '8px 0 8px 8px' : '0 8px 8px 8px' }}>
+                    {msg.isAI && <p className="text-[10px] text-purple-600 font-semibold mb-0.5 flex items-center gap-1"><Zap className="h-3 w-3" />AI Agent</p>}
+                    {senderName && <p className="text-[11px] font-semibold text-[#06cf9c] mb-0.5">{senderName}</p>}
+                    <p className="text-[14px] text-[#111b21] break-words leading-relaxed">{body}</p>
+                    <div className="flex items-center justify-end gap-1 mt-0.5">
+                      <span className="text-[11px] text-[#667781]">{time}</span>
+                      {isMe && <CheckCheck className="h-3.5 w-3.5 text-[#53bdeb]" />}
                     </div>
                   </div>
                 </div>
               );
             })}
-            {chats.length === 0 && activeInstance && <p className="text-xs text-muted-foreground text-center py-8">No chats</p>}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input */}
+          <div className="px-3 py-2 bg-[#f0f2f5] flex items-center gap-2">
+            <div className="flex-1 bg-white rounded-lg flex items-center px-3 gap-2">
+              <input value={message} onChange={e => setMessage(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMsg()}
+                placeholder="Type a message" className="flex-1 py-2.5 text-[15px] outline-none text-[#111b21] placeholder:text-[#8696a0]" />
+            </div>
+            <button onClick={sendMsg} disabled={!message.trim()}
+              className="h-10 w-10 rounded-full bg-[#00a884] hover:bg-[#017561] flex items-center justify-center disabled:opacity-40 transition-colors">
+              <Send className="h-4 w-4 text-white" />
+            </button>
           </div>
         </div>
+      ) : (
+        <div className="flex-1 flex flex-col items-center justify-center bg-[#f0f2f5]">
+          <MessageCircle className="h-16 w-16 text-[#8696a0] mb-4" />
+          <p className="text-xl text-[#41525d] font-light">WhatsApp Web</p>
+          <p className="text-sm text-[#8696a0] mt-2">Select a chat to start messaging</p>
+        </div>
+      )}
 
-        {/* Messages */}
-        <div className="flex-1 border rounded-xl overflow-hidden flex flex-col" style={{ background: '#efeae2' }}>
-          {activeChat ? (
-            <>
-              {/* Header */}
-              <div className="px-4 py-2.5 bg-[#075e54] flex items-center gap-3">
-                {activeChat.pic ? (
-                  <img src={activeChat.pic} alt="" className="h-9 w-9 rounded-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                ) : (
-                  <div className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold text-white">
-                    {(activeChat.displayName || activeChat.pushName || activeChat.remoteJid?.split('@')[0])?.[0]?.toUpperCase()}
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{activeChat.displayName || activeChat.pushName || activeChat.remoteJid?.split('@')[0]}</p>
-                  <p className="text-[10px] text-white/60 truncate">{activeChat.realJid?.split('@')[0] || activeChat.remoteJid?.split('@')[0]}</p>
-                </div>
+      {/* Profile Dialog */}
+      <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader><DialogTitle>Contact Info</DialogTitle></DialogHeader>
+          {activeChat && (
+            <div className="text-center space-y-3">
+              {activeChat.pic
+                ? <img src={activeChat.pic} alt="" className="h-24 w-24 rounded-full mx-auto object-cover" />
+                : <div className="h-24 w-24 rounded-full bg-[#dfe5e7] flex items-center justify-center text-3xl font-bold text-[#54656f] mx-auto">{activeChat.name?.[0]?.toUpperCase()}</div>
+              }
+              <div>
+                <p className="text-lg font-semibold">{activeChat.name}</p>
+                <p className="text-sm text-muted-foreground">{activeChat.displayPhone || activeChat.phone}</p>
+                <p className="text-xs text-muted-foreground mt-1 font-mono">{activeChat.realJid || activeChat.remoteJid}</p>
               </div>
-              <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                {messages.map((msg, i) => {
-                  const isMe = msg.fromMe || msg.from_me || msg.key?.fromMe;
-                  const msgBody = (() => {
-                    const typeLabels: Record<string,string> = { imageMessage:'📷 Image', videoMessage:'🎥 Video', audioMessage:'🎵 Audio', documentMessage:'📄 Document', stickerMessage:'🎭 Sticker', protocolMessage:'🔄 System message', reactionMessage:'👍 Reaction', locationMessage:'📍 Location' };
-                    const b = msg.body || msg.message;
-                    if (!b) {
-                      const m = msg.message || {};
-                      const type = msg.messageType || Object.keys(m)[0] || '';
-                      return m.conversation || m.extendedTextMessage?.text || m.imageMessage?.caption || typeLabels[type] || (type ? `[${type}]` : '[media]');
-                    }
-                    if (typeof b === 'string') return b;
-                    if (typeof b === 'object') {
-                      const type = Object.keys(b)[0] || '';
-                      return b.conversation || b.extendedTextMessage?.text || b.imageMessage?.caption || typeLabels[type] || (type ? `[${type}]` : '[media]');
-                    }
-                    return String(b);
-                  })();
-                  const msgTime = msg.time || (msg.messageTimestamp ? new Date(msg.messageTimestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '');
-                  return (
-                    <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[70%] rounded-2xl px-3 py-2 text-sm shadow-sm ${isMe ? 'bg-[#d9fdd3] rounded-tr-none' : 'bg-white rounded-tl-none'}`}>
-                        {msg.isAI && <p className="text-[9px] text-purple-600 font-semibold mb-0.5">🤖 AI Agent</p>}
-                        <p className="text-gray-800 break-words">{msgBody}</p>
-                        <p className="text-[10px] text-gray-400 text-right mt-0.5">{msgTime}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
+              <div className="flex justify-center gap-3">
+                <a href={`tel:+${activeChat.phone}`}>
+                  <Button size="sm" variant="outline" className="gap-1.5"><Phone className="h-3.5 w-3.5" /> Call</Button>
+                </a>
+                <a href={`https://wa.me/${activeChat.phone}`} target="_blank" rel="noreferrer">
+                  <Button size="sm" className="gap-1.5 bg-[#25d366] hover:bg-[#20b858]"><MessageCircle className="h-3.5 w-3.5" /> WhatsApp</Button>
+                </a>
               </div>
-              <div className="p-2 bg-[#f0f2f5] flex gap-2">
-                <Input value={message} onChange={e => setMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMsg()}
-                  placeholder="Type a message" className="flex-1 h-9 text-sm rounded-full bg-white border-0" />
-                <Button size="icon" className="h-9 w-9 rounded-full bg-[#075e54] hover:bg-[#064e45]" onClick={sendMsg} disabled={!message.trim()}>
-                  <Send className="h-4 w-4 text-white" />
-                </Button>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-              Select a chat to start messaging
             </div>
           )}
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
 
       {/* QR Dialog */}
       <Dialog open={!!qrDialog} onOpenChange={() => setQrDialog(null)}>
         <DialogContent className="max-w-sm text-center">
-          <DialogHeader><DialogTitle>Scan QR Code — {qrDialog?.instanceName}</DialogTitle></DialogHeader>
-          {qrDialog?.qr ? (
-            <div>
-              <img src={qrDialog.qr.startsWith('data:') ? qrDialog.qr : `data:image/png;base64,${qrDialog.qr}`} alt="QR Code" className="w-64 h-64 mx-auto rounded-xl" />
-              <p className="text-xs text-muted-foreground mt-3">Open WhatsApp → Linked Devices → Link a Device → Scan</p>
-              <Button size="sm" variant="outline" className="mt-3 gap-1.5" onClick={() => getQR(qrDialog.instanceName)}>
-                <RefreshCw className="h-3.5 w-3.5" /> Refresh QR
-              </Button>
-            </div>
-          ) : <p className="text-muted-foreground text-sm py-8">QR code not available. Try connecting first.</p>}
+          <DialogHeader><DialogTitle>Scan QR — {qrDialog?.name}</DialogTitle></DialogHeader>
+          {qrDialog?.qr
+            ? <div><img src={qrDialog.qr.startsWith('data:') ? qrDialog.qr : `data:image/png;base64,${qrDialog.qr}`} alt="QR" className="w-64 h-64 mx-auto rounded-xl" />
+              <p className="text-xs text-muted-foreground mt-3">Open WhatsApp → Linked Devices → Link a Device</p>
+              <Button size="sm" variant="outline" className="mt-3 gap-1.5" onClick={() => getQR(qrDialog.name)}><RefreshCw className="h-3.5 w-3.5" /> Refresh</Button></div>
+            : <p className="text-muted-foreground py-8">QR not available</p>}
         </DialogContent>
       </Dialog>
 
       {/* New Instance Dialog */}
       <Dialog open={newInstanceDialog} onOpenChange={setNewInstanceDialog}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Create New Instance</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Create Instance</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label className="text-xs">Instance Name</Label><Input className="mt-1 text-sm" value={newForm.instance_name} onChange={e => setNewForm(p => ({ ...p, instance_name: e.target.value }))} placeholder="ailaptopwala" /></div>
-            <div>
-              <Label className="text-xs">Connection Type</Label>
+            <div><Label className="text-xs">Type</Label>
               <Select value={newForm.connection_type} onValueChange={v => setNewForm(p => ({ ...p, connection_type: v }))}>
                 <SelectTrigger className="mt-1 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="baileys"><span className="flex items-center gap-2"><Zap className="h-3.5 w-3.5 text-primary" /> Baileys (Free - WhatsApp Web)</span></SelectItem>
-                  <SelectItem value="cloud"><span className="flex items-center gap-2"><Cloud className="h-3.5 w-3.5 text-blue-500" /> Cloud API (Meta Official)</span></SelectItem>
+                  <SelectItem value="baileys"><Zap className="h-3.5 w-3.5 inline mr-1 text-primary" />Baileys (Free)</SelectItem>
+                  <SelectItem value="cloud"><Cloud className="h-3.5 w-3.5 inline mr-1 text-blue-500" />Cloud API (Meta)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {newForm.connection_type === 'cloud' && (
-              <>
-                <div><Label className="text-xs">Phone Number ID</Label><Input className="mt-1 text-sm" value={newForm.cloud_phone_id} onChange={e => setNewForm(p => ({ ...p, cloud_phone_id: e.target.value }))} /></div>
-                <div><Label className="text-xs">Access Token</Label><Input className="mt-1 text-sm" value={newForm.cloud_access_token} onChange={e => setNewForm(p => ({ ...p, cloud_access_token: e.target.value }))} /></div>
-              </>
-            )}
-            <Button onClick={createInstance} disabled={loading || !newForm.instance_name} className="w-full gap-2">
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />} Create Instance
+            {newForm.connection_type === 'cloud' && <>
+              <div><Label className="text-xs">Phone Number ID</Label><Input className="mt-1 text-sm" value={newForm.cloud_phone_id} onChange={e => setNewForm(p => ({ ...p, cloud_phone_id: e.target.value }))} /></div>
+              <div><Label className="text-xs">Access Token</Label><Input className="mt-1 text-sm" value={newForm.cloud_access_token} onChange={e => setNewForm(p => ({ ...p, cloud_access_token: e.target.value }))} /></div>
+            </>}
+            <Button onClick={async () => { setLoading(true); try { await req('POST', '/instances', newForm); toast.success('Created!'); setNewInstanceDialog(false); loadInstances(); } catch (e: any) { toast.error(e.message); } finally { setLoading(false); } }} disabled={loading || !newForm.instance_name} className="w-full gap-2">
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />} Create
             </Button>
           </div>
         </DialogContent>
@@ -394,7 +394,6 @@ const ChatsTab = () => {
   );
 };
 
-// ── Main Page ─────────────────────────────────────────────
 const AdminEvolution = () => {
   const { user } = useAuth();
 
