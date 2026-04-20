@@ -33,6 +33,8 @@ import reelsRoutes from './routes/reels.js';
 import servicesRoutes from './routes/services.js';
 import invoiceRoutes from './routes/invoice.js';
 import reviewsRoutes from './routes/reviews.js';
+import evolutionRoutes from './routes/evolution.js';
+import { setIO as setEvolutionIO } from './evolution/webhook.js';
 import { startNotificationProcessor } from './whatsapp/notifications.js';
 import { setIO } from './whatsapp/client.js';
 
@@ -96,6 +98,7 @@ app.use('/api/invoice', invoiceRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/reels', reelsRoutes);
 app.use('/api/social', socialRoutes);
+app.use('/api/evolution', evolutionRoutes);
 app.use('/uploads', express.static(path.resolve(__dirname, '../../uploads')));
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportRoutes);
@@ -160,6 +163,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, async () => {
   console.log(`✅ AI Laptop Wala Backend running on http://localhost:${PORT}`);
+  setEvolutionIO(io);
   await runSeeder(db);
   startNotificationProcessor();
 });

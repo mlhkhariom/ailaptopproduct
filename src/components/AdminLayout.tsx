@@ -26,6 +26,7 @@ const routeNames: Record<string, string> = {
   "/admin/services": "Service Bookings",
   "/admin/reviews": "Product Reviews",
   "/admin/reels": "Reels & Videos",
+  "/admin/evolution": "Evolution API",
   "/admin/settings": "Settings",
 };
 

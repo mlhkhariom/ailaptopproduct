@@ -1,0 +1,109 @@
+import db from '../db/database.js';
+import { v4 as uuid } from 'uuid';
+import { processAgentMessage } from '../ai/agent.js';
+import { sendText } from './client.js';
+
+let io = null;
+export const setIO = (socketIO) => { io = socketIO; };
+
+const emit = (event, data) => { if (io) io.emit(event, data); };
+
+// Save/update chat in DB
+const upsertChat = (instanceName, remoteJid, pushName, lastMessage, timestamp) => {
+  db.prepare(`INSERT INTO evolution_chats (id, instance_name, remote_jid, push_name, last_message, last_message_time, unread_count, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'))
+    ON CONFLICT(instance_name, remote_jid) DO UPDATE SET
+      push_name = COALESCE(excluded.push_name, push_name),
+      last_message = excluded.last_message,
+      last_message_time = excluded.last_message_time,
+      unread_count = unread_count + 1,
+      updated_at = datetime('now')`)
+    .run(uuid(), instanceName, remoteJid, pushName || '', lastMessage || '', timestamp || new Date().toISOString());
+};
+
+// Save message to DB
+const saveMessage = (instanceName, msg) => {
+  try {
+    db.prepare(`INSERT OR IGNORE INTO evolution_messages
+      (id, instance_name, remote_jid, message_id, body, from_me, message_type, media_url, status, timestamp, push_name)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(uuid(), instanceName, msg.remoteJid, msg.id, msg.body || '', msg.fromMe ? 1 : 0,
+        msg.type || 'text', msg.mediaUrl || null, 'received', msg.timestamp || Date.now(), msg.pushName || '');
+  } catch {}
+};
+
+// Main webhook handler
+export const handleWebhook = async (instanceName, event, data) => {
+  try {
+    switch (event) {
+      case 'MESSAGES_UPSERT': {
+        const messages = Array.isArray(data) ? data : [data];
+        for (const msg of messages) {
+          if (!msg?.key) continue;
+          const remoteJid = msg.key.remoteJid;
+          const fromMe = msg.key.fromMe;
+          const body = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || '';
+          const pushName = msg.pushName || '';
+          const msgType = Object.keys(msg.message || {})[0] || 'text';
+
+          const parsed = { id: msg.key.id, remoteJid, fromMe, body, pushName, type: msgType, timestamp: msg.messageTimestamp };
+
+          saveMessage(instanceName, parsed);
+          if (!fromMe) upsertChat(instanceName, remoteJid, pushName, body, new Date().toISOString());
+
+          // Emit to frontend
+          emit('evolution:message', { instanceName, ...parsed, time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) });
+
+          // AI Agent — only for incoming text messages
+          if (!fromMe && body && msgType === 'conversation' || msgType === 'extendedTextMessage') {
+            try {
+              const result = await processAgentMessage(remoteJid, pushName, body);
+              if (result?.reply) {
+                await sendText(instanceName, remoteJid.replace('@s.whatsapp.net', ''), result.reply);
+                saveMessage(instanceName, { id: uuid(), remoteJid, fromMe: true, body: result.reply, type: 'text', timestamp: Date.now() });
+                emit('evolution:message', { instanceName, remoteJid, fromMe: true, body: result.reply, isAI: true, time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) });
+              }
+            } catch (e) { console.error('Evolution AI error:', e.message); }
+          }
+        }
+        break;
+      }
+
+      case 'MESSAGES_UPDATE': {
+        const updates = Array.isArray(data) ? data : [data];
+        for (const u of updates) {
+          const status = u.update?.status === 3 ? 'read' : u.update?.status === 2 ? 'delivered' : 'sent';
+          db.prepare("UPDATE evolution_messages SET status=? WHERE message_id=?").run(status, u.key?.id);
+          emit('evolution:status_update', { instanceName, msgId: u.key?.id, status });
+        }
+        break;
+      }
+
+      case 'CONNECTION_UPDATE': {
+        const state = data.state || data.connection;
+        db.prepare("UPDATE evolution_instances SET status=?, updated_at=datetime('now') WHERE instance_name=?").run(state, instanceName);
+        emit('evolution:connection', { instanceName, state, qr: data.qr });
+        if (data.qr) {
+          db.prepare("UPDATE evolution_instances SET qr_code=?, status='qr_code', updated_at=datetime('now') WHERE instance_name=?").run(data.qr, instanceName);
+          emit('evolution:qr', { instanceName, qr: data.qr });
+        }
+        if (state === 'open') {
+          db.prepare("UPDATE evolution_instances SET status='connected', qr_code=NULL, updated_at=datetime('now') WHERE instance_name=?").run(instanceName);
+          emit('evolution:connected', { instanceName });
+        }
+        break;
+      }
+
+      case 'QRCODE_UPDATED': {
+        const qr = data.qrcode?.base64 || data.qr;
+        if (qr) {
+          db.prepare("UPDATE evolution_instances SET qr_code=?, status='qr_code', updated_at=datetime('now') WHERE instance_name=?").run(qr, instanceName);
+          emit('evolution:qr', { instanceName, qr });
+        }
+        break;
+      }
+    }
+  } catch (e) {
+    console.error('Evolution webhook error:', e.message);
+  }
+};

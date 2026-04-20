@@ -102,6 +102,15 @@ export function AdminSidebar() {
           <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "System"}</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenu(systemMenu)}</SidebarGroupContent>
         </SidebarGroup>
+        {user?.role === 'superadmin' && (
+          <>
+            {!collapsed && <Separator className="mx-3 bg-sidebar-border/50" />}
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "Super Admin"}</SidebarGroupLabel>
+              <SidebarGroupContent>{renderMenu([{ title: "Evolution API", url: "/admin/evolution", icon: Zap, badge: "" }])}</SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-3">

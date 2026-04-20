@@ -41,6 +41,7 @@ import AdminWhatsApp from "./pages/admin/AdminWhatsApp";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AdminReviews from "./pages/admin/AdminReviews";
 import AdminReels from "./pages/admin/AdminReels";
+import AdminEvolution from "./pages/admin/AdminEvolution";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminCategories from "./pages/admin/AdminCategories";
 import AdminSettings from "./pages/admin/AdminSettings";
@@ -104,6 +105,7 @@ const App = () => (
             <Route path="/admin/services" element={<AdminRoute><AdminServices /></AdminRoute>} />
             <Route path="/admin/reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
             <Route path="/admin/reels" element={<AdminRoute><AdminReels /></AdminRoute>} />
+            <Route path="/admin/evolution" element={<AdminRoute><AdminEvolution /></AdminRoute>} />
             <Route path="/admin/customers" element={<AdminRoute><AdminCustomers /></AdminRoute>} />
             <Route path="/admin/categories" element={<AdminRoute><AdminCategories /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
