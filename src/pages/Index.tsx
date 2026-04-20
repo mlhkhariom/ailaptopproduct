@@ -72,7 +72,7 @@ const Index = () => {
               </Button>
             </Link>
             <Link to="/services">
-              <Button size="lg" variant="outline" className="gap-2 px-8 h-12 text-base font-bold border-white/20 text-white hover:bg-white/10">
+              <Button size="lg" variant="outline" className="gap-2 px-8 h-12 text-base font-bold border-primary text-primary bg-primary/10 hover:bg-primary hover:text-white transition-colors">
                 <Wrench size={18} /> Book Repair
               </Button>
             </Link>
