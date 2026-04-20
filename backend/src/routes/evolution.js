@@ -166,24 +166,38 @@ router.get('/instances/:name/messages/:jid', authMiddleware, async (req, res) =>
   const phone = jid.replace('@s.whatsapp.net','').replace('@lid','').replace(/[^0-9]/g,'');
 
   try {
-    // Fetch from both JID formats and merge
-    const [r1, r2] = await Promise.allSettled([
-      fetchMessages(req.params.name, jid, 50),
-      // Also try @lid if given @s.whatsapp.net and vice versa
-      fetchMessages(req.params.name, jid.includes('@lid') ? `${phone}@s.whatsapp.net` : `${phone}@lid`, 50),
-    ]);
+    // Find all JIDs for this contact (phone number can have @s.whatsapp.net and @lid)
+    const allChats = await fetchChats(req.params.name).catch(() => []);
+    const relatedJids = new Set([jid]);
 
-    const records1 = r1.status === 'fulfilled' ? (r1.value?.messages?.records || []) : [];
-    const records2 = r2.status === 'fulfilled' ? (r2.value?.messages?.records || []) : [];
+    if (Array.isArray(allChats)) {
+      allChats.forEach(c => {
+        const cJid = c.remoteJid || '';
+        const altJid = c.lastMessage?.key?.remoteJidAlt || '';
+        // If this chat's phone matches or altJid matches
+        if (cJid.includes(phone) || altJid.includes(phone)) {
+          relatedJids.add(cJid);
+          if (altJid) relatedJids.add(altJid.split('@')[0] + '@s.whatsapp.net');
+        }
+      });
+    }
 
-    // Merge and deduplicate by message ID
+    // Fetch messages from all related JIDs
+    const allResults = await Promise.allSettled(
+      Array.from(relatedJids).map(j => fetchMessages(req.params.name, j, 50))
+    );
+
     const seen = new Set();
-    const all = [...records1, ...records2].filter(m => {
-      const id = m.key?.id || m.id;
-      if (seen.has(id)) return false;
-      seen.add(id);
-      return true;
-    }).sort((a, b) => (a.messageTimestamp || 0) - (b.messageTimestamp || 0));
+    const all = allResults
+      .filter(r => r.status === 'fulfilled')
+      .flatMap(r => r.value?.messages?.records || [])
+      .filter(m => {
+        const id = m.key?.id || m.id;
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      })
+      .sort((a, b) => (a.messageTimestamp || 0) - (b.messageTimestamp || 0));
 
     if (all.length > 0) {
       return res.json(all.map(m => ({
@@ -197,14 +211,12 @@ router.get('/instances/:name/messages/:jid', authMiddleware, async (req, res) =>
         status: m.status,
       })));
     }
-  } catch {}
+  } catch (e) {
+    console.error('Evolution messages error:', e.message);
+  }
 
   // DB fallback
-  const local = db.prepare(`
-    SELECT * FROM evolution_messages 
-    WHERE instance_name=? AND (remote_jid=? OR remote_jid LIKE ?)
-    ORDER BY timestamp ASC LIMIT 50
-  `).all(req.params.name, jid, `%${phone}%`);
+  const local = db.prepare(`SELECT * FROM evolution_messages WHERE instance_name=? AND (remote_jid=? OR remote_jid LIKE ?) ORDER BY timestamp ASC LIMIT 50`).all(req.params.name, jid, `%${phone}%`);
   res.json(local.map(m => ({ ...m, fromMe: !!m.from_me, time: new Date(m.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) })));
 });
 
