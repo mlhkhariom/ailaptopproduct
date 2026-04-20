@@ -174,15 +174,16 @@ const ChatsTab = () => {
 
       sock.on('connect', () => {
         console.log('✅ Evolution WS connected:', sock.id);
-        toast.success('Evolution API connected!', { duration: 2000 });
       });
       sock.on('connect_error', (e: any) => console.warn('Evolution WS error:', e.message));
-      sock.on('disconnect', () => console.log('Evolution WS disconnected'));
 
-      sock.on('messages.upsert', (data: any) => {
-        const msgs = Array.isArray(data) ? data : [data];
+      // Evolution API v2 event names (UPPERCASE_UNDERSCORE format)
+      const handleMsg = (data: any) => {
+        const msgs = Array.isArray(data) ? data : (data?.data ? [data.data] : [data]);
         msgs.forEach((msg: any) => {
           if (!msg?.key) return;
+          // Filter by instance
+          if (data?.instance && data.instance !== activeInstance) return;
           const remoteJid = msg.key.remoteJid;
           const fromMe = msg.key.fromMe;
           const body = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || `[${msg.messageType || 'media'}]`;
@@ -195,29 +196,41 @@ const ChatsTab = () => {
             ? { ...c, lastMessage: msg, unreadCount: fromMe ? (c.unreadCount || 0) : (c.unreadCount || 0) + 1 }
             : c));
         });
-      });
+      };
 
-      sock.on('messages.update', (data: any) => {
-        const updates = Array.isArray(data) ? data : [data];
-        updates.forEach((u: any) => setMessages(p => p.map(m => m.id === u.key?.id ? { ...m, status: u.update?.status } : m)));
-      });
+      // Listen both formats
+      sock.on('MESSAGES_UPSERT', handleMsg);
+      sock.on('messages.upsert', handleMsg);
+      sock.on('send.message', handleMsg);
 
-      sock.on('presence.update', (data: any) => {
-        if (!data?.presences) return;
-        const jid = Object.keys(data.presences)[0];
-        const presence = data.presences[jid]?.lastKnownPresence;
-        const chatJid = activeChatRef.current?.remoteJid || '';
-        if (chatJid.includes(jid.split('@')[0])) {
+      const handleUpdate = (data: any) => {
+        const updates = Array.isArray(data) ? data : (data?.data ? [data.data] : [data]);
+        updates.forEach((u: any) => setMessages(p => p.map(m => m.id === u.key?.id ? { ...m, status: u.update?.status || u.status } : m)));
+      };
+      sock.on('MESSAGES_UPDATE', handleUpdate);
+      sock.on('messages.update', handleUpdate);
+
+      const handlePresence = (data: any) => {
+        const presences = data?.presences || data?.data?.presences;
+        if (!presences) return;
+        const jid = Object.keys(presences)[0];
+        const presence = presences[jid]?.lastKnownPresence;
+        if (activeChatRef.current?.remoteJid?.includes(jid.split('@')[0])) {
           setTyping(presence === 'composing');
           if (presence === 'composing') setTimeout(() => setTyping(false), 5000);
         }
+      };
+      sock.on('PRESENCE_UPDATE', handlePresence);
+      sock.on('presence.update', handlePresence);
+
+      sock.on('QRCODE_UPDATED', (data: any) => {
+        const qr = data?.qrcode?.base64 || data?.data?.qrcode?.base64;
+        if (qr) setQrDialog((p: any) => p ? { ...p, qr } : null);
       });
 
-      sock.on('qrcode.updated', (data: any) => {
-        if (data?.qrcode?.base64) setQrDialog((p: any) => p ? { ...p, qr: data.qrcode.base64 } : null);
-      });
-
+      sock.on('CONNECTION_UPDATE', () => loadInstances());
       sock.on('connection.update', () => loadInstances());
+
       setEvoSocket(sock);
     }).catch(e => console.warn('socket.io-client error:', e));
 
