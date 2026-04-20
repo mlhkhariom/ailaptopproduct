@@ -247,7 +247,9 @@ const ChatsTab = () => {
                 if (typeof lm === 'string') return lm;
                 if (typeof lm === 'object') {
                   const msg = lm.message || lm;
-                  return msg.conversation || msg.extendedTextMessage?.text || msg.imageMessage?.caption || msg.videoMessage?.caption || msg.documentMessage?.title || (lm.messageType ? `[${lm.messageType}]` : '[media]');
+                  const type = lm.messageType || Object.keys(msg)[0] || '';
+                  const typeLabels: Record<string,string> = { imageMessage:'📷 Image', videoMessage:'🎥 Video', audioMessage:'🎵 Audio', documentMessage:'📄 Document', stickerMessage:'🎭 Sticker', protocolMessage:'🔄 System', reactionMessage:'👍 Reaction', locationMessage:'📍 Location' };
+                  return msg.conversation || msg.extendedTextMessage?.text || msg.imageMessage?.caption || msg.videoMessage?.caption || typeLabels[type] || (type ? `[${type}]` : '');
                 }
                 return '';
               })();
@@ -282,14 +284,18 @@ const ChatsTab = () => {
                 {messages.map((msg, i) => {
                   const isMe = msg.fromMe || msg.from_me || msg.key?.fromMe;
                   const msgBody = (() => {
+                    const typeLabels: Record<string,string> = { imageMessage:'📷 Image', videoMessage:'🎥 Video', audioMessage:'🎵 Audio', documentMessage:'📄 Document', stickerMessage:'🎭 Sticker', protocolMessage:'🔄 System message', reactionMessage:'👍 Reaction', locationMessage:'📍 Location' };
                     const b = msg.body || msg.message;
                     if (!b) {
-                      // Evolution API v2 format
                       const m = msg.message || {};
-                      return m.conversation || m.extendedTextMessage?.text || m.imageMessage?.caption || m.videoMessage?.caption || (msg.messageType ? `[${msg.messageType}]` : '[media]');
+                      const type = msg.messageType || Object.keys(m)[0] || '';
+                      return m.conversation || m.extendedTextMessage?.text || m.imageMessage?.caption || typeLabels[type] || (type ? `[${type}]` : '[media]');
                     }
                     if (typeof b === 'string') return b;
-                    if (typeof b === 'object') return b.conversation || b.extendedTextMessage?.text || b.imageMessage?.caption || '[media]';
+                    if (typeof b === 'object') {
+                      const type = Object.keys(b)[0] || '';
+                      return b.conversation || b.extendedTextMessage?.text || b.imageMessage?.caption || typeLabels[type] || (type ? `[${type}]` : '[media]');
+                    }
                     return String(b);
                   })();
                   const msgTime = msg.time || (msg.messageTimestamp ? new Date(msg.messageTimestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '');
