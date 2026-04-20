@@ -177,5 +177,7 @@ addColumnIfMissing('products', 'meta_description', 'TEXT');
 addColumnIfMissing('products', 'focus_keywords', 'TEXT');
 addColumnIfMissing('orders', 'payment_id', 'TEXT');
 addColumnIfMissing('orders', 'payment_status', "TEXT DEFAULT 'pending'");
+addColumnIfMissing('app_settings', 'category', "TEXT DEFAULT 'general'");
+addColumnIfMissing('app_settings', 'updated_at', "TEXT DEFAULT (datetime('now'))");
 
 export default db;
