@@ -107,9 +107,19 @@ if (existsSync(frontendDist)) {
   app.get('*', (req, res) => res.sendFile(path.join(frontendDist, 'index.html')));
 }
 
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: `Route ${req.method} ${req.path} not found` });
+});
+
+// Global error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Internal server error' });
+  console.error(`[${new Date().toISOString()}] Error on ${req.method} ${req.path}:`, err.message);
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
+    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack?.split('\n')[0] }),
+  });
 });
 
 const PORT = process.env.PORT || 5000;

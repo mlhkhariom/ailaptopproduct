@@ -38,7 +38,7 @@ import AdminBlog from "./pages/admin/AdminBlog";
 import AdminSocial from "./pages/admin/AdminSocial";
 import AdminMedia from "./pages/admin/AdminMedia";
 import AdminWhatsApp from "./pages/admin/AdminWhatsApp";
-import AdminReviews from "./pages/admin/AdminReviews";
+import ErrorBoundary from "./components/ErrorBoundary";
 import AdminReels from "./pages/admin/AdminReels";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminCategories from "./pages/admin/AdminCategories";
@@ -54,6 +54,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
+  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -118,6 +119,7 @@ const App = () => (
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
