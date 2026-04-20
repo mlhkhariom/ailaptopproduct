@@ -175,46 +175,22 @@ httpServer.listen(PORT, async () => {
 
       const { io: socketIO } = await import('socket.io-client');
 
-      // Get all active instances
-      const instances = db.prepare("SELECT instance_name FROM evolution_instances WHERE is_active=1").all();
-
-      const connectInstance = (instanceName) => {
-        // Connect to instance-specific namespace
-        const sock = socketIO(`${evoSettings.api_url}/${instanceName}`, {
-          transports: ['websocket', 'polling'],
-          query: { apikey: evoSettings.api_key },
-          reconnection: true,
-        });
-        sock.on('connect', () => console.log(`✅ Evolution WS connected for instance: ${instanceName}`));
-        sock.on('connect_error', e => console.warn(`Evolution WS error (${instanceName}):`, e.message));
-        sock.onAny(async (eventName, payload) => {
-          const event = payload?.event || eventName;
-          const data = payload?.data;
-          if (!data) return;
-          const { handleWebhook } = await import('./evolution/webhook.js');
-          await handleWebhook(instanceName, event, data).catch(() => {});
-        });
-        return sock;
-      };
-
-      // Also connect to global namespace
+      // Connect to global namespace only (Evolution API v2 doesn't support instance namespaces)
       const globalSock = socketIO(evoSettings.api_url, {
         transports: ['websocket', 'polling'],
         query: { apikey: evoSettings.api_key },
         reconnection: true,
       });
       globalSock.on('connect', () => console.log('✅ Evolution API WebSocket connected (backend)'));
+      globalSock.on('connect_error', e => console.warn('Evolution WS error:', e.message));
       globalSock.onAny(async (eventName, payload) => {
         const event = payload?.event || eventName;
         const data = payload?.data;
         const instanceName = payload?.instance;
         if (!data || !instanceName) return;
         const { handleWebhook } = await import('./evolution/webhook.js');
-        await handleWebhook(instanceName, event, data).catch(() => {});
+        await handleWebhook(instanceName, event, data).catch(e => console.error('Webhook error:', e.message));
       });
-
-      // Connect to each instance namespace
-      instances.forEach(i => connectInstance(i.instance_name));
 
       console.log('✅ Evolution API AI processing started');
     } catch (e) {
