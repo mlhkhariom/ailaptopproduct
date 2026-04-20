@@ -42,7 +42,16 @@ export const handleWebhook = async (instanceName, event, data) => {
           if (!msg?.key) continue;
           const remoteJid = msg.key.remoteJid;
           const fromMe = msg.key.fromMe;
-          const body = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || '';
+          // Extract text body from various message types
+          const body = typeof msg.message === 'string' ? msg.message :
+            msg.message?.conversation ||
+            msg.message?.extendedTextMessage?.text ||
+            msg.message?.imageMessage?.caption ||
+            msg.message?.videoMessage?.caption ||
+            msg.message?.documentMessage?.caption ||
+            msg.message?.buttonsResponseMessage?.selectedDisplayText ||
+            msg.message?.listResponseMessage?.title ||
+            '[media]';
           const pushName = msg.pushName || '';
           const msgType = Object.keys(msg.message || {})[0] || 'text';
 

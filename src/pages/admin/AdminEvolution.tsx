@@ -272,7 +272,11 @@ const ChatsTab = () => {
                   <div key={i} className={`flex ${msg.fromMe || msg.from_me ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[70%] rounded-2xl px-3 py-2 text-sm shadow-sm ${msg.fromMe || msg.from_me ? 'bg-[#d9fdd3] rounded-tr-none' : 'bg-white rounded-tl-none'}`}>
                       {msg.isAI && <p className="text-[9px] text-purple-600 font-semibold mb-0.5">🤖 AI Agent</p>}
-                      <p className="text-gray-800 break-words">{msg.body || msg.message?.conversation}</p>
+                      <p className="text-gray-800 break-words">
+                        {typeof msg.body === 'string' ? msg.body :
+                         typeof msg.message === 'string' ? msg.message :
+                         msg.message?.conversation || msg.message?.extendedTextMessage?.text || '[media]'}
+                      </p>
                       <p className="text-[10px] text-gray-400 text-right mt-0.5">{msg.time || ''}</p>
                     </div>
                   </div>
