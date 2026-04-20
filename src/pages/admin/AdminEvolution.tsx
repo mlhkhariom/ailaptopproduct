@@ -193,7 +193,12 @@ const ChatsTab = () => {
             const mediaUrl = msg.message?.imageMessage?.url || msg.message?.videoMessage?.url || msg.message?.documentMessage?.url || null;
             const newMsg = { id: msg.key.id || Date.now(), body, fromMe, from_me: fromMe ? 1 : 0, messageTimestamp: msg.messageTimestamp, time, status: msg.status, mediaUrl, messageType: msg.messageType };
             if (activeChatRef.current?.remoteJid === remoteJid || activeChatRef.current?.remoteJid?.includes(remoteJid?.split('@')[0])) {
-              setMessages(p => p.some(m => m.id === newMsg.id) ? p : [...p, newMsg]);
+              setMessages(p => {
+                if (p.some(m => m.id === newMsg.id)) return p;
+                // Insert in correct position by timestamp
+                const inserted = [...p, newMsg].sort((a, b) => (a.messageTimestamp || 0) - (b.messageTimestamp || 0));
+                return inserted;
+              });
             }
             setChats(p => p.map(c => (c.remoteJid === remoteJid || c.id === remoteJid || c.remoteJid?.includes(remoteJid?.split('@')[0]))
               ? { ...c, lastMessage: { ...msg, message: msg.message }, unreadCount: fromMe ? (c.unreadCount || 0) : (c.unreadCount || 0) + 1 }
@@ -234,10 +239,22 @@ const ChatsTab = () => {
   useEffect(() => { if (activeInstance) req('GET', `/instances/${activeInstance}/chats`).then(setChats).catch(() => {}); }, [activeInstance]);
   useEffect(() => {
     if (activeChat && activeInstance) {
-      req('GET', `/instances/${activeInstance}/messages/${encodeURIComponent(activeChat.remoteJid)}`).then(setMessages).catch(() => {});
+      req('GET', `/instances/${activeInstance}/messages/${encodeURIComponent(activeChat.remoteJid)}`).then(data => {
+        // Sort oldest first (ascending timestamp)
+        const sorted = [...(Array.isArray(data) ? data : [])].sort((a, b) => {
+          const ta = a.messageTimestamp || a.timestamp || 0;
+          const tb = b.messageTimestamp || b.timestamp || 0;
+          return ta - tb;
+        });
+        setMessages(sorted);
+      }).catch(() => {});
     }
   }, [activeChat?.remoteJid, activeInstance]);
-  useEffect(() => { setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50); }, [messages]);
+
+  // Auto scroll to bottom on new messages
+  useEffect(() => {
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80);
+  }, [messages.length]);
 
   const typeLabels: Record<string,string> = { imageMessage:'📷 Image', videoMessage:'🎥 Video', audioMessage:'🎵 Audio', documentMessage:'📄 Document', stickerMessage:'🎭 Sticker', protocolMessage:'🔄 System', reactionMessage:'👍 Reaction', locationMessage:'📍 Location', contactMessage:'👤 Contact' };
 
@@ -362,11 +379,7 @@ const ChatsTab = () => {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
-            {[...messages].sort((a, b) => {
-              const ta = a.messageTimestamp || a.timestamp || 0;
-              const tb = b.messageTimestamp || b.timestamp || 0;
-              return ta - tb;
-            }).map((msg, i) => {
+            {messages.map((msg, i) => {
               const isMe = msg.fromMe || msg.from_me || msg.key?.fromMe;
               const body = extractBody(msg);
               const time = msg.time || (msg.messageTimestamp ? new Date(msg.messageTimestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '');
