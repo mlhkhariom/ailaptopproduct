@@ -275,7 +275,8 @@ const ChatsTab = () => {
     const realJid = chat.lastMessage?.key?.remoteJidAlt || jid;
     const phone = realJid.replace('@s.whatsapp.net','').replace('@lid','').replace(/[^0-9]/g,'');
     const displayPhone = phone ? `+${phone}` : '';
-    const name = chat.pushName || chat.lastMessage?.pushName || chat.name || displayPhone || 'Unknown';
+    // Best name: chat.pushName > lastMessage.pushName > contacts > phone
+    const name = chat.pushName || chat.lastMessage?.pushName || chat.name || chat.verifiedName || displayPhone || 'Unknown';
     const lm = chat.lastMessage;
     const lastMsg = lm ? extractBody({ body: null, message: lm.message, messageType: lm.messageType }) : '';
     const lastTime = lm?.messageTimestamp ? new Date(lm.messageTimestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
@@ -298,31 +299,55 @@ const ChatsTab = () => {
   };
 
   const filteredChats = (() => {
-    // Deduplicate by phone number — same contact can have @lid and @s.whatsapp.net JIDs
-    const seen = new Map<string, any>();
+    // Merge @lid and @s.whatsapp.net for same contact
+    const byPhone = new Map<string, any>();
+    const byLid = new Map<string, any>();
+
     chats.forEach(chat => {
-      const p = parseChat(chat);
-      const key = p.phone || p.jid; // group by phone number
-      if (!seen.has(key)) {
-        seen.set(key, chat);
-      } else {
-        // Prefer @s.whatsapp.net over @lid, and prefer one with more info
-        const existing = seen.get(key);
-        const existingJid = existing.remoteJid || existing.id || '';
-        const thisJid = chat.remoteJid || chat.id || '';
-        // Prefer s.whatsapp.net
-        if (thisJid.includes('@s.whatsapp.net') && !existingJid.includes('@s.whatsapp.net')) {
-          seen.set(key, chat);
-        }
-        // Prefer one with pushName
-        else if (!parseChat(existing).name.startsWith('+') && parseChat(chat).name.startsWith('+')) {
-          // keep existing (has real name)
-        } else if (parseChat(existing).name.startsWith('+') && !parseChat(chat).name.startsWith('+')) {
-          seen.set(key, chat);
-        }
+      const jid = chat.remoteJid || chat.id || '';
+      if (jid.includes('@s.whatsapp.net')) {
+        const phone = jid.split('@')[0];
+        byPhone.set(phone, chat);
+      } else if (jid.includes('@lid')) {
+        // Try to get real phone from lastMessage.key.remoteJidAlt
+        const altJid = chat.lastMessage?.key?.remoteJidAlt || '';
+        const phone = altJid.replace('@s.whatsapp.net', '');
+        byLid.set(phone || jid, chat);
       }
     });
-    return Array.from(seen.values()).filter(c => {
+
+    // Merge: prefer @s.whatsapp.net, enrich with @lid data if needed
+    const merged = new Map<string, any>();
+
+    // Add all @s.whatsapp.net chats
+    byPhone.forEach((chat, phone) => {
+      const lidChat = byLid.get(phone);
+      // Merge: take name from whichever has it, prefer s.whatsapp.net
+      const mergedChat = {
+        ...chat,
+        pushName: chat.pushName || chat.lastMessage?.pushName || lidChat?.pushName || lidChat?.lastMessage?.pushName,
+        profilePicUrl: chat.profilePicUrl || lidChat?.profilePicUrl,
+        // Keep s.whatsapp.net JID for sending
+      };
+      merged.set(phone, mergedChat);
+    });
+
+    // Add @lid chats that have no @s.whatsapp.net counterpart
+    byLid.forEach((chat, phone) => {
+      if (!merged.has(phone)) {
+        merged.set(phone, chat);
+      }
+    });
+
+    // Add any remaining chats (groups etc)
+    chats.forEach(chat => {
+      const jid = chat.remoteJid || chat.id || '';
+      if (!jid.includes('@s.whatsapp.net') && !jid.includes('@lid')) {
+        merged.set(jid, chat);
+      }
+    });
+
+    return Array.from(merged.values()).filter(c => {
       const p = parseChat(c);
       return p.name.toLowerCase().includes(searchChat.toLowerCase()) || p.phone.includes(searchChat);
     });
