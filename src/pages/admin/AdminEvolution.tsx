@@ -275,8 +275,9 @@ const ChatsTab = () => {
     const realJid = chat.lastMessage?.key?.remoteJidAlt || jid;
     const phone = realJid.replace('@s.whatsapp.net','').replace('@lid','').replace(/[^0-9]/g,'');
     const displayPhone = phone ? `+${phone}` : '';
-    // Best name: chat.pushName > lastMessage.pushName > contacts > phone
-    const name = chat.pushName || chat.lastMessage?.pushName || chat.name || chat.verifiedName || displayPhone || 'Unknown';
+    // "Você" = Portuguese for "You" = own number, skip it
+    const rawName = chat.pushName || chat.lastMessage?.pushName || chat.name || chat.verifiedName;
+    const name = (rawName && rawName !== 'Você') ? rawName : displayPhone || 'Unknown';
     const lm = chat.lastMessage;
     const lastMsg = lm ? extractBody({ body: null, message: lm.message, messageType: lm.messageType }) : '';
     const lastTime = lm?.messageTimestamp ? new Date(lm.messageTimestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
@@ -322,12 +323,14 @@ const ChatsTab = () => {
     // Add all @s.whatsapp.net chats
     byPhone.forEach((chat, phone) => {
       const lidChat = byLid.get(phone);
-      // Merge: take name from whichever has it, prefer s.whatsapp.net
+      const sName = chat.pushName || chat.lastMessage?.pushName;
+      const lidName = lidChat?.pushName || lidChat?.lastMessage?.pushName;
+      // Prefer @lid name if @s.whatsapp.net has "Você" (own number) or no name
+      const bestName = (sName && sName !== 'Você') ? sName : (lidName && lidName !== 'Você') ? lidName : sName;
       const mergedChat = {
         ...chat,
-        pushName: chat.pushName || chat.lastMessage?.pushName || lidChat?.pushName || lidChat?.lastMessage?.pushName,
+        pushName: bestName,
         profilePicUrl: chat.profilePicUrl || lidChat?.profilePicUrl,
-        // Keep s.whatsapp.net JID for sending
       };
       merged.set(phone, mergedChat);
     });
