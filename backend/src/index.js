@@ -95,6 +95,7 @@ app.use('/api/services', servicesRoutes);
 app.use('/api/invoice', invoiceRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/reels', reelsRoutes);
+app.use('/api/social', socialRoutes);
 app.use('/uploads', express.static(path.resolve(__dirname, '../../uploads')));
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportRoutes);
