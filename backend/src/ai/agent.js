@@ -55,11 +55,6 @@ export const createOrderWithPaymentLink = async (contactPhone, productId, custom
   }
 };
 
-// ── Get settings ──────────────────────────────────────────
-export const getAgentSettings = () => {
-  return db.prepare('SELECT * FROM ai_agent_settings WHERE id = ?').get('main') || {};
-};
-
 // ── Check if agent enabled for contact ───────────────────
 export const isAgentEnabledForContact = (contactId) => {
   const s = getAgentSettings();
