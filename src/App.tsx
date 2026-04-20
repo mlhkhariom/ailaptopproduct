@@ -39,6 +39,7 @@ import AdminSocial from "./pages/admin/AdminSocial";
 import AdminMedia from "./pages/admin/AdminMedia";
 import AdminWhatsApp from "./pages/admin/AdminWhatsApp";
 import ErrorBoundary from "./components/ErrorBoundary";
+import AdminReviews from "./pages/admin/AdminReviews";
 import AdminReels from "./pages/admin/AdminReels";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminCategories from "./pages/admin/AdminCategories";
