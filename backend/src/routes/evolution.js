@@ -209,6 +209,9 @@ router.get('/instances/:name/messages/:jid', authMiddleware, async (req, res) =>
         timestamp: m.messageTimestamp,
         time: m.messageTimestamp ? new Date(m.messageTimestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '',
         status: m.status,
+        // Include thumbnail for images
+        thumbnail: m.message?.imageMessage?.jpegThumbnail || m.message?.videoMessage?.jpegThumbnail || null,
+        mediaUrl: m.message?.imageMessage?.url || m.message?.videoMessage?.url || m.message?.documentMessage?.url || null,
       })));
     }
   } catch (e) {

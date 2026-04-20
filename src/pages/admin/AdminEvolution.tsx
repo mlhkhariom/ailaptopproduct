@@ -448,8 +448,14 @@ const ChatsTab = () => {
                     style={{ borderRadius: isMe ? '8px 0 8px 8px' : '0 8px 8px 8px' }}>
                     {msg.isAI && <p className="text-[10px] text-purple-600 font-semibold mb-0.5 flex items-center gap-1"><Zap className="h-3 w-3" />AI Agent</p>}
                     {/* Media rendering */}
-                    {msg.messageType === 'imageMessage' && msg.mediaUrl && (
-                      <img src={msg.mediaUrl} alt="image" className="rounded-lg max-w-full mb-1 max-h-48 object-cover cursor-pointer" onClick={() => window.open(msg.mediaUrl, '_blank')} />
+                    {msg.messageType === 'imageMessage' && (
+                      <div className="rounded-lg overflow-hidden mb-1 max-w-[200px] cursor-pointer" onClick={() => msg.mediaUrl && window.open(msg.mediaUrl, '_blank')}>
+                        {msg.thumbnail
+                          ? <img src={`data:image/jpeg;base64,${msg.thumbnail}`} alt="image" className="w-full object-cover max-h-48" />
+                          : <div className="bg-black/10 flex items-center justify-center h-32 w-40"><svg className="h-8 w-8 text-[#54656f]" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></div>
+                        }
+                        {msg.body && msg.body !== '[imageMessage]' && <p className="text-xs text-[#111b21] px-1 py-0.5">{msg.body}</p>}
+                      </div>
                     )}
                     {msg.messageType === 'videoMessage' && (
                       <div className="flex items-center gap-2 bg-black/10 rounded-lg p-2 mb-1 cursor-pointer" onClick={() => msg.mediaUrl && window.open(msg.mediaUrl, '_blank')}>
