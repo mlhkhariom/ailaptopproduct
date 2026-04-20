@@ -53,7 +53,7 @@ export const handleWebhook = async (instanceName, event, data) => {
             msg.message?.listResponseMessage?.title ||
             '[media]';
           const pushName = msg.pushName || '';
-          const msgType = Object.keys(msg.message || {})[0] || 'text';
+          const msgType = msg.messageType || Object.keys(msg.message || {}).find(k => k !== 'messageContextInfo') || 'text';
 
           const parsed = { id: msg.key.id, remoteJid, fromMe, body, pushName, type: msgType, timestamp: msg.messageTimestamp, remoteJidAlt: msg.key.remoteJidAlt || null };
 
@@ -64,7 +64,8 @@ export const handleWebhook = async (instanceName, event, data) => {
           emit('evolution:message', { instanceName, ...parsed, time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) });
 
           // AI Agent — only for incoming text messages
-          if (!fromMe && body && (msgType === 'conversation' || msgType === 'extendedTextMessage')) {
+          if (!fromMe && body && body !== '[media]' && (msgType === 'conversation' || msgType === 'extendedTextMessage')) {
+            console.log(`🤖 Evolution AI processing: "${body.slice(0,30)}" from ${remoteJid.split('@')[0]}`);
             try {
               // Use @s.whatsapp.net format for AI agent (consistent with contact settings)
               const agentContactId = remoteJid.includes('@lid')
