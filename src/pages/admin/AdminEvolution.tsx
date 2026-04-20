@@ -146,10 +146,84 @@ const ChatsTab = () => {
   const [newForm, setNewForm] = useState({ instance_name: '', connection_type: 'baileys', cloud_phone_id: '', cloud_access_token: '' });
   const [loading, setLoading] = useState(false);
   const [searchChat, setSearchChat] = useState('');
+  const [typing, setTyping] = useState(false);
+  const [evoSocket, setEvoSocket] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const activeChatRef = useRef<any>(null);
+  useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
 
   const loadInstances = () => req('GET', '/instances').then(d => { setInstances(d); if (d.length > 0 && !activeInstance) setActiveInstance(d[0].instance_name); }).catch(() => {});
   useEffect(() => { loadInstances(); }, []);
+
+  // Connect to Evolution API WebSocket for real-time events
+  useEffect(() => {
+    if (!activeInstance) return;
+    req('GET', '/settings').then(settings => {
+      if (!settings.api_url || !settings.api_key) return;
+      // Dynamically import socket.io-client
+      import('socket.io-client').then(({ io }) => {
+        const sock = io(settings.api_url, {
+          transports: ['websocket'],
+          query: { apikey: settings.api_key },
+        });
+        sock.on('connect', () => console.log('✅ Evolution WS connected'));
+        sock.on('disconnect', () => console.log('❌ Evolution WS disconnected'));
+
+        // Real-time message
+        sock.on('messages.upsert', (data: any) => {
+          const msgs = Array.isArray(data) ? data : [data];
+          msgs.forEach(msg => {
+            if (!msg?.key) return;
+            const remoteJid = msg.key.remoteJid;
+            const fromMe = msg.key.fromMe;
+            const body = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || `[${msg.messageType || 'media'}]`;
+            const time = msg.messageTimestamp ? new Date(msg.messageTimestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+            const newMsg = { id: msg.key.id, body, fromMe, from_me: fromMe ? 1 : 0, messageTimestamp: msg.messageTimestamp, time, pushName: msg.pushName, status: msg.status };
+
+            // Add to messages if active chat
+            if (activeChatRef.current?.remoteJid === remoteJid) {
+              setMessages(p => p.some(m => m.id === msg.key.id) ? p : [...p, newMsg]);
+            }
+            // Update chat list last message
+            setChats(p => p.map(c => (c.remoteJid === remoteJid || c.id === remoteJid) ? { ...c, lastMessage: { ...msg, message: msg.message }, unreadCount: fromMe ? c.unreadCount : (c.unreadCount || 0) + 1 } : c));
+          });
+        });
+
+        // Message status update (delivered/read)
+        sock.on('messages.update', (data: any) => {
+          const updates = Array.isArray(data) ? data : [data];
+          updates.forEach(u => {
+            setMessages(p => p.map(m => m.id === u.key?.id ? { ...m, status: u.update?.status } : m));
+          });
+        });
+
+        // Typing indicator
+        sock.on('presence.update', (data: any) => {
+          if (data?.presences) {
+            const jid = Object.keys(data.presences)[0];
+            const presence = data.presences[jid]?.lastKnownPresence;
+            if (activeChatRef.current?.remoteJid === jid || activeChatRef.current?.remoteJid?.includes(jid.split('@')[0])) {
+              setTyping(presence === 'composing');
+              if (presence === 'composing') setTimeout(() => setTyping(false), 5000);
+            }
+          }
+        });
+
+        // QR update
+        sock.on('qrcode.updated', (data: any) => {
+          if (data?.qrcode?.base64) setQrDialog((p: any) => p ? { ...p, qr: data.qrcode.base64 } : null);
+        });
+
+        // Connection update
+        sock.on('connection.update', (data: any) => {
+          if (data?.state) loadInstances();
+        });
+
+        setEvoSocket(sock);
+        return () => { sock.disconnect(); };
+      }).catch(() => {});
+    }).catch(() => {});
+  }, [activeInstance]);
   useEffect(() => { if (activeInstance) req('GET', `/instances/${activeInstance}/chats`).then(setChats).catch(() => {}); }, [activeInstance]);
   useEffect(() => {
     if (activeChat && activeInstance) {
@@ -270,7 +344,7 @@ const ChatsTab = () => {
             }
             <div className="flex-1 min-w-0">
               <p className="text-[15px] font-medium text-[#111b21]">{activeChat.name}</p>
-              <p className="text-xs text-[#667781]">{activeChat.displayPhone || activeChat.phone}</p>
+              <p className="text-xs text-[#667781]">{typing ? <span className="text-[#25d366]">typing...</span> : (activeChat.displayPhone || activeChat.phone)}</p>
             </div>
             <div className="flex items-center gap-3 text-[#54656f]">
               <button onClick={e => { e.stopPropagation(); req('GET', `/instances/${activeInstance}/messages/${encodeURIComponent(activeChat.remoteJid)}`).then(setMessages).catch(() => {}); }}>
@@ -309,6 +383,17 @@ const ChatsTab = () => {
               );
             })}
             <div ref={messagesEndRef} />
+            {typing && (
+              <div className="flex justify-start">
+                <div className="bg-white rounded-lg px-4 py-2.5 shadow-sm" style={{ borderRadius: '0 8px 8px 8px' }}>
+                  <div className="flex gap-1 items-center h-4">
+                    <span className="h-2 w-2 rounded-full bg-[#8696a0] animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="h-2 w-2 rounded-full bg-[#8696a0] animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="h-2 w-2 rounded-full bg-[#8696a0] animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Input — WhatsApp exact */}
