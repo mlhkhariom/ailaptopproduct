@@ -166,4 +166,37 @@ httpServer.listen(PORT, async () => {
   setEvolutionIO(io);
   await runSeeder(db);
   startNotificationProcessor();
+
+  // Connect to Evolution API WebSocket to process incoming messages with AI
+  setTimeout(async () => {
+    try {
+      const evoSettings = db.prepare("SELECT api_url, api_key FROM evolution_settings WHERE id='main'").get();
+      if (!evoSettings?.api_url || !evoSettings?.api_key) return;
+
+      const { io: socketIO } = await import('socket.io-client');
+      const evoSock = socketIO(evoSettings.api_url, {
+        transports: ['websocket', 'polling'],
+        query: { apikey: evoSettings.api_key },
+        reconnection: true,
+      });
+
+      evoSock.on('connect', () => console.log('✅ Evolution API WebSocket connected (backend)'));
+      evoSock.on('connect_error', e => console.warn('Evolution WS error:', e.message));
+
+      evoSock.onAny(async (eventName, payload) => {
+        const event = payload?.event || eventName;
+        const data = payload?.data;
+        const instanceName = payload?.instance;
+        if (!data || !instanceName) return;
+
+        // Process with webhook handler (handles AI agent)
+        const { handleWebhook } = await import('./evolution/webhook.js');
+        await handleWebhook(instanceName, event, data).catch(() => {});
+      });
+
+      console.log('✅ Evolution API AI processing started');
+    } catch (e) {
+      console.warn('Evolution API not configured:', e.message);
+    }
+  }, 3000);
 });
