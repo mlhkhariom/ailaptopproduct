@@ -36,7 +36,7 @@ const saveMessage = (instanceName, msg) => {
 export const handleWebhook = async (instanceName, event, data) => {
   try {
     switch (event) {
-      case 'MESSAGES_UPSERT': {
+      case 'MESSAGES_UPSERT': case 'messages.upsert': case 'send.message': {
         const messages = Array.isArray(data) ? data : [data];
         for (const msg of messages) {
           if (!msg?.key) continue;
@@ -85,7 +85,7 @@ export const handleWebhook = async (instanceName, event, data) => {
         break;
       }
 
-      case 'MESSAGES_UPDATE': {
+      case 'MESSAGES_UPDATE': case 'messages.update': {
         const updates = Array.isArray(data) ? data : [data];
         for (const u of updates) {
           const status = u.update?.status === 3 ? 'read' : u.update?.status === 2 ? 'delivered' : 'sent';
@@ -95,7 +95,7 @@ export const handleWebhook = async (instanceName, event, data) => {
         break;
       }
 
-      case 'CONNECTION_UPDATE': {
+      case 'CONNECTION_UPDATE': case 'connection.update': {
         const state = data.state || data.connection;
         db.prepare("UPDATE evolution_instances SET status=?, updated_at=datetime('now') WHERE instance_name=?").run(state, instanceName);
         emit('evolution:connection', { instanceName, state, qr: data.qr });
@@ -110,7 +110,7 @@ export const handleWebhook = async (instanceName, event, data) => {
         break;
       }
 
-      case 'QRCODE_UPDATED': {
+      case 'QRCODE_UPDATED': case 'qrcode.updated': {
         const qr = data.qrcode?.base64 || data.qr;
         if (qr) {
           db.prepare("UPDATE evolution_instances SET qr_code=?, status='qr_code', updated_at=datetime('now') WHERE instance_name=?").run(qr, instanceName);
