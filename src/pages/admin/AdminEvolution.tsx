@@ -239,7 +239,14 @@ const ChatsTab = () => {
           <div className="flex-1 overflow-y-auto">
             {chats.map((chat, i) => {
               const jid = chat.id || chat.remote_jid;
-              const name = chat.name || chat.pushName || chat.push_name || jid?.split('@')[0];
+              const name = String(chat.name || chat.pushName || chat.push_name || jid?.split('@')[0] || '');
+              const lastMsg = (() => {
+                const lm = chat.lastMessage || chat.last_message;
+                if (!lm) return '';
+                if (typeof lm === 'string') return lm;
+                if (typeof lm === 'object') return lm.conversation || lm.extendedTextMessage?.text || lm.imageMessage?.caption || '[media]';
+                return '';
+              })();
               return (
                 <div key={i} onClick={() => setActiveChat({ ...chat, remoteJid: jid })}
                   className={`p-3 border-b cursor-pointer hover:bg-muted/30 ${activeChat?.remoteJid === jid ? 'bg-primary/5' : ''}`}>
@@ -247,7 +254,7 @@ const ChatsTab = () => {
                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">{name?.[0]?.toUpperCase()}</div>
                     <div className="min-w-0">
                       <p className="text-xs font-semibold truncate">{name}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{chat.lastMessage || chat.last_message || ''}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{lastMsg}</p>
                     </div>
                   </div>
                 </div>
@@ -268,19 +275,25 @@ const ChatsTab = () => {
                 <p className="text-sm font-semibold">{activeChat.name || activeChat.pushName || activeChat.remoteJid?.split('@')[0]}</p>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                {messages.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.fromMe || msg.from_me ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[70%] rounded-2xl px-3 py-2 text-sm shadow-sm ${msg.fromMe || msg.from_me ? 'bg-[#d9fdd3] rounded-tr-none' : 'bg-white rounded-tl-none'}`}>
-                      {msg.isAI && <p className="text-[9px] text-purple-600 font-semibold mb-0.5">🤖 AI Agent</p>}
-                      <p className="text-gray-800 break-words">
-                        {typeof msg.body === 'string' ? msg.body :
-                         typeof msg.message === 'string' ? msg.message :
-                         msg.message?.conversation || msg.message?.extendedTextMessage?.text || '[media]'}
-                      </p>
-                      <p className="text-[10px] text-gray-400 text-right mt-0.5">{msg.time || ''}</p>
+                {messages.map((msg, i) => {
+                  const isMe = msg.fromMe || msg.from_me;
+                  const msgBody = (() => {
+                    const b = msg.body || msg.message;
+                    if (!b) return '';
+                    if (typeof b === 'string') return b;
+                    if (typeof b === 'object') return b.conversation || b.extendedTextMessage?.text || b.imageMessage?.caption || '[media]';
+                    return String(b);
+                  })();
+                  return (
+                    <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[70%] rounded-2xl px-3 py-2 text-sm shadow-sm ${isMe ? 'bg-[#d9fdd3] rounded-tr-none' : 'bg-white rounded-tl-none'}`}>
+                        {msg.isAI && <p className="text-[9px] text-purple-600 font-semibold mb-0.5">🤖 AI Agent</p>}
+                        <p className="text-gray-800 break-words">{msgBody}</p>
+                        <p className="text-[10px] text-gray-400 text-right mt-0.5">{msg.time || ''}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 <div ref={messagesEndRef} />
               </div>
               <div className="p-2 bg-[#f0f2f5] flex gap-2">
