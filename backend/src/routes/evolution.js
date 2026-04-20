@@ -202,6 +202,7 @@ router.get('/instances/:name/messages/:jid', authMiddleware, async (req, res) =>
     if (all.length > 0) {
       return res.json(all.map(m => ({
         id: m.key?.id || m.id,
+        remoteJid: m.key?.remoteJid || '',  // original JID for media download
         body: m.message?.conversation || m.message?.extendedTextMessage?.text || m.message?.imageMessage?.caption || m.message?.videoMessage?.caption || `[${m.messageType || 'media'}]`,
         fromMe: m.key?.fromMe || false,
         pushName: m.pushName || '',
@@ -261,10 +262,13 @@ router.post('/instances/:name/contacts/check', authMiddleware, async (req, res) 
 
 // POST /api/evolution/instances/:name/media/download — download encrypted WhatsApp media
 router.post('/instances/:name/media/download', authMiddleware, async (req, res) => {
-  const { messageId, remoteJid } = req.body;
+  const { messageId, remoteJid, messageType } = req.body;
   try {
     const data = await evolutionFetch(`/chat/getBase64FromMediaMessage/${req.params.name}`, 'POST', {
-      message: { key: { id: messageId, remoteJid }, messageType: 'imageMessage' },
+      message: {
+        key: { id: messageId, remoteJid, fromMe: false },
+        messageType: messageType || 'imageMessage',
+      },
       convertToMp4: false,
     });
     if (data?.base64) return res.json({ base64: data.base64, mimetype: data.mimetype || 'image/jpeg' });

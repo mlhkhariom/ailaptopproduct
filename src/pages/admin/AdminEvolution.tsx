@@ -451,15 +451,19 @@ const ChatsTab = () => {
                     {msg.messageType === 'imageMessage' && (
                       <div className="rounded-lg overflow-hidden mb-1 max-w-[220px] cursor-pointer"
                         onClick={async () => {
-                          // Download full image via Evolution API
                           try {
-                            const jid = activeChat?.remoteJid || '';
-                            const data = await req('POST', `/instances/${activeInstance}/media/download`, { messageId: msg.id, remoteJid: jid });
+                            // Use the original remoteJid from message, not active chat JID
+                            const msgJid = msg.remoteJid || activeChat?.remoteJid || '';
+                            const data = await req('POST', `/instances/${activeInstance}/media/download`, {
+                              messageId: msg.id,
+                              remoteJid: msgJid,
+                              messageType: msg.messageType || 'imageMessage',
+                            });
                             if (data?.base64) {
-                              const w = window.open();
-                              if (w) w.document.write(`<img src="data:${data.mimetype || 'image/jpeg'};base64,${data.base64}" style="max-width:100%">`);
+                              const w = window.open('', '_blank');
+                              if (w) w.document.write(`<img src="data:${data.mimetype || 'image/jpeg'};base64,${data.base64}" style="max-width:100%;height:auto">`);
                             }
-                          } catch {}
+                          } catch (e: any) { toast.error('Could not load image: ' + e.message); }
                         }}>
                         {msg.thumbnail ? (
                           <img
