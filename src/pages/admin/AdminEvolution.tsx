@@ -172,64 +172,59 @@ const ChatsTab = () => {
         reconnectionDelay: 2000,
       });
 
-      sock.on('connect', () => {
-        console.log('✅ Evolution WS connected:', sock.id);
-      });
-      sock.on('connect_error', (e: any) => console.warn('Evolution WS error:', e.message));
+      // Evolution API v2 wraps events as: { event, instance, data }
+      // Listen to ALL events and route them
+      sock.onAny((eventName: string, payload: any) => {
+        const instance = payload?.instance;
+        const data = payload?.data || payload;
+        const event = payload?.event || eventName;
 
-      // Evolution API v2 event names (UPPERCASE_UNDERSCORE format)
-      const handleMsg = (data: any) => {
-        const msgs = Array.isArray(data) ? data : (data?.data ? [data.data] : [data]);
-        msgs.forEach((msg: any) => {
-          if (!msg?.key) return;
-          // Filter by instance
-          if (data?.instance && data.instance !== activeInstance) return;
-          const remoteJid = msg.key.remoteJid;
-          const fromMe = msg.key.fromMe;
-          const body = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || `[${msg.messageType || 'media'}]`;
-          const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-          const newMsg = { id: msg.key.id || Date.now(), body, fromMe, from_me: fromMe ? 1 : 0, messageTimestamp: msg.messageTimestamp, time, status: msg.status };
-          if (activeChatRef.current?.remoteJid === remoteJid) {
-            setMessages(p => p.some(m => m.id === newMsg.id) ? p : [...p, newMsg]);
-          }
-          setChats(p => p.map(c => (c.remoteJid === remoteJid || c.id === remoteJid)
-            ? { ...c, lastMessage: msg, unreadCount: fromMe ? (c.unreadCount || 0) : (c.unreadCount || 0) + 1 }
-            : c));
-        });
-      };
+        // Filter by active instance
+        if (instance && instance !== activeInstance) return;
 
-      // Listen both formats
-      sock.on('MESSAGES_UPSERT', handleMsg);
-      sock.on('messages.upsert', handleMsg);
-      sock.on('send.message', handleMsg);
-
-      const handleUpdate = (data: any) => {
-        const updates = Array.isArray(data) ? data : (data?.data ? [data.data] : [data]);
-        updates.forEach((u: any) => setMessages(p => p.map(m => m.id === u.key?.id ? { ...m, status: u.update?.status || u.status } : m)));
-      };
-      sock.on('MESSAGES_UPDATE', handleUpdate);
-      sock.on('messages.update', handleUpdate);
-
-      const handlePresence = (data: any) => {
-        const presences = data?.presences || data?.data?.presences;
-        if (!presences) return;
-        const jid = Object.keys(presences)[0];
-        const presence = presences[jid]?.lastKnownPresence;
-        if (activeChatRef.current?.remoteJid?.includes(jid.split('@')[0])) {
-          setTyping(presence === 'composing');
-          if (presence === 'composing') setTimeout(() => setTyping(false), 5000);
+        if (event === 'messages.upsert' || event === 'MESSAGES_UPSERT' || event === 'send.message') {
+          const msgs = Array.isArray(data) ? data : [data];
+          msgs.forEach((msg: any) => {
+            if (!msg?.key) return;
+            const remoteJid = msg.key.remoteJid || msg.key.remoteJidAlt;
+            const fromMe = msg.key.fromMe;
+            const body = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || msg.message?.videoMessage?.caption || msg.message?.documentMessage?.title || `[${msg.messageType || 'media'}]`;
+            const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+            const mediaUrl = msg.message?.imageMessage?.url || msg.message?.videoMessage?.url || msg.message?.documentMessage?.url || null;
+            const newMsg = { id: msg.key.id || Date.now(), body, fromMe, from_me: fromMe ? 1 : 0, messageTimestamp: msg.messageTimestamp, time, status: msg.status, mediaUrl, messageType: msg.messageType };
+            if (activeChatRef.current?.remoteJid === remoteJid || activeChatRef.current?.remoteJid?.includes(remoteJid?.split('@')[0])) {
+              setMessages(p => p.some(m => m.id === newMsg.id) ? p : [...p, newMsg]);
+            }
+            setChats(p => p.map(c => (c.remoteJid === remoteJid || c.id === remoteJid || c.remoteJid?.includes(remoteJid?.split('@')[0]))
+              ? { ...c, lastMessage: { ...msg, message: msg.message }, unreadCount: fromMe ? (c.unreadCount || 0) : (c.unreadCount || 0) + 1 }
+              : c));
+          });
         }
-      };
-      sock.on('PRESENCE_UPDATE', handlePresence);
-      sock.on('presence.update', handlePresence);
 
-      sock.on('QRCODE_UPDATED', (data: any) => {
-        const qr = data?.qrcode?.base64 || data?.data?.qrcode?.base64;
-        if (qr) setQrDialog((p: any) => p ? { ...p, qr } : null);
+        if (event === 'messages.update' || event === 'MESSAGES_UPDATE') {
+          const updates = Array.isArray(data) ? data : [data];
+          updates.forEach((u: any) => setMessages(p => p.map(m => m.id === u.key?.id ? { ...m, status: u.update?.status || u.status } : m)));
+        }
+
+        if (event === 'presence.update' || event === 'PRESENCE_UPDATE') {
+          const presences = data?.presences || data;
+          if (presences && typeof presences === 'object') {
+            const jid = Object.keys(presences)[0];
+            const presence = presences[jid]?.lastKnownPresence || presences[jid];
+            if (activeChatRef.current?.remoteJid?.includes(jid?.split('@')[0])) {
+              setTyping(presence === 'composing');
+              if (presence === 'composing') setTimeout(() => setTyping(false), 5000);
+            }
+          }
+        }
+
+        if (event === 'qrcode.updated' || event === 'QRCODE_UPDATED') {
+          const qr = data?.qrcode?.base64 || data?.base64;
+          if (qr) setQrDialog((p: any) => p ? { ...p, qr } : null);
+        }
+
+        if (event === 'connection.update' || event === 'CONNECTION_UPDATE') loadInstances();
       });
-
-      sock.on('CONNECTION_UPDATE', () => loadInstances());
-      sock.on('connection.update', () => loadInstances());
 
       setEvoSocket(sock);
     }).catch(e => console.warn('socket.io-client error:', e));
@@ -381,7 +376,37 @@ const ChatsTab = () => {
                   <div className={`max-w-[65%] relative ${isMe ? 'bg-[#d9fdd3]' : 'bg-white'} shadow-sm px-3 py-1.5`}
                     style={{ borderRadius: isMe ? '8px 0 8px 8px' : '0 8px 8px 8px' }}>
                     {msg.isAI && <p className="text-[10px] text-purple-600 font-semibold mb-0.5 flex items-center gap-1"><Zap className="h-3 w-3" />AI Agent</p>}
-                    <p className="text-[14.2px] text-[#111b21] break-words leading-[1.4] pr-12">{body}</p>
+                    {/* Media rendering */}
+                    {msg.messageType === 'imageMessage' && msg.mediaUrl && (
+                      <img src={msg.mediaUrl} alt="image" className="rounded-lg max-w-full mb-1 max-h-48 object-cover cursor-pointer" onClick={() => window.open(msg.mediaUrl, '_blank')} />
+                    )}
+                    {msg.messageType === 'videoMessage' && (
+                      <div className="flex items-center gap-2 bg-black/10 rounded-lg p-2 mb-1 cursor-pointer" onClick={() => msg.mediaUrl && window.open(msg.mediaUrl, '_blank')}>
+                        <svg className="h-8 w-8 text-[#54656f]" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <span className="text-xs text-[#54656f]">Video</span>
+                      </div>
+                    )}
+                    {msg.messageType === 'audioMessage' && (
+                      <div className="flex items-center gap-2 bg-black/5 rounded-full px-3 py-2 mb-1 min-w-[160px]">
+                        <svg className="h-5 w-5 text-[#54656f] shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                        <div className="flex-1 h-1 bg-[#8696a0] rounded-full" />
+                        <span className="text-[10px] text-[#54656f]">Audio</span>
+                      </div>
+                    )}
+                    {msg.messageType === 'documentMessage' && (
+                      <div className="flex items-center gap-2 bg-black/5 rounded-lg p-2 mb-1 cursor-pointer" onClick={() => msg.mediaUrl && window.open(msg.mediaUrl, '_blank')}>
+                        <svg className="h-8 w-8 text-[#54656f]" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                        <span className="text-xs text-[#54656f] truncate max-w-[120px]">{body}</span>
+                      </div>
+                    )}
+                    {msg.messageType === 'stickerMessage' && <p className="text-2xl">🎭</p>}
+                    {/* Text body */}
+                    {(!msg.messageType || msg.messageType === 'conversation' || msg.messageType === 'extendedTextMessage') && (
+                      <p className="text-[14.2px] text-[#111b21] break-words leading-[1.4] pr-12">{body}</p>
+                    )}
+                    {(msg.messageType && !['conversation','extendedTextMessage','imageMessage','videoMessage','audioMessage','documentMessage','stickerMessage'].includes(msg.messageType)) && (
+                      <p className="text-[14.2px] text-[#111b21] break-words leading-[1.4]">{body}</p>
+                    )}
                     <div className="flex items-center justify-end gap-1 mt-0.5 -mb-0.5">
                       <span className="text-[11px] text-[#667781]">{time}</span>
                       {isMe && (
