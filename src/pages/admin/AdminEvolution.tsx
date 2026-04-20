@@ -232,35 +232,46 @@ const ChatsTab = () => {
       {/* Chat area */}
       <div className="flex-1 flex gap-3 min-w-0">
         {/* Chat list */}
-        <div className="w-56 shrink-0 border rounded-xl overflow-hidden flex flex-col">
-          <div className="p-2 border-b bg-muted/30">
-            <p className="text-xs font-semibold">{activeInstance || 'Select instance'}</p>
+        <div className="w-72 shrink-0 border rounded-xl overflow-hidden flex flex-col bg-white">
+          <div className="px-4 py-3 bg-[#f0f2f5] border-b flex items-center justify-between">
+            <p className="text-sm font-semibold text-[#111b21]">{activeInstance || 'Select instance'}</p>
+            <span className="text-xs text-[#667781]">{chats.length} chats</span>
           </div>
           <div className="flex-1 overflow-y-auto">
             {chats.map((chat, i) => {
-              const jid = chat.id || chat.remoteJid || chat.remote_jid || '';
-              const phone = jid.split('@')[0].split(':')[0];
-              const name = String(chat.name || chat.pushName || chat.push_name || chat.verifiedName || phone || 'Unknown');
+              const jid = chat.remoteJid || chat.id || '';
+              const realJid = chat.lastMessage?.key?.remoteJidAlt || jid;
+              const phone = realJid.split('@')[0].replace(/[^0-9]/g, '');
+              const name = chat.pushName || chat.lastMessage?.pushName || chat.name || (phone ? `+${phone}` : 'Unknown');
+              const pic = chat.profilePicUrl;
+              const typeLabels: Record<string,string> = { imageMessage:'📷 Image', videoMessage:'🎥 Video', audioMessage:'🎵 Audio', documentMessage:'📄 Document', stickerMessage:'🎭 Sticker', protocolMessage:'🔄 System', reactionMessage:'👍 Reaction', locationMessage:'📍 Location' };
               const lastMsg = (() => {
-                const lm = chat.lastMessage || chat.last_message || chat.lastMsg;
+                const lm = chat.lastMessage;
                 if (!lm) return '';
-                if (typeof lm === 'string') return lm;
-                if (typeof lm === 'object') {
-                  const msg = lm.message || lm;
-                  const type = lm.messageType || Object.keys(msg)[0] || '';
-                  const typeLabels: Record<string,string> = { imageMessage:'📷 Image', videoMessage:'🎥 Video', audioMessage:'🎵 Audio', documentMessage:'📄 Document', stickerMessage:'🎭 Sticker', protocolMessage:'🔄 System', reactionMessage:'👍 Reaction', locationMessage:'📍 Location' };
-                  return msg.conversation || msg.extendedTextMessage?.text || msg.imageMessage?.caption || msg.videoMessage?.caption || typeLabels[type] || (type ? `[${type}]` : '');
-                }
-                return '';
+                const m = lm.message || {};
+                const type = lm.messageType || '';
+                return m.conversation || m.extendedTextMessage?.text || m.imageMessage?.caption || typeLabels[type] || (type ? `[${type}]` : '');
               })();
+              const lastTime = chat.lastMessage?.messageTimestamp ? new Date(chat.lastMessage.messageTimestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+              const unread = chat.unreadCount || 0;
+              const isActive = activeChat?.remoteJid === jid;
               return (
-                <div key={i} onClick={() => setActiveChat({ ...chat, remoteJid: jid })}
-                  className={`p-3 border-b cursor-pointer hover:bg-muted/30 ${activeChat?.remoteJid === jid ? 'bg-primary/5' : ''}`}>
-                  <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">{name?.[0]?.toUpperCase()}</div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold truncate">{name}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{lastMsg}</p>
+                <div key={i} onClick={() => setActiveChat({ ...chat, remoteJid: jid, realJid, displayName: name, pic })}
+                  className={`flex items-center gap-3 px-3 py-3 cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition-colors ${isActive ? 'bg-[#f0f2f5]' : ''}`}>
+                  {/* Avatar */}
+                  <div className="relative shrink-0">
+                    {pic ? <img src={pic} alt={name} className="h-11 w-11 rounded-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} /> : null}
+                    <div className={`h-11 w-11 rounded-full bg-[#dfe5e7] flex items-center justify-center text-base font-bold text-[#54656f] ${pic ? 'hidden' : ''}`}>{name[0]?.toUpperCase()}</div>
+                  </div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-[#111b21] truncate">{name}</p>
+                      <p className="text-[11px] text-[#667781] shrink-0 ml-1">{lastTime}</p>
+                    </div>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <p className="text-xs text-[#667781] truncate">{lastMsg}</p>
+                      {unread > 0 && <span className="ml-1 shrink-0 h-5 min-w-5 rounded-full bg-[#25d366] text-white text-[10px] font-bold flex items-center justify-center px-1">{unread}</span>}
                     </div>
                   </div>
                 </div>
@@ -271,14 +282,22 @@ const ChatsTab = () => {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 border rounded-xl overflow-hidden flex flex-col bg-[#efeae2]">
+        <div className="flex-1 border rounded-xl overflow-hidden flex flex-col" style={{ background: '#efeae2' }}>
           {activeChat ? (
             <>
-              <div className="p-3 bg-[#075e54] text-white flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">
-                  {(activeChat.name || activeChat.pushName || activeChat.remoteJid?.split('@')[0])?.[0]?.toUpperCase()}
+              {/* Header */}
+              <div className="px-4 py-2.5 bg-[#075e54] flex items-center gap-3">
+                {activeChat.pic ? (
+                  <img src={activeChat.pic} alt="" className="h-9 w-9 rounded-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                ) : (
+                  <div className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold text-white">
+                    {(activeChat.displayName || activeChat.pushName || activeChat.remoteJid?.split('@')[0])?.[0]?.toUpperCase()}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">{activeChat.displayName || activeChat.pushName || activeChat.remoteJid?.split('@')[0]}</p>
+                  <p className="text-[10px] text-white/60 truncate">{activeChat.realJid?.split('@')[0] || activeChat.remoteJid?.split('@')[0]}</p>
                 </div>
-                <p className="text-sm font-semibold">{activeChat.name || activeChat.pushName || activeChat.remoteJid?.split('@')[0]}</p>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-2">
                 {messages.map((msg, i) => {

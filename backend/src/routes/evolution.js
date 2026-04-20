@@ -162,7 +162,18 @@ router.get('/instances/:name/messages/:jid', authMiddleware, async (req, res) =>
   const jid = decodeURIComponent(req.params.jid);
   try {
     const remote = await fetchMessages(req.params.name, jid, 50).catch(() => null);
-    if (remote?.messages?.records?.length) return res.json(remote.messages.records);
+    if (remote?.messages?.records?.length) {
+      return res.json(remote.messages.records.map(m => ({
+        id: m.id,
+        body: m.message?.conversation || m.message?.extendedTextMessage?.text || m.message?.imageMessage?.caption || m.message?.videoMessage?.caption || `[${m.messageType || 'media'}]`,
+        fromMe: m.key?.fromMe || false,
+        pushName: m.pushName || '',
+        messageType: m.messageType,
+        timestamp: m.messageTimestamp,
+        time: m.messageTimestamp ? new Date(m.messageTimestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '',
+        status: m.status,
+      })));
+    }
   } catch {}
   const local = db.prepare('SELECT * FROM evolution_messages WHERE instance_name=? AND remote_jid=? ORDER BY timestamp ASC LIMIT 50').all(req.params.name, jid);
   res.json(local.map(m => ({ ...m, fromMe: !!m.from_me, time: new Date(m.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) })));
