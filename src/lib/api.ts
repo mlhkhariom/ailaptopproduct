@@ -34,7 +34,8 @@ export const api = {
   createRazorpayOrder: (amount: number) => req('POST', '/payment/razorpay/create-order', { amount }),
   verifyRazorpay: (data: unknown) => req('POST', '/payment/razorpay/verify', data),
 
-  // Reviews
+  exportProducts: () => `${BASE}/products/export`,
+  importProducts: (csv: string) => req('POST', '/products/import', { csv }),
   getProductReviews: (productId: string) => req('GET', `/reviews/${productId}`),
   submitReview: (productId: string, data: unknown) => req('POST', `/reviews/${productId}`, data),
   getAdminReviews: (status?: string) => req('GET', `/reviews${status ? `?status=${status}` : ''}`),

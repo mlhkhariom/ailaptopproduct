@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, Edit, Trash2, Eye, Copy, MoreHorizontal, Filter, Download, Package, Save, X, ImageIcon } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, Copy, MoreHorizontal, Filter, Download, Upload, Package, Save, X, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -48,6 +48,36 @@ const AdminProducts = () => {
     .filter((p) => view === "all" || (view === "active" ? p.in_stock : !p.in_stock));
 
   const toggleSelect = (id: string) => setSelected((prev) => prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]);
+
+  const handleExport = () => {
+    const token = localStorage.getItem('ailaptopwala_token');
+    const url = api.exportProducts();
+    const a = document.createElement('a');
+    a.href = url + (token ? `?token=${token}` : '');
+    // Use fetch with auth header instead
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.blob())
+      .then(blob => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `ailaptopwala-products-${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        toast.success('Products exported!');
+      }).catch(() => toast.error('Export failed'));
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    try {
+      const result = await api.importProducts(text);
+      toast.success(`Import done! Added: ${result.added}, Updated: ${result.updated}`);
+      if (result.errors?.length) toast.error(`${result.errors.length} rows had errors`);
+      fetchProducts();
+    } catch (err: any) { toast.error(err.message); }
+    e.target.value = '';
+  };
 
   const openAdd = () => { setForm(emptyForm); setEditingId(null); setDialogOpen(true); };
 
@@ -111,9 +141,15 @@ const AdminProducts = () => {
           <p className="text-sm text-muted-foreground">{products.length} products, {products.filter(p => p.in_stock).length} in stock</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8">
-            <Download className="h-3.5 w-3.5" /> Export
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={handleExport}>
+            <Download className="h-3.5 w-3.5" /> Export CSV
           </Button>
+          <label>
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" asChild>
+              <span><Upload className="h-3.5 w-3.5" /> Import CSV</span>
+            </Button>
+            <input type="file" accept=".csv" className="hidden" onChange={handleImport} />
+          </label>
           <Button size="sm" className="gap-1.5 text-xs h-8" onClick={openAdd}>
             <Plus className="h-3.5 w-3.5" /> Add Product
           </Button>

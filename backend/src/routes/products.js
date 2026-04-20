@@ -64,4 +64,82 @@ router.delete('/:id', authMiddleware, adminOnly, (req, res) => {
   res.json({ message: 'Deleted' });
 });
 
+// GET /api/products/export — export all products as CSV
+router.get('/export', authMiddleware, adminOnly, (req, res) => {
+  const products = db.prepare('SELECT * FROM products ORDER BY created_at DESC').all();
+
+  const headers = ['id','name','price','original_price','category','stock','in_stock','sku','slug','badge','status','description','meta_title','meta_description','focus_keywords','image','rating','reviews'];
+  const escape = (v) => {
+    if (v === null || v === undefined) return '';
+    const s = String(v).replace(/"/g, '""');
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
+  };
+
+  const rows = products.map(p => headers.map(h => {
+    let val = p[h];
+    if (h === 'focus_keywords' && val) {
+      try { val = JSON.parse(val).join(';'); } catch { val = val; }
+    }
+    return escape(val);
+  }).join(','));
+
+  const csv = [headers.join(','), ...rows].join('\n');
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="ailaptopwala-products-${new Date().toISOString().split('T')[0]}.csv"`);
+  res.send(csv);
+});
+
+// POST /api/products/import — import products from CSV
+router.post('/import', authMiddleware, adminOnly, (req, res) => {
+  const { csv } = req.body;
+  if (!csv) return res.status(400).json({ error: 'CSV data required' });
+
+  const lines = csv.trim().split('\n');
+  if (lines.length < 2) return res.status(400).json({ error: 'CSV must have header + data rows' });
+
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  let added = 0, updated = 0, errors = [];
+
+  const parseCSVRow = (line) => {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === '"') { inQuotes = !inQuotes; }
+      else if (line[i] === ',' && !inQuotes) { result.push(current); current = ''; }
+      else { current += line[i]; }
+    }
+    result.push(current);
+    return result.map(v => v.replace(/^"|"$/g, '').replace(/""/g, '"'));
+  };
+
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    try {
+      const values = parseCSVRow(lines[i]);
+      const row = {};
+      headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+
+      if (!row.name || !row.price) { errors.push(`Row ${i}: name and price required`); continue; }
+
+      const existing = row.id ? db.prepare('SELECT id FROM products WHERE id=? OR sku=?').get(row.id, row.sku) : null;
+      const focusKeywords = row.focus_keywords ? JSON.stringify(row.focus_keywords.split(';').filter(Boolean)) : null;
+
+      if (existing) {
+        db.prepare('UPDATE products SET name=?,price=?,original_price=?,category=?,stock=?,in_stock=?,sku=?,slug=?,badge=?,status=?,description=?,meta_title=?,meta_description=?,focus_keywords=?,image=? WHERE id=?')
+          .run(row.name, Number(row.price)||0, Number(row.original_price)||null, row.category, Number(row.stock)||0, row.in_stock==='1'?1:0, row.sku, row.slug, row.badge||null, row.status||'active', row.description, row.meta_title||null, row.meta_description||null, focusKeywords, row.image||null, existing.id);
+        updated++;
+      } else {
+        const id = row.id || uuid();
+        const slug = row.slug || row.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+        db.prepare('INSERT OR IGNORE INTO products (id,name,price,original_price,category,stock,in_stock,sku,slug,badge,status,description,meta_title,meta_description,focus_keywords,image,rating,reviews) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+          .run(id, row.name, Number(row.price)||0, Number(row.original_price)||null, row.category||'Laptops', Number(row.stock)||0, row.in_stock==='1'?1:0, row.sku||`ALW-${Date.now()}`, slug, row.badge||null, row.status||'active', row.description||'', row.meta_title||null, row.meta_description||null, focusKeywords, row.image||null, Number(row.rating)||4.5, Number(row.reviews)||0);
+        added++;
+      }
+    } catch (e) { errors.push(`Row ${i}: ${e.message}`); }
+  }
+
+  res.json({ added, updated, errors, total: lines.length - 1 });
+});
+
 export default router;
