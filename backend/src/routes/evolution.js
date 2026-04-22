@@ -13,12 +13,12 @@ import {
 
 const router = Router();
 
-const getSettings = () => db.prepare("SELECT * FROM evolution_settings WHERE id='main'").get() || {};
+const getSettings = async () => await db.prepare("SELECT * FROM evolution_settings WHERE id='main'").get() || {};
 
 // ── Settings (superadmin only) ────────────────────────────
 
 // GET /api/evolution/settings
-router.get('/settings', authMiddleware, superAdminOnly, (req, res) => {
+router.get('/settings', authMiddleware, superAdminOnly, async (req, res) => {
   const s = getSettings();
   // Return masked key for display, but also provide ws_url for frontend WebSocket
   const masked = { ...s };
@@ -28,10 +28,10 @@ router.get('/settings', authMiddleware, superAdminOnly, (req, res) => {
 });
 
 // PUT /api/evolution/settings
-router.put('/settings', authMiddleware, superAdminOnly, (req, res) => {
+router.put('/settings', authMiddleware, superAdminOnly, async (req, res) => {
   const { api_url, api_key, default_instance, webhook_secret } = req.body;
   const existing = getSettings();
-  db.prepare(`INSERT OR REPLACE INTO evolution_settings (id, api_url, api_key, default_instance, webhook_secret, is_visible_to_admin, updated_at)
+  await db.prepare(`INSERT OR REPLACE INTO evolution_settings (id, api_url, api_key, default_instance, webhook_secret, is_visible_to_admin, updated_at)
     VALUES ('main', ?, ?, ?, ?, ?, datetime('now'))`)
     .run(api_url || existing.api_url, api_key && !api_key.includes('•') ? api_key : existing.api_key,
       default_instance || existing.default_instance, webhook_secret || existing.webhook_secret,
@@ -48,8 +48,8 @@ router.post('/settings/test', authMiddleware, superAdminOnly, async (req, res) =
 });
 
 // PUT /api/evolution/settings/visibility
-router.put('/settings/visibility', authMiddleware, superAdminOnly, (req, res) => {
-  db.prepare("UPDATE evolution_settings SET is_visible_to_admin=?, updated_at=datetime('now') WHERE id='main'").run(req.body.visible ? 1 : 0);
+router.put('/settings/visibility', authMiddleware, superAdminOnly, async (req, res) => {
+  await db.prepare("UPDATE evolution_settings SET is_visible_to_admin=?, updated_at=datetime('now') WHERE id='main'").run(req.body.visible ? 1 : 0);
   res.json({ message: 'Updated' });
 });
 
@@ -64,7 +64,7 @@ router.get('/instances', authMiddleware, async (req, res) => {
   }
   try {
     const remote = await fetchInstances();
-    const local = db.prepare('SELECT * FROM evolution_instances WHERE is_active=1').all();
+    const local = await db.prepare('SELECT * FROM evolution_instances WHERE is_active=1').all();
     // Merge remote status into local
     const merged = local.map(l => {
       const r = Array.isArray(remote) ? remote.find(ri => ri.instance?.instanceName === l.instance_name) : null;
@@ -72,7 +72,7 @@ router.get('/instances', authMiddleware, async (req, res) => {
     });
     res.json(merged);
   } catch (e) {
-    const local = db.prepare('SELECT * FROM evolution_instances WHERE is_active=1').all();
+    const local = await db.prepare('SELECT * FROM evolution_instances WHERE is_active=1').all();
     res.json(local);
   }
 });
@@ -85,14 +85,14 @@ router.post('/instances', authMiddleware, superAdminOnly, async (req, res) => {
     const cloudConfig = connection_type === 'cloud' ? { phoneNumber: cloud_phone_id, token: cloud_access_token } : {};
     await createInstance(instance_name, connection_type, cloudConfig);
     const id = uuid();
-    db.prepare('INSERT OR IGNORE INTO evolution_instances (id,instance_name,connection_type,cloud_phone_id,cloud_business_id,cloud_access_token,cloud_webhook_token) VALUES (?,?,?,?,?,?,?)')
+    await db.prepare('INSERT OR IGNORE INTO evolution_instances (id,instance_name,connection_type,cloud_phone_id,cloud_business_id,cloud_access_token,cloud_webhook_token) VALUES (?,?,?,?,?,?,?)')
       .run(id, instance_name, connection_type, cloud_phone_id || null, cloud_business_id || null, cloud_access_token || null, cloud_webhook_token || null);
 
     // Set webhook
     const webhookUrl = `${process.env.FRONTEND_URL?.replace('8080', '5000') || 'http://localhost:5000'}/api/evolution/webhook/${instance_name}`;
     await setWebhook(instance_name, webhookUrl).catch(() => {});
 
-    res.status(201).json(db.prepare('SELECT * FROM evolution_instances WHERE id=?').get(id));
+    res.status(201).json(await db.prepare('SELECT * FROM evolution_instances WHERE id=?').get(id));
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -100,7 +100,7 @@ router.post('/instances', authMiddleware, superAdminOnly, async (req, res) => {
 router.get('/instances/:name/status', authMiddleware, async (req, res) => {
   try {
     const status = await getInstanceStatus(req.params.name);
-    db.prepare("UPDATE evolution_instances SET status=?, updated_at=datetime('now') WHERE instance_name=?").run(status.instance?.state || 'unknown', req.params.name);
+    await db.prepare("UPDATE evolution_instances SET status=?, updated_at=datetime('now') WHERE instance_name=?").run(status.instance?.state || 'unknown', req.params.name);
     res.json(status);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -109,7 +109,7 @@ router.get('/instances/:name/status', authMiddleware, async (req, res) => {
 router.get('/instances/:name/qr', authMiddleware, async (req, res) => {
   try {
     const data = await getQRCode(req.params.name);
-    if (data.base64) db.prepare("UPDATE evolution_instances SET qr_code=?, status='qr_code' WHERE instance_name=?").run(data.base64, req.params.name);
+    if (data.base64) await db.prepare("UPDATE evolution_instances SET qr_code=?, status='qr_code' WHERE instance_name=?").run(data.base64, req.params.name);
     res.json(data);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -124,7 +124,7 @@ router.post('/instances/:name/connect', authMiddleware, superAdminOnly, async (r
 router.post('/instances/:name/disconnect', authMiddleware, superAdminOnly, async (req, res) => {
   try {
     await disconnectInstance(req.params.name);
-    db.prepare("UPDATE evolution_instances SET status='disconnected' WHERE instance_name=?").run(req.params.name);
+    await db.prepare("UPDATE evolution_instances SET status='disconnected' WHERE instance_name=?").run(req.params.name);
     res.json({ message: 'Disconnected' });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -139,7 +139,7 @@ router.post('/instances/:name/restart', authMiddleware, superAdminOnly, async (r
 router.delete('/instances/:name', authMiddleware, superAdminOnly, async (req, res) => {
   try {
     await deleteInstance(req.params.name).catch(() => {});
-    db.prepare("UPDATE evolution_instances SET is_active=0 WHERE instance_name=?").run(req.params.name);
+    await db.prepare("UPDATE evolution_instances SET is_active=0 WHERE instance_name=?").run(req.params.name);
     res.json({ message: 'Deleted' });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -152,10 +152,10 @@ router.get('/instances/:name/chats', authMiddleware, async (req, res) => {
     // Try remote first, fallback to DB
     const remote = await fetchChats(req.params.name).catch(() => null);
     if (remote && Array.isArray(remote)) return res.json(remote);
-    const local = db.prepare('SELECT * FROM evolution_chats WHERE instance_name=? ORDER BY updated_at DESC').all(req.params.name);
+    const local = await db.prepare('SELECT * FROM evolution_chats WHERE instance_name=? ORDER BY updated_at DESC').all(req.params.name);
     res.json(local);
   } catch (e) {
-    const local = db.prepare('SELECT * FROM evolution_chats WHERE instance_name=? ORDER BY updated_at DESC').all(req.params.name);
+    const local = await db.prepare('SELECT * FROM evolution_chats WHERE instance_name=? ORDER BY updated_at DESC').all(req.params.name);
     res.json(local);
   }
 });
@@ -220,7 +220,7 @@ router.get('/instances/:name/messages/:jid', authMiddleware, async (req, res) =>
   }
 
   // DB fallback
-  const local = db.prepare(`SELECT * FROM evolution_messages WHERE instance_name=? AND (remote_jid=? OR remote_jid LIKE ?) ORDER BY timestamp ASC LIMIT 50`).all(req.params.name, jid, `%${phone}%`);
+  const local = await db.prepare(`SELECT * FROM evolution_messages WHERE instance_name=? AND (remote_jid=? OR remote_jid LIKE ?) ORDER BY timestamp ASC LIMIT 50`).all(req.params.name, jid, `%${phone}%`);
   res.json(local.map(m => ({ ...m, fromMe: !!m.from_me, time: new Date(m.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) })));
 });
 
@@ -232,7 +232,7 @@ router.post('/instances/:name/send/text', authMiddleware, async (req, res) => {
     const result = await sendText(req.params.name, number, text, quotedMsgId);
     // Save to DB
     const jid = number.includes('@') ? number : `${number}@s.whatsapp.net`;
-    db.prepare('INSERT OR IGNORE INTO evolution_messages (id,instance_name,remote_jid,message_id,body,from_me,message_type,timestamp) VALUES (?,?,?,?,?,1,?,?)')
+    await db.prepare('INSERT OR IGNORE INTO evolution_messages (id,instance_name,remote_jid,message_id,body,from_me,message_type,timestamp) VALUES (?,?,?,?,?,1,?,?)')
       .run(uuid(), req.params.name, jid, result?.key?.id || uuid(), text, 'text', Date.now());
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }

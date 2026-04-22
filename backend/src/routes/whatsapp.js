@@ -11,12 +11,12 @@ const router = Router();
 // ── Connection ────────────────────────────────────────────
 
 // GET /api/whatsapp/status
-router.get('/status', authMiddleware, adminOnly, (req, res) => {
+router.get('/status', authMiddleware, adminOnly, async (req, res) => {
   res.json({ status: getStatus(), qr: getQR() });
 });
 
 // POST /api/whatsapp/connect
-router.post('/connect', authMiddleware, adminOnly, (req, res) => {
+router.post('/connect', authMiddleware, adminOnly, async (req, res) => {
   initWhatsApp();
   res.json({ message: 'WhatsApp initializing...' });
 });
@@ -42,14 +42,14 @@ router.post('/send', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // DELETE /api/whatsapp/messages/:phone/clear — clear chat history from DB
-router.delete('/messages/:phone/clear', authMiddleware, adminOnly, (req, res) => {
-  db.prepare('DELETE FROM whatsapp_messages WHERE from_phone = ? OR to_phone = ?').run(decodeURIComponent(req.params.phone), decodeURIComponent(req.params.phone));
+router.delete('/messages/:phone/clear', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM whatsapp_messages WHERE from_phone = ? OR to_phone = ?').run(decodeURIComponent(req.params.phone), decodeURIComponent(req.params.phone));
   res.json({ message: 'Cleared' });
 });
 
 // GET /api/whatsapp/messages/:phone
-router.get('/messages/:phone', authMiddleware, adminOnly, (req, res) => {
-  const msgs = db.prepare('SELECT * FROM whatsapp_messages WHERE from_phone = ? OR to_phone = ? ORDER BY created_at ASC')
+router.get('/messages/:phone', authMiddleware, adminOnly, async (req, res) => {
+  const msgs = await db.prepare('SELECT * FROM whatsapp_messages WHERE from_phone = ? OR to_phone = ? ORDER BY created_at ASC')
     .all(req.params.phone, req.params.phone);
   res.json(msgs);
 });
@@ -75,8 +75,8 @@ router.get('/chats/:chatId/messages', authMiddleware, adminOnly, async (req, res
 });
 
 // PUT /api/whatsapp/messages/:phone/read
-router.put('/messages/:phone/read', authMiddleware, adminOnly, (req, res) => {
-  db.prepare("UPDATE whatsapp_messages SET is_read = 1 WHERE from_phone = ? AND direction = 'incoming'").run(req.params.phone);
+router.put('/messages/:phone/read', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare("UPDATE whatsapp_messages SET is_read = 1 WHERE from_phone = ? AND direction = 'incoming'").run(req.params.phone);
   res.json({ message: 'Marked read' });
 });
 
@@ -178,40 +178,40 @@ router.post('/message/:msgId/forward', authMiddleware, adminOnly, async (req, re
 // ── Auto-reply Rules ──────────────────────────────────────
 
 // GET /api/whatsapp/rules
-router.get('/rules', authMiddleware, adminOnly, (req, res) => {
-  res.json(db.prepare('SELECT * FROM whatsapp_rules ORDER BY created_at ASC').all()
+router.get('/rules', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM whatsapp_rules ORDER BY created_at ASC').all()
     .map(r => ({ ...r, keywords: JSON.parse(r.keywords), is_active: !!r.is_active })));
 });
 
 // POST /api/whatsapp/rules
-router.post('/rules', authMiddleware, adminOnly, (req, res) => {
+router.post('/rules', authMiddleware, adminOnly, async (req, res) => {
   const { name, keywords, response_template, type } = req.body;
   const id = uuid();
-  db.prepare('INSERT INTO whatsapp_rules (id, name, keywords, response_template, type) VALUES (?, ?, ?, ?, ?)')
+  await db.prepare('INSERT INTO whatsapp_rules (id, name, keywords, response_template, type) VALUES (?, ?, ?, ?, ?)')
     .run(id, name, JSON.stringify(keywords), response_template, type || 'custom');
   res.status(201).json({ id });
 });
 
 // PUT /api/whatsapp/rules/:id
-router.put('/rules/:id', authMiddleware, adminOnly, (req, res) => {
+router.put('/rules/:id', authMiddleware, adminOnly, async (req, res) => {
   const { name, keywords, response_template, type, is_active } = req.body;
-  db.prepare('UPDATE whatsapp_rules SET name=?, keywords=?, response_template=?, type=?, is_active=? WHERE id=?')
+  await db.prepare('UPDATE whatsapp_rules SET name=?, keywords=?, response_template=?, type=?, is_active=? WHERE id=?')
     .run(name, JSON.stringify(keywords), response_template, type, is_active ? 1 : 0, req.params.id);
   res.json({ message: 'Updated' });
 });
 
 // DELETE /api/whatsapp/rules/:id
-router.delete('/rules/:id', authMiddleware, adminOnly, (req, res) => {
-  db.prepare('DELETE FROM whatsapp_rules WHERE id = ?').run(req.params.id);
+router.delete('/rules/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM whatsapp_rules WHERE id = ?').run(req.params.id);
   res.json({ message: 'Deleted' });
 });
 
 // ── Simulate ──────────────────────────────────────────────
 
 // POST /api/whatsapp/simulate
-router.post('/simulate', authMiddleware, adminOnly, (req, res) => {
+router.post('/simulate', authMiddleware, adminOnly, async (req, res) => {
   const { message } = req.body;
-  const rules = db.prepare('SELECT * FROM whatsapp_rules WHERE is_active = 1').all()
+  const rules = await db.prepare('SELECT * FROM whatsapp_rules WHERE is_active = 1').all()
     .map(r => ({ ...r, keywords: JSON.parse(r.keywords) }));
 
   const msgLower = message.toLowerCase();
@@ -219,7 +219,7 @@ router.post('/simulate', authMiddleware, adminOnly, (req, res) => {
   if (!matched) return res.json({ matched: false, reply: 'Koi matching rule nahi mili.' });
 
   let reply = matched.response_template;
-  const products = db.prepare('SELECT * FROM products').all();
+  const products = await db.prepare('SELECT * FROM products').all();
   const product = products.find(p =>
     msgLower.includes(p.name.toLowerCase()) ||
     (p.name_hi && msgLower.includes(p.name_hi.toLowerCase()))
@@ -235,7 +235,7 @@ router.post('/simulate', authMiddleware, adminOnly, (req, res) => {
       .replace(/{{stock_info}}/g, `Stock: ${product.stock} units`);
   }
   reply = reply.replace(/{{[^}]+}}/g, '[N/A]');
-  db.prepare('UPDATE whatsapp_rules SET match_count = match_count + 1 WHERE id = ?').run(matched.id);
+  await db.prepare('UPDATE whatsapp_rules SET match_count = match_count + 1 WHERE id = ?').run(matched.id);
 
   res.json({ matched: true, rule: matched.name, reply });
 });
@@ -243,12 +243,12 @@ router.post('/simulate', authMiddleware, adminOnly, (req, res) => {
 // ── Analytics ─────────────────────────────────────────────
 
 // GET /api/whatsapp/analytics
-router.get('/analytics', authMiddleware, adminOnly, (req, res) => {
-  const totalMessages = db.prepare('SELECT COUNT(*) as val FROM whatsapp_messages').get().val;
-  const botReplies = db.prepare("SELECT COUNT(*) as val FROM whatsapp_messages WHERE from_phone = 'bot'").get().val;
-  const totalContacts = db.prepare("SELECT COUNT(DISTINCT from_phone) as val FROM whatsapp_messages WHERE direction = 'incoming'").get().val;
-  const unread = db.prepare("SELECT COUNT(*) as val FROM whatsapp_messages WHERE is_read = 0 AND direction = 'incoming'").get().val;
-  const topRules = db.prepare('SELECT name, match_count FROM whatsapp_rules ORDER BY match_count DESC LIMIT 5').all();
+router.get('/analytics', authMiddleware, adminOnly, async (req, res) => {
+  const totalMessages = await db.prepare('SELECT COUNT(*) as val FROM whatsapp_messages').get().val;
+  const botReplies = await db.prepare("SELECT COUNT(*) as val FROM whatsapp_messages WHERE from_phone = 'bot'").get().val;
+  const totalContacts = await db.prepare("SELECT COUNT(DISTINCT from_phone) as val FROM whatsapp_messages WHERE direction = 'incoming'").get().val;
+  const unread = await db.prepare("SELECT COUNT(*) as val FROM whatsapp_messages WHERE is_read = 0 AND direction = 'incoming'").get().val;
+  const topRules = await db.prepare('SELECT name, match_count FROM whatsapp_rules ORDER BY match_count DESC LIMIT 5').all();
   res.json({ totalMessages, botReplies, totalContacts, unread, topRules });
 });
 

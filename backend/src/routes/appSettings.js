@@ -49,23 +49,23 @@ const defaults = [
   ['twitter_handle', '@ailaptopwala', 'seo'],
 ];
 
-const insertDefault = db.prepare('INSERT OR IGNORE INTO app_settings (key, value, category) VALUES (?,?,?)');
+const insertDefault = await db.prepare('INSERT OR IGNORE INTO app_settings (key, value, category) VALUES (?,?,?)');
 defaults.forEach(([k, v, c]) => insertDefault.run(k, v, c));
 
 // GET /api/app-settings?category=general
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { category } = req.query;
   let q = 'SELECT key, value, category FROM app_settings WHERE 1=1';
   const params = [];
   if (category) { q += ' AND category = ?'; params.push(category); }
-  const rows = db.prepare(q).all(...params);
+  const rows = await db.prepare(q).all(...params);
   const result = Object.fromEntries(rows.map(r => [r.key, r.value]));
   res.json(result);
 });
 
 // PUT /api/app-settings — admin
-router.put('/', authMiddleware, adminOnly, (req, res) => {
-  const update = db.prepare("INSERT OR REPLACE INTO app_settings (key, value, category, updated_at) VALUES (?, ?, COALESCE((SELECT category FROM app_settings WHERE key=?), 'general'), datetime('now'))");
+router.put('/', authMiddleware, adminOnly, async (req, res) => {
+  const update = await db.prepare("INSERT OR REPLACE INTO app_settings (key, value, category, updated_at) VALUES (?, ?, COALESCE((SELECT category FROM app_settings WHERE key=?), 'general'), datetime('now'))");
   const updateMany = db.transaction((settings) => {
     for (const [key, value] of Object.entries(settings)) {
       update.run(key, String(value), key);

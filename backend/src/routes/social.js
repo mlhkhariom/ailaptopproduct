@@ -21,7 +21,7 @@ const upload = multer({ storage, limits: { fileSize: 200 * 1024 * 1024 } }); // 
 const router = Router();
 
 // ── Helpers ──────────────────────────────────────────────
-const getSettings = () => db.prepare('SELECT * FROM social_settings WHERE id = ?').get('main') || {};
+const getSettings = async () => await db.prepare('SELECT * FROM social_settings WHERE id = ?').get('main') || {};
 
 const metaFetch = async (url, options = {}) => {
   const res = await fetch(url, options);
@@ -33,7 +33,7 @@ const metaFetch = async (url, options = {}) => {
 // ── Settings ─────────────────────────────────────────────
 
 // GET /api/social/settings
-router.get('/settings', authMiddleware, adminOnly, (req, res) => {
+router.get('/settings', authMiddleware, adminOnly, async (req, res) => {
   const s = getSettings();
   // mask secret
   if (s.meta_app_secret) s.meta_app_secret = s.meta_app_secret.replace(/.(?=.{4})/g, '*');
@@ -41,14 +41,14 @@ router.get('/settings', authMiddleware, adminOnly, (req, res) => {
 });
 
 // PUT /api/social/settings — superadmin only
-router.put('/settings', authMiddleware, superAdminOnly, (req, res) => {
+router.put('/settings', authMiddleware, superAdminOnly, async (req, res) => {
   const { meta_app_id, meta_app_secret, meta_access_token, meta_page_id, meta_ig_account_id } = req.body;
-  const existing = db.prepare('SELECT id FROM social_settings WHERE id = ?').get('main');
+  const existing = await db.prepare('SELECT id FROM social_settings WHERE id = ?').get('main');
   if (existing) {
-    db.prepare(`UPDATE social_settings SET meta_app_id=?, meta_app_secret=COALESCE(NULLIF(?,?),meta_app_secret), meta_access_token=?, meta_page_id=?, meta_ig_account_id=?, updated_at=datetime('now') WHERE id='main'`)
+    await db.prepare(`UPDATE social_settings SET meta_app_id=?, meta_app_secret=COALESCE(NULLIF(?,?),meta_app_secret), meta_access_token=?, meta_page_id=?, meta_ig_account_id=?, updated_at=datetime('now') WHERE id='main'`)
       .run(meta_app_id, meta_app_secret, '***masked***', meta_access_token, meta_page_id, meta_ig_account_id);
   } else {
-    db.prepare(`INSERT INTO social_settings (id, meta_app_id, meta_app_secret, meta_access_token, meta_page_id, meta_ig_account_id) VALUES ('main',?,?,?,?,?)`)
+    await db.prepare(`INSERT INTO social_settings (id, meta_app_id, meta_app_secret, meta_access_token, meta_page_id, meta_ig_account_id) VALUES ('main',?,?,?,?,?)`)
       .run(meta_app_id, meta_app_secret, meta_access_token, meta_page_id, meta_ig_account_id);
   }
   res.json({ message: 'Settings saved' });
@@ -69,7 +69,7 @@ router.post('/settings/verify', authMiddleware, adminOnly, async (req, res) => {
 // ── Upload video ──────────────────────────────────────────
 
 // POST /api/social/upload
-router.post('/upload', authMiddleware, adminOnly, upload.single('video'), (req, res) => {
+router.post('/upload', authMiddleware, adminOnly, upload.single('video'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   res.json({ path: req.file.filename, url: `/uploads/${req.file.filename}` });
 });
@@ -77,36 +77,36 @@ router.post('/upload', authMiddleware, adminOnly, upload.single('video'), (req, 
 // ── Posts CRUD ────────────────────────────────────────────
 
 // GET /api/social/posts
-router.get('/posts', authMiddleware, adminOnly, (req, res) => {
+router.get('/posts', authMiddleware, adminOnly, async (req, res) => {
   const { platform, status } = req.query;
   let q = 'SELECT * FROM social_posts WHERE 1=1';
   const params = [];
   if (platform) { q += ' AND platform = ?'; params.push(platform); }
   if (status) { q += ' AND status = ?'; params.push(status); }
   q += ' ORDER BY created_at DESC';
-  res.json(db.prepare(q).all(...params));
+  res.json(await db.prepare(q).all(...params));
 });
 
 // POST /api/social/posts — create draft
-router.post('/posts', authMiddleware, adminOnly, (req, res) => {
+router.post('/posts', authMiddleware, adminOnly, async (req, res) => {
   const { title, caption, hashtags, thumbnail, video_path, platform, product_id, scheduled_at } = req.body;
   const id = uuid();
-  db.prepare(`INSERT INTO social_posts (id, title, caption, hashtags, thumbnail, video_path, platform, product_id, scheduled_at) VALUES (?,?,?,?,?,?,?,?,?)`)
+  await db.prepare(`INSERT INTO social_posts (id, title, caption, hashtags, thumbnail, video_path, platform, product_id, scheduled_at) VALUES (?,?,?,?,?,?,?,?,?)`)
     .run(id, title, caption, hashtags, thumbnail, video_path, platform, product_id, scheduled_at);
   res.status(201).json({ id });
 });
 
 // PUT /api/social/posts/:id
-router.put('/posts/:id', authMiddleware, adminOnly, (req, res) => {
+router.put('/posts/:id', authMiddleware, adminOnly, async (req, res) => {
   const { title, caption, hashtags, thumbnail, video_path, platform, product_id, scheduled_at } = req.body;
-  db.prepare('UPDATE social_posts SET title=?, caption=?, hashtags=?, thumbnail=?, video_path=?, platform=?, product_id=?, scheduled_at=? WHERE id=?')
+  await db.prepare('UPDATE social_posts SET title=?, caption=?, hashtags=?, thumbnail=?, video_path=?, platform=?, product_id=?, scheduled_at=? WHERE id=?')
     .run(title, caption, hashtags, thumbnail, video_path, platform, product_id, scheduled_at, req.params.id);
   res.json({ message: 'Updated' });
 });
 
 // DELETE /api/social/posts/:id
-router.delete('/posts/:id', authMiddleware, adminOnly, (req, res) => {
-  db.prepare('DELETE FROM social_posts WHERE id = ?').run(req.params.id);
+router.delete('/posts/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM social_posts WHERE id = ?').run(req.params.id);
   res.json({ message: 'Deleted' });
 });
 
@@ -114,7 +114,7 @@ router.delete('/posts/:id', authMiddleware, adminOnly, (req, res) => {
 
 // POST /api/social/publish/:id — publish to platform
 router.post('/publish/:id', authMiddleware, adminOnly, async (req, res) => {
-  const post = db.prepare('SELECT * FROM social_posts WHERE id = ?').get(req.params.id);
+  const post = await db.prepare('SELECT * FROM social_posts WHERE id = ?').get(req.params.id);
   if (!post) return res.status(404).json({ error: 'Post not found' });
 
   const s = getSettings();
@@ -190,13 +190,13 @@ router.post('/publish/:id', authMiddleware, adminOnly, async (req, res) => {
       }
     }
 
-    db.prepare(`UPDATE social_posts SET status='published', meta_post_id=?, published_at=datetime('now'), error_msg=NULL WHERE id=?`)
+    await db.prepare(`UPDATE social_posts SET status='published', meta_post_id=?, published_at=datetime('now'), error_msg=NULL WHERE id=?`)
       .run(metaPostId, post.id);
 
     res.json({ success: true, meta_post_id: metaPostId });
 
   } catch (e) {
-    db.prepare(`UPDATE social_posts SET status='failed', error_msg=? WHERE id=?`).run(e.message, post.id);
+    await db.prepare(`UPDATE social_posts SET status='failed', error_msg=? WHERE id=?`).run(e.message, post.id);
     res.status(500).json({ error: e.message });
   }
 });
@@ -206,14 +206,14 @@ router.post('/publish-both/:id', authMiddleware, adminOnly, async (req, res) => 
   const results = { instagram: null, facebook: null, errors: [] };
 
   // Create FB post
-  const fbPost = db.prepare('SELECT * FROM social_posts WHERE id = ?').get(req.params.id);
+  const fbPost = await db.prepare('SELECT * FROM social_posts WHERE id = ?').get(req.params.id);
   if (!fbPost) return res.status(404).json({ error: 'Post not found' });
 
   // Duplicate for FB if original is IG
   let fbId = req.params.id;
   if (fbPost.platform === 'instagram') {
     const newId = uuid();
-    db.prepare(`INSERT INTO social_posts (id, title, caption, hashtags, thumbnail, video_path, platform, product_id) VALUES (?,?,?,?,?,?,?,?)`)
+    await db.prepare(`INSERT INTO social_posts (id, title, caption, hashtags, thumbnail, video_path, platform, product_id) VALUES (?,?,?,?,?,?,?,?)`)
       .run(newId, fbPost.title, fbPost.caption, fbPost.hashtags, fbPost.thumbnail, fbPost.video_path, 'facebook', fbPost.product_id);
     fbId = newId;
   }

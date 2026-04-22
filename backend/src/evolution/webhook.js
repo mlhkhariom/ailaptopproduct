@@ -9,8 +9,8 @@ export const setIO = (socketIO) => { io = socketIO; };
 const emit = (event, data) => { if (io) io.emit(event, data); };
 
 // Save/update chat in DB
-const upsertChat = (instanceName, remoteJid, pushName, lastMessage, timestamp) => {
-  db.prepare(`INSERT INTO evolution_chats (id, instance_name, remote_jid, push_name, last_message, last_message_time, unread_count, updated_at)
+const upsertChat = async (instanceName, remoteJid, pushName, lastMessage, timestamp) => {
+  await db.prepare(`INSERT INTO evolution_chats (id, instance_name, remote_jid, push_name, last_message, last_message_time, unread_count, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'))
     ON CONFLICT(instance_name, remote_jid) DO UPDATE SET
       push_name = COALESCE(excluded.push_name, push_name),
@@ -22,9 +22,9 @@ const upsertChat = (instanceName, remoteJid, pushName, lastMessage, timestamp) =
 };
 
 // Save message to DB
-const saveMessage = (instanceName, msg) => {
+const saveMessage = async (instanceName, msg) => {
   try {
-    db.prepare(`INSERT OR IGNORE INTO evolution_messages
+    await db.prepare(`INSERT OR IGNORE INTO evolution_messages
       (id, instance_name, remote_jid, message_id, body, from_me, message_type, media_url, status, timestamp, push_name)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .run(uuid(), instanceName, msg.remoteJid, msg.id, msg.body || '', msg.fromMe ? 1 : 0,
@@ -89,7 +89,7 @@ export const handleWebhook = async (instanceName, event, data) => {
         const updates = Array.isArray(data) ? data : [data];
         for (const u of updates) {
           const status = u.update?.status === 3 ? 'read' : u.update?.status === 2 ? 'delivered' : 'sent';
-          db.prepare("UPDATE evolution_messages SET status=? WHERE message_id=?").run(status, u.key?.id);
+          await db.prepare("UPDATE evolution_messages SET status=? WHERE message_id=?").run(status, u.key?.id);
           emit('evolution:status_update', { instanceName, msgId: u.key?.id, status });
         }
         break;
@@ -97,14 +97,14 @@ export const handleWebhook = async (instanceName, event, data) => {
 
       case 'CONNECTION_UPDATE': case 'connection.update': {
         const state = data.state || data.connection;
-        db.prepare("UPDATE evolution_instances SET status=?, updated_at=datetime('now') WHERE instance_name=?").run(state, instanceName);
+        await db.prepare("UPDATE evolution_instances SET status=?, updated_at=datetime('now') WHERE instance_name=?").run(state, instanceName);
         emit('evolution:connection', { instanceName, state, qr: data.qr });
         if (data.qr) {
-          db.prepare("UPDATE evolution_instances SET qr_code=?, status='qr_code', updated_at=datetime('now') WHERE instance_name=?").run(data.qr, instanceName);
+          await db.prepare("UPDATE evolution_instances SET qr_code=?, status='qr_code', updated_at=datetime('now') WHERE instance_name=?").run(data.qr, instanceName);
           emit('evolution:qr', { instanceName, qr: data.qr });
         }
         if (state === 'open') {
-          db.prepare("UPDATE evolution_instances SET status='connected', qr_code=NULL, updated_at=datetime('now') WHERE instance_name=?").run(instanceName);
+          await db.prepare("UPDATE evolution_instances SET status='connected', qr_code=NULL, updated_at=datetime('now') WHERE instance_name=?").run(instanceName);
           emit('evolution:connected', { instanceName });
         }
         break;
@@ -113,7 +113,7 @@ export const handleWebhook = async (instanceName, event, data) => {
       case 'QRCODE_UPDATED': case 'qrcode.updated': {
         const qr = data.qrcode?.base64 || data.qr;
         if (qr) {
-          db.prepare("UPDATE evolution_instances SET qr_code=?, status='qr_code', updated_at=datetime('now') WHERE instance_name=?").run(qr, instanceName);
+          await db.prepare("UPDATE evolution_instances SET qr_code=?, status='qr_code', updated_at=datetime('now') WHERE instance_name=?").run(qr, instanceName);
           emit('evolution:qr', { instanceName, qr });
         }
         break;

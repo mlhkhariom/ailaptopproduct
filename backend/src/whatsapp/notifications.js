@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { getClient, getStatus } from '../whatsapp/client.js';
 
 // Normalize phone → 91XXXXXXXXXX format
-const normalizePhone = (phone) => {
+const normalizePhone = async (phone) => {
   let p = String(phone).replace(/[^0-9]/g, '');
   if (p.startsWith('0')) p = p.slice(1);           // remove leading 0
   if (p.length === 10) p = '91' + p;               // add India code
@@ -12,10 +12,10 @@ const normalizePhone = (phone) => {
 };
 
 // Queue a WhatsApp notification
-export const queueNotification = (phone, message, type = 'general') => {
+export const queueNotification = async (phone, message, type = 'general') => {
   if (!phone) return;
   try {
-    db.prepare('INSERT INTO whatsapp_notifications (id, type, phone, message) VALUES (?,?,?,?)')
+    await db.prepare('INSERT INTO whatsapp_notifications (id, type, phone, message) VALUES (?,?,?,?)')
       .run(uuid(), type, String(phone).trim(), message);
   } catch (e) {
     console.error('Queue notification error:', e.message);
@@ -27,7 +27,7 @@ export const sendPendingNotifications = async () => {
   const client = getClient();
   if (!client || getStatus() !== 'ready') return;
 
-  const pending = db.prepare(`
+  const pending = await db.prepare(`
     SELECT * FROM whatsapp_notifications 
     WHERE status='pending' 
        OR (status='failed' AND (sent_at IS NULL OR sent_at < datetime('now', '-5 minutes')))
@@ -41,22 +41,22 @@ export const sendPendingNotifications = async () => {
       const isRegistered = await client.isRegisteredUser(chatId).catch(() => true);
       if (!isRegistered) {
         console.warn(`📵 Not on WhatsApp: ${n.phone}`);
-        db.prepare("UPDATE whatsapp_notifications SET status='not_registered' WHERE id=?").run(n.id);
+        await db.prepare("UPDATE whatsapp_notifications SET status='not_registered' WHERE id=?").run(n.id);
         continue;
       }
       await client.sendMessage(chatId, n.message);
-      db.prepare("UPDATE whatsapp_notifications SET status='sent', sent_at=datetime('now') WHERE id=?").run(n.id);
+      await db.prepare("UPDATE whatsapp_notifications SET status='sent', sent_at=datetime('now') WHERE id=?").run(n.id);
       console.log(`✅ WhatsApp sent to ${n.phone}`);
       await new Promise(r => setTimeout(r, 1500));
     } catch (e) {
       console.error(`❌ WhatsApp send failed to ${n.phone}:`, e.message);
-      db.prepare("UPDATE whatsapp_notifications SET status='failed', sent_at=datetime('now') WHERE id=?").run(n.id);
+      await db.prepare("UPDATE whatsapp_notifications SET status='failed', sent_at=datetime('now') WHERE id=?").run(n.id);
     }
   }
 };
 
 // Order placed notification
-export const notifyOrderPlaced = (order, phone, customerName) => {
+export const notifyOrderPlaced = async (order, phone, customerName) => {
   const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]');
   const itemList = items.map(i => `• ${i.name} x${i.quantity} — ₹${i.price * i.quantity}`).join('\n');
   const msg = `🛒 *Order Confirmed!*
@@ -80,7 +80,7 @@ Thank you for shopping with *AI Laptop Wala* 💻
 };
 
 // Payment success notification
-export const notifyPaymentSuccess = (order, phone, customerName, paymentId) => {
+export const notifyPaymentSuccess = async (order, phone, customerName, paymentId) => {
   const msg = `✅ *Payment Successful!*
 
 Hello ${customerName}!
@@ -98,7 +98,7 @@ Your order is being processed. We'll update you soon!
 };
 
 // Order shipped notification
-export const notifyOrderShipped = (order, phone, customerName) => {
+export const notifyOrderShipped = async (order, phone, customerName) => {
   const msg = `🚚 *Order Shipped!*
 
 Hello ${customerName}!
@@ -117,7 +117,7 @@ Track: ailaptopwala.com/track-order?order=${order.order_number}
 };
 
 // Order delivered notification
-export const notifyOrderDelivered = (order, phone, customerName) => {
+export const notifyOrderDelivered = async (order, phone, customerName) => {
   const msg = `🎉 *Order Delivered!*
 
 Hello ${customerName}!
@@ -136,7 +136,7 @@ Please share your experience:
 };
 
 // Service booking notification
-export const notifyServiceBooked = (booking, phone) => {
+export const notifyServiceBooked = async (booking, phone) => {
   const msg = `🔧 *Service Booking Confirmed!*
 
 Hello ${booking.customer_name}!
@@ -159,7 +159,7 @@ We'll contact you to confirm the appointment.
 };
 
 // Invoice link notification
-export const notifyInvoiceReady = (order, phone, customerName) => {
+export const notifyInvoiceReady = async (order, phone, customerName) => {
   const msg = `🧾 *Invoice Ready!*
 
 Hello ${customerName}!
@@ -173,7 +173,7 @@ Download Invoice: ailaptopwala.com/invoice/${order.order_number}
 };
 
 // Start notification processor (every 30 seconds)
-export const startNotificationProcessor = () => {
+export const startNotificationProcessor = async () => {
   setInterval(sendPendingNotifications, 30000);
   console.log('📬 WhatsApp notification processor started');
 };

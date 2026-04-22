@@ -2,13 +2,13 @@ import db from '../db/database.js';
 import { v4 as uuid } from 'uuid';
 
 // ── Get settings ──────────────────────────────────────────
-export const getAgentSettings = () => {
-  return db.prepare('SELECT * FROM ai_agent_settings WHERE id = ?').get('main') || {};
+export const getAgentSettings = async () => {
+  return await db.prepare('SELECT * FROM ai_agent_settings WHERE id = ?').get('main') || {};
 };
 
 // ── Create order + payment link ───────────────────────────
 export const createOrderWithPaymentLink = async (contactPhone, productId, customerName) => {
-  const product = db.prepare('SELECT * FROM products WHERE id=? OR slug=?').get(productId, productId);
+  const product = await db.prepare('SELECT * FROM products WHERE id=? OR slug=?').get(productId, productId);
   if (!product) return null;
 
   const order_number = 'ALW-' + Date.now().toString().slice(-6);
@@ -16,12 +16,12 @@ export const createOrderWithPaymentLink = async (contactPhone, productId, custom
   const phone = contactPhone.replace('@c.us', '').replace(/[^0-9]/g, '');
 
   // Create order
-  db.prepare(`INSERT INTO orders (id,order_number,items,subtotal,total,payment_method,payment_status,address) VALUES (?,?,?,?,?,'razorpay','pending','{}')`)
+  await db.prepare(`INSERT INTO orders (id,order_number,items,subtotal,total,payment_method,payment_status,address) VALUES (?,?,?,?,?,'razorpay','pending','{}')`)
     .run(orderId, order_number, JSON.stringify([{ id: product.id, name: product.name, quantity: 1, price: product.price }]), product.price, product.price);
 
   // Create Razorpay payment link
-  const keyId = db.prepare("SELECT value FROM app_settings WHERE key='razorpay_key_id'").get()?.value;
-  const keySecret = db.prepare("SELECT value FROM app_settings WHERE key='razorpay_key_secret'").get()?.value;
+  const keyId = await db.prepare("SELECT value FROM app_settings WHERE key='razorpay_key_id'").get()?.value;
+  const keySecret = await db.prepare("SELECT value FROM app_settings WHERE key='razorpay_key_secret'").get()?.value;
 
   if (!keyId || !keySecret) {
     return { order_number, product, payment_link: null, message: `Order ${order_number} created! Pay ₹${product.price.toLocaleString('en-IN')} via UPI/Cash on delivery.\n\nTrack: ailaptopwala.com/track-order?order=${order_number}` };
@@ -46,7 +46,7 @@ export const createOrderWithPaymentLink = async (contactPhone, productId, custom
     const payLink = data.short_url || null;
 
     if (payLink) {
-      db.prepare("UPDATE orders SET payment_status='link_sent' WHERE id=?").run(orderId);
+      await db.prepare("UPDATE orders SET payment_status='link_sent' WHERE id=?").run(orderId);
     }
 
     return { order_number, product, payment_link: payLink };
@@ -56,16 +56,16 @@ export const createOrderWithPaymentLink = async (contactPhone, productId, custom
 };
 
 // ── Check if agent enabled for contact ───────────────────
-export const isAgentEnabledForContact = (contactId) => {
+export const isAgentEnabledForContact = async (contactId) => {
   const s = getAgentSettings();
   if (!s.enabled) return false;
-  const contactSetting = db.prepare('SELECT agent_enabled FROM ai_agent_contact_settings WHERE contact_id = ?').get(contactId);
+  const contactSetting = await db.prepare('SELECT agent_enabled FROM ai_agent_contact_settings WHERE contact_id = ?').get(contactId);
   if (contactSetting) return !!contactSetting.agent_enabled;
   return true; // default enabled
 };
 
 // ── Business hours check ──────────────────────────────────
-const isWithinBusinessHours = (s) => {
+const isWithinBusinessHours = async (s) => {
   if (!s.business_hours_enabled) return true;
   const now = new Date();
   const [sh, sm] = s.business_hours_start.split(':').map(Number);
@@ -75,59 +75,59 @@ const isWithinBusinessHours = (s) => {
 };
 
 // ── Daily limit check ─────────────────────────────────────
-const checkDailyLimit = (contactId, limit) => {
+const checkDailyLimit = async (contactId, limit) => {
   const today = new Date().toISOString().split('T')[0];
-  const row = db.prepare('SELECT count FROM ai_daily_count WHERE contact_id = ? AND date = ?').get(contactId, today);
+  const row = await db.prepare('SELECT count FROM ai_daily_count WHERE contact_id = ? AND date = ?').get(contactId, today);
   return !row || row.count < limit;
 };
 
-const incrementDailyCount = (contactId) => {
+const incrementDailyCount = async (contactId) => {
   const today = new Date().toISOString().split('T')[0];
-  db.prepare('INSERT INTO ai_daily_count (contact_id, date, count) VALUES (?,?,1) ON CONFLICT(contact_id,date) DO UPDATE SET count=count+1').run(contactId, today);
+  await db.prepare('INSERT INTO ai_daily_count (contact_id, date, count) VALUES (?,?,1) ON CONFLICT(contact_id,date) DO UPDATE SET count=count+1').run(contactId, today);
 };
 
 // ── Memory management ─────────────────────────────────────
-const getMemory = (contactId, limit = 20) => {
-  return db.prepare('SELECT role, content FROM ai_conversation_memory WHERE contact_id = ? ORDER BY created_at DESC LIMIT ?').all(contactId, limit).reverse();
+const getMemory = async (contactId, limit = 20) => {
+  return await db.prepare('SELECT role, content FROM ai_conversation_memory WHERE contact_id = ? ORDER BY created_at DESC LIMIT ?').all(contactId, limit).reverse();
 };
 
-const saveMemory = (contactId, role, content) => {
-  db.prepare('INSERT INTO ai_conversation_memory (id, contact_id, role, content) VALUES (?,?,?,?)').run(uuid(), contactId, role, content);
+const saveMemory = async (contactId, role, content) => {
+  await db.prepare('INSERT INTO ai_conversation_memory (id, contact_id, role, content) VALUES (?,?,?,?)').run(uuid(), contactId, role, content);
   // Keep only last 50 messages per contact
-  db.prepare('DELETE FROM ai_conversation_memory WHERE contact_id = ? AND id NOT IN (SELECT id FROM ai_conversation_memory WHERE contact_id = ? ORDER BY created_at DESC LIMIT 50)').run(contactId, contactId);
+  await db.prepare('DELETE FROM ai_conversation_memory WHERE contact_id = ? AND id NOT IN (SELECT id FROM ai_conversation_memory WHERE contact_id = ? ORDER BY created_at DESC LIMIT 50)').run(contactId, contactId);
 };
 
 // ── Product search ────────────────────────────────────────
-const searchProducts = (query) => {
+const searchProducts = async (query) => {
   // Extract meaningful keywords (remove common Hindi/English stop words)
   const stopWords = ['ka', 'ki', 'ke', 'hai', 'kya', 'mujhe', 'chahiye', 'price', 'kitna', 'karo', 'do', 'the', 'is', 'are', 'what', 'how', 'much', 'cost', 'rate', 'bata', 'batao'];
   const words = query.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
   
   // Try full query first
   const fullQ = `%${query}%`;
-  const full = db.prepare("SELECT name, price, original_price, description, slug, in_stock, stock, id FROM products WHERE (name LIKE ? OR description LIKE ?) AND status='active' LIMIT 3").all(fullQ, fullQ);
+  const full = await db.prepare("SELECT name, price, original_price, description, slug, in_stock, stock, id FROM products WHERE (name LIKE ? OR description LIKE ?) AND status='active' LIMIT 3").all(fullQ, fullQ);
   if (full.length > 0) return full;
   
   // Try each keyword
   for (const word of words) {
     const q = `%${word}%`;
-    const results = db.prepare("SELECT name, price, original_price, description, slug, in_stock, stock, id FROM products WHERE (name LIKE ? OR description LIKE ? OR category LIKE ?) AND status='active' LIMIT 3").all(q, q, q);
+    const results = await db.prepare("SELECT name, price, original_price, description, slug, in_stock, stock, id FROM products WHERE (name LIKE ? OR description LIKE ? OR category LIKE ?) AND status='active' LIMIT 3").all(q, q, q);
     if (results.length > 0) return results;
   }
   
   // Return all products if no match (so AI knows what we have)
-  return db.prepare("SELECT name, price, original_price, description, slug, in_stock, stock, id FROM products WHERE status='active' ORDER BY price ASC LIMIT 5").all();
+  return await db.prepare("SELECT name, price, original_price, description, slug, in_stock, stock, id FROM products WHERE status='active' ORDER BY price ASC LIMIT 5").all();
 };
 
 // ── Services search ───────────────────────────────────────
-const searchServices = (query) => {
+const searchServices = async (query) => {
   const q = `%${query}%`;
-  return db.prepare('SELECT name, price, duration, description, category FROM services WHERE (name LIKE ? OR description LIKE ? OR category LIKE ?) AND is_active = 1 LIMIT 4').all(q, q, q);
+  return await db.prepare('SELECT name, price, duration, description, category FROM services WHERE (name LIKE ? OR description LIKE ? OR category LIKE ?) AND is_active = 1 LIMIT 4').all(q, q, q);
 };
 
 // ── Order lookup ──────────────────────────────────────────
-const lookupOrder = (query) => {
-  return db.prepare('SELECT order_number, status, total, tracking_id, courier, created_at FROM orders WHERE order_number LIKE ? LIMIT 1').get(`%${query}%`);
+const lookupOrder = async (query) => {
+  return await db.prepare('SELECT order_number, status, total, tracking_id, courier, created_at FROM orders WHERE order_number LIKE ? LIMIT 1').get(`%${query}%`);
 };
 
 // ── Booking intent detection ──────────────────────────────
@@ -139,7 +139,7 @@ const BUY_KEYWORDS = ['khareedna', 'kharidna', 'buy', 'order', 'purchase', 'lena
 const isBuyIntent = (msg) => BUY_KEYWORDS.some(k => msg.toLowerCase().includes(k));
 
 // ── Build context for LLM ─────────────────────────────────
-const buildContext = (s, message) => {
+const buildContext = async (s, message) => {
   const parts = [];
 
   // Product search
@@ -158,7 +158,7 @@ const buildContext = (s, message) => {
   // Services search
   if (isBookingIntent(message)) {
     const services = searchServices(message);
-    const allServices = services.length > 0 ? services : db.prepare('SELECT name, price, duration FROM services WHERE is_active=1 LIMIT 6').all();
+    const allServices = services.length > 0 ? services : await db.prepare('SELECT name, price, duration FROM services WHERE is_active=1 LIMIT 6').all();
     if (allServices.length > 0) {
       parts.push('REPAIR SERVICES:\n' + allServices.map(s =>
         `- ${s.name}: ₹${s.price} | ${s.duration}`
@@ -286,7 +286,7 @@ export const processAgentMessage = async (contactId, contactName, message) => {
           saveMemory(contactId, 'assistant', reply);
           incrementDailyCount(contactId);
           // Admin notification
-          db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)').run(uuid(), 'order', '🛒 WhatsApp Order', `${contactName} ordered ${result.product.name} via WhatsApp`, '/admin/orders');
+          await db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)').run(uuid(), 'order', '🛒 WhatsApp Order', `${contactName} ordered ${result.product.name} via WhatsApp`, '/admin/orders');
           return { reply, isAI: true, isOrder: true, order_number: result.order_number };
         }
       }

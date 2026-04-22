@@ -7,16 +7,16 @@ import { getAgentSettings, fetchAvailableModels } from '../ai/agent.js';
 const router = Router();
 
 // GET /api/ai/settings
-router.get('/settings', authMiddleware, adminOnly, (req, res) => {
+router.get('/settings', authMiddleware, adminOnly, async (req, res) => {
   const s = getAgentSettings();
   if (s.api_key) s.api_key = s.api_key.replace(/.(?=.{6})/g, '*');
   res.json(s);
 });
 
 // PUT /api/ai/settings — superadmin can edit system_prompt + api_key, admin can toggle features
-router.put('/settings', authMiddleware, adminOnly, (req, res) => {
+router.put('/settings', authMiddleware, adminOnly, async (req, res) => {
   const isSuperAdmin = req.user.role === 'superadmin';
-  const current = db.prepare('SELECT * FROM ai_agent_settings WHERE id = ?').get('main');
+  const current = await db.prepare('SELECT * FROM ai_agent_settings WHERE id = ?').get('main');
   const body = req.body;
 
   // Only superadmin can change api_key and system_prompt
@@ -46,7 +46,7 @@ router.put('/settings', authMiddleware, adminOnly, (req, res) => {
     business_hours_end: body.business_hours_end || current.business_hours_end,
   };
 
-  db.prepare(`UPDATE ai_agent_settings SET
+  await db.prepare(`UPDATE ai_agent_settings SET
     enabled=?, llm_provider=?, llm_model=?, api_key=?, system_prompt=?,
     temperature=?, max_tokens=?, memory_messages=?, reply_delay_min=?, reply_delay_max=?,
     feature_product_search=?, feature_order_status=?, feature_greeting=?, feature_faq=?,
@@ -75,28 +75,28 @@ router.get('/models', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // GET /api/ai/contact/:contactId — get per-contact agent setting
-router.get('/contact/:contactId', authMiddleware, adminOnly, (req, res) => {
-  const row = db.prepare('SELECT agent_enabled FROM ai_agent_contact_settings WHERE contact_id = ?').get(req.params.contactId);
+router.get('/contact/:contactId', authMiddleware, adminOnly, async (req, res) => {
+  const row = await db.prepare('SELECT agent_enabled FROM ai_agent_contact_settings WHERE contact_id = ?').get(req.params.contactId);
   res.json({ agent_enabled: row ? !!row.agent_enabled : true });
 });
 
 // PUT /api/ai/contact/:contactId — toggle agent for contact
-router.put('/contact/:contactId', authMiddleware, adminOnly, (req, res) => {
+router.put('/contact/:contactId', authMiddleware, adminOnly, async (req, res) => {
   const { agent_enabled } = req.body;
-  db.prepare('INSERT INTO ai_agent_contact_settings (contact_id, agent_enabled) VALUES (?,?) ON CONFLICT(contact_id) DO UPDATE SET agent_enabled=?')
+  await db.prepare('INSERT INTO ai_agent_contact_settings (contact_id, agent_enabled) VALUES (?,?) ON CONFLICT(contact_id) DO UPDATE SET agent_enabled=?')
     .run(req.params.contactId, agent_enabled ? 1 : 0, agent_enabled ? 1 : 0);
   res.json({ message: 'Updated' });
 });
 
 // GET /api/ai/memory/:contactId
-router.get('/memory/:contactId', authMiddleware, adminOnly, (req, res) => {
-  const msgs = db.prepare('SELECT role, content, created_at FROM ai_conversation_memory WHERE contact_id = ? ORDER BY created_at DESC LIMIT 20').all(req.params.contactId);
+router.get('/memory/:contactId', authMiddleware, adminOnly, async (req, res) => {
+  const msgs = await db.prepare('SELECT role, content, created_at FROM ai_conversation_memory WHERE contact_id = ? ORDER BY created_at DESC LIMIT 20').all(req.params.contactId);
   res.json(msgs.reverse());
 });
 
 // DELETE /api/ai/memory/:contactId — clear memory
-router.delete('/memory/:contactId', authMiddleware, adminOnly, (req, res) => {
-  db.prepare('DELETE FROM ai_conversation_memory WHERE contact_id = ?').run(req.params.contactId);
+router.delete('/memory/:contactId', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM ai_conversation_memory WHERE contact_id = ?').run(req.params.contactId);
   res.json({ message: 'Memory cleared' });
 });
 

@@ -1,6 +1,6 @@
 import db from '../db/database.js';
 
-const getSettings = () => db.prepare("SELECT * FROM evolution_settings WHERE id='main'").get() || {};
+const getSettings = async () => await db.prepare("SELECT * FROM evolution_settings WHERE id='main'").get() || {};
 
 // HTTP wrapper for Evolution API
 export const evolutionFetch = async (path, method = 'GET', body = null) => {

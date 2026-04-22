@@ -4,8 +4,8 @@ import db from '../db/database.js';
 const router = Router();
 
 // GET /api/invoice/:orderNumber — public invoice download (HTML)
-router.get('/:orderNumber', (req, res) => {
-  const order = db.prepare('SELECT o.*, u.name as customer_name, u.email as customer_email, u.phone as customer_phone FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.order_number=?').get(req.params.orderNumber);
+router.get('/:orderNumber', async (req, res) => {
+  const order = await db.prepare('SELECT o.*, u.name as customer_name, u.email as customer_email, u.phone as customer_phone FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.order_number=?').get(req.params.orderNumber);
   if (!order) return res.status(404).send('Invoice not found');
 
   const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]');

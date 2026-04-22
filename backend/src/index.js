@@ -5,7 +5,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import db from './db/database.js';
+import db, { initDB } from './db/database.js';
 import { runSeeder } from './db/seeder.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -164,13 +164,14 @@ const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, async () => {
   console.log(`✅ AI Laptop Wala Backend running on http://localhost:${PORT}`);
   setEvolutionIO(io);
+  await initDB();
   await runSeeder(db);
   startNotificationProcessor();
 
   // Connect to Evolution API WebSocket to process incoming messages with AI
   setTimeout(async () => {
     try {
-      const evoSettings = db.prepare("SELECT api_url, api_key FROM evolution_settings WHERE id='main'").get();
+      const evoSettings = await db.prepare("SELECT api_url, api_key FROM evolution_settings WHERE id='main'").get();
       if (!evoSettings?.api_url || !evoSettings?.api_key) return;
 
       const { io: socketIO } = await import('socket.io-client');

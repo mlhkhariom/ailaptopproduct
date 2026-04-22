@@ -13,19 +13,19 @@ let qrCodeData = null;
 let status = 'disconnected';
 let io = null;
 
-export const setIO = (socketIO) => { io = socketIO; };
-const emit = (event, data) => { if (io) io.emit(event, data); };
+export const setIO = async (socketIO) => { io = socketIO; };
+const emit = async (event, data) => { if (io) io.emit(event, data); };
 
 // ── Auto-reply engine ─────────────────────────────────────
 const processAutoReply = async (msg) => {
-  const rules = db.prepare('SELECT * FROM whatsapp_rules WHERE is_active = 1').all()
+  const rules = await db.prepare('SELECT * FROM whatsapp_rules WHERE is_active = 1').all()
     .map(r => ({ ...r, keywords: JSON.parse(r.keywords) }));
   const msgLower = msg.body.toLowerCase();
   const matched = rules.find(r => r.keywords.some(k => msgLower.includes(k.toLowerCase())));
   if (!matched) return;
 
   let reply = matched.response_template;
-  const products = db.prepare('SELECT * FROM products').all();
+  const products = await db.prepare('SELECT * FROM products').all();
   const product = products.find(p =>
     msgLower.includes(p.name.toLowerCase()) ||
     (p.name_hi && msgLower.includes(p.name_hi.toLowerCase()))
@@ -41,14 +41,14 @@ const processAutoReply = async (msg) => {
   }
   reply = reply.replace(/{{[^}]+}}/g, '[N/A]');
   await msg.reply(reply);
-  db.prepare('UPDATE whatsapp_rules SET match_count = match_count + 1 WHERE id = ?').run(matched.id);
+  await db.prepare('UPDATE whatsapp_rules SET match_count = match_count + 1 WHERE id = ?').run(matched.id);
   // Save bot reply to DB
-  db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
+  await db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
     .run(uuid(), 'bot', msg.from, reply, 'outgoing');
 };
 
 // ── Init ──────────────────────────────────────────────────
-export const initWhatsApp = () => {
+export const initWhatsApp = async () => {
   if (client) return;
   status = 'initializing';
   emit('whatsapp:status', { status });
@@ -152,7 +152,7 @@ export const initWhatsApp = () => {
       media: mediaData,
     };
     emit('whatsapp:message', msgData);
-    db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
+    await db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
       .run(msg.id._serialized, msg.from, 'me', msg.body || `[${msg.type}]`, 'incoming');
 
     // AI Agent processing
@@ -198,7 +198,7 @@ export const initWhatsApp = () => {
           }
 
           // Save AI reply to DB
-          db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
+          await db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
             .run(uuid(), 'ai-agent', msg.from, result.reply, 'outgoing');
 
           // Emit to frontend with AI flag + custom color
@@ -215,7 +215,7 @@ export const initWhatsApp = () => {
 
           // Human handoff alert
           if (result.isHandoff) {
-            db.prepare('INSERT INTO notifications (id, type, title, message, link) VALUES (?,?,?,?,?)')
+            await db.prepare('INSERT INTO notifications (id, type, title, message, link) VALUES (?,?,?,?,?)')
               .run(uuid(), 'whatsapp', 'Human Handoff Requested', `${contact.pushname || msg.from} wants to talk to a human`, '/admin/whatsapp');
           }
         }
@@ -310,7 +310,7 @@ export const sendMessage = async (phone, message, mediaUrl = null, caption = nul
   } else {
     msg = await client.sendMessage(chatId, message);
   }
-  db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
+  await db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
     .run(msg.id._serialized, 'me', phone, caption || message || '[media]', 'outgoing');
   return msg;
 };
@@ -374,7 +374,7 @@ export const getChatMessages = async (chatId, limit = 50) => {
     if (!chat) return [];
     const messages = await chat.fetchMessages({ limit });
     // Save to DB for AI memory
-    const insert = db.prepare('INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)');
+    const insert = await db.prepare('INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)');
     db.transaction((msgs) => {
       for (const m of msgs) {
         try { insert.run(m.id._serialized, m.fromMe ? 'me' : chatId, m.fromMe ? chatId : 'me', m.body || `[${m.type}]`, m.fromMe ? 'outgoing' : 'incoming'); } catch {}

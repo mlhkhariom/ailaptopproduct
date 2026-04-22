@@ -5,12 +5,12 @@ import { authMiddleware } from '../middleware/auth.js';
 const router = Router();
 
 // ── Helpers ───────────────────────────────────────────────
-const getSetting = (key) => db.prepare('SELECT value FROM app_settings WHERE key = ?').get(key)?.value || '';
-const isEnabled = (key) => getSetting(key) === 'true';
+const getSetting = async (key) => (await db.prepare('SELECT value FROM app_settings WHERE key = ?').get(key))?.value || '';
+const isEnabled = async (key) => (await getSetting(key)) === 'true';
 
 // ── Shipping calculation ──────────────────────────────────
 // GET /api/payment/shipping?subtotal=500
-router.get('/shipping', (req, res) => {
+router.get('/shipping', async (req, res) => {
   const subtotal = Number(req.query.subtotal) || 0;
   const freeAbove = Number(getSetting('shipping_free_above')) || 499;
   const flatRate = Number(getSetting('shipping_flat_rate')) || 50;
@@ -29,7 +29,7 @@ router.get('/shipping', (req, res) => {
 
 // ── Payment methods ───────────────────────────────────────
 // GET /api/payment/methods — get enabled payment methods
-router.get('/methods', (req, res) => {
+router.get('/methods', async (req, res) => {
   res.json({
     razorpay: { enabled: isEnabled('payment_razorpay'), key_id: getSetting('razorpay_key_id') },
     paytm: { enabled: isEnabled('payment_paytm') },
@@ -113,11 +113,11 @@ router.post('/paytm/initiate', authMiddleware, async (req, res) => {
 });
 
 // POST /api/payment/paytm/callback
-router.post('/paytm/callback', (req, res) => {
+router.post('/paytm/callback', async (req, res) => {
   const { STATUS, ORDERID, TXNAMOUNT, TXNID } = req.body;
   if (STATUS === 'TXN_SUCCESS') {
     // Update order payment status
-    db.prepare("UPDATE orders SET payment_status='paid', razorpay_id=? WHERE order_number=?").run(TXNID, ORDERID);
+    await db.prepare("UPDATE orders SET payment_status='paid', razorpay_id=? WHERE order_number=?").run(TXNID, ORDERID);
     res.redirect(`http://localhost:8080/track-order?order=${ORDERID}&payment=success`);
   } else {
     res.redirect(`http://localhost:8080/checkout?payment=failed`);
@@ -187,12 +187,12 @@ router.post('/razorpay/webhook', async (req, res) => {
       const phone = payload?.payment_link?.entity?.customer?.contact || payload?.payment?.entity?.contact;
 
       if (orderNumber) {
-        db.prepare("UPDATE orders SET payment_status='paid', razorpay_id=? WHERE order_number=?").run(paymentId, orderNumber);
+        await db.prepare("UPDATE orders SET payment_status='paid', razorpay_id=? WHERE order_number=?").run(paymentId, orderNumber);
 
         // WhatsApp notification
         if (phone) {
           const { notifyPaymentSuccess } = await import('../whatsapp/notifications.js');
-          const order = db.prepare('SELECT * FROM orders WHERE order_number=?').get(orderNumber);
+          const order = await db.prepare('SELECT * FROM orders WHERE order_number=?').get(orderNumber);
           if (order) notifyPaymentSuccess(order, phone, 'Customer', paymentId);
         }
       }

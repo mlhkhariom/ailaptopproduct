@@ -7,37 +7,37 @@ import { adminOnly } from '../middleware/adminOnly.js';
 const router = Router();
 
 // GET /api/reels — public (all active reels)
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { product_id, platform } = req.query;
   let q = 'SELECT r.*, p.name as product_name, p.slug as product_slug FROM reels r LEFT JOIN products p ON r.product_id = p.id WHERE r.is_active = 1';
   const params = [];
   if (product_id) { q += ' AND r.product_id = ?'; params.push(product_id); }
   if (platform) { q += ' AND r.platform = ?'; params.push(platform); }
   q += ' ORDER BY r.created_at DESC';
-  res.json(db.prepare(q).all(...params));
+  res.json(await db.prepare(q).all(...params));
 });
 
 // POST /api/reels — admin create
-router.post('/', authMiddleware, adminOnly, (req, res) => {
+router.post('/', authMiddleware, adminOnly, async (req, res) => {
   const { product_id, title, thumbnail, video_url, platform, views } = req.body;
   if (!title) return res.status(400).json({ error: 'title required' });
   const id = uuid();
-  db.prepare('INSERT INTO reels (id, product_id, title, thumbnail, video_url, platform, views) VALUES (?,?,?,?,?,?,?)')
+  await db.prepare('INSERT INTO reels (id, product_id, title, thumbnail, video_url, platform, views) VALUES (?,?,?,?,?,?,?)')
     .run(id, product_id || null, title, thumbnail, video_url, platform || 'instagram', views || '0');
-  res.status(201).json(db.prepare('SELECT * FROM reels WHERE id = ?').get(id));
+  res.status(201).json(await db.prepare('SELECT * FROM reels WHERE id = ?').get(id));
 });
 
 // PUT /api/reels/:id — admin update
-router.put('/:id', authMiddleware, adminOnly, (req, res) => {
+router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
   const { product_id, title, thumbnail, video_url, platform, views, is_active } = req.body;
-  db.prepare('UPDATE reels SET product_id=?, title=?, thumbnail=?, video_url=?, platform=?, views=?, is_active=? WHERE id=?')
+  await db.prepare('UPDATE reels SET product_id=?, title=?, thumbnail=?, video_url=?, platform=?, views=?, is_active=? WHERE id=?')
     .run(product_id || null, title, thumbnail, video_url, platform, views, is_active ? 1 : 0, req.params.id);
   res.json({ message: 'Updated' });
 });
 
 // DELETE /api/reels/:id — admin
-router.delete('/:id', authMiddleware, adminOnly, (req, res) => {
-  db.prepare('DELETE FROM reels WHERE id = ?').run(req.params.id);
+router.delete('/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM reels WHERE id = ?').run(req.params.id);
   res.json({ message: 'Deleted' });
 });
 
@@ -69,7 +69,7 @@ router.post('/instagram', authMiddleware, adminOnly, async (req, res) => {
 
 // GET /api/reels/fetch-profile — fetch latest reels from Instagram profile via Graph API
 router.get('/fetch-profile', authMiddleware, adminOnly, async (req, res) => {
-  const s = db.prepare("SELECT meta_access_token, meta_ig_account_id FROM social_settings WHERE id='main'").get();
+  const s = await db.prepare("SELECT meta_access_token, meta_ig_account_id FROM social_settings WHERE id='main'").get();
 
   if (!s?.meta_access_token || !s?.meta_ig_account_id) {
     return res.status(400).json({ error: 'Instagram credentials not configured. Go to Social Media → API Settings.' });
@@ -87,10 +87,10 @@ router.get('/fetch-profile', authMiddleware, adminOnly, async (req, res) => {
     const reels = (data.data || []).filter(m => m.media_type === 'VIDEO' || m.media_type === 'REEL');
 
     // Auto-save to DB if not already exists
-    const insertReel = db.prepare('INSERT OR IGNORE INTO reels (id, title, thumbnail, video_url, platform, views, is_active) VALUES (?,?,?,?,?,?,1)');
+    const insertReel = await db.prepare('INSERT OR IGNORE INTO reels (id, title, thumbnail, video_url, platform, views, is_active) VALUES (?,?,?,?,?,?,1)');
     let added = 0;
     for (const reel of reels) {
-      const existing = db.prepare('SELECT id FROM reels WHERE video_url = ?').get(reel.permalink);
+      const existing = await db.prepare('SELECT id FROM reels WHERE video_url = ?').get(reel.permalink);
       if (!existing) {
         const { v4: uuid } = await import('uuid');
         insertReel.run(uuid(), reel.caption?.slice(0, 100) || 'Instagram Reel', reel.thumbnail_url || reel.media_url, reel.permalink, 'instagram', '0');
