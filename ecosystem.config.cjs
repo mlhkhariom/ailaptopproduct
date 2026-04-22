@@ -12,10 +12,12 @@ module.exports = {
       max_memory_restart: '500M',
       env: {
         NODE_ENV: 'production',
+        DATABASE_URL: 'postgresql://postgres:postgres123@127.0.0.1:5433/ailaptopwala_db',
         PORT: 5000,
       },
       env_production: {
         NODE_ENV: 'production',
+        DATABASE_URL: 'postgresql://postgres:postgres123@127.0.0.1:5433/ailaptopwala_db',
         PORT: 5000,
       },
       error_file: './logs/backend-error.log',

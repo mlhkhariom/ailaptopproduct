@@ -49,21 +49,21 @@ const db = {
   prepare: (sql) => ({
     run: async (...params) => {
       const pgSql = toPostgres(sql);
-      const p = flatParams(params);
+      const p = Array.isArray(params[0]) ? params[0] : params;
       const res = await pool.query(pgSql, p);
       return { changes: res.rowCount };
     },
     get: async (...params) => {
       const pgSql = toPostgres(sql);
-      const p = flatParams(params);
+      const p = Array.isArray(params[0]) ? params[0] : params;
       const res = await pool.query(pgSql, p);
       return res.rows[0] || null;
     },
     all: async (...params) => {
       const pgSql = toPostgres(sql);
-      const p = flatParams(params);
+      const p = Array.isArray(params[0]) ? params[0] : params;
       const res = await pool.query(pgSql, p);
-      return res.rows;
+      return res.rows || [];
     },
   }),
 
