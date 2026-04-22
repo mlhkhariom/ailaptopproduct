@@ -188,4 +188,45 @@ addColumnIfMissing('ai_agent_settings', 'feature_cart_suggest', 'INTEGER DEFAULT
 addColumnIfMissing('ai_agent_settings', 'fallback_message', 'TEXT');
 addColumnIfMissing('ai_agent_settings', 'agent_bubble_color', "TEXT DEFAULT '#e8d5ff'");
 
+// ── EVOLUTION API TABLES (auto-create if missing) ─────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS evolution_settings (
+    id TEXT PRIMARY KEY DEFAULT 'main',
+    api_url TEXT DEFAULT 'http://localhost:8081',
+    api_key TEXT DEFAULT '',
+    default_instance TEXT DEFAULT '',
+    updated_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS evolution_instances (
+    id TEXT PRIMARY KEY,
+    instance_name TEXT UNIQUE NOT NULL,
+    status TEXT DEFAULT 'close',
+    qr_code TEXT,
+    is_active INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS evolution_messages (
+    id TEXT PRIMARY KEY,
+    instance_name TEXT NOT NULL,
+    remote_jid TEXT NOT NULL,
+    from_me INTEGER DEFAULT 0,
+    body TEXT,
+    type TEXT DEFAULT 'text',
+    timestamp INTEGER,
+    media_url TEXT,
+    thumbnail TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS evolution_chats (
+    id TEXT PRIMARY KEY,
+    instance_name TEXT NOT NULL,
+    remote_jid TEXT NOT NULL UNIQUE,
+    push_name TEXT,
+    last_message TEXT,
+    last_message_time TEXT,
+    unread_count INTEGER DEFAULT 0,
+    updated_at TEXT DEFAULT (datetime('now'))
+  );
+`);
+
 export default db;

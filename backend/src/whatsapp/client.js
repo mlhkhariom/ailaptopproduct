@@ -187,11 +187,11 @@ export const initWhatsApp = () => {
             } catch {}
           }
 
-          // Send reply — use msg.reply() for quoted reply, fallback to sendMessage
+          // Send reply — use sendMessage (more reliable than msg.reply on reconnect)
           try {
-            await msg.reply(result.reply);
-          } catch {
             await client.sendMessage(msg.from, result.reply);
+          } catch (sendErr) {
+            console.error('AI Agent send error:', sendErr.message);
           }
 
           // Save AI reply to DB
