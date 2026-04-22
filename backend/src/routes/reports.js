@@ -14,14 +14,15 @@ router.get('/dashboard', authMiddleware, adminOnly, async (req, res) => {
   const pendingOrders = await db.prepare("SELECT COUNT(*) as val FROM orders WHERE status='placed' OR status='processing'").get().val;
   const lowStock = await db.prepare("SELECT COUNT(*) as val FROM products WHERE stock <= 5 AND status='active'").get().val;
   const recentOrders = await db.prepare('SELECT o.*, u.name as customer_name FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 5').all()
-    .map(o => ({ ...o, items: JSON.parse(o.items || '[]') }));
+    .then(rows => (rows || []).map(o => ({ ...o, items: JSON.parse(o.items || '[]') })));
   const topProducts = await db.prepare(`
     SELECT p.name, p.price, p.stock, p.category,
       COUNT(DISTINCT o.id) as order_count
     FROM products p
     LEFT JOIN orders o ON o.items LIKE '%' || p.id || '%'
     GROUP BY p.id ORDER BY order_count DESC LIMIT 5
-  `).all();
+  `).all()
+    .then(rows => rows || []);
 
   res.json({ totalRevenue, totalOrders, totalCustomers, totalProducts, pendingOrders, lowStock, recentOrders, topProducts });
 });
@@ -32,20 +33,22 @@ router.get('/sales', authMiddleware, adminOnly, async (req, res) => {
   const days = period === '7d' ? 7 : period === '30d' ? 30 : period === '90d' ? 90 : 365;
 
   const sales = await db.prepare(`
-    SELECT date(created_at) as date,
+    SELECT DATE(created_at) as date,
       COUNT(*) as orders,
       COALESCE(SUM(total), 0) as revenue
     FROM orders
-    WHERE created_at >= date('now', '-${days} days')
-    GROUP BY date(created_at)
+    WHERE created_at >= DATE(NOW() - INTERVAL '${days} days')
+    GROUP BY DATE(created_at)
     ORDER BY date ASC
-  `).all();
+  `).all()
+    .then(rows => rows || []);
 
   const byStatus = await db.prepare(`
     SELECT status, COUNT(*) as count FROM orders
-    WHERE created_at >= date('now', '-${days} days')
+    WHERE created_at >= DATE(NOW() - INTERVAL '${days} days')
     GROUP BY status
-  `).all();
+  `).all()
+    .then(rows => rows || []);
 
   const byPayment = await db.prepare(`
     SELECT payment_method, COUNT(*) as count, COALESCE(SUM(total),0) as revenue
