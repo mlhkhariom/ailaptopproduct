@@ -37,7 +37,7 @@ router.get('/sales', authMiddleware, adminOnly, async (req, res) => {
       COUNT(*) as orders,
       COALESCE(SUM(total), 0) as revenue
     FROM orders
-    WHERE created_at >= DATE(NOW() - INTERVAL '${days} days')
+    WHERE DATE(created_at) >= DATE(NOW() - INTERVAL '${days} days')
     GROUP BY DATE(created_at)
     ORDER BY date ASC
   `).all()
@@ -45,16 +45,17 @@ router.get('/sales', authMiddleware, adminOnly, async (req, res) => {
 
   const byStatus = await db.prepare(`
     SELECT status, COUNT(*) as count FROM orders
-    WHERE created_at >= DATE(NOW() - INTERVAL '${days} days')
+    WHERE DATE(created_at) >= DATE(NOW() - INTERVAL '${days} days')
     GROUP BY status
   `).all()
     .then(rows => rows || []);
 
   const byPayment = await db.prepare(`
     SELECT payment_method, COUNT(*) as count, COALESCE(SUM(total),0) as revenue
-    FROM orders WHERE created_at >= date('now', '-${days} days')
+    FROM orders WHERE DATE(created_at) >= DATE(NOW() - INTERVAL '${days} days')
     GROUP BY payment_method
-  `).all();
+  `).all()
+    .then(rows => rows || []);
 
   res.json({ sales, byStatus, byPayment });
 });
