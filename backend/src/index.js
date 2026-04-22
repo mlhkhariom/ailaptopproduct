@@ -40,6 +40,7 @@ import { setIO } from './whatsapp/client.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+app.set('trust proxy', 1); // Trust nginx reverse proxy
 const httpServer = createServer(app);
 
 // Socket.IO for real-time WhatsApp events
