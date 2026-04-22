@@ -56,6 +56,7 @@ export const initWhatsApp = () => {
 
   client = new Client({
     authStrategy: new LocalAuth({ dataPath: path.resolve(__dirname, '../../../data/whatsapp-session') }),
+    restartOnAuthFail: true,
     puppeteer: {
       headless: true,
       executablePath: '/usr/bin/google-chrome',
@@ -75,6 +76,8 @@ export const initWhatsApp = () => {
         '--metrics-recording-only',
         '--mute-audio',
         '--safebrowsing-disable-auto-update',
+        '--single-process',
+        '--memory-pressure-off',
       ]
     }
   });
@@ -268,6 +271,11 @@ export const initWhatsApp = () => {
     client = null;
     emit('whatsapp:status', { status: 'disconnected', reason });
     console.log('❌ WhatsApp disconnected:', reason);
+    // Auto-reconnect after 10s (unless manually logged out)
+    if (reason !== 'LOGOUT') {
+      console.log('🔄 Auto-reconnecting WhatsApp in 10s...');
+      setTimeout(() => initWhatsApp(), 10000);
+    }
   });
 
   client.initialize().catch(e => {
