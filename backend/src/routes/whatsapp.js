@@ -180,7 +180,7 @@ router.post('/message/:msgId/forward', authMiddleware, adminOnly, async (req, re
 // GET /api/whatsapp/rules
 router.get('/rules', authMiddleware, adminOnly, async (req, res) => {
   res.json(await db.prepare('SELECT * FROM whatsapp_rules ORDER BY created_at ASC').all()
-    .map(r => ({ ...r, keywords: JSON.parse(r.keywords), is_active: !!r.is_active })));
+    .then(rows => (rows || []).map(r => ({ ...r, keywords: JSON.parse(r.keywords), is_active: !!r.is_active }))));
 });
 
 // POST /api/whatsapp/rules
@@ -212,14 +212,15 @@ router.delete('/rules/:id', authMiddleware, adminOnly, async (req, res) => {
 router.post('/simulate', authMiddleware, adminOnly, async (req, res) => {
   const { message } = req.body;
   const rules = await db.prepare('SELECT * FROM whatsapp_rules WHERE is_active = 1').all()
-    .map(r => ({ ...r, keywords: JSON.parse(r.keywords) }));
+    .then(rows => (rows || []).map(r => ({ ...r, keywords: JSON.parse(r.keywords) })));
 
   const msgLower = message.toLowerCase();
   const matched = rules.find(r => r.keywords.some(k => msgLower.includes(k.toLowerCase())));
   if (!matched) return res.json({ matched: false, reply: 'Koi matching rule nahi mili.' });
 
   let reply = matched.response_template;
-  const products = await db.prepare('SELECT * FROM products').all();
+  const products = await db.prepare('SELECT * FROM products').all()
+    .then(rows => rows || []);
   const product = products.find(p =>
     msgLower.includes(p.name.toLowerCase()) ||
     (p.name_hi && msgLower.includes(p.name_hi.toLowerCase()))
@@ -248,7 +249,8 @@ router.get('/analytics', authMiddleware, adminOnly, async (req, res) => {
   const botReplies = await db.prepare("SELECT COUNT(*) as val FROM whatsapp_messages WHERE from_phone = 'bot'").get().val;
   const totalContacts = await db.prepare("SELECT COUNT(DISTINCT from_phone) as val FROM whatsapp_messages WHERE direction = 'incoming'").get().val;
   const unread = await db.prepare("SELECT COUNT(*) as val FROM whatsapp_messages WHERE is_read = 0 AND direction = 'incoming'").get().val;
-  const topRules = await db.prepare('SELECT name, match_count FROM whatsapp_rules ORDER BY match_count DESC LIMIT 5').all();
+  const topRules = await db.prepare('SELECT name, match_count FROM whatsapp_rules ORDER BY match_count DESC LIMIT 5').all()
+    .then(rows => rows || []);
   res.json({ totalMessages, botReplies, totalContacts, unread, topRules });
 });
 
