@@ -245,10 +245,10 @@ router.post('/simulate', authMiddleware, adminOnly, async (req, res) => {
 
 // GET /api/whatsapp/analytics
 router.get('/analytics', authMiddleware, adminOnly, async (req, res) => {
-  const totalMessages = await db.prepare('SELECT COUNT(*) as val FROM whatsapp_messages').get().val;
-  const botReplies = await db.prepare("SELECT COUNT(*) as val FROM whatsapp_messages WHERE from_phone = 'bot'").get().val;
-  const totalContacts = await db.prepare("SELECT COUNT(DISTINCT from_phone) as val FROM whatsapp_messages WHERE direction = 'incoming'").get().val;
-  const unread = await db.prepare("SELECT COUNT(*) as val FROM whatsapp_messages WHERE is_read = 0 AND direction = 'incoming'").get().val;
+  const totalMessages = (await db.prepare('SELECT COUNT(*) as val FROM whatsapp_messages').get())?.val || 0;
+  const botReplies = (await db.prepare("SELECT COUNT(*) as val FROM whatsapp_messages WHERE from_phone = 'bot'").get())?.val || 0;
+  const totalContacts = (await db.prepare("SELECT COUNT(DISTINCT from_phone) as val FROM whatsapp_messages WHERE direction = 'incoming'").get())?.val || 0;
+  const unread = (await db.prepare("SELECT COUNT(*) as val FROM whatsapp_messages WHERE is_read = 0 AND direction = 'incoming'").get())?.val || 0;
   const topRules = await db.prepare('SELECT name, match_count FROM whatsapp_rules ORDER BY match_count DESC LIMIT 5').all()
     .then(rows => rows || []);
   res.json({ totalMessages, botReplies, totalContacts, unread, topRules });

@@ -7,12 +7,12 @@ const router = Router();
 
 // GET /api/reports/dashboard
 router.get('/dashboard', authMiddleware, adminOnly, async (req, res) => {
-  const totalRevenue = await db.prepare("SELECT COALESCE(SUM(total),0) as val FROM orders WHERE payment_status='paid'").get().val;
-  const totalOrders = await db.prepare('SELECT COUNT(*) as val FROM orders').get().val;
-  const totalCustomers = await db.prepare("SELECT COUNT(*) as val FROM users WHERE role='customer'").get().val;
-  const totalProducts = await db.prepare("SELECT COUNT(*) as val FROM products WHERE status='active'").get().val;
-  const pendingOrders = await db.prepare("SELECT COUNT(*) as val FROM orders WHERE status='placed' OR status='processing'").get().val;
-  const lowStock = await db.prepare("SELECT COUNT(*) as val FROM products WHERE stock <= 5 AND status='active'").get().val;
+  const totalRevenue = (await db.prepare("SELECT COALESCE(SUM(total),0) as val FROM orders WHERE payment_status='paid'").get())?.val || 0;
+  const totalOrders = (await db.prepare('SELECT COUNT(*) as val FROM orders').get())?.val || 0;
+  const totalCustomers = (await db.prepare("SELECT COUNT(*) as val FROM users WHERE role='customer'").get())?.val || 0;
+  const totalProducts = (await db.prepare("SELECT COUNT(*) as val FROM products WHERE status='active'").get())?.val || 0;
+  const pendingOrders = (await db.prepare("SELECT COUNT(*) as val FROM orders WHERE status='placed' OR status='processing'").get())?.val || 0;
+  const lowStock = (await db.prepare("SELECT COUNT(*) as val FROM products WHERE stock <= 5 AND status='active'").get())?.val || 0;
   const recentOrders = await db.prepare('SELECT o.*, u.name as customer_name FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 5').all()
     .then(rows => (rows || []).map(o => ({ ...o, items: JSON.parse(o.items || '[]') })));
   const topProducts = await db.prepare(`
@@ -76,7 +76,7 @@ router.get('/products', authMiddleware, adminOnly, async (req, res) => {
     .then(rows => rows || []);
   const byCategory = await db.prepare("SELECT category, COUNT(*) as count FROM products WHERE status='active' GROUP BY category ORDER BY count DESC").all()
     .then(rows => rows || []);
-  const outOfStock = await db.prepare("SELECT COUNT(*) as val FROM products WHERE in_stock=0 AND status='active'").get().val;
+  const outOfStock = (await db.prepare("SELECT COUNT(*) as val FROM products WHERE in_stock=0 AND status='active'").get())?.val || 0;
 
   res.json({ topSelling, lowStock, byCategory, outOfStock });
 });
@@ -94,9 +94,9 @@ router.get('/customers', authMiddleware, adminOnly, async (req, res) => {
   `).all()
     .then(rows => rows || []);
 
-  const newThisMonth = await db.prepare("SELECT COUNT(*) as val FROM users WHERE role='customer' AND DATE(created_at) >= DATE(NOW() - INTERVAL '30 days')").get().val;
-  const repeatCustomers = await db.prepare("SELECT COUNT(*) as val FROM (SELECT user_id FROM orders GROUP BY user_id HAVING COUNT(*) > 1)").get().val;
-  const avgOrderValue = await db.prepare("SELECT COALESCE(AVG(total),0) as val FROM orders WHERE payment_status='paid'").get().val;
+  const newThisMonth = (await db.prepare("SELECT COUNT(*) as val FROM users WHERE role='customer' AND DATE(created_at) >= DATE(NOW() - INTERVAL '30 days')").get())?.val || 0;
+  const repeatCustomers = (await db.prepare("SELECT COUNT(*) as val FROM (SELECT user_id FROM orders GROUP BY user_id HAVING COUNT(*) > 1) t").get())?.val || 0;
+  const avgOrderValue = (await db.prepare("SELECT COALESCE(AVG(total),0) as val FROM orders WHERE payment_status='paid'").get())?.val || 0;
 
   res.json({ topCustomers, newThisMonth, repeatCustomers, avgOrderValue: Math.round(avgOrderValue) });
 });
