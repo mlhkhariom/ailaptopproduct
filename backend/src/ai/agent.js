@@ -243,12 +243,12 @@ const callLLM = async (s, messages, retries = 2) => {
 export const processAgentMessage = async (contactId, contactName, message) => {
   const s = await getAgentSettings();
 
-  console.log(`🤖 Agent check: enabled=${s.enabled}, api_key=${s.api_key?.length > 0}, businessHours=${isWithinBusinessHours(s)}, dailyLimit=${checkDailyLimit(contactId, s.daily_limit)}, contactEnabled=${isAgentEnabledForContact(contactId)}`);
+  console.log(`🤖 Agent check: enabled=${s.enabled}, api_key=${s.api_key?.length > 0}`);
 
   // Checks
-  if (!isAgentEnabledForContact(contactId)) { console.log('🤖 Skipped: contact disabled'); return null; }
-  if (!isWithinBusinessHours(s)) { console.log('🤖 Skipped: outside business hours'); return null; }
-  if (!checkDailyLimit(contactId, s.daily_limit)) { console.log('🤖 Skipped: daily limit reached'); return null; }
+  if (!(await isAgentEnabledForContact(contactId))) { console.log('🤖 Skipped: contact disabled'); return null; }
+  if (!(await isWithinBusinessHours(s))) { console.log('🤖 Skipped: outside business hours'); return null; }
+  if (!(await checkDailyLimit(contactId, s.daily_limit))) { console.log('🤖 Skipped: daily limit reached'); return null; }
   if (!s.api_key) { console.log('🤖 Skipped: no api key'); return null; }
 
   // Human handoff check
