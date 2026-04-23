@@ -69,10 +69,13 @@ router.get('/products', authMiddleware, adminOnly, async (req, res) => {
     LEFT JOIN orders o ON o.items LIKE '%' || p.id || '%'
     WHERE p.status = 'active'
     GROUP BY p.id ORDER BY order_count DESC LIMIT 10
-  `).all();
+  `).all()
+    .then(rows => rows || []);
 
-  const lowStock = await db.prepare("SELECT id, name, stock, category FROM products WHERE stock <= 10 AND status='active' ORDER BY stock ASC LIMIT 10").all();
-  const byCategory = await db.prepare("SELECT category, COUNT(*) as count FROM products WHERE status='active' GROUP BY category ORDER BY count DESC").all();
+  const lowStock = await db.prepare("SELECT id, name, stock, category FROM products WHERE stock <= 10 AND status='active' ORDER BY stock ASC LIMIT 10").all()
+    .then(rows => rows || []);
+  const byCategory = await db.prepare("SELECT category, COUNT(*) as count FROM products WHERE status='active' GROUP BY category ORDER BY count DESC").all()
+    .then(rows => rows || []);
   const outOfStock = await db.prepare("SELECT COUNT(*) as val FROM products WHERE in_stock=0 AND status='active'").get().val;
 
   res.json({ topSelling, lowStock, byCategory, outOfStock });
@@ -88,9 +91,10 @@ router.get('/customers', authMiddleware, adminOnly, async (req, res) => {
     LEFT JOIN orders o ON u.id = o.user_id
     WHERE u.role = 'customer'
     GROUP BY u.id ORDER BY total_spent DESC LIMIT 10
-  `).all();
+  `).all()
+    .then(rows => rows || []);
 
-  const newThisMonth = await db.prepare("SELECT COUNT(*) as val FROM users WHERE role='customer' AND created_at >= date('now', '-30 days')").get().val;
+  const newThisMonth = await db.prepare("SELECT COUNT(*) as val FROM users WHERE role='customer' AND DATE(created_at) >= DATE(NOW() - INTERVAL '30 days')").get().val;
   const repeatCustomers = await db.prepare("SELECT COUNT(*) as val FROM (SELECT user_id FROM orders GROUP BY user_id HAVING COUNT(*) > 1)").get().val;
   const avgOrderValue = await db.prepare("SELECT COALESCE(AVG(total),0) as val FROM orders WHERE payment_status='paid'").get().val;
 
