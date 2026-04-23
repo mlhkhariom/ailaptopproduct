@@ -66,8 +66,8 @@ router.get('/', authMiddleware, adminOnly, async (req, res) => {
   let query = 'SELECT o.*, u.name as customer_name, u.email as customer_email FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE 1=1';
   const params = [];
   if (status) { query += ' AND o.status = ?'; params.push(status); }
-  if (from) { query += ' AND o.created_at >= ?'; params.push(from); }
-  if (to) { query += ' AND o.created_at <= ?'; params.push(to); }
+  if (from) { query += ' AND o.created_at::timestamptz >= ?::timestamptz'; params.push(from); }
+  if (to) { query += ' AND o.created_at::timestamptz <= ?::timestamptz'; params.push(to); }
   query += ' ORDER BY o.created_at DESC';
   const orders = (await db.prepare(query).all(...params)).map(o => ({ ...o, items: JSON.parse(o.items), address: JSON.parse(o.address || '{}') }));
   res.json(orders);
