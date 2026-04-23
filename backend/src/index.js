@@ -177,11 +177,12 @@ httpServer.listen(PORT, async () => {
 
       const { io: socketIO } = await import('socket.io-client');
 
-      // Connect to global namespace only (Evolution API v2 doesn't support instance namespaces)
       const globalSock = socketIO(evoSettings.api_url, {
         transports: ['websocket', 'polling'],
+        auth: { apikey: evoSettings.api_key },
         query: { apikey: evoSettings.api_key },
         reconnection: true,
+        reconnectionDelay: 5000,
       });
       globalSock.on('connect', () => console.log('✅ Evolution API WebSocket connected (backend)'));
       globalSock.on('connect_error', e => console.warn('Evolution WS error:', e.message));
