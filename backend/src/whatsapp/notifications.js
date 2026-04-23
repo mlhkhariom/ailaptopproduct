@@ -30,7 +30,7 @@ export const sendPendingNotifications = async () => {
   const pending = await db.prepare(`
     SELECT * FROM whatsapp_notifications 
     WHERE status='pending' 
-       OR (status='failed' AND (sent_at IS NULL OR sent_at < NOW() - INTERVAL '5 minutes'))
+       OR (status='failed' AND (sent_at IS NULL OR sent_at::text < (NOW() - INTERVAL '5 minutes')::text))
     ORDER BY created_at ASC LIMIT 5
   `).all()
     .then(rows => rows || []);
