@@ -276,6 +276,9 @@ export const initDB = async () => {
     "ALTER TABLE evolution_settings ADD COLUMN IF NOT EXISTS webhook_secret TEXT",
     "ALTER TABLE evolution_settings ADD COLUMN IF NOT EXISTS is_visible_to_admin INTEGER DEFAULT 0",
     "UPDATE ai_agent_settings SET max_tokens=1024 WHERE id='main' AND max_tokens<=500",
+    "ALTER TABLE media ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'image'",
+    "ALTER TABLE media ADD COLUMN IF NOT EXISTS folder TEXT DEFAULT 'general'",
+    "ALTER TABLE media ADD COLUMN IF NOT EXISTS alt TEXT",
   ];
   for (const m of migrations) {
     try { await pool.query(m); } catch {}
