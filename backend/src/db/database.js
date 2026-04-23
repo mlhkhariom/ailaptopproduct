@@ -269,6 +269,17 @@ export const initDB = async () => {
       UNIQUE(instance_name, remote_jid)
     );
   `);
+
+  // Migrations — add missing columns
+  const migrations = [
+    "ALTER TABLE evolution_settings ADD COLUMN IF NOT EXISTS default_instance TEXT DEFAULT ''",
+    "ALTER TABLE evolution_settings ADD COLUMN IF NOT EXISTS webhook_secret TEXT",
+    "ALTER TABLE evolution_settings ADD COLUMN IF NOT EXISTS is_visible_to_admin INTEGER DEFAULT 0",
+  ];
+  for (const m of migrations) {
+    try { await pool.query(m); } catch {}
+  }
+
   console.log('✅ PostgreSQL tables ready');
 };
 
