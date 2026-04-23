@@ -144,7 +144,7 @@ const buildContext = async (s, message) => {
 
   // Product search
   if (s.feature_product_search) {
-    const products = searchProducts(message);
+    const products = await searchProducts(message);
     if (products.length > 0) {
       parts.push('AVAILABLE PRODUCTS:\n' + products.map(p =>
         `- ${p.name}: ₹${p.price}${p.original_price ? ` (MRP: ₹${p.original_price})` : ''} | ${p.in_stock ? `In Stock (${p.stock})` : 'Out of Stock'} | ID: ${p.id} | ${p.description?.slice(0, 80)}`
@@ -157,7 +157,7 @@ const buildContext = async (s, message) => {
 
   // Services search
   if (isBookingIntent(message)) {
-    const services = searchServices(message);
+    const services = await searchServices(message);
     const allServices = services.length > 0 ? services : await db.prepare('SELECT name, price, duration FROM services WHERE is_active=1 LIMIT 6').all();
     if (allServices.length > 0) {
       parts.push('REPAIR SERVICES:\n' + allServices.map(s =>
@@ -170,7 +170,7 @@ const buildContext = async (s, message) => {
   if (s.feature_order_status) {
     const orderMatch = message.match(/ALW-\d+/i) || message.match(/APC-\d+/i) || message.match(/order[:\s#]*([A-Z0-9-]+)/i);
     if (orderMatch) {
-      const order = lookupOrder(orderMatch[1] || orderMatch[0]);
+      const order = await lookupOrder(orderMatch[1] || orderMatch[0]);
       if (order) {
         parts.push(`ORDER: ${order.order_number} | Status: ${order.status} | ₹${order.total}${order.tracking_id ? ` | Tracking: ${order.tracking_id} (${order.courier})` : ''}`);
       }
