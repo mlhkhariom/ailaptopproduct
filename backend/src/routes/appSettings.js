@@ -5,47 +5,6 @@ import { adminOnly, superAdminOnly } from '../middleware/adminOnly.js';
 
 const router = Router();
 
-// DB table (created in database.js initDB)
-
-
-// Seed defaults
-const defaults = [
-  // General
-  ['store_name', 'AI Laptop Wala – AI Laptop Wala Store', 'general'],
-  ['store_tagline', "Nature's Power, Modern Science", 'general'],
-  ['store_email', 'info@ailaptopwala.com', 'general'],
-  ['store_phone', '+91 98765 43210', 'general'],
-  ['store_website', 'https://ailaptopwala.com', 'general'],
-  ['store_address', 'AI Laptop Wala Store, Laptop Wing, India', 'general'],
-  // Shipping
-  ['shipping_flat_rate', '50', 'shipping'],
-  ['shipping_free_above', '499', 'shipping'],
-  ['shipping_express', '150', 'shipping'],
-  ['shipping_cod_charge', '30', 'shipping'],
-  ['shipping_courier', 'dtdc', 'shipping'],
-  ['gst_rate', '8', 'shipping'],
-  ['gstin', '', 'shipping'],
-  // Payments
-  ['currency', 'INR', 'payments'],
-  ['min_order', '199', 'payments'],
-  ['max_cod', '5000', 'payments'],
-  ['payment_upi', 'true', 'payments'],
-  ['payment_card', 'true', 'payments'],
-  ['payment_netbanking', 'true', 'payments'],
-  ['payment_wallet', 'false', 'payments'],
-  ['payment_cod', 'true', 'payments'],
-  ['payment_emi', 'false', 'payments'],
-  // SEO
-  ['seo_title', 'AI Laptop Wala | Authentic Laptop Products Online', 'seo'],
-  ['seo_description', 'Shop authentic Laptop products from AI Laptop Wala Store.', 'seo'],
-  ['seo_keywords', 'laptop products, herbal medicine, natural remedies', 'seo'],
-  ['og_title', 'AI Laptop Wala – Ancient Laptop Wisdom', 'seo'],
-  ['og_description', 'Authentic Laptop products for modern health.', 'seo'],
-  ['twitter_handle', '@ailaptopwala', 'seo'],
-];
-
-const insertDefault = await db.prepare('INSERT OR IGNORE INTO app_settings (key, value, category) VALUES (?,?,?)');
-for (const [k, v, c] of defaults) await insertDefault.run(k, v, c);
 
 // GET /api/app-settings?category=general
 router.get('/', async (req, res) => {
