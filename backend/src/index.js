@@ -169,35 +169,28 @@ httpServer.listen(PORT, async () => {
   await runSeeder(db);
   startNotificationProcessor();
 
-  // Connect to Evolution API WebSocket to process incoming messages with AI
+  // Register Evolution API webhook for AI processing
   setTimeout(async () => {
     try {
-      const evoSettings = await db.prepare("SELECT api_url, api_key FROM evolution_settings WHERE id='main'").get();
-      if (!evoSettings?.api_url || !evoSettings?.api_key) return;
+      const evoSettings = await db.prepare("SELECT api_url, api_key, default_instance FROM evolution_settings WHERE id='main'").get();
+      if (!evoSettings?.api_url || !evoSettings?.api_key || !evoSettings?.default_instance) return;
 
-      const { io: socketIO } = await import('socket.io-client');
-
-      const globalSock = socketIO(evoSettings.api_url, {
-        transports: ['websocket', 'polling'],
-        auth: { apikey: evoSettings.api_key },
-        query: { apikey: evoSettings.api_key },
-        reconnection: true,
-        reconnectionDelay: 5000,
+      const webhookUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/evolution/webhook/${evoSettings.default_instance}`;
+      const res = await fetch(`${evoSettings.api_url}/webhook/set/${evoSettings.default_instance}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': evoSettings.api_key },
+        body: JSON.stringify({
+          url: webhookUrl,
+          webhook_by_events: false,
+          webhook_base64: false,
+          events: ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'],
+        }),
       });
-      globalSock.on('connect', () => console.log('✅ Evolution API WebSocket connected (backend)'));
-      globalSock.on('connect_error', e => console.warn('Evolution WS error:', e.message));
-      globalSock.onAny(async (eventName, payload) => {
-        const event = payload?.event || eventName;
-        const data = payload?.data;
-        const instanceName = payload?.instance;
-        if (!data || !instanceName) return;
-        const { handleWebhook } = await import('./evolution/webhook.js');
-        await handleWebhook(instanceName, event, data).catch(e => console.error('Webhook error:', e.message));
-      });
-
-      console.log('✅ Evolution API AI processing started');
+      if (res.ok) console.log(`✅ Evolution API webhook registered: ${webhookUrl}`);
+      else console.warn('Evolution webhook registration failed:', await res.text());
     } catch (e) {
       console.warn('Evolution API not configured:', e.message);
     }
   }, 3000);
+  console.log('✅ Evolution API AI processing started');
 });
