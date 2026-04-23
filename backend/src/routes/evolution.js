@@ -19,7 +19,7 @@ const getSettings = async () => await db.prepare("SELECT * FROM evolution_settin
 
 // GET /api/evolution/settings
 router.get('/settings', authMiddleware, superAdminOnly, async (req, res) => {
-  const s = getSettings();
+  const s = await getSettings();
   // Return masked key for display, but also provide ws_url for frontend WebSocket
   const masked = { ...s };
   if (masked.api_key) masked.api_key_masked = masked.api_key.replace(/.(?=.{4})/g, '•');
@@ -30,7 +30,7 @@ router.get('/settings', authMiddleware, superAdminOnly, async (req, res) => {
 // PUT /api/evolution/settings
 router.put('/settings', authMiddleware, superAdminOnly, async (req, res) => {
   const { api_url, api_key, default_instance, webhook_secret } = req.body;
-  const existing = getSettings();
+  const existing = await getSettings();
   await db.prepare(`INSERT OR REPLACE INTO evolution_settings (id, api_url, api_key, default_instance, webhook_secret, is_visible_to_admin, updated_at)
     VALUES ('main', ?, ?, ?, ?, ?, datetime('now'))`)
     .run(api_url || existing.api_url, api_key && !api_key.includes('•') ? api_key : existing.api_key,
@@ -59,7 +59,7 @@ router.put('/settings/visibility', authMiddleware, superAdminOnly, async (req, r
 router.get('/instances', authMiddleware, async (req, res) => {
   // Check visibility for non-superadmin
   if (req.user.role !== 'superadmin') {
-    const s = getSettings();
+    const s = await getSettings();
     if (!s.is_visible_to_admin) return res.status(403).json({ error: 'Access denied' });
   }
   try {
