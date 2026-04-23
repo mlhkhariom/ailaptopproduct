@@ -266,7 +266,7 @@ export const processAgentMessage = async (contactId, contactName, message) => {
 
   if (isConfirming) {
     // Check last AI message for pending order context
-    const lastMsgs = getMemory(contactId, 4);
+    const lastMsgs = await getMemory(contactId, 4);
     const lastAiMsg = [...lastMsgs].reverse().find(m => m.role === 'assistant');
     if (lastAiMsg?.content) {
       // Extract product ID from context if AI mentioned a product
@@ -282,9 +282,9 @@ export const processAgentMessage = async (contactId, contactName, message) => {
           } else {
             reply = `✅ *Order Confirmed!*\n\n*Order ID:* ${result.order_number}\n*Product:* ${result.product.name}\n*Amount:* ₹${result.product.price.toLocaleString('en-IN')}\n\nHamari team aapko payment details ke liye contact karegi.\n📞 +91 98934 96163\n\nTrack: ailaptopwala.com/track-order?order=${result.order_number}`;
           }
-          saveMemory(contactId, 'user', message);
-          saveMemory(contactId, 'assistant', reply);
-          incrementDailyCount(contactId);
+          await saveMemory(contactId, 'user', message);
+          await saveMemory(contactId, 'assistant', reply);
+          await incrementDailyCount(contactId);
           // Admin notification
           await db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)').run(uuid(), 'order', '🛒 WhatsApp Order', `${contactName} ordered ${result.product.name} via WhatsApp`, '/admin/orders');
           return { reply, isAI: true, isOrder: true, order_number: result.order_number };
@@ -294,10 +294,10 @@ export const processAgentMessage = async (contactId, contactName, message) => {
   }
 
   // Build context
-  const context = buildContext(s, message);
+  const context = await buildContext(s, message);
 
   // Get memory
-  const memory = getMemory(contactId, s.memory_messages);
+  const memory = await getMemory(contactId, s.memory_messages);
 
   // Build messages array
   const systemPrompt = s.system_prompt + (context ? `\n\nCURRENT CONTEXT:\n${context}` : '');
@@ -308,16 +308,16 @@ export const processAgentMessage = async (contactId, contactName, message) => {
   ];
 
   // Save user message to memory
-  saveMemory(contactId, 'user', message);
+  await saveMemory(contactId, 'user', message);
 
   // Call LLM
   const reply = await callLLM(s, messages);
 
   // Save reply to memory
-  saveMemory(contactId, 'assistant', reply);
+  await saveMemory(contactId, 'assistant', reply);
 
   // Increment daily count
-  incrementDailyCount(contactId);
+  await incrementDailyCount(contactId);
 
   return { reply, isAI: true };
 };
