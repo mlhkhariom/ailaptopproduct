@@ -114,7 +114,7 @@ if (existsSync(frontendDist)) {
 }
 
 // Dynamic Sitemap
-app.get('/sitemap.xml', (req, res) => {
+app.get('/sitemap.xml', async (req, res) => {
   const base = 'https://ailaptopwala.com';
   const now = new Date().toISOString().split('T')[0];
   const staticPages = [
