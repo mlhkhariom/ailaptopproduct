@@ -322,24 +322,20 @@ export const processAgentMessage = async (contactId, contactName, message) => {
   const wantsImage = imageKeywords.some(k => message.toLowerCase().includes(k));
   if (s.feature_product_search && wantsImage) {
   // Try current message first, then fall back to memory context
-  let products = await searchProducts(message);
-  if (products.length === 0 && memory.length > 0) {
-    // Extract product names from recent AI messages
-    const recentAI = memory.filter(m => m.role === 'assistant').slice(-3).map(m => m.content).join(' ');
-    const productNameMatch = recentAI.match(/Dell\s+[\w\s]+?(?=\s*[₹\n\*])|HP\s+[\w\s]+?(?=\s*[₹\n\*])|Lenovo\s+[\w\s]+?(?=\s*[₹\n\*])|Apple\s+[\w\s]+?(?=\s*[₹\n\*])|ASUS\s+[\w\s]+?(?=\s*[₹\n\*])|MacBook\s+[\w\s]+?(?=\s*[₹\n\*])|ThinkPad\s+[\w\s]+?(?=\s*[₹\n\*])|OptiPlex\s+[\w\s]+?(?=\s*[₹\n\*])|EliteBook\s+[\w\s]+?(?=\s*[₹\n\*])/i);
-    if (productNameMatch) {
-      products = await searchProducts(productNameMatch[0].trim());
-    }
-  }
-  // Only send images if we found specific matching products (not fallback)
-  productImages = products.filter(p => p.image && p.in_stock && (
-    message.toLowerCase().split(/\s+/).some(w => w.length > 3 && p.name.toLowerCase().includes(w)) ||
-    (memory.length > 0 && memory.filter(m=>m.role==='assistant').slice(-2).some(m => p.name.toLowerCase().split(' ').some(w => w.length > 3 && m.content.toLowerCase().includes(w))))
-  )).slice(0, 2).map(p => ({
+  // Get all products with images
+  const allProducts = await db.prepare("SELECT name, price, image, slug, in_stock FROM products WHERE status='active' AND image IS NOT NULL AND in_stock=1").all();
+  
+  // Find product mentioned in AI reply or recent memory
+  const searchIn = reply + ' ' + memory.filter(m=>m.role==='assistant').slice(-2).map(m=>m.content).join(' ');
+  const matched = allProducts.filter(p => 
+    p.name.split(' ').filter(w=>w.length>3).some(w => searchIn.toLowerCase().includes(w.toLowerCase()))
+  ).slice(0, 1); // Only 1 image max
+
+  productImages = matched.map(p => ({
     url: p.image.startsWith('http') ? p.image : `https://ailaptopwala.com${p.image}`,
     caption: `${p.name} — ₹${p.price.toLocaleString('en-IN')}`
   }));
-  console.log(`📸 productImages: ${productImages.length} found`);
+  console.log(`📸 productImages: ${productImages.length} found (${matched.map(p=>p.name).join(', ')})`);
   }
 
   return { reply, isAI: true, productImages };
