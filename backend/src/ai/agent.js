@@ -322,7 +322,9 @@ export const processAgentMessage = async (contactId, contactName, message) => {
 
   // Check if product image should be sent
   let productImages = [];
-  if (s.feature_product_search && isBuyIntent(message)) {
+  const imageKeywords = ['photo', 'image', 'pic', 'picture', 'foto', 'tasveer', 'dikhao', 'show', 'dekho', 'dekha'];
+  const wantsImage = imageKeywords.some(k => message.toLowerCase().includes(k));
+  if (s.feature_product_search && (isBuyIntent(message) || wantsImage)) {
     const products = await searchProducts(message);
     productImages = products.filter(p => p.image && p.in_stock).slice(0, 2).map(p => ({
       url: p.image.startsWith('http') ? p.image : `https://ailaptopwala.com${p.image}`,

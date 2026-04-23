@@ -80,7 +80,12 @@ export const handleWebhook = async (instanceName, event, data) => {
                 // Send product images
                 if (result.productImages?.length > 0) {
                   for (const img of result.productImages) {
-                    try { await sendMedia(instanceName, sendNumber, img.url, img.caption, 'image'); } catch {}
+                    try {
+                      await sendMedia(instanceName, sendNumber, img.url, img.caption, 'image');
+                      console.log(`📸 Product image sent to ${sendNumber}`);
+                    } catch (imgErr) {
+                      console.error('Image send error:', imgErr.message);
+                    }
                   }
                 }
               }
