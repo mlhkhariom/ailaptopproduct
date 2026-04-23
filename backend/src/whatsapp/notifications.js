@@ -37,7 +37,7 @@ export const sendPendingNotifications = async () => {
 
   for (const n of pending) {
     try {
-      const chatId = normalizePhone(n.phone);
+      const chatId = await normalizePhone(n.phone);
       // Check number exists on WhatsApp
       const isRegistered = await client.isRegisteredUser(chatId).catch(() => true);
       if (!isRegistered) {

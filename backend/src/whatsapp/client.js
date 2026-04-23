@@ -158,9 +158,8 @@ export const initWhatsApp = async () => {
     // AI Agent processing
     if (msg.body && msg.type === 'chat') {
       try {
-        const { processAgentMessage } = await import('../ai/agent.js');
-        const { getAgentSettings } = await import('../ai/agent.js');
-        const agentSettings = getAgentSettings();
+        const { processAgentMessage, getAgentSettings } = await import('../ai/agent.js');
+        const agentSettings = await getAgentSettings();
 
         console.log(`🤖 AI Agent: processing msg from ${msg.from}, enabled=${agentSettings.enabled}, api_key_len=${agentSettings.api_key?.length}`);
 
