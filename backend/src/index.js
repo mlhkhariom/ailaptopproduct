@@ -175,15 +175,18 @@ httpServer.listen(PORT, async () => {
       const evoSettings = await db.prepare("SELECT api_url, api_key, default_instance FROM evolution_settings WHERE id='main'").get();
       if (!evoSettings?.api_url || !evoSettings?.api_key || !evoSettings?.default_instance) return;
 
-      const webhookUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/evolution/webhook/${evoSettings.default_instance}`;
+      const webhookUrl = `${process.env.BACKEND_URL || 'https://ailaptopwala.com'}/api/evolution/webhook/${evoSettings.default_instance}`;
       const res = await fetch(`${evoSettings.api_url}/webhook/set/${evoSettings.default_instance}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': evoSettings.api_key },
         body: JSON.stringify({
-          url: webhookUrl,
-          webhook_by_events: false,
-          webhook_base64: false,
-          events: ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'],
+          webhook: {
+            enabled: true,
+            url: webhookUrl,
+            webhook_by_events: false,
+            webhook_base64: false,
+            events: ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'],
+          }
         }),
       });
       if (res.ok) console.log(`✅ Evolution API webhook registered: ${webhookUrl}`);
