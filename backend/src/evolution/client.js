@@ -4,7 +4,7 @@ const getSettings = async () => await db.prepare("SELECT * FROM evolution_settin
 
 // HTTP wrapper for Evolution API
 export const evolutionFetch = async (path, method = 'GET', body = null) => {
-  const s = getSettings();
+  const s = await getSettings();
   if (!s.api_url || !s.api_key) throw new Error('Evolution API not configured');
   const res = await fetch(`${s.api_url.replace(/\/$/, '')}${path}`, {
     method,

@@ -8,7 +8,7 @@ const router = Router();
 
 // GET /api/ai/settings
 router.get('/settings', authMiddleware, adminOnly, async (req, res) => {
-  const s = getAgentSettings();
+  const s = await getAgentSettings();
   if (s.api_key) s.api_key = s.api_key.replace(/.(?=.{6})/g, '*');
   res.json(s);
 });

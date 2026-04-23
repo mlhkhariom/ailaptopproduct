@@ -374,11 +374,9 @@ export const getChatMessages = async (chatId, limit = 50) => {
     const messages = await chat.fetchMessages({ limit });
     // Save to DB for AI memory
     const insert = await db.prepare('INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)');
-    db.transaction((msgs) => {
-      for (const m of msgs) {
-        try { insert.run(m.id._serialized, m.fromMe ? 'me' : chatId, m.fromMe ? chatId : 'me', m.body || `[${m.type}]`, m.fromMe ? 'outgoing' : 'incoming'); } catch {}
-      }
-    })(messages);
+    for (const m of messages) {
+      try { await insert.run(m.id._serialized, m.fromMe ? 'me' : chatId, m.fromMe ? chatId : 'me', m.body || `[${m.type}]`, m.fromMe ? 'outgoing' : 'incoming'); } catch {}
+    }
     return messages.map(m => ({
       id: m.id._serialized,
       body: m.body || (m.type !== 'chat' ? `[${m.type}]` : ''),
