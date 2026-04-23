@@ -144,10 +144,10 @@ const buildContext = async (s, message) => {
     const products = await searchProducts(message);
     if (products.length > 0) {
       parts.push('AVAILABLE PRODUCTS:\n' + products.map(p =>
-        `- ${p.name}: ₹${p.price}${p.original_price ? ` (MRP: ₹${p.original_price})` : ''} | ${p.in_stock ? `In Stock (${p.stock})` : 'Out of Stock'} | ID: ${p.id} | ${p.description?.slice(0, 80)}`
+        `- ${p.name}: ₹${p.price}${p.original_price ? ` (MRP: ₹${p.original_price})` : ''} | ${p.in_stock ? `In Stock (${p.stock})` : 'Out of Stock'} | ID: ${p.id} | Buy: https://ailaptopwala.com/products/${p.slug} | ${p.description?.slice(0, 60)}`
       ).join('\n'));
       if (isBuyIntent(message)) {
-        parts.push('BUY INTENT DETECTED: User wants to buy. If they confirm a specific product, you can create an order. Reply with product details and ask: "Kya aap [product name] order karna chahte hain? Haan/Yes bolein toh main payment link bhej deta hoon."');
+        parts.push('BUY INTENT DETECTED: Share the product buy link (https://ailaptopwala.com/products/[slug]) AND ask if they want WhatsApp order with payment link. Say: "Online order ke liye: [link] \nYa WhatsApp pe order ke liye Haan bolein, main payment link bhejta hoon 😊"');
       }
     }
   }
