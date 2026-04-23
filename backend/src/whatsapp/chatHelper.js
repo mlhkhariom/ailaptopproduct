@@ -5,6 +5,7 @@ export const fetchChatMessages = async (chatId, limit = 50) => {
   if (!client || getStatus() !== 'ready') throw new Error('WhatsApp not connected');
 
   try {
+    if (!client.pupPage || client.pupPage.isClosed()) throw new Error('WhatsApp page not available');
     const messages = await client.pupPage.evaluate((chatId, limit) => {
       const chat = window.Store.Chat.get(chatId);
       if (!chat) return [];

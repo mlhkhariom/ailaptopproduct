@@ -83,7 +83,7 @@ const checkDailyLimit = async (contactId, limit) => {
 
 const incrementDailyCount = async (contactId) => {
   const today = new Date().toISOString().split('T')[0];
-  await db.prepare('INSERT INTO ai_daily_count (contact_id, date, count) VALUES (?,?,1) ON CONFLICT(contact_id,date) DO UPDATE SET count=count+1').run(contactId, today);
+  await db.prepare('INSERT INTO ai_daily_count (contact_id, date, count) VALUES (?,?,1) ON CONFLICT(contact_id,date) DO UPDATE SET count=ai_daily_count.count+1').run(contactId, today);
 };
 
 // ── Memory management ─────────────────────────────────────
