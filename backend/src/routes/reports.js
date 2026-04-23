@@ -37,7 +37,7 @@ router.get('/sales', authMiddleware, adminOnly, async (req, res) => {
       COUNT(*) as orders,
       COALESCE(SUM(total), 0) as revenue
     FROM orders
-    WHERE DATE(created_at) >= DATE(NOW() - INTERVAL '${days} days')
+    WHERE created_at >= NOW() - INTERVAL '${days} days'
     GROUP BY DATE(created_at)
     ORDER BY date ASC
   `).all()
