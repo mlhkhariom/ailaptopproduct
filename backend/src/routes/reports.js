@@ -33,26 +33,26 @@ router.get('/sales', authMiddleware, adminOnly, async (req, res) => {
   const days = period === '7d' ? 7 : period === '30d' ? 30 : period === '90d' ? 90 : 365;
 
   const sales = await db.prepare(`
-    SELECT DATE(created_at) as date,
+    SELECT DATE(created_at::timestamptz) as date,
       COUNT(*) as orders,
       COALESCE(SUM(total), 0) as revenue
     FROM orders
-    WHERE created_at >= NOW() - INTERVAL '${days} days'
-    GROUP BY DATE(created_at)
+    WHERE created_at::timestamptz >= NOW() - INTERVAL '${days} days'
+    GROUP BY DATE(created_at::timestamptz)
     ORDER BY date ASC
   `).all()
     .then(rows => rows || []);
 
   const byStatus = await db.prepare(`
     SELECT status, COUNT(*) as count FROM orders
-    WHERE DATE(created_at) >= DATE(NOW() - INTERVAL '${days} days')
+    WHERE created_at::timestamptz >= NOW() - INTERVAL '${days} days'
     GROUP BY status
   `).all()
     .then(rows => rows || []);
 
   const byPayment = await db.prepare(`
     SELECT payment_method, COUNT(*) as count, COALESCE(SUM(total),0) as revenue
-    FROM orders WHERE DATE(created_at) >= DATE(NOW() - INTERVAL '${days} days')
+    FROM orders WHERE created_at::timestamptz >= NOW() - INTERVAL '${days} days'
     GROUP BY payment_method
   `).all()
     .then(rows => rows || []);
@@ -94,7 +94,7 @@ router.get('/customers', authMiddleware, adminOnly, async (req, res) => {
   `).all()
     .then(rows => rows || []);
 
-  const newThisMonth = (await db.prepare("SELECT COUNT(*) as val FROM users WHERE role='customer' AND DATE(created_at) >= DATE(NOW() - INTERVAL '30 days')").get())?.val || 0;
+  const newThisMonth = (await db.prepare("SELECT COUNT(*) as val FROM users WHERE role='customer' AND created_at::timestamptz >= NOW() - INTERVAL '30 days'").get())?.val || 0;
   const repeatCustomers = (await db.prepare("SELECT COUNT(*) as val FROM (SELECT user_id FROM orders GROUP BY user_id HAVING COUNT(*) > 1) t").get())?.val || 0;
   const avgOrderValue = (await db.prepare("SELECT COALESCE(AVG(total),0) as val FROM orders WHERE payment_status='paid'").get())?.val || 0;
 
