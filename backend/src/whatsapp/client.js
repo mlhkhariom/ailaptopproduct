@@ -76,7 +76,6 @@ export const initWhatsApp = async () => {
         '--metrics-recording-only',
         '--mute-audio',
         '--safebrowsing-disable-auto-update',
-        '--single-process',
         '--memory-pressure-off',
       ]
     }
