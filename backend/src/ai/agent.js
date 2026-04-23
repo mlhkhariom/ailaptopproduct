@@ -322,14 +322,24 @@ export const processAgentMessage = async (contactId, contactName, message) => {
 
   // Check if product image should be sent
   let productImages = [];
-  const imageKeywords = ['photo', 'image', 'pic', 'picture', 'foto', 'tasveer', 'dikhao', 'show', 'dekho', 'dekha'];
+  const imageKeywords = ['photo', 'image', 'pic', 'picture', 'foto', 'tasveer', 'dikhao', 'show', 'dekho', 'dekha', 'bhejo', 'send', 'दिखाओ', 'फोटो', 'तस्वीर'];
   const wantsImage = imageKeywords.some(k => message.toLowerCase().includes(k));
-  if (s.feature_product_search && (isBuyIntent(message) || wantsImage)) {
-    const products = await searchProducts(message);
-    productImages = products.filter(p => p.image && p.in_stock).slice(0, 2).map(p => ({
-      url: p.image.startsWith('http') ? p.image : `https://ailaptopwala.com${p.image}`,
-      caption: `${p.name} — ₹${p.price.toLocaleString('en-IN')}`
-    }));
+  if (s.feature_product_search) {
+    // Search from current message OR from recent memory context
+    let searchQuery = message;
+    if (wantsImage && memory.length > 0) {
+      // Use last few messages as context for product search
+      const recentContext = memory.slice(-4).map(m => m.content).join(' ');
+      searchQuery = recentContext + ' ' + message;
+    }
+    if (isBuyIntent(message) || wantsImage) {
+      const products = await searchProducts(searchQuery);
+      productImages = products.filter(p => p.image && p.in_stock).slice(0, 2).map(p => ({
+        url: p.image.startsWith('http') ? p.image : `https://ailaptopwala.com${p.image}`,
+        caption: `${p.name} — ₹${p.price.toLocaleString('en-IN')}`
+      }));
+      console.log(`📸 productImages: ${productImages.length} found for "${searchQuery.slice(0,40)}"`);
+    }
   }
 
   return { reply, isAI: true, productImages };
