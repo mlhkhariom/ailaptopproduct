@@ -184,7 +184,7 @@ export const initDB = async () => {
       llm_provider TEXT DEFAULT 'openrouter',
       llm_model TEXT DEFAULT 'google/gemini-flash-1.5',
       api_key TEXT DEFAULT '', system_prompt TEXT,
-      temperature REAL DEFAULT 0.7, max_tokens INTEGER DEFAULT 500,
+      temperature REAL DEFAULT 0.7, max_tokens INTEGER DEFAULT 1024,
       memory_messages INTEGER DEFAULT 20, daily_limit INTEGER DEFAULT 100,
       business_hours_enabled INTEGER DEFAULT 0,
       business_hours_start TEXT DEFAULT '09:00',
@@ -275,6 +275,7 @@ export const initDB = async () => {
     "ALTER TABLE evolution_settings ADD COLUMN IF NOT EXISTS default_instance TEXT DEFAULT ''",
     "ALTER TABLE evolution_settings ADD COLUMN IF NOT EXISTS webhook_secret TEXT",
     "ALTER TABLE evolution_settings ADD COLUMN IF NOT EXISTS is_visible_to_admin INTEGER DEFAULT 0",
+    "UPDATE ai_agent_settings SET max_tokens=1024 WHERE id='main' AND max_tokens<=500",
   ];
   for (const m of migrations) {
     try { await pool.query(m); } catch {}

@@ -196,6 +196,17 @@ export const initWhatsApp = async () => {
             console.error('AI Agent send error:', sendErr.message);
           }
 
+          // Send product images if available
+          if (result.productImages?.length > 0) {
+            const { MessageMedia } = pkg;
+            for (const img of result.productImages) {
+              try {
+                const media = await MessageMedia.fromUrl(img.url, { unsafeMime: true });
+                await client.sendMessage(msg.from, media, { caption: img.caption });
+              } catch {}
+            }
+          }
+
           // Save AI reply to DB
           await db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
             .run(uuid(), 'ai-agent', msg.from, result.reply, 'outgoing');

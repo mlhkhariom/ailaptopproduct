@@ -88,7 +88,8 @@ const incrementDailyCount = async (contactId) => {
 
 // ── Memory management ─────────────────────────────────────
 const getMemory = async (contactId, limit = 20) => {
-  return await db.prepare('SELECT role, content FROM ai_conversation_memory WHERE contact_id = ? ORDER BY created_at DESC LIMIT ?').all(contactId, limit).reverse();
+  const rows = await db.prepare('SELECT role, content FROM ai_conversation_memory WHERE contact_id = ? ORDER BY created_at DESC LIMIT ?').all(contactId, limit);
+  return (rows || []).reverse();
 };
 
 const saveMemory = async (contactId, role, content) => {
@@ -183,7 +184,7 @@ const buildContext = async (s, message) => {
 // ── Call LLM with timeout + retry ────────────────────────
 const callLLM = async (s, messages, retries = 2) => {
   const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s.api_key}` };
-  const body = { model: s.llm_model, messages, temperature: s.temperature, max_tokens: s.max_tokens };
+  const body = { model: s.llm_model, messages, temperature: s.temperature || 0.7, max_tokens: s.max_tokens || 1024 };
 
   let url = 'https://openrouter.ai/api/v1/chat/completions';
 
@@ -319,7 +320,17 @@ export const processAgentMessage = async (contactId, contactName, message) => {
   // Increment daily count
   await incrementDailyCount(contactId);
 
-  return { reply, isAI: true };
+  // Check if product image should be sent
+  let productImages = [];
+  if (s.feature_product_search && isBuyIntent(message)) {
+    const products = await searchProducts(message);
+    productImages = products.filter(p => p.image && p.in_stock).slice(0, 2).map(p => ({
+      url: p.image.startsWith('http') ? p.image : `https://ailaptopwala.com${p.image}`,
+      caption: `${p.name} — ₹${p.price.toLocaleString('en-IN')}`
+    }));
+  }
+
+  return { reply, isAI: true, productImages };
 };
 
 // ── Fetch available models ────────────────────────────────

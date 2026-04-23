@@ -1,7 +1,7 @@
 import db from '../db/database.js';
 import { v4 as uuid } from 'uuid';
 import { processAgentMessage } from '../ai/agent.js';
-import { sendText } from './client.js';
+import { sendText, sendMedia } from './client.js';
 
 let io = null;
 export const setIO = (socketIO) => { io = socketIO; };
@@ -73,11 +73,16 @@ export const handleWebhook = async (instanceName, event, data) => {
                 : remoteJid;
               const result = await processAgentMessage(agentContactId, pushName, body);
               if (result?.reply) {
-                // Send to the actual JID (could be @lid or @s.whatsapp.net)
                 const sendNumber = remoteJid.replace('@s.whatsapp.net','').replace('@lid','').replace(/[^0-9]/g,'');
                 await sendText(instanceName, sendNumber, result.reply);
                 saveMessage(instanceName, { id: uuid(), remoteJid, fromMe: true, body: result.reply, type: 'text', timestamp: Date.now() });
                 emit('evolution:message', { instanceName, remoteJid, fromMe: true, body: result.reply, isAI: true, time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) });
+                // Send product images
+                if (result.productImages?.length > 0) {
+                  for (const img of result.productImages) {
+                    try { await sendMedia(instanceName, sendNumber, img.url, img.caption, 'image'); } catch {}
+                  }
+                }
               }
             } catch (e) { console.error('Evolution AI error:', e.message); }
           }
