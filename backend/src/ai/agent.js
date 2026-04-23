@@ -57,7 +57,7 @@ export const createOrderWithPaymentLink = async (contactPhone, productId, custom
 
 // ── Check if agent enabled for contact ───────────────────
 export const isAgentEnabledForContact = async (contactId) => {
-  const s = getAgentSettings();
+  const s = await getAgentSettings();
   if (!s.enabled) return false;
   const contactSetting = await db.prepare('SELECT agent_enabled FROM ai_agent_contact_settings WHERE contact_id = ?').get(contactId);
   if (contactSetting) return !!contactSetting.agent_enabled;
@@ -241,7 +241,7 @@ const callLLM = async (s, messages, retries = 2) => {
 
 // ── Main agent function ───────────────────────────────────
 export const processAgentMessage = async (contactId, contactName, message) => {
-  const s = getAgentSettings();
+  const s = await getAgentSettings();
 
   console.log(`🤖 Agent check: enabled=${s.enabled}, api_key=${s.api_key?.length > 0}, businessHours=${isWithinBusinessHours(s)}, dailyLimit=${checkDailyLimit(contactId, s.daily_limit)}, contactEnabled=${isAgentEnabledForContact(contactId)}`);
 

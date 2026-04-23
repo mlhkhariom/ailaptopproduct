@@ -19,13 +19,14 @@ const emit = async (event, data) => { if (io) io.emit(event, data); };
 // ── Auto-reply engine ─────────────────────────────────────
 const processAutoReply = async (msg) => {
   const rules = await db.prepare('SELECT * FROM whatsapp_rules WHERE is_active = 1').all()
-    .map(r => ({ ...r, keywords: JSON.parse(r.keywords) }));
+    .then(rows => (rows || []).map(r => ({ ...r, keywords: JSON.parse(r.keywords) })));
   const msgLower = msg.body.toLowerCase();
   const matched = rules.find(r => r.keywords.some(k => msgLower.includes(k.toLowerCase())));
   if (!matched) return;
 
   let reply = matched.response_template;
-  const products = await db.prepare('SELECT * FROM products').all();
+  const products = await db.prepare('SELECT * FROM products').all()
+    .then(rows => rows || []);
   const product = products.find(p =>
     msgLower.includes(p.name.toLowerCase()) ||
     (p.name_hi && msgLower.includes(p.name_hi.toLowerCase()))
