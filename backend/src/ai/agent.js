@@ -321,22 +321,25 @@ export const processAgentMessage = async (contactId, contactName, message) => {
   const imageKeywords = ['photo', 'image', 'pic', 'picture', 'foto', 'tasveer', 'dikhao', 'show', 'dekho', 'dekha', 'bhejo', 'send', 'दिखाओ', 'फोटो', 'तस्वीर'];
   const wantsImage = imageKeywords.some(k => message.toLowerCase().includes(k));
   if (s.feature_product_search && (isBuyIntent(message) || wantsImage)) {
-    // Try current message first, then fall back to memory context
-    let products = await searchProducts(message);
-    if (products.length === 0 && memory.length > 0) {
-      // Extract product names from recent AI messages
-      const recentAI = memory.filter(m => m.role === 'assistant').slice(-3).map(m => m.content).join(' ');
-      // Find product names mentioned (look for capitalized words)
-      const productNameMatch = recentAI.match(/Dell\s+\w+|HP\s+\w+|Lenovo\s+\w+|Apple\s+\w+|ASUS\s+\w+|MacBook\s+\w+|ThinkPad\s+\w+|OptiPlex\s+\w+|EliteBook\s+\w+/i);
-      if (productNameMatch) {
-        products = await searchProducts(productNameMatch[0]);
-      }
+  // Try current message first, then fall back to memory context
+  let products = await searchProducts(message);
+  if (products.length === 0 && memory.length > 0) {
+    // Extract product names from recent AI messages
+    const recentAI = memory.filter(m => m.role === 'assistant').slice(-3).map(m => m.content).join(' ');
+    const productNameMatch = recentAI.match(/Dell\s+[\w\s]+?(?=\s*[₹\n\*])|HP\s+[\w\s]+?(?=\s*[₹\n\*])|Lenovo\s+[\w\s]+?(?=\s*[₹\n\*])|Apple\s+[\w\s]+?(?=\s*[₹\n\*])|ASUS\s+[\w\s]+?(?=\s*[₹\n\*])|MacBook\s+[\w\s]+?(?=\s*[₹\n\*])|ThinkPad\s+[\w\s]+?(?=\s*[₹\n\*])|OptiPlex\s+[\w\s]+?(?=\s*[₹\n\*])|EliteBook\s+[\w\s]+?(?=\s*[₹\n\*])/i);
+    if (productNameMatch) {
+      products = await searchProducts(productNameMatch[0].trim());
     }
-    productImages = products.filter(p => p.image && p.in_stock).slice(0, 2).map(p => ({
-      url: p.image.startsWith('http') ? p.image : `https://ailaptopwala.com${p.image}`,
-      caption: `${p.name} — ₹${p.price.toLocaleString('en-IN')}`
-    }));
-    console.log(`📸 productImages: ${productImages.length} found`);
+  }
+  // Only send images if we found specific matching products (not fallback)
+  productImages = products.filter(p => p.image && p.in_stock && (
+    message.toLowerCase().split(/\s+/).some(w => w.length > 3 && p.name.toLowerCase().includes(w)) ||
+    (memory.length > 0 && memory.filter(m=>m.role==='assistant').slice(-2).some(m => p.name.toLowerCase().split(' ').some(w => w.length > 3 && m.content.toLowerCase().includes(w))))
+  )).slice(0, 2).map(p => ({
+    url: p.image.startsWith('http') ? p.image : `https://ailaptopwala.com${p.image}`,
+    caption: `${p.name} — ₹${p.price.toLocaleString('en-IN')}`
+  }));
+  console.log(`📸 productImages: ${productImages.length} found`);
   }
 
   return { reply, isAI: true, productImages };
