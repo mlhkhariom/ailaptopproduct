@@ -20,18 +20,8 @@ const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
 
 const router = Router();
 
-// DB table
-db.exec(`CREATE TABLE IF NOT EXISTS media (
-  id TEXT PRIMARY KEY,
-  filename TEXT NOT NULL,
-  original_name TEXT,
-  url TEXT NOT NULL,
-  type TEXT DEFAULT 'image',
-  size INTEGER DEFAULT 0,
-  folder TEXT DEFAULT 'general',
-  alt TEXT,
-  created_at TEXT DEFAULT (datetime('now'))
-)`);
+// DB table (created in database.js initDB)
+
 
 // GET /api/media
 router.get('/', authMiddleware, adminOnly, async (req, res) => {

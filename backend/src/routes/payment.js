@@ -169,7 +169,7 @@ router.post('/create-link', async (req, res) => {
 
 // POST /api/payment/razorpay/webhook — payment success webhook
 router.post('/razorpay/webhook', async (req, res) => {
-  const secret = getSetting('razorpay_webhook_secret');
+  const secret = await getSetting('razorpay_webhook_secret');
   try {
     if (secret) {
       const crypto = await import('crypto');

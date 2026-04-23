@@ -5,13 +5,8 @@ import { adminOnly, superAdminOnly } from '../middleware/adminOnly.js';
 
 const router = Router();
 
-// Ensure table exists with all needed keys
-db.exec(`CREATE TABLE IF NOT EXISTS app_settings (
-  key TEXT PRIMARY KEY,
-  value TEXT NOT NULL,
-  category TEXT DEFAULT 'general',
-  updated_at TEXT DEFAULT (datetime('now'))
-)`);
+// DB table (created in database.js initDB)
+
 
 // Seed defaults
 const defaults = [
