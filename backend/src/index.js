@@ -126,8 +126,8 @@ app.get('/sitemap.xml', (req, res) => {
     { url: '/contact', priority: '0.7', changefreq: 'monthly' },
     { url: '/faq', priority: '0.6', changefreq: 'monthly' },
   ];
-  const products = db.prepare("SELECT slug, id, updated_at, created_at FROM products WHERE status='active'").all();
-  const blogs = db.prepare("SELECT slug, id, published_at, updated_at FROM blog_posts WHERE status='published'").all();
+  const products = await db.prepare("SELECT slug, id, updated_at, created_at FROM products WHERE status='active'").all();
+  const blogs = await db.prepare("SELECT slug, id, published_at, updated_at FROM blog_posts WHERE status='published'").all();
   const toUrl = (loc, lastmod, freq, priority) =>
     `\n  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>${freq}</changefreq><priority>${priority}</priority></url>`;
   const xml = [
