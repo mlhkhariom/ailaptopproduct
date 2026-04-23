@@ -49,7 +49,7 @@ router.post('/', authMiddleware, async (req, res) => {
 // GET /api/orders/my — user's own orders
 router.get('/my', authMiddleware, async (req, res) => {
   const orders = await db.prepare('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id)
-    .map(o => ({ ...o, items: JSON.parse(o.items), address: JSON.parse(o.address || '{}') }));
+    .then(rows => (rows || []).map(o => ({ ...o, items: JSON.parse(o.items), address: JSON.parse(o.address || '{}') })));
   res.json(orders);
 });
 

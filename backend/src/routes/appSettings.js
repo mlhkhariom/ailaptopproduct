@@ -50,7 +50,7 @@ const defaults = [
 ];
 
 const insertDefault = await db.prepare('INSERT OR IGNORE INTO app_settings (key, value, category) VALUES (?,?,?)');
-defaults.forEach(([k, v, c]) => insertDefault.run(k, v, c));
+for (const [k, v, c] of defaults) await insertDefault.run(k, v, c);
 
 // GET /api/app-settings?category=general
 router.get('/', async (req, res) => {
@@ -66,12 +66,9 @@ router.get('/', async (req, res) => {
 // PUT /api/app-settings — admin
 router.put('/', authMiddleware, adminOnly, async (req, res) => {
   const update = await db.prepare("INSERT OR REPLACE INTO app_settings (key, value, category, updated_at) VALUES (?, ?, COALESCE((SELECT category FROM app_settings WHERE key=?), 'general'), datetime('now'))");
-  const updateMany = db.transaction((settings) => {
-    for (const [key, value] of Object.entries(settings)) {
-      update.run(key, String(value), key);
-    }
-  });
-  updateMany(req.body);
+  for (const [key, value] of Object.entries(req.body)) {
+    await update.run(key, String(value), key);
+  }
   res.json({ message: 'Settings saved' });
 });
 

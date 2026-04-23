@@ -12,10 +12,11 @@ const isEnabled = async (key) => (await getSetting(key)) === 'true';
 // GET /api/payment/shipping?subtotal=500
 router.get('/shipping', async (req, res) => {
   const subtotal = Number(req.query.subtotal) || 0;
-  const freeAbove = Number(getSetting('shipping_free_above')) || 499;
-  const flatRate = Number(getSetting('shipping_flat_rate')) || 50;
-  const expressRate = Number(getSetting('shipping_express')) || 150;
-  const codCharge = Number(getSetting('shipping_cod_charge')) || 30;
+  const freeAbove = Number(await getSetting('shipping_free_above')) || 499;
+  const flatRate = Number(await getSetting('shipping_flat_rate')) || 50;
+  const expressRate = Number(await getSetting('shipping_express')) || 150;
+  const codCharge = Number(await getSetting('shipping_cod_charge')) || 30;
+  const courier = await getSetting('shipping_courier') || 'dtdc';
 
   res.json({
     free: subtotal >= freeAbove,
@@ -23,7 +24,7 @@ router.get('/shipping', async (req, res) => {
     express: expressRate,
     cod_charge: codCharge,
     free_above: freeAbove,
-    courier: getSetting('shipping_courier') || 'dtdc',
+    courier,
   });
 });
 
@@ -31,22 +32,22 @@ router.get('/shipping', async (req, res) => {
 // GET /api/payment/methods — get enabled payment methods
 router.get('/methods', async (req, res) => {
   res.json({
-    razorpay: { enabled: isEnabled('payment_razorpay'), key_id: getSetting('razorpay_key_id') },
-    paytm: { enabled: isEnabled('payment_paytm') },
-    upi: { enabled: isEnabled('payment_upi') !== false },
-    card: { enabled: isEnabled('payment_card') !== false },
-    netbanking: { enabled: isEnabled('payment_netbanking') !== false },
-    wallet: { enabled: isEnabled('payment_wallet') },
-    cod: { enabled: isEnabled('payment_cod') !== false },
-    emi: { enabled: isEnabled('payment_emi') },
+    razorpay: { enabled: await isEnabled('payment_razorpay'), key_id: await getSetting('razorpay_key_id') },
+    paytm: { enabled: await isEnabled('payment_paytm') },
+    upi: { enabled: await isEnabled('payment_upi') !== false },
+    card: { enabled: await isEnabled('payment_card') !== false },
+    netbanking: { enabled: await isEnabled('payment_netbanking') !== false },
+    wallet: { enabled: await isEnabled('payment_wallet') },
+    cod: { enabled: await isEnabled('payment_cod') !== false },
+    emi: { enabled: await isEnabled('payment_emi') },
   });
 });
 
 // ── Razorpay ──────────────────────────────────────────────
 // POST /api/payment/razorpay/create-order
 router.post('/razorpay/create-order', authMiddleware, async (req, res) => {
-  const keyId = getSetting('razorpay_key_id');
-  const keySecret = getSetting('razorpay_key_secret');
+  const keyId = await getSetting('razorpay_key_id');
+  const keySecret = await getSetting('razorpay_key_secret');
 
   if (!keyId || !keySecret) {
     return res.status(400).json({ error: 'Razorpay not configured. Using COD fallback.' });
@@ -69,7 +70,7 @@ router.post('/razorpay/create-order', authMiddleware, async (req, res) => {
 // POST /api/payment/razorpay/verify
 router.post('/razorpay/verify', authMiddleware, async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-  const keySecret = getSetting('razorpay_key_secret');
+  const keySecret = await getSetting('razorpay_key_secret');
   try {
     const crypto = await import('crypto');
     const sign = razorpay_order_id + '|' + razorpay_payment_id;
@@ -87,8 +88,8 @@ router.post('/razorpay/verify', authMiddleware, async (req, res) => {
 // ── Paytm ─────────────────────────────────────────────────
 // POST /api/payment/paytm/initiate
 router.post('/paytm/initiate', authMiddleware, async (req, res) => {
-  const merchantId = getSetting('paytm_merchant_id');
-  const merchantKey = getSetting('paytm_merchant_key');
+  const merchantId = await getSetting('paytm_merchant_id');
+  const merchantKey = await getSetting('paytm_merchant_key');
 
   if (!merchantId || !merchantKey) {
     return res.status(400).json({ error: 'Paytm not configured. Using COD fallback.' });
@@ -126,8 +127,8 @@ router.post('/paytm/callback', async (req, res) => {
 
 // POST /api/payment/create-link — create Razorpay Payment Link (for WhatsApp sharing)
 router.post('/create-link', async (req, res) => {
-  const keyId = getSetting('razorpay_key_id');
-  const keySecret = getSetting('razorpay_key_secret');
+  const keyId = await getSetting('razorpay_key_id');
+  const keySecret = await getSetting('razorpay_key_secret');
   const { amount, description, customer_name, customer_phone, customer_email, order_number } = req.body;
 
   if (!keyId || !keySecret) {

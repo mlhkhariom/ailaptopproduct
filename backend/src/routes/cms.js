@@ -13,7 +13,7 @@ router.get('/:section', async (req, res) => {
   if (!isAdmin) q += ' AND is_active = 1';
   q += ' ORDER BY sort_order ASC';
   const items = await db.prepare(q).all(req.params.section)
-    .map(i => ({ ...i, content: JSON.parse(i.content) }));
+    .then(rows => (rows || []).map(i => ({ ...i, content: JSON.parse(i.content) })));
   res.json(items);
 });
 

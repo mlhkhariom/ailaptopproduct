@@ -34,7 +34,7 @@ const metaFetch = async (url, options = {}) => {
 
 // GET /api/social/settings
 router.get('/settings', authMiddleware, adminOnly, async (req, res) => {
-  const s = getSettings();
+  const s = await getSettings();
   // mask secret
   if (s.meta_app_secret) s.meta_app_secret = s.meta_app_secret.replace(/.(?=.{4})/g, '*');
   res.json(s);
@@ -56,7 +56,7 @@ router.put('/settings', authMiddleware, superAdminOnly, async (req, res) => {
 
 // POST /api/social/settings/verify — test connection
 router.post('/settings/verify', authMiddleware, adminOnly, async (req, res) => {
-  const s = getSettings();
+  const s = await getSettings();
   if (!s.meta_access_token) return res.status(400).json({ error: 'No access token configured' });
   try {
     const data = await metaFetch(`https://graph.facebook.com/v18.0/me?access_token=${s.meta_access_token}`);
@@ -117,7 +117,7 @@ router.post('/publish/:id', authMiddleware, adminOnly, async (req, res) => {
   const post = await db.prepare('SELECT * FROM social_posts WHERE id = ?').get(req.params.id);
   if (!post) return res.status(404).json({ error: 'Post not found' });
 
-  const s = getSettings();
+  const s = await getSettings();
   if (!s.meta_access_token) return res.status(400).json({ error: 'Meta credentials not configured. Go to Settings → Social Media.' });
 
   const fullCaption = `${post.caption || ''}\n\n${post.hashtags || ''}`.trim();
@@ -239,7 +239,7 @@ router.post('/publish-both/:id', authMiddleware, adminOnly, async (req, res) => 
 
 // GET /api/social/stats — fetch live stats from Meta
 router.get('/stats', authMiddleware, adminOnly, async (req, res) => {
-  const s = getSettings();
+  const s = await getSettings();
   if (!s.meta_access_token) return res.json({ instagram: null, facebook: null });
   try {
     const [igData, fbData] = await Promise.allSettled([
