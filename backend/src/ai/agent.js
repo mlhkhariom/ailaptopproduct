@@ -316,11 +316,11 @@ export const processAgentMessage = async (contactId, contactName, message) => {
   // Increment daily count
   await incrementDailyCount(contactId);
 
-  // Check if product image should be sent
+  // Send product images ONLY when user explicitly asks for photo/image
   let productImages = [];
-  const imageKeywords = ['photo', 'image', 'pic', 'picture', 'foto', 'tasveer', 'dikhao', 'show', 'dekho', 'dekha', 'bhejo', 'send', 'दिखाओ', 'फोटो', 'तस्वीर'];
+  const imageKeywords = ['photo', 'image', 'pic', 'picture', 'foto', 'tasveer', 'dikhao', 'show me', 'dekho', 'dekha', 'दिखाओ', 'फोटो', 'तस्वीर'];
   const wantsImage = imageKeywords.some(k => message.toLowerCase().includes(k));
-  if (s.feature_product_search && (isBuyIntent(message) || wantsImage)) {
+  if (s.feature_product_search && wantsImage) {
   // Try current message first, then fall back to memory context
   let products = await searchProducts(message);
   if (products.length === 0 && memory.length > 0) {
