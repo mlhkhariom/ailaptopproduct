@@ -23,7 +23,15 @@ const ProductDetail = () => {
   const [mainImage, setMainImage] = useState(0);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => { if (products.length === 0) fetchProducts(); }, []);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (products.length === 0) {
+      fetchProducts().finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
   const product = products.find((p) => p.id === id || p.slug === id);
 
@@ -33,6 +41,14 @@ const ProductDetail = () => {
       if (!stored.includes(product.id)) localStorage.setItem("recently-viewed", JSON.stringify([product.id, ...stored].slice(0, 8)));
     }
   }, [product?.id]);
+
+  if (loading) return (
+    <CustomerLayout>
+      <div className="container mx-auto px-4 py-20 text-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+      </div>
+    </CustomerLayout>
+  );
 
   if (!product) return (
     <CustomerLayout>
