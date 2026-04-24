@@ -142,6 +142,57 @@ app.get('/og/products/:slug', async (req, res) => {
 const frontendDist = path.resolve(__dirname, '../../../dist');
 if (existsSync(frontendDist)) {
   app.use(express.static(frontendDist));
+
+  // Pre-render product pages for Google bot
+  app.get('/products/:slug', async (req, res) => {
+    const ua = req.headers['user-agent'] || '';
+    const isBot = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandex|facebookexternalhit|twitterbot|linkedinbot|whatsapp/i.test(ua);
+
+    if (isBot) {
+      try {
+        const p = await db.prepare('SELECT * FROM products WHERE slug=? OR id=?').get(req.params.slug, req.params.slug);
+        if (p) {
+          const image = p.image?.startsWith('http') ? p.image : `https://ailaptopwala.com${p.image}`;
+          const title = p.meta_title || `${p.name} | Buy in Indore – AI Laptop Wala`;
+          const desc = p.meta_description || `Buy ${p.name} at ₹${p.price} in Indore. AI Laptop Wala.`;
+          const url = `https://ailaptopwala.com/products/${p.slug || p.id}`;
+          const benefits = (() => { try { return JSON.parse(p.benefits || '[]'); } catch { return []; } })();
+
+          const html = `<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title}</title>
+<meta name="description" content="${desc}">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${desc}">
+<meta property="og:image" content="${image}">
+<meta property="og:url" content="${url}">
+<meta property="og:type" content="product">
+<link rel="canonical" href="${url}">
+<script type="application/ld+json">${JSON.stringify({
+  "@context":"https://schema.org","@type":"Product",
+  "name":p.name,"image":[image],"description":p.description,
+  "sku":p.sku,"brand":{"@type":"Brand","name":p.name.split(' ')[0]},
+  "offers":{"@type":"Offer","url":url,"priceCurrency":"INR","price":p.price,
+    "availability":p.in_stock?"https://schema.org/InStock":"https://schema.org/OutOfStock",
+    "itemCondition":"https://schema.org/RefurbishedCondition",
+    "seller":{"@type":"Organization","name":"AI Laptop Wala","url":"https://ailaptopwala.com"}}
+})}</script>
+</head><body>
+<h1>${p.name}</h1>
+<p>Price: ₹${p.price?.toLocaleString('en-IN')}</p>
+<p>${p.description || ''}</p>
+<ul>${benefits.map((b: string) => `<li>${b}</li>`).join('')}</ul>
+<p>Stock: ${p.in_stock ? 'In Stock' : 'Out of Stock'}</p>
+<a href="${url}">Buy ${p.name}</a>
+<script>window.location.href="${url}"</script>
+</body></html>`;
+          return res.send(html);
+        }
+      } catch {}
+    }
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+
   app.get('*', (req, res) => res.sendFile(path.join(frontendDist, 'index.html')));
 }
 
