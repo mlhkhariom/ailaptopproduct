@@ -191,7 +191,4 @@ export const api = {
   salesReport: (period = '30d') => req('GET', `/reports/sales?period=${period}`),
   productsReport: () => req('GET', '/reports/products'),
   customersReport: () => req('GET', '/reports/customers'),
-  salesReport: (period = '30d') => req('GET', `/reports/sales?period=${period}`),
-  productsReport: () => req('GET', '/reports/products'),
-  customersReport: () => req('GET', '/reports/customers'),
 };
