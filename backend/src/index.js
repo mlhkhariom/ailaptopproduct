@@ -126,14 +126,14 @@ app.get('/sitemap.xml', async (req, res) => {
     { url: '/contact', priority: '0.7', changefreq: 'monthly' },
     { url: '/faq', priority: '0.6', changefreq: 'monthly' },
   ];
-  const products = await db.prepare("SELECT slug, id, updated_at, created_at FROM products WHERE status='active'").all();
-  const blogs = await db.prepare("SELECT slug, id, published_at, updated_at FROM blog_posts WHERE status='published'").all();
+  const products = await db.prepare("SELECT slug, id, created_at FROM products WHERE status='active'").all();
+  const blogs = await db.prepare("SELECT slug, id, published_at, created_at FROM blog_posts WHERE status='published'").all();
   const toUrl = (loc, lastmod, freq, priority) =>
     `\n  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>${freq}</changefreq><priority>${priority}</priority></url>`;
   const xml = [
     ...staticPages.map(p => toUrl(`${base}${p.url}`, now, p.changefreq, p.priority)),
-    ...products.map(p => toUrl(`${base}/products/${p.slug || p.id}`, (p.updated_at || p.created_at || now).split('T')[0], 'weekly', '0.8')),
-    ...blogs.map(b => toUrl(`${base}/blog/${b.slug || b.id}`, (b.updated_at || b.published_at || now).split('T')[0], 'monthly', '0.7')),
+    ...products.map(p => toUrl(`${base}/products/${p.slug || p.id}`, (p.created_at || now).split('T')[0], 'weekly', '0.8')),
+    ...blogs.map(b => toUrl(`${base}/blog/${b.slug || b.id}`, (b.published_at || b.created_at || now).split('T')[0], 'monthly', '0.7')),
   ].join('');
   res.setHeader('Content-Type', 'application/xml');
   res.setHeader('Cache-Control', 'public, max-age=3600');
