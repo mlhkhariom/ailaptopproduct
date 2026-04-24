@@ -311,7 +311,7 @@ const AdminProducts = () => {
                     fd.append('files', file);
                     fd.append('folder', 'products');
                     try {
-                      const res = await fetch('/api/media/upload', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }, body: fd });
+                      const res = await fetch('/api/media/upload', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: fd });
                       const data = await res.json();
                       if (data[0]?.url) setForm(f => ({ ...f, image: `https://ailaptopwala.com${data[0].url}` }));
                     } catch {}
