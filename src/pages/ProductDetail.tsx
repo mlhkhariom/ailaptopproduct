@@ -51,10 +51,11 @@ const ProductDetail = () => {
 
   const seoTitle = product.metaTitle || `${product.name} | Buy in Indore – AI Laptop Wala`;
   const seoDesc = product.metaDescription || `Buy ${product.name} at ₹${product.price.toLocaleString()} in Indore. ${product.description?.slice(0, 100)}. 6 month warranty. AI Laptop Wala — Silver Mall.`;
+  const productImage = product.image?.startsWith('http') ? product.image : `https://ailaptopwala.com${product.image}`;
 
   const productSchema = {
     "@context": "https://schema.org", "@type": "Product",
-    "name": product.name, "image": product.image, "description": product.description,
+    "name": product.name, "image": productImage, "description": product.description,
     "sku": product.sku, "brand": { "@type": "Brand", "name": "AI Laptop Wala" },
     "offers": { "@type": "Offer", "url": pageUrl, "priceCurrency": "INR", "price": product.price, "availability": product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock", "seller": { "@type": "Organization", "name": "AI Laptop Wala" } },
     ...(product.rating ? { "aggregateRating": { "@type": "AggregateRating", "ratingValue": product.rating, "reviewCount": product.reviews || 1, "bestRating": 5 } } : {})
@@ -66,7 +67,7 @@ const ProductDetail = () => {
 
   return (
     <CustomerLayout>
-      <SEOHead title={seoTitle} description={seoDesc} canonical={`/products/${product.slug || product.id}`} image={product.image} type="product"
+      <SEOHead title={seoTitle} description={seoDesc} canonical={`/products/${product.slug || product.id}`} image={productImage} type="product"
         breadcrumbs={[{ name: "Products", url: "/products" }, { name: product.category, url: `/products?category=${product.category}` }, { name: product.name }]}
         jsonLd={productSchema} />
 

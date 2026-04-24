@@ -166,7 +166,9 @@ const SEOHead = ({
   const fullTitle = title ? `${title} | AI Laptop Wala Indore` : "AI Laptop Wala Indore – Best Laptop Shop | MacBook, Gaming, Refurbished";
   const fullDesc = description || "AI Laptop Wala – Indore's most trusted laptop store since 2011. Buy certified refurbished laptops, MacBooks, gaming laptops. Expert repair at Silver Mall, RNT Marg. 5000+ happy customers.";
   const fullKeywords = keywords || "AI Laptop Wala, laptop shop Indore, refurbished laptop Indore, MacBook Indore, gaming laptop Indore, laptop repair Indore, Silver Mall laptop, Asati Infotech";
-  const fullImage = image || SITE.logo;
+  const fullImage = image 
+    ? (image.startsWith('http') ? image : `${SITE.url}${image}`)
+    : SITE.logo;
   const fullCanonical = canonical ? (canonical.startsWith("http") ? canonical : `${SITE.url}${canonical}`) : SITE.url;
 
   // Breadcrumb schema
