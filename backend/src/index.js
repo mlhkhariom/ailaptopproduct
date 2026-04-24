@@ -111,6 +111,33 @@ app.use('/api/reports', reportRoutes);
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
+// OG meta tags for social bots (WhatsApp, Facebook, Twitter)
+app.get('/og/products/:slug', async (req, res) => {
+  try {
+    const p = await db.prepare('SELECT * FROM products WHERE slug=? OR id=?').get(req.params.slug, req.params.slug);
+    if (!p) return res.redirect(`https://ailaptopwala.com/products/${req.params.slug}`);
+    const image = p.image?.startsWith('http') ? p.image : `https://ailaptopwala.com${p.image}`;
+    const title = p.meta_title || `${p.name} | Buy in Indore – AI Laptop Wala`;
+    const desc = p.meta_description || `Buy ${p.name} at ₹${p.price} in Indore. AI Laptop Wala.`;
+    const url = `https://ailaptopwala.com/products/${p.slug || p.id}`;
+    res.send(`<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>${title}</title>
+<meta name="description" content="${desc}">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${desc}">
+<meta property="og:image" content="${image}">
+<meta property="og:url" content="${url}">
+<meta property="og:type" content="product">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${title}">
+<meta name="twitter:description" content="${desc}">
+<meta name="twitter:image" content="${image}">
+<meta http-equiv="refresh" content="0;url=${url}">
+</head><body><a href="${url}">${title}</a></body></html>`);
+  } catch { res.redirect(`https://ailaptopwala.com/products/${req.params.slug}`); }
+});
+
 // Serve React frontend (only if dist exists)
 const frontendDist = path.resolve(__dirname, '../../../dist');
 if (existsSync(frontendDist)) {
