@@ -76,6 +76,16 @@ const ProductDetail = () => {
     ...(product.rating ? { "aggregateRating": { "@type": "AggregateRating", "ratingValue": product.rating, "reviewCount": product.reviews || 1, "bestRating": 5, "worstRating": 1 } } : {})
   };
 
+  const faqSchema = {
+    "@context": "https://schema.org", "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": `What is the price of ${product.name}?`, "acceptedAnswer": { "@type": "Answer", "text": `${product.name} is available at ₹${product.price?.toLocaleString('en-IN')} at AI Laptop Wala, Indore.${product.original_price ? ` Original MRP was ₹${product.original_price?.toLocaleString('en-IN')}.` : ''}` } },
+      { "@type": "Question", "name": `Is ${product.name} available in Indore?`, "acceptedAnswer": { "@type": "Answer", "text": `Yes, ${product.name} is ${product.inStock ? 'available in stock' : 'currently out of stock'} at AI Laptop Wala, Silver Mall, RNT Marg, Indore. Call +91 98934 96163 for availability.` } },
+      { "@type": "Question", "name": `What warranty comes with ${product.name}?`, "acceptedAnswer": { "@type": "Answer", "text": `${product.name} comes with 6 months warranty from AI Laptop Wala. We also offer extended warranty options.` } },
+      { "@type": "Question", "name": `Can I get home delivery for ${product.name} in Indore?`, "acceptedAnswer": { "@type": "Answer", "text": `Yes, AI Laptop Wala offers home delivery across Indore for ${product.name}. Contact us at +91 98934 96163 or WhatsApp for delivery details.` } },
+    ]
+  };
+
   const copyLink = () => { navigator.clipboard.writeText(pageUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); toast.success("Link copied!"); };
 
   const benefits = Array.isArray(product.benefits) ? product.benefits : (typeof product.benefits === 'string' ? JSON.parse(product.benefits || '[]') : []);
@@ -84,7 +94,7 @@ const ProductDetail = () => {
     <CustomerLayout>
       <SEOHead title={seoTitle} description={seoDesc} canonical={`/products/${product.slug || product.id}`} image={productImage} type="product"
         breadcrumbs={[{ name: "Products", url: "/products" }, { name: product.category, url: `/products?category=${product.category}` }, { name: product.name }]}
-        jsonLd={productSchema} />
+        jsonLd={[productSchema, faqSchema]} />
 
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         {/* Breadcrumb */}

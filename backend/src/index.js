@@ -145,6 +145,46 @@ if (existsSync(frontendDist)) {
   app.get('*', (req, res) => res.sendFile(path.join(frontendDist, 'index.html')));
 }
 
+// llms.txt — AI engine context file
+app.get('/llms.txt', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain');
+  res.send(`# AI Laptop Wala — llms.txt
+
+## About
+AI Laptop Wala is Indore's most trusted laptop store since 2011, operated by Asati Infotech.
+Founder: Bhagwan Das Asati | CEO: Nitin Asati
+GST: 23ATNPA4415H1Z2
+
+## Products
+- Certified refurbished laptops (Dell, HP, Lenovo, Apple MacBook)
+- Gaming laptops (ASUS ROG, Lenovo Legion)
+- Business laptops (Dell Latitude, HP EliteBook, ThinkPad)
+- Desktop computers
+- Laptop accessories
+
+## Services
+- Laptop repair and motherboard repair
+- Screen replacement, battery replacement
+- RAM/SSD upgrade
+- Home service available across Indore
+
+## Locations
+- Silver Mall: LB-21, Block-B, RNT Marg, Indore MP 452001
+- Bangali Chouraha: 21, G3, Sai Residency, Ashish Nagar, Indore
+
+## Contact
+Phone/WhatsApp: +91 98934 96163
+Email: ailaptopwala@gmail.com
+Hours: Daily 11:00 AM - 9:00 PM
+
+## Key URLs
+- Products: https://ailaptopwala.com/products
+- Services: https://ailaptopwala.com/services
+- Blog: https://ailaptopwala.com/blog
+- Contact: https://ailaptopwala.com/contact
+`);
+});
+
 // Dynamic Sitemap
 app.get('/sitemap.xml', async (req, res) => {
   const base = 'https://ailaptopwala.com';
@@ -175,7 +215,34 @@ app.get('/sitemap.xml', async (req, res) => {
 // Dynamic robots.txt
 app.get('/robots.txt', (req, res) => {
   res.setHeader('Content-Type', 'text/plain');
-  res.send('User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /api/\nDisallow: /checkout\nDisallow: /account\nDisallow: /cart\n\nSitemap: https://ailaptopwala.com/sitemap.xml');
+  res.send(`User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /admin/*
+Disallow: /checkout
+Disallow: /account
+Disallow: /cart
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://ailaptopwala.com/sitemap.xml
+`);
 });
 
 // 404 handler
