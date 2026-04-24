@@ -99,21 +99,21 @@ const saveMemory = async (contactId, role, content) => {
 };
 
 // ── Product search ────────────────────────────────────────
-const searchProducts = async (query) => {
+const searchProducts = async (query, limit = 5) => {
   const stopWords = ['ka', 'ki', 'ke', 'hai', 'kya', 'mujhe', 'chahiye', 'price', 'kitna', 'karo', 'do', 'the', 'is', 'are', 'what', 'how', 'much', 'cost', 'rate', 'bata', 'batao'];
   const words = query.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !stopWords.includes(w));
 
   const fullQ = `%${query}%`;
-  const full = await db.prepare("SELECT name, price, original_price, description, slug, in_stock, stock, id, image FROM products WHERE (name ILIKE ? OR description ILIKE ?) AND status='active' LIMIT 3").all(fullQ, fullQ);
+  const full = await db.prepare(`SELECT name, price, original_price, description, slug, in_stock, stock, id, image FROM products WHERE (name ILIKE ? OR description ILIKE ?) AND status='active' LIMIT ${limit}`).all(fullQ, fullQ);
   if (full.length > 0) return full;
 
   for (const word of words) {
     const q = `%${word}%`;
-    const results = await db.prepare("SELECT name, price, original_price, description, slug, in_stock, stock, id, image FROM products WHERE (name ILIKE ? OR description ILIKE ? OR category ILIKE ?) AND status='active' LIMIT 3").all(q, q, q);
+    const results = await db.prepare(`SELECT name, price, original_price, description, slug, in_stock, stock, id, image FROM products WHERE (name ILIKE ? OR description ILIKE ? OR category ILIKE ?) AND status='active' LIMIT ${limit}`).all(q, q, q);
     if (results.length > 0) return results;
   }
 
-  return await db.prepare("SELECT name, price, original_price, description, slug, in_stock, stock, id, image FROM products WHERE status='active' ORDER BY price ASC LIMIT 5").all();
+  return await db.prepare(`SELECT name, price, original_price, description, slug, in_stock, stock, id, image FROM products WHERE status='active' ORDER BY in_stock DESC, price ASC LIMIT ${limit}`).all();
 };
 
 // ── Services search ───────────────────────────────────────
@@ -141,7 +141,16 @@ const buildContext = async (s, message) => {
 
   // Product search
   if (s.feature_product_search) {
-    const products = await searchProducts(message);
+    // Total product count for inventory queries
+    const totalCount = await db.prepare("SELECT COUNT(*) as c FROM products WHERE status='active'").get();
+    const inStockCount = await db.prepare("SELECT COUNT(*) as c FROM products WHERE status='active' AND in_stock=1").get();
+    parts.push(`STORE INVENTORY: Total ${totalCount?.c || 0} products, ${inStockCount?.c || 0} in stock`);
+
+    const countKeywords = ['kitne', 'total', 'how many', 'kitna stock', 'sab', 'all products', 'list', 'sabhi'];
+    const isCountQuery = countKeywords.some(k => message.toLowerCase().includes(k));
+    const limit = isCountQuery ? 10 : 5;
+
+    const products = await searchProducts(message, limit);
     if (products.length > 0) {
       parts.push('AVAILABLE PRODUCTS:\n' + products.map(p =>
         `- ${p.name}: ₹${p.price}${p.original_price ? ` (MRP: ₹${p.original_price})` : ''} | ${p.in_stock ? `In Stock (${p.stock})` : 'Out of Stock'} | ID: ${p.id} | Buy: https://ailaptopwala.com/products/${p.slug} | ${p.description?.slice(0, 60)}`
