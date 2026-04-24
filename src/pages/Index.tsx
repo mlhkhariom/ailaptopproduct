@@ -216,6 +216,57 @@ const Index = () => {
 
       {/* ── INSTAGRAM REELS ──────────────────────────────── */}
       <ReelsSection />
+
+      {/* ── CATEGORIES ───────────────────────────────────── */}
+      <section className="py-14 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-black text-center mb-2">Shop by <span className="gradient-text">Category</span></h2>
+          <div className="section-divider mb-8" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { name: 'Laptops', slug: 'Laptops', icon: '💻', desc: 'Dell, HP, Lenovo refurbished' },
+              { name: 'MacBooks', slug: 'MacBooks', icon: '🍎', desc: 'Open-box Apple MacBooks' },
+              { name: 'Gaming', slug: 'Gaming', icon: '🎮', desc: 'ROG, Legion, Omen' },
+              { name: 'Desktops', slug: 'Desktops', icon: '🖥️', desc: 'HP, Dell, Lenovo desktops' },
+            ].map(cat => (
+              <Link key={cat.slug} to={`/products?category=${cat.slug}`} className="group">
+                <div className="bg-card border rounded-xl p-5 text-center hover:border-primary hover:shadow-md transition-all">
+                  <div className="text-3xl mb-2">{cat.icon}</div>
+                  <h3 className="font-bold text-sm mb-1">{cat.name}</h3>
+                  <p className="text-xs text-muted-foreground">{cat.desc}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ──────────────────────────────────────────── */}
+      <section className="py-14">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <h2 className="text-2xl md:text-3xl font-black text-center mb-2">Frequently Asked <span className="gradient-text">Questions</span></h2>
+          <div className="section-divider mb-8" />
+          <div className="space-y-3">
+            {[
+              { q: 'Kya refurbished laptops reliable hote hain?', a: 'Haan! AI Laptop Wala ke sab laptops certified refurbished hain — thoroughly tested, cleaned aur 6 month warranty ke saath.' },
+              { q: 'Kya home delivery available hai Indore mein?', a: 'Haan, hum poore Indore mein home delivery karte hain. WhatsApp karein: +91 98934 96163' },
+              { q: 'EMI available hai kya?', a: 'Haan! Bajaj Finance EMI available hai. Minimum age 25 years, Indore ke 60km radius mein.' },
+              { q: 'Laptop repair kitne time mein hoti hai?', a: 'Most repairs same day ya 24 hours mein complete hoti hain. Screen replacement, battery, RAM/SSD upgrade available.' },
+            ].map((faq, i) => (
+              <details key={i} className="border rounded-lg p-4 group">
+                <summary className="font-semibold text-sm cursor-pointer list-none flex justify-between items-center">
+                  {faq.q} <span className="text-primary group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <p className="text-sm text-muted-foreground mt-2">{faq.a}</p>
+              </details>
+            ))}
+          </div>
+          <div className="text-center mt-6">
+            <Link to="/faq"><Button variant="outline" size="sm">View All FAQs</Button></Link>
+          </div>
+        </div>
+      </section>
+
       <section className="py-14 bg-gradient-to-br from-primary/5 to-secondary/5">
         <div className="container mx-auto px-4 text-center max-w-2xl">
           <h2 className="text-2xl md:text-3xl font-black mb-2">Need Help Choosing a Laptop?</h2>
