@@ -323,20 +323,36 @@ export const processAgentMessage = async (contactId, contactName, message) => {
   if (s.feature_product_search && wantsImage) {
     const allProducts = await db.prepare("SELECT name, price, image, slug, in_stock FROM products WHERE status='active' AND image IS NOT NULL AND in_stock=1").all();
     
-    // Find product mentioned in AI reply — score by how many words match
-    const searchIn = (reply + ' ' + memory.filter(m=>m.role==='assistant').slice(-2).map(m=>m.content).join(' ')).toLowerCase();
-    const scored = (allProducts || []).map(p => {
-      const words = p.name.split(' ').filter(w => w.length > 3);
-      const score = words.filter(w => searchIn.includes(w.toLowerCase())).length;
-      return { ...p, score };
-    }).filter(p => p.score > 0).sort((a, b) => b.score - a.score);
+    // Extract product name from bold text in AI reply (**Product Name**)
+    const boldMatches = reply.match(/\*\*([^*]+)\*\*/g)?.map(m => m.replace(/\*/g, '').trim()) || [];
+    
+    let matched = [];
+    
+    // Try exact/partial match with bold text first
+    for (const boldName of boldMatches) {
+      const exactMatch = (allProducts || []).find(p => 
+        p.name.toLowerCase().includes(boldName.toLowerCase()) ||
+        boldName.toLowerCase().includes(p.name.toLowerCase().split(' ').slice(0,3).join(' '))
+      );
+      if (exactMatch) { matched = [exactMatch]; break; }
+    }
+    
+    // Fallback: score-based matching from reply
+    if (matched.length === 0) {
+      const searchIn = reply.toLowerCase();
+      const scored = (allProducts || []).map(p => {
+        const words = p.name.split(' ').filter(w => w.length > 3);
+        const score = words.filter(w => searchIn.includes(w.toLowerCase())).length;
+        return { ...p, score };
+      }).filter(p => p.score >= 2).sort((a, b) => b.score - a.score);
+      matched = scored.slice(0, 1);
+    }
 
-    const matched = scored.slice(0, 1);
     productImages = matched.map(p => ({
       url: p.image.startsWith('http') ? p.image : `https://ailaptopwala.com${p.image}`,
       caption: `${p.name} — ₹${p.price.toLocaleString('en-IN')}`
     }));
-    console.log(`📸 productImages: ${productImages.length} found (${matched.map(p=>`${p.name}[${p.score}]`).join(', ')})`);
+    console.log(`📸 productImages: ${productImages.length} found (${matched.map(p=>p.name).join(', ')})`);
   }
 
   return { reply, isAI: true, productImages };
