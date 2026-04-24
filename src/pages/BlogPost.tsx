@@ -96,7 +96,7 @@ const BlogPost = () => {
           </div>
           <div className="mt-8 p-6 bg-primary/5 rounded-xl border text-center">
             <h3 className="font-bold mb-2">Looking for a Laptop in Indore?</h3>
-            <p className="text-sm text-muted-foreground mb-4">AI Laptop Wala — Certified refurbished laptops, MacBooks, gaming laptops at best prices.</p>
+            <p className="text-sm text-muted-foreground mb-4">AI Laptop Wala - Certified refurbished laptops, MacBooks, gaming laptops at best prices.</p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link to="/products"><Button size="sm">Browse Laptops</Button></Link>
               <Link to="/services"><Button size="sm" variant="outline">Book Repair</Button></Link>
