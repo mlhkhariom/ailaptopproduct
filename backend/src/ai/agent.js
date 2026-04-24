@@ -304,6 +304,32 @@ export const processAgentMessage = async (contactId, contactName, message) => {
     }
   }
 
+  // ── SERVICE BOOKING FLOW ─────────────────────────────────
+  if (isBookingIntent(message)) {
+    const lastMsgs = await getMemory(contactId, 6);
+    const lastAiMsg = [...lastMsgs].reverse().find(m => m.role === 'assistant');
+    
+    // Check if we already asked for phone and customer replied with number
+    const phoneMatch = message.match(/\b[6-9]\d{9}\b/);
+    if (phoneMatch && lastAiMsg?.content?.includes('phone number')) {
+      // Create booking
+      const services = await db.prepare("SELECT * FROM services WHERE is_active=1 LIMIT 1").get();
+      if (services) {
+        const { v4: uuidv4 } = await import('uuid');
+        const bookingNum = 'SVC-' + Date.now().toString().slice(-6);
+        await db.prepare('INSERT INTO service_bookings (id,booking_number,customer_name,customer_phone,service_id,service_name,price) VALUES (?,?,?,?,?,?,?)')
+          .run(uuidv4(), bookingNum, contactName || 'Customer', phoneMatch[0], services.id, services.name, services.price);
+        await db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)')
+          .run(uuidv4(), 'service', 'WhatsApp Booking', `${contactName} booked ${services.name} via WhatsApp`, '/admin/services');
+        const reply = `✅ *Booking Confirmed!*\n\n*Booking ID:* ${bookingNum}\n*Service:* ${services.name}\n*Phone:* ${phoneMatch[0]}\n\nHamari team aapko jald contact karegi. Ya seedha call karein: *+91 98934 96163* 😊`;
+        await saveMemory(contactId, 'user', message);
+        await saveMemory(contactId, 'assistant', reply);
+        await incrementDailyCount(contactId);
+        return { reply, isAI: true, productImages: [] };
+      }
+    }
+  }
+
   // ── ORDER CONFIRMATION FLOW ───────────────────────────────
   // Check if user is confirming an order from memory
   const confirmKeywords = ['haan', 'yes', 'ha', 'ok', 'okay', 'confirm', 'order karo', 'le lena', 'book karo', 'chahiye'];
