@@ -183,6 +183,30 @@ const buildContext = async (s, message) => {
     }
   }
 
+  // FAQ answers
+  if (s.feature_faq) {
+    const faqKeywords = ['warranty', 'return', 'refund', 'delivery', 'emi', 'payment', 'guarantee', 'waranty', 'wapas', 'kitne din', 'how long', 'kab milega'];
+    if (faqKeywords.some(k => message.toLowerCase().includes(k))) {
+      parts.push(`FAQ INFO:
+- Warranty: 6 months on all refurbished laptops, 1 month on budget laptops
+- Return Policy: 7 days return if defective
+- EMI: Bajaj Finance available (age 25+, within 60km Indore)
+- Delivery: Same day in Indore, 2-3 days outside
+- Payment: UPI, Cash, Card, EMI, COD available`);
+    }
+  }
+
+  // Cart suggestions — suggest related products
+  if (s.feature_cart_suggest) {
+    const accessoryKeywords = ['bag', 'charger', 'mouse', 'keyboard', 'cooling', 'accessories', 'ke saath', 'with laptop'];
+    if (accessoryKeywords.some(k => message.toLowerCase().includes(k))) {
+      const accessories = await db.prepare("SELECT name, price, slug FROM products WHERE category='Accessories' AND status='active' AND in_stock=1 LIMIT 3").all();
+      if ((accessories || []).length > 0) {
+        parts.push('ACCESSORIES:\n' + accessories.map(a => `- ${a.name}: ₹${a.price} | Buy: https://ailaptopwala.com/products/${a.slug}`).join('\n'));
+      }
+    }
+  }
+
   return parts.join('\n\n');
 };
 
@@ -256,6 +280,21 @@ export const processAgentMessage = async (contactId, contactName, message) => {
   if (!(await isWithinBusinessHours(s))) { console.log('🤖 Skipped: outside business hours'); return null; }
   if (!(await checkDailyLimit(contactId, s.daily_limit))) { console.log('🤖 Skipped: daily limit reached'); return null; }
   if (!s.api_key) { console.log('🤖 Skipped: no api key'); return null; }
+
+  // Auto greeting — first message from new contact
+  if (s.feature_greeting) {
+    const msgCount = await db.prepare('SELECT COUNT(*) as c FROM ai_conversation_memory WHERE contact_id=?').get(contactId);
+    if ((msgCount?.c || 0) === 0) {
+      const name = contactName ? ` ${contactName.split(' ')[0]}` : '';
+      const greetingContext = `FIRST MESSAGE FROM NEW CONTACT: Give a warm, impressive welcome greeting to${name}. Introduce yourself as Nitya from AI Laptop Wala. Ask how you can help. Keep it short and friendly.`;
+      const systemPrompt = s.system_prompt + '\n\n' + greetingContext;
+      const reply = await callLLM(s, [{ role: 'system', content: systemPrompt }, { role: 'user', content: message }]);
+      await saveMemory(contactId, 'user', message);
+      await saveMemory(contactId, 'assistant', reply);
+      await incrementDailyCount(contactId);
+      return { reply, isAI: true, productImages: [] };
+    }
+  }
 
   // Human handoff check
   if (s.feature_human_handoff) {
