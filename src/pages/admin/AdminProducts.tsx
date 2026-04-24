@@ -300,8 +300,25 @@ const AdminProducts = () => {
             <div><Label className="text-xs">Usage / Dosage</Label><Textarea className="mt-1" rows={2} value={form.usage} onChange={(e) => setForm({ ...form, usage: e.target.value })} /></div>
             <div><Label className="text-xs">Precautions</Label><Textarea className="mt-1" rows={2} value={form.precautions} onChange={(e) => setForm({ ...form, precautions: e.target.value })} /></div>
             <div>
-              <Label className="text-xs">Product Image URL</Label>
-              <Input className="mt-1 h-9" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://..." />
+              <Label className="text-xs">Product Image</Label>
+              <div className="flex gap-2 mt-1">
+                <Input className="h-9 flex-1" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://... ya file upload karein" />
+                <label className="cursor-pointer">
+                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const fd = new FormData();
+                    fd.append('files', file);
+                    fd.append('folder', 'products');
+                    try {
+                      const res = await fetch('/api/media/upload', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }, body: fd });
+                      const data = await res.json();
+                      if (data[0]?.url) setForm(f => ({ ...f, image: `https://ailaptopwala.com${data[0].url}` }));
+                    } catch {}
+                  }} />
+                  <span className="inline-flex items-center px-3 h-9 rounded-md border bg-muted text-xs hover:bg-accent cursor-pointer">📁 Upload</span>
+                </label>
+              </div>
               {form.image && (
                 <div className="mt-2 flex items-center gap-3">
                   <img src={form.image} alt="Preview" className="h-16 w-16 rounded-lg object-cover border" onError={(e) => (e.currentTarget.style.display = "none")} />
