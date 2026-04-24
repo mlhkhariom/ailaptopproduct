@@ -321,7 +321,7 @@ export const processAgentMessage = async (contactId, contactName, message) => {
   const imageKeywords = ['photo', 'image', 'pic', 'picture', 'foto', 'tasveer', 'dikhao', 'show me', 'dekho', 'dekha', 'दिखाओ', 'फोटो', 'तस्वीर'];
   const wantsImage = imageKeywords.some(k => message.toLowerCase().includes(k));
   if (s.feature_product_search && wantsImage) {
-    const allProducts = await db.prepare("SELECT name, price, image, slug, in_stock FROM products WHERE status='active' AND image IS NOT NULL AND in_stock=1").all();
+    const allProducts = await db.prepare("SELECT name, price, image, slug FROM products WHERE status='active' AND image IS NOT NULL AND image != ''").all();
     
     // Extract product name from bold text in AI reply (**Product Name**)
     const boldMatches = reply.match(/\*\*([^*]+)\*\*/g)?.map(m => m.replace(/\*/g, '').trim()) || [];
@@ -344,7 +344,7 @@ export const processAgentMessage = async (contactId, contactName, message) => {
         const words = p.name.split(' ').filter(w => w.length > 3);
         const score = words.filter(w => searchIn.includes(w.toLowerCase())).length;
         return { ...p, score };
-      }).filter(p => p.score >= 2).sort((a, b) => b.score - a.score);
+      }).filter(p => p.score >= 1).sort((a, b) => b.score - a.score);
       matched = scored.slice(0, 1);
     }
 
