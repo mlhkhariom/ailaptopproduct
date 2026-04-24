@@ -64,12 +64,7 @@ export const handleWebhook = async (instanceName, event, data) => {
           emit('evolution:message', { instanceName, ...parsed, time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) });
 
           // AI Agent — only for incoming text messages
-          // Skip if WhatsApp Web.js is connected (it will handle AI reply)
           if (!fromMe && body && body !== '[media]' && (msgType === 'conversation' || msgType === 'extendedTextMessage')) {
-            const { getStatus } = await import('../whatsapp/client.js');
-            if (getStatus() === 'ready') {
-              // WhatsApp Web.js is connected — it will handle AI reply
-            } else {
             console.log(`🤖 Evolution AI processing: "${body.slice(0,30)}" from ${remoteJid.split('@')[0]}`);
             try {
               const agentContactId = remoteJid.includes('@lid')
@@ -94,7 +89,6 @@ export const handleWebhook = async (instanceName, event, data) => {
                 }
               }
             } catch (e) { console.error('Evolution AI error:', e.message); }
-            } // end else (WhatsApp Web.js not ready)
           }
         }
         break;
