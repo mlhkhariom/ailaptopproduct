@@ -153,7 +153,7 @@ export const initWhatsApp = async () => {
     };
     emit('whatsapp:message', msgData);
     await db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
-      .run(msg.id._serialized, msg.from, 'me', msg.body || `[${msg.type}]`, 'incoming');
+      .run(msg.id._serialized, msg.from, 'me', msg.hasMedia ? `[${msg.type}]` : (msg.body || `[${msg.type}]`), 'incoming');
 
     // AI Agent processing
     if (msg.body && msg.type === 'chat') {

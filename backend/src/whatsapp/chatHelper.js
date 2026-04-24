@@ -12,7 +12,7 @@ export const fetchChatMessages = async (chatId, limit = 50) => {
       const msgs = chat.msgs.getModelsArray().filter(m => m && m.id && m.id._serialized).slice(-limit);
       return msgs.map(m => ({
         id: m.id._serialized,
-        body: m.body || m.caption || '',
+        body: (m.type === 'chat' || m.type === 'text') ? (m.body || m.caption || '') : (m.caption || `[${m.type}]`),
         fromMe: m.id.fromMe,
         timestamp: m.t || 0,
         type: m.type || 'chat',
