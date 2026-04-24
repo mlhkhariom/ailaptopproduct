@@ -51,7 +51,7 @@ const MediaMessage = ({ msg, chatId, token }: { msg: any; chatId: string; token:
             <span>📷 {loading ? 'Loading...' : 'Tap to load image'}</span>
           </div>
         )}
-        {msg.body && <p className="text-xs mt-1 text-gray-600">{msg.body}</p>}
+        {msg.body && msg.type !== 'image' && msg.type !== 'sticker' && <p className="text-xs mt-1 text-gray-600">{msg.body}</p>}
       </div>
     );
   }
