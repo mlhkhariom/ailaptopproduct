@@ -95,6 +95,8 @@ PRODUCT RULES:
 BUYING INTENT SIGNALS: buy, order, book, delivery, payment, kharidna, chahiye, le lena
 When detected: Share contact info respectfully + ask for address/number
 
+PRODUCT LINKS: ALWAYS share the buy link when showing any product. Format: "🛒 Buy: https://ailaptopwala.com/products/[slug]"
+
 IMPORTANT: Only use products from CURRENT CONTEXT. Never invent prices or specs. Keep responses concise.`
     );
   }
