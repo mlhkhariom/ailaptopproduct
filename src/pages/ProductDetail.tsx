@@ -55,10 +55,25 @@ const ProductDetail = () => {
 
   const productSchema = {
     "@context": "https://schema.org", "@type": "Product",
-    "name": product.name, "image": productImage, "description": product.description,
-    "sku": product.sku, "brand": { "@type": "Brand", "name": "AI Laptop Wala" },
-    "offers": { "@type": "Offer", "url": pageUrl, "priceCurrency": "INR", "price": product.price, "availability": product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock", "seller": { "@type": "Organization", "name": "AI Laptop Wala" } },
-    ...(product.rating ? { "aggregateRating": { "@type": "AggregateRating", "ratingValue": product.rating, "reviewCount": product.reviews || 1, "bestRating": 5 } } : {})
+    "name": product.name,
+    "image": [productImage],
+    "description": product.description,
+    "sku": product.sku,
+    "mpn": product.sku,
+    "brand": { "@type": "Brand", "name": product.name.split(' ')[0] || "AI Laptop Wala" },
+    "offers": {
+      "@type": "Offer",
+      "url": pageUrl,
+      "priceCurrency": "INR",
+      "price": product.price,
+      "priceValidUntil": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      "availability": product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "itemCondition": "https://schema.org/RefurbishedCondition",
+      "seller": { "@type": "Organization", "name": "AI Laptop Wala", "url": "https://ailaptopwala.com" },
+      "shippingDetails": { "@type": "OfferShippingDetails", "shippingRate": { "@type": "MonetaryAmount", "value": "0", "currency": "INR" }, "deliveryTime": { "@type": "ShippingDeliveryTime", "handlingTime": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 2, "unitCode": "DAY" }, "transitTime": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 3, "unitCode": "DAY" } } },
+      "hasMerchantReturnPolicy": { "@type": "MerchantReturnPolicy", "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow", "merchantReturnDays": 7, "returnMethod": "https://schema.org/ReturnInStore" }
+    },
+    ...(product.rating ? { "aggregateRating": { "@type": "AggregateRating", "ratingValue": product.rating, "reviewCount": product.reviews || 1, "bestRating": 5, "worstRating": 1 } } : {})
   };
 
   const copyLink = () => { navigator.clipboard.writeText(pageUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); toast.success("Link copied!"); };
