@@ -28,7 +28,7 @@ export const fetchChatMessages = async (chatId, limit = 50) => {
     }));
   } catch (e) {
     console.error('fetchChatMessages error:', e.message);
-    throw e;
+    return []; // Don't throw — prevents unhandled rejection crash
   }
 };
 
