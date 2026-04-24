@@ -29,7 +29,27 @@ const Index = () => {
 
   return (
     <CustomerLayout>
-      <SEOHead canonical="/" />
+      <SEOHead canonical="/" jsonLd={{
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "@id": "https://ailaptopwala.com/#business",
+        "name": "AI Laptop Wala",
+        "alternateName": "Asati Infotech",
+        "description": "Indore's most trusted laptop store since 2011. Certified refurbished laptops, MacBooks, gaming laptops. Expert repair at Silver Mall, RNT Marg.",
+        "url": "https://ailaptopwala.com",
+        "telephone": "+919893496163",
+        "email": "ailaptopwala@gmail.com",
+        "foundingDate": "2011",
+        "priceRange": "₹₹",
+        "image": "https://ailaptopwala.com/logo.jpeg",
+        "logo": "https://ailaptopwala.com/logo.jpeg",
+        "address": { "@type": "PostalAddress", "streetAddress": "LB-21, Block-B, Silver Mall, RNT Marg", "addressLocality": "Indore", "addressRegion": "Madhya Pradesh", "postalCode": "452001", "addressCountry": "IN" },
+        "geo": { "@type": "GeoCoordinates", "latitude": 22.7166372, "longitude": 75.8737741 },
+        "openingHoursSpecification": [{ "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"], "opens": "11:00", "closes": "21:00" }],
+        "sameAs": ["https://www.instagram.com/ailaptopwala", "https://www.facebook.com/profile.php?id=61563386652422", "https://www.youtube.com/@AiLaptopwalaindore"],
+        "hasMap": "https://maps.app.goo.gl/Z4e1Z91HVKwjm5xp9",
+        "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "reviewCount": "500", "bestRating": "5" }
+      }} />
 
       {/* ── HERO ─────────────────────────────────────────── */}
       <section className="relative min-h-[90svh] flex items-center justify-center overflow-hidden"

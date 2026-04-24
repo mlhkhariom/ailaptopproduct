@@ -49,6 +49,19 @@ const Products = () => {
         description="Buy certified refurbished laptops in Indore. MacBooks, gaming laptops, business laptops at best prices. AI Laptop Wala — Silver Mall, Indore."
         canonical="/products"
         breadcrumbs={[{ name: "Products", url: "/products" }]}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          "name": "Laptops for Sale in Indore",
+          "url": "https://ailaptopwala.com/products",
+          "numberOfItems": products.length,
+          "itemListElement": products.slice(0, 10).map((p: any, i: number) => ({
+            "@type": "ListItem",
+            "position": i + 1,
+            "url": `https://ailaptopwala.com/products/${p.slug || p.id}`,
+            "name": p.name
+          }))
+        }}
       />
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
