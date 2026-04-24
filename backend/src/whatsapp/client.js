@@ -294,6 +294,22 @@ export const initWhatsApp = async () => {
     emit('whatsapp:status', { status: 'disconnected', error: e.message });
     console.error('WhatsApp init error:', e.message);
   });
+
+  // Health check — detect detached frame and auto-restart
+  const healthCheck = setInterval(async () => {
+    if (!client || status !== 'ready') return;
+    try {
+      if (client.pupPage?.isClosed() || !client.pupBrowser?.isConnected()) {
+        console.log('🔄 WhatsApp page crashed — restarting...');
+        clearInterval(healthCheck);
+        try { await client.destroy(); } catch {}
+        client = null;
+        status = 'disconnected';
+        emit('whatsapp:status', { status: 'disconnected' });
+        setTimeout(() => initWhatsApp(), 5000);
+      }
+    } catch {}
+  }, 30000); // check every 30s
 };
 
 export const getClient = () => client;
