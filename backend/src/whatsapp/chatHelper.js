@@ -12,12 +12,16 @@ export const fetchChatMessages = async (chatId, limit = 50) => {
       const msgs = chat.msgs.getModelsArray().filter(m => m && m.id && m.id._serialized).slice(-limit);
       return msgs.map(m => ({
         id: m.id._serialized,
-        body: (m.type === 'chat' || m.type === 'text') ? (m.body || m.caption || '') : (m.caption || `[${m.type}]`),
+        body: (m.type === 'chat' || m.type === 'text') ? (m.body || m.caption || '') : (m.caption || ''),
         fromMe: m.id.fromMe,
         timestamp: m.t || 0,
         type: m.type || 'chat',
         ack: m.ack || 0,
         hasMedia: !!(m.mediaData || m.mediaKey),
+        mimetype: m.mimetype || null,
+        jpegThumbnail: m.mediaData?.preview || null,
+        quotedMsg: m.quotedMsg ? { id: m.quotedMsg.id?._serialized, body: m.quotedMsg.body, fromMe: m.quotedMsg.id?.fromMe } : null,
+        isStarred: m.star || false,
       }));
     }, chatId, limit);
 

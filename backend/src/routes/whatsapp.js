@@ -80,6 +80,26 @@ router.put('/messages/:phone/read', authMiddleware, adminOnly, async (req, res) 
   res.json({ message: 'Marked read' });
 });
 
+// POST /api/whatsapp/media/download — download media from message
+router.post('/media/download', authMiddleware, adminOnly, async (req, res) => {
+  const { messageId, chatId } = req.body;
+  const client = getClient();
+  if (!client) return res.status(503).json({ error: 'WhatsApp not connected' });
+  try {
+    const chats = await client.getChats();
+    const chat = chats.find(c => c.id._serialized === chatId);
+    if (!chat) return res.status(404).json({ error: 'Chat not found' });
+    const msgs = await chat.fetchMessages({ limit: 100 });
+    const msg = msgs.find(m => m.id._serialized === messageId);
+    if (!msg || !msg.hasMedia) return res.status(404).json({ error: 'Media not found' });
+    const media = await msg.downloadMedia();
+    if (!media) return res.status(404).json({ error: 'Could not download media' });
+    res.json({ data: media.data, mimetype: media.mimetype, filename: media.filename });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET /api/whatsapp/contact/:phone — get contact info
 router.get('/contact/:phone', authMiddleware, adminOnly, async (req, res) => {
   const client = getClient();

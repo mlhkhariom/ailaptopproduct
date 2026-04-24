@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, ArrowLeft, Send, Smile, Paperclip, Phone, MoreVertical, Check, CheckCheck, Users, RefreshCw, Sparkles } from "lucide-react";
+import { Search, ArrowLeft, Send, Smile, Paperclip, Phone, MoreVertical, Check, CheckCheck, Users, RefreshCw, Sparkles, Star, Copy, Reply, Download, Play } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 const API_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
@@ -10,6 +11,99 @@ const AckIcon = ({ ack }: { ack: number }) => {
   if (ack >= 3) return <CheckCheck className="h-3.5 w-3.5 text-blue-400" />;
   if (ack >= 2) return <CheckCheck className="h-3.5 w-3.5 text-gray-400" />;
   return <Check className="h-3.5 w-3.5 text-gray-400" />;
+};
+
+// Media message renderer
+const MediaMessage = ({ msg, chatId, token }: { msg: any; chatId: string; token: string | null }) => {
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const downloadMedia = async () => {
+    if (mediaUrl) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/whatsapp/media/download`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId: msg.id, chatId }),
+      });
+      const data = await res.json();
+      if (data.data) setMediaUrl(`data:${data.mimetype};base64,${data.data}`);
+    } catch {}
+    finally { setLoading(false); }
+  };
+
+  if (msg.type === 'image' || msg.type === 'sticker') {
+    return (
+      <div className="cursor-pointer" onClick={downloadMedia}>
+        {mediaUrl ? (
+          <img src={mediaUrl} alt="image" className="max-w-[220px] rounded-lg" />
+        ) : msg.jpegThumbnail ? (
+          <div className="relative">
+            <img src={`data:image/jpeg;base64,${msg.jpegThumbnail}`} alt="thumbnail" className="max-w-[220px] rounded-lg blur-sm" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              {loading ? <RefreshCw className="h-6 w-6 animate-spin text-white" /> : <Download className="h-6 w-6 text-white" />}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2">
+            {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            <span>📷 {loading ? 'Loading...' : 'Tap to load image'}</span>
+          </div>
+        )}
+        {msg.body && <p className="text-xs mt-1 text-gray-600">{msg.body}</p>}
+      </div>
+    );
+  }
+
+  if (msg.type === 'video') {
+    return (
+      <div className="cursor-pointer" onClick={downloadMedia}>
+        {mediaUrl ? (
+          <video src={mediaUrl} controls className="max-w-[220px] rounded-lg" />
+        ) : (
+          <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2">
+            {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+            <span>🎥 {loading ? 'Loading...' : 'Tap to load video'}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (msg.type === 'audio' || msg.type === 'ptt') {
+    return (
+      <div className="cursor-pointer" onClick={downloadMedia}>
+        {mediaUrl ? (
+          <audio src={mediaUrl} controls className="max-w-[220px]" />
+        ) : (
+          <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2">
+            {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+            <span>🎤 {msg.type === 'ptt' ? 'Voice message' : 'Audio'} — {loading ? 'Loading...' : 'Tap to play'}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (msg.type === 'document') {
+    return (
+      <div className="cursor-pointer" onClick={downloadMedia}>
+        {mediaUrl ? (
+          <a href={mediaUrl} download={msg.body || 'document'} className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 rounded-lg px-3 py-2">
+            <Download className="h-4 w-4" /> {msg.body || 'Download document'}
+          </a>
+        ) : (
+          <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2">
+            {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            <span>📄 {msg.body || 'Document'} — {loading ? 'Loading...' : 'Tap to download'}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return <p className="text-xs text-gray-400 italic">[{msg.type}]</p>;
 };
 
 interface Props {
@@ -27,6 +121,9 @@ export const WhatsAppChatPanel = ({ socket, status, aiSettings, contactAI, onTog
   const [messages, setMessages] = useState<any[]>([]);
   const [message, setMessage] = useState('');
   const [search, setSearch] = useState('');
+  const [msgSearch, setMsgSearch] = useState('');
+  const [showMsgSearch, setShowMsgSearch] = useState(false);
+  const [replyTo, setReplyTo] = useState<any>(null);
   const [showMobile, setShowMobile] = useState(false);
   const [loadingChats, setLoadingChats] = useState(false);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
@@ -186,39 +283,72 @@ export const WhatsAppChatPanel = ({ socket, status, aiSettings, contactAI, onTog
                 <Switch checked={contactAI[activeChat.id] !== false} onCheckedChange={v => onToggleAI(activeChat.id, v)} className="scale-75" />
               </div>
               <Button size="icon" variant="ghost" className="h-8 w-8"><Phone className="h-4 w-4" /></Button>
+              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setShowMsgSearch(v => !v)}><Search className="h-4 w-4" /></Button>
               <Button size="icon" variant="ghost" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
             </div>
+            {showMsgSearch && (
+              <div className="px-3 py-1.5 border-b bg-card">
+                <Input placeholder="Search in chat..." className="h-8 text-sm" value={msgSearch} onChange={e => setMsgSearch(e.target.value)} autoFocus />
+              </div>
+            )}
 
             <div className="flex-1 overflow-y-auto p-4 space-y-1.5"
               style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%23e5ddd5' opacity='0.3'/%3E%3C/svg%3E\")" }}>
               {loadingMsgs ? (
                 <div className="flex items-center justify-center h-32"><RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-              ) : messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.fromMe ? 'justify-end' : 'justify-start'}`}>
+              ) : messages.filter(m => !msgSearch || m.body?.toLowerCase().includes(msgSearch.toLowerCase())).map((msg, i) => (
+                <div key={i} className={`flex ${msg.fromMe ? 'justify-end' : 'justify-start'} group`}>
                   <div className={`max-w-[72%] rounded-2xl px-3 py-2 shadow-sm text-sm ${msg.fromMe ? 'bg-[#d9fdd3] rounded-tr-none' : 'bg-white rounded-tl-none'}`}
                     style={msg.isAI ? { backgroundColor: aiSettings?.agent_bubble_color || '#e8d5ff' } : {}}>
                     {msg.isAI && <p className="text-[9px] text-purple-600 font-semibold mb-0.5 flex items-center gap-1"><Sparkles className="h-2.5 w-2.5" />AI Agent</p>}
-                    <p className={`text-gray-800 whitespace-pre-wrap break-words ${msg.revoked ? 'italic text-gray-400' : ''}`}>{msg.body}</p>
+                    {/* Quoted reply */}
+                    {msg.quotedMsg && (
+                      <div className="border-l-4 border-green-500 bg-black/5 rounded px-2 py-1 mb-1 text-xs text-gray-500 truncate">
+                        {msg.quotedMsg.body || '[media]'}
+                      </div>
+                    )}
+                    {/* Media or text */}
+                    {msg.hasMedia ? (
+                      <MediaMessage msg={msg} chatId={activeChat.id} token={token} />
+                    ) : (
+                      <p className={`text-gray-800 whitespace-pre-wrap break-words ${msg.revoked ? 'italic text-gray-400' : ''}`}>{msg.body}</p>
+                    )}
                     {msg.reaction && <span className="text-sm">{msg.reaction}</span>}
                     <div className="flex items-center justify-end gap-1 mt-0.5">
+                      {msg.isStarred && <Star className="h-2.5 w-2.5 text-yellow-500 fill-yellow-500" />}
                       <span className="text-[10px] text-gray-500">{msg.time}</span>
                       {msg.fromMe && <AckIcon ack={msg.ack || 1} />}
                     </div>
+                  </div>
+                  {/* Action buttons on hover */}
+                  <div className={`flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${msg.fromMe ? 'order-first mr-1' : 'ml-1'}`}>
+                    <button onClick={() => setReplyTo(msg)} className="p-1 rounded-full hover:bg-gray-200" title="Reply"><Reply className="h-3.5 w-3.5 text-gray-500" /></button>
+                    <button onClick={() => { navigator.clipboard.writeText(msg.body || ''); toast.success('Copied!'); }} className="p-1 rounded-full hover:bg-gray-200" title="Copy"><Copy className="h-3.5 w-3.5 text-gray-500" /></button>
+                    <button onClick={() => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isStarred: !m.isStarred } : m))} className="p-1 rounded-full hover:bg-gray-200" title="Star"><Star className={`h-3.5 w-3.5 ${msg.isStarred ? 'text-yellow-500 fill-yellow-500' : 'text-gray-500'}`} /></button>
                   </div>
                 </div>
               ))}
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="px-3 py-2 border-t bg-[#f0f2f5] flex items-center gap-2 shrink-0">
-              <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0 text-gray-500"><Smile className="h-5 w-5" /></Button>
-              <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0 text-gray-500"><Paperclip className="h-5 w-5" /></Button>
-              <Input value={message} onChange={e => setMessage(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMsg()}
-                placeholder="Type a message" className="flex-1 h-9 text-sm rounded-full bg-white border-0 shadow-sm" />
-              <Button size="icon" className="h-9 w-9 rounded-full shrink-0 bg-green-500 hover:bg-green-600 border-0" onClick={sendMsg} disabled={!message.trim()}>
-                <Send className="h-4 w-4 text-white" />
-              </Button>
+            <div className="px-3 py-2 border-t bg-[#f0f2f5] flex flex-col gap-1 shrink-0">
+              {replyTo && (
+                <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-1.5 text-xs border-l-4 border-green-500">
+                  <Reply className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                  <span className="flex-1 truncate text-gray-600">{replyTo.body || '[media]'}</span>
+                  <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0 text-gray-500"><Smile className="h-5 w-5" /></Button>
+                <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0 text-gray-500"><Paperclip className="h-5 w-5" /></Button>
+                <Input value={message} onChange={e => setMessage(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMsg()}
+                  placeholder="Type a message" className="flex-1 h-9 text-sm rounded-full bg-white border-0 shadow-sm" />
+                <Button size="icon" className="h-9 w-9 rounded-full shrink-0 bg-green-500 hover:bg-green-600 border-0" onClick={sendMsg} disabled={!message.trim()}>
+                  <Send className="h-4 w-4 text-white" />
+                </Button>
+              </div>
             </div>
           </>
         )}
