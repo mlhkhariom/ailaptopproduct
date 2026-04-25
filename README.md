@@ -1,174 +1,96 @@
-# 💻 AI Laptop Wala — Enterprise Laptop E-Commerce Platform
+# AI Laptop Wala — Full Stack Platform
 
-> **AI Laptop Wala** — Buy, Sell & Repair Laptops in Indore. A full-stack enterprise e-commerce platform with AI-powered WhatsApp agent, real-time chat, admin panel, and complete business management suite.
+## Tech Stack
+- **Frontend:** React + Vite + TypeScript + Tailwind CSS + shadcn/ui
+- **Backend:** Node.js + Express + PostgreSQL
+- **WhatsApp:** whatsapp-web.js + Evolution API
+- **AI Agent:** OpenRouter / Gemini API
+- **Deployment:** PM2 + Nginx + Cloudflare
 
-**Developed by:** [MLHK Infotech](https://mlhk.in) (Hariom Vishwkarma)
-
----
-
-## 🚀 Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React 18 + TypeScript + Vite |
-| **Styling** | Tailwind CSS + shadcn/ui |
-| **Backend** | Node.js + Express |
-| **Database** | SQLite (better-sqlite3) |
-| **WhatsApp** | whatsapp-web.js + Socket.IO |
-| **AI Agent** | OpenRouter / Google Gemini |
-| **State** | Zustand + React Context |
-| **Charts** | Recharts |
-
----
-
-## ✨ Key Features
-
-### 🛒 E-Commerce
-- Product catalog — Laptops, MacBooks, Gaming, Accessories, Repair Services
-- Cart, Checkout, Order tracking
-- Coupon & discount engine
-- Razorpay + Paytm + COD payments
-- Invoice generation
-
-### 🤖 AI WhatsApp Agent
-- OpenRouter (GPT-4, Claude, Llama) or Google Gemini
-- Last 20 messages memory
-- Product DB search — auto answers price/stock queries
-- Order status lookup
-- Human handoff detection
-- Per-contact ON/OFF toggle
-- Custom bubble color
-- Typing indicator + random delay
-
-### 📱 WhatsApp Module
-- Real-time chat (Socket.IO)
-- Auto-reply rules engine
-- Message reactions, star, delete, forward
-- Contact info panel
-- Chat clear feature
-
-### 🏪 Admin Panel (16 Modules)
-- Dashboard with real-time KPIs
-- Products CRUD
-- Orders management + tracking
-- Customers + Users & Roles
-- Blog management
-- Social Media (Instagram/Facebook publish)
-- Media Library
-- CMS (Banners, FAQs, Testimonials)
-- Coupons management
-- Contact queries pipeline
-- Reports & Analytics
-- Settings (8 tabs)
-
-### ⚙️ Settings
-- Site features toggle (Maintenance mode, Cookie consent, etc.)
-- Razorpay + Paytm API keys
-- Meta Graph API (Instagram/Facebook)
-- Google Analytics + GTM
-- Shipping rates
-- SEO settings
-
----
-
-## 🏗 Project Structure
-
-```
-├── src/                    # React Frontend
-│   ├── pages/              # 20+ public pages
-│   ├── pages/admin/        # 16 admin modules
-│   ├── components/         # Reusable components
-│   ├── contexts/           # Auth, SiteSettings
-│   ├── store/              # Zustand stores
-│   └── lib/api.ts          # API client
-│
-├── backend/
-│   ├── src/
-│   │   ├── routes/         # 18+ API routes
-│   │   ├── ai/             # AI Agent engine
-│   │   ├── whatsapp/       # WhatsApp client
-│   │   ├── middleware/     # Auth, AdminOnly
-│   │   └── db/             # SQLite + seed data
-│   └── data/               # SQLite database
-```
-
----
-
-## 🚀 Getting Started
+## Quick Start
 
 ### Prerequisites
-- Node.js 18+
-- Google Chrome (for WhatsApp)
+- Node.js 20+
+- PostgreSQL 14+
+- Google Chrome (for WhatsApp Web.js)
 
-### Installation
+### Setup
 
 ```bash
 # Clone
 git clone https://github.com/mlhkhariom/ailaptopproduct.git
 cd ailaptopproduct
 
-# Frontend
+# Frontend dependencies
 npm install
-npm run dev
 
-# Backend
-cd backend
-npm install
-node src/index.js
+# Backend dependencies
+cd backend && npm install
+
+# Environment
+cp .env.example .env
+# Edit .env with your values
+
+# Run backend
+cd backend && node src/index.js
+
+# Run frontend (dev)
+cd .. && npm run dev
 ```
 
-### Environment
+### Environment Variables
+
 ```env
-# backend/.env
+# Backend (.env in /backend)
+DATABASE_URL=postgresql://user:pass@localhost:5432/ailaptopwala_db
+JWT_SECRET=your_jwt_secret
 PORT=5000
-JWT_SECRET=your_secret_key
-DB_PATH=./data/apsoncure.db
+
+# Frontend (.env in root)
+VITE_API_URL=http://localhost:5000/api
+VITE_EVOLUTION_URL=http://localhost:8081
+VITE_EVOLUTION_KEY=your_evolution_key
 ```
 
----
+## Production Deployment
 
-## 🔑 Demo Credentials
+```bash
+# Build frontend
+npm run build
 
-| Role | Email | Password |
-|------|-------|----------|
-| **Super Admin** | `admin@mlhk.in` | `HarioM9165` |
-| **Admin** | `admin@ailaptopwala.com` | `admin123` |
-| **Customer** | `priya@email.com` | `user123` |
+# Start with PM2
+pm2 start ecosystem.config.cjs
 
----
+# Nginx config
+sudo cp nginx.conf /etc/nginx/sites-available/ailaptopwala
+sudo ln -s /etc/nginx/sites-available/ailaptopwala /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+```
 
-## 📦 Products Seeded
+## Admin Credentials
+- Super Admin: `admin@mlhk.in` / `HarioM9165`
+- Admin: `admin@ailaptopwala.com` / `Laptop@9165`
 
-| Product | Price |
-|---------|-------|
-| Dell Latitude E7470 Refurbished | ₹18,999 |
-| HP EliteBook 840 G5 | ₹24,999 |
-| Apple MacBook Pro 2019 | ₹54,999 |
-| Lenovo ThinkPad T480 | ₹21,999 |
-| ASUS ROG Strix G15 Gaming | ₹65,999 |
-| Dell OptiPlex 7050 Desktop | ₹14,999 |
-| Laptop Cooling Pad | ₹799 |
-| Screen Replacement Service | ₹2,499 |
+## Features
+- E-commerce (products, orders, coupons, reviews)
+- WhatsApp AI Agent (auto-reply, product search, booking)
+- Evolution API WhatsApp module
+- Admin panel (20+ modules)
+- SEO optimized (Schema.org, sitemap, robots.txt)
+- Blog, FAQ, Services, Contact
+- Payment integration (Razorpay)
+- Media upload
+- Social media posting
 
----
+## Database
+See `backend/src/db/database.js` for all table schemas.
+Run `node backend/db_schema.js` to view all tables and columns.
 
-## 🤖 AI Agent Setup
-
-1. Get free API key from [OpenRouter](https://openrouter.ai) or [Google AI Studio](https://aistudio.google.com)
-2. Admin Panel → WhatsApp → Agent tab
-3. Select provider, paste API key, click **Load** to fetch models
-4. Select model (free: `meta-llama/llama-3.1-8b-instruct:free`)
-5. Edit system prompt, toggle features, **Save**
-
----
-
-## 📄 License
-
-Proprietary software developed by **MLHK Infotech** for **AI Laptop Wala**.
-
-| | |
-|---|---|
-| **Developer** | [MLHK Infotech](https://mlhk.in) — Hariom Vishwkarma |
-| **Business** | AI Laptop Wala, Indore |
-| **WhatsApp** | +91 98765 43210 |
-| **Email** | info@ailaptopwala.com |
+## API Routes
+- `GET /api/products` — Products list
+- `POST /api/auth/login` — Login
+- `GET /api/orders` — Orders (admin)
+- `GET /api/whatsapp/status` — WhatsApp status
+- `GET /sitemap.xml` — Dynamic sitemap
+- `GET /robots.txt` — Robots.txt
+- `GET /llms.txt` — AI context file
