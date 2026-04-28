@@ -20,7 +20,7 @@ import { toast } from "sonner";
 const emptyForm = {
   name: "", name_hi: "", price: 0, original_price: 0, image: "",
   category: "", description: "", ingredients: "", benefits: "", usage: "",
-  sku: "", slug: "", stock: 10, in_stock: true, status: "active",
+  sku: "", slug: "", stock: 10, in_stock: true, status: "active", badge: "",
   meta_title: "", meta_description: "", focus_keywords: "",
 };
 
@@ -88,7 +88,7 @@ const AdminProducts = () => {
       ingredients: Array.isArray(p.ingredients) ? p.ingredients.join("\n") : p.ingredients || "",
       benefits: Array.isArray(p.benefits) ? p.benefits.join("\n") : p.benefits || "",
       usage: p.usage || "", sku: p.sku, slug: p.slug,
-      stock: p.stock, in_stock: p.in_stock, status: p.status,
+      stock: p.stock, in_stock: p.in_stock, status: p.status, badge: p.badge || "",
       meta_title: p.meta_title || "", meta_description: p.meta_description || "",
       focus_keywords: Array.isArray(p.focus_keywords) ? p.focus_keywords.join(', ') : p.focus_keywords || "",
     });
@@ -106,6 +106,7 @@ const AdminProducts = () => {
       in_stock: form.in_stock, status: form.status,
       sku: form.sku ? (form.sku.startsWith('ALW-') ? form.sku : `ALW-${form.sku}`) : `ALW-${Date.now().toString().slice(-6)}`,
       slug: form.slug || form.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+      badge: form.badge || null,
       description: form.description,
       ingredients: form.ingredients.split("\n").filter(Boolean),
       benefits: form.benefits.split("\n").filter(Boolean),
@@ -295,7 +296,40 @@ const AdminProducts = () => {
                   <Input className="h-9 rounded-l-none" value={form.sku.replace(/^ALW-/i, '')} onChange={(e) => setForm({ ...form, sku: `ALW-${e.target.value.toUpperCase()}` })} placeholder="DELL-001" />
                 </div>
               </div>
-              <div><Label className="text-xs">Slug</Label><Input className="mt-1 h-9" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="auto-generated" /></div>
+              <div><Label className="text-xs">Slug</Label>
+                <div className="flex gap-1 mt-1">
+                  <Input className="h-9 flex-1" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="auto-generated" />
+                  <Button type="button" size="sm" variant="outline" className="h-9 px-2 text-xs shrink-0" onClick={() => setForm(f => ({ ...f, slug: f.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + (f.sku.replace(/^ALW-/i,'').toLowerCase() || Date.now().toString().slice(-4)) }))}>Auto</Button>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs">Status</Label>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Badge</Label>
+                <Select value={form.badge || ''} onValueChange={(v) => setForm({ ...form, badge: v || null })}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="None" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="Best Seller">Best Seller</SelectItem>
+                    <SelectItem value="New">New</SelectItem>
+                    <SelectItem value="Premium">Premium</SelectItem>
+                    <SelectItem value="Open Box">Open Box</SelectItem>
+                    <SelectItem value="Refurbished">Refurbished</SelectItem>
+                    <SelectItem value="Gaming">Gaming</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div><Label className="text-xs">Description</Label><Textarea className="mt-1" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-4">
