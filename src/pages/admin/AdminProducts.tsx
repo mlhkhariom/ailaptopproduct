@@ -104,7 +104,7 @@ const AdminProducts = () => {
       image: form.image || "https://images.unsplash.com/photo-1611241893603-3c359704e0ee?w=400&h=400&fit=crop",
       category: form.category, rating: 4.5, reviews: 0, stock: Number(form.stock),
       in_stock: form.in_stock, status: form.status,
-      sku: form.sku || `ALW-${Date.now()}`,
+      sku: form.sku ? (form.sku.startsWith('ALW-') ? form.sku : `ALW-${form.sku}`) : `ALW-${Date.now().toString().slice(-6)}`,
       slug: form.slug || form.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
       description: form.description,
       ingredients: form.ingredients.split("\n").filter(Boolean),
@@ -274,12 +274,12 @@ const AdminProducts = () => {
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-xs">Product Name *</Label><Input className="mt-1 h-9" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ashwagandha Powder" /></div>
-              <div><Label className="text-xs">Hindi Name</Label><Input className="mt-1 h-9" value={form.name_hi} onChange={(e) => setForm({ ...form, nameHi: e.target.value })} placeholder="Dell Latitude (Hindi name)" /></div>
+              <div><Label className="text-xs">Product Name *</Label><Input className="mt-1 h-9" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Dell Latitude E7470" /></div>
+              <div><Label className="text-xs">Hindi Name</Label><Input className="mt-1 h-9" value={form.name_hi} onChange={(e) => setForm({ ...form, name_hi: e.target.value })} placeholder="Hindi name (optional)" /></div>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div><Label className="text-xs">Price (₹) *</Label><Input type="number" className="mt-1 h-9" value={form.price || ""} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} /></div>
-              <div><Label className="text-xs">Compare Price (₹)</Label><Input type="number" className="mt-1 h-9" value={form.original_price || ""} onChange={(e) => setForm({ ...form, originalPrice: Number(e.target.value) })} /></div>
+              <div><Label className="text-xs">Compare Price (₹)</Label><Input type="number" className="mt-1 h-9" value={form.original_price || ""} onChange={(e) => setForm({ ...form, original_price: Number(e.target.value) })} /></div>
               <div>
                 <Label className="text-xs">Category *</Label>
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
@@ -289,16 +289,20 @@ const AdminProducts = () => {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-xs">SKU</Label><Input className="mt-1 h-9" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} /></div>
+              <div><Label className="text-xs">SKU</Label>
+                <div className="flex mt-1">
+                  <span className="inline-flex items-center px-2 border border-r-0 rounded-l-md bg-muted text-xs text-muted-foreground">ALW-</span>
+                  <Input className="h-9 rounded-l-none" value={form.sku.replace(/^ALW-/i, '')} onChange={(e) => setForm({ ...form, sku: `ALW-${e.target.value.toUpperCase()}` })} placeholder="DELL-001" />
+                </div>
+              </div>
               <div><Label className="text-xs">Slug</Label><Input className="mt-1 h-9" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="auto-generated" /></div>
             </div>
             <div><Label className="text-xs">Description</Label><Textarea className="mt-1" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-xs">Ingredients (one per line)</Label><Textarea className="mt-1" rows={3} value={form.ingredients} onChange={(e) => setForm({ ...form, ingredients: e.target.value })} /></div>
-              <div><Label className="text-xs">Benefits (one per line)</Label><Textarea className="mt-1" rows={3} value={form.benefits} onChange={(e) => setForm({ ...form, benefits: e.target.value })} /></div>
+              <div><Label className="text-xs">Specifications (one per line)</Label><Textarea className="mt-1" rows={3} value={form.ingredients} onChange={(e) => setForm({ ...form, ingredients: e.target.value })} placeholder="Intel Core i5 6th Gen&#10;8GB RAM&#10;256GB SSD" /></div>
+              <div><Label className="text-xs">Key Features (one per line)</Label><Textarea className="mt-1" rows={3} value={form.benefits} onChange={(e) => setForm({ ...form, benefits: e.target.value })} placeholder="6 Month Warranty&#10;Windows 11 Pro&#10;Certified Refurbished" /></div>
             </div>
-            <div><Label className="text-xs">Usage / Dosage</Label><Textarea className="mt-1" rows={2} value={form.usage} onChange={(e) => setForm({ ...form, usage: e.target.value })} /></div>
-            <div><Label className="text-xs">Precautions</Label><Textarea className="mt-1" rows={2} value={form.precautions} onChange={(e) => setForm({ ...form, precautions: e.target.value })} /></div>
+            <div><Label className="text-xs">Condition / Grade</Label><Input className="mt-1 h-9" value={form.usage} onChange={(e) => setForm({ ...form, usage: e.target.value })} placeholder="Excellent / Good / Used" /></div>
             <div>
               <Label className="text-xs">Product Image</Label>
               <div className="flex gap-2 mt-1">
@@ -328,7 +332,7 @@ const AdminProducts = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
-                <Switch checked={form.in_stock} onCheckedChange={(v) => setForm({ ...form, inStock: v })} /><Label className="text-xs">In Stock</Label>
+                <Switch checked={form.in_stock} onCheckedChange={(v) => setForm({ ...form, in_stock: v })} /><Label className="text-xs">In Stock</Label>
               </div>
               <div>
                 <Label className="text-xs">Stock Quantity</Label>
