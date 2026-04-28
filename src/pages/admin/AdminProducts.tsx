@@ -317,10 +317,10 @@ const AdminProducts = () => {
               </div>
               <div>
                 <Label className="text-xs">Badge</Label>
-                <Select value={form.badge || ''} onValueChange={(v) => setForm({ ...form, badge: v || null })}>
+                <Select value={form.badge || 'none'} onValueChange={(v) => setForm({ ...form, badge: v === 'none' ? null : v })}>
                   <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="None" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     <SelectItem value="Best Seller">Best Seller</SelectItem>
                     <SelectItem value="New">New</SelectItem>
                     <SelectItem value="Premium">Premium</SelectItem>
