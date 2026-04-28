@@ -90,7 +90,13 @@ const AdminProducts = () => {
       usage: p.usage || "", sku: p.sku, slug: p.slug,
       stock: p.stock, in_stock: p.in_stock, status: p.status, badge: p.badge || "",
       meta_title: p.meta_title || "", meta_description: p.meta_description || "",
-      focus_keywords: Array.isArray(p.focus_keywords) ? p.focus_keywords.join(', ') : p.focus_keywords || "",
+      focus_keywords: (() => {
+        if (Array.isArray(p.focus_keywords)) return p.focus_keywords.join(', ');
+        if (typeof p.focus_keywords === 'string') {
+          try { const arr = JSON.parse(p.focus_keywords); return Array.isArray(arr) ? arr.join(', ') : p.focus_keywords; } catch { return p.focus_keywords; }
+        }
+        return '';
+      })(),
     });
     setEditingId(p.id);
     setDialogOpen(true);
@@ -108,8 +114,8 @@ const AdminProducts = () => {
       slug: form.slug || form.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
       badge: form.badge || null,
       description: form.description,
-      ingredients: form.ingredients.split("\n").filter(Boolean),
-      benefits: form.benefits.split("\n").filter(Boolean),
+      ingredients: typeof form.ingredients === 'string' ? form.ingredients.split("\n").filter(Boolean) : (form.ingredients || []),
+      benefits: typeof form.benefits === 'string' ? form.benefits.split("\n").filter(Boolean) : (form.benefits || []),
       usage: form.usage,
       meta_title: form.meta_title || null,
       meta_description: form.meta_description || null,
