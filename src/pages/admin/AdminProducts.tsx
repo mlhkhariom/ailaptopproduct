@@ -125,6 +125,8 @@ const AdminProducts = () => {
       if (editingId) { await updateProduct(editingId, payload); toast.success("Product updated!"); }
       else { await addProduct(payload as any); toast.success("Product added!"); }
       setDialogOpen(false);
+      fetchProducts();
+      fetchProducts();
     } catch (e: any) { toast.error(e.message); }
   };
 
