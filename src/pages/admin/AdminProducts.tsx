@@ -356,15 +356,31 @@ const AdminProducts = () => {
                       const file = e.target.files?.[0];
                       if (!file) return;
                       setForm(f => ({ ...f, _uploading: true }));
+                      // Compress image before upload
+                      const compressedFile = await new Promise<File>((resolve) => {
+                        const img = new Image();
+                        const url = URL.createObjectURL(file);
+                        img.onload = () => {
+                          const canvas = document.createElement('canvas');
+                          const max = 1200;
+                          let w = img.width, h = img.height;
+                          if (w > max) { h = h * max / w; w = max; }
+                          canvas.width = w; canvas.height = h;
+                          canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+                          canvas.toBlob(blob => resolve(new File([blob!], file.name, { type: 'image/jpeg' })), 'image/jpeg', 0.85);
+                          URL.revokeObjectURL(url);
+                        };
+                        img.src = url;
+                      });
                       const fd = new FormData();
-                      fd.append('files', file);
+                      fd.append('files', compressedFile);
                       fd.append('folder', 'products');
                       try {
                         const res = await fetch('/api/media/upload', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: fd });
                         const data = await res.json();
                         if (data[0]?.url) setForm(f => ({ ...f, image: `https://ailaptopwala.com${data[0].url}`, _uploading: false }));
-                        else setForm(f => ({ ...f, _uploading: false }));
-                      } catch { setForm(f => ({ ...f, _uploading: false })); }
+                        else { toast.error('Upload failed: ' + JSON.stringify(data)); setForm(f => ({ ...f, _uploading: false })); }
+                      } catch(err: any) { toast.error('Upload error: ' + err.message); setForm(f => ({ ...f, _uploading: false })); }
                     }} />
                     <span className={`flex items-center justify-center gap-2 h-10 rounded-md border text-xs font-medium w-full ${form._uploading ? 'bg-primary/10 text-primary' : 'bg-muted hover:bg-accent'}`}>
                       {form._uploading ? '⏳ Uploading...' : '📁 Gallery / File'}
@@ -382,8 +398,8 @@ const AdminProducts = () => {
                         const res = await fetch('/api/media/upload', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: fd });
                         const data = await res.json();
                         if (data[0]?.url) setForm(f => ({ ...f, image: `https://ailaptopwala.com${data[0].url}`, _uploading: false }));
-                        else setForm(f => ({ ...f, _uploading: false }));
-                      } catch { setForm(f => ({ ...f, _uploading: false })); }
+                        else { toast.error('Upload failed'); setForm(f => ({ ...f, _uploading: false })); }
+                      } catch(err: any) { toast.error('Upload error: ' + err.message); setForm(f => ({ ...f, _uploading: false })); }
                     }} />
                     <span className={`flex items-center justify-center gap-2 h-10 rounded-md border text-xs font-medium w-full ${form._uploading ? 'bg-primary/10 text-primary' : 'bg-muted hover:bg-accent'}`}>
                       {form._uploading ? '⏳ Uploading...' : '📷 Camera'}
