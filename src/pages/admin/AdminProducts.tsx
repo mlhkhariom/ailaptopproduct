@@ -346,30 +346,61 @@ const AdminProducts = () => {
             <div><Label className="text-xs">Condition / Grade</Label><Input className="mt-1 h-9" value={form.usage} onChange={(e) => setForm({ ...form, usage: e.target.value })} placeholder="Excellent / Good / Used" /></div>
             <div>
               <Label className="text-xs">Product Image</Label>
-              <div className="flex gap-2 mt-1">
-                <Input className="h-9 flex-1" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://... ya file upload karein" />
-                <label className="cursor-pointer">
-                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const fd = new FormData();
-                    fd.append('files', file);
-                    fd.append('folder', 'products');
-                    try {
-                      const res = await fetch('/api/media/upload', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: fd });
-                      const data = await res.json();
-                      if (data[0]?.url) setForm(f => ({ ...f, image: `https://ailaptopwala.com${data[0].url}` }));
-                    } catch {}
-                  }} />
-                  <span className="inline-flex items-center px-3 h-9 rounded-md border bg-muted text-xs hover:bg-accent cursor-pointer">📁 Upload</span>
-                </label>
-              </div>
-              {form.image && (
-                <div className="mt-2 flex items-center gap-3">
-                  <img src={form.image} alt="Preview" className="h-16 w-16 rounded-lg object-cover border" onError={(e) => (e.currentTarget.style.display = "none")} />
-                  <span className="text-xs text-muted-foreground">Image Preview</span>
+              <div className="mt-1 space-y-2">
+                {/* Image URL input */}
+                <Input className="h-9" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://... ya neeche se upload karein" />
+                {/* Upload buttons — mobile friendly */}
+                <div className="flex gap-2">
+                  <label className="flex-1 cursor-pointer">
+                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setForm(f => ({ ...f, _uploading: true }));
+                      const fd = new FormData();
+                      fd.append('files', file);
+                      fd.append('folder', 'products');
+                      try {
+                        const res = await fetch('/api/media/upload', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: fd });
+                        const data = await res.json();
+                        if (data[0]?.url) setForm(f => ({ ...f, image: `https://ailaptopwala.com${data[0].url}`, _uploading: false }));
+                        else setForm(f => ({ ...f, _uploading: false }));
+                      } catch { setForm(f => ({ ...f, _uploading: false })); }
+                    }} />
+                    <span className={`flex items-center justify-center gap-2 h-10 rounded-md border text-xs font-medium w-full ${form._uploading ? 'bg-primary/10 text-primary' : 'bg-muted hover:bg-accent'}`}>
+                      {form._uploading ? '⏳ Uploading...' : '📁 Gallery / File'}
+                    </span>
+                  </label>
+                  <label className="flex-1 cursor-pointer">
+                    <input type="file" accept="image/*" capture="environment" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setForm(f => ({ ...f, _uploading: true }));
+                      const fd = new FormData();
+                      fd.append('files', file);
+                      fd.append('folder', 'products');
+                      try {
+                        const res = await fetch('/api/media/upload', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: fd });
+                        const data = await res.json();
+                        if (data[0]?.url) setForm(f => ({ ...f, image: `https://ailaptopwala.com${data[0].url}`, _uploading: false }));
+                        else setForm(f => ({ ...f, _uploading: false }));
+                      } catch { setForm(f => ({ ...f, _uploading: false })); }
+                    }} />
+                    <span className={`flex items-center justify-center gap-2 h-10 rounded-md border text-xs font-medium w-full ${form._uploading ? 'bg-primary/10 text-primary' : 'bg-muted hover:bg-accent'}`}>
+                      {form._uploading ? '⏳ Uploading...' : '📷 Camera'}
+                    </span>
+                  </label>
                 </div>
-              )}
+                {/* Preview + Save button after upload */}
+                {form.image && !form._uploading && (
+                  <div className="flex items-center gap-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                    <img src={form.image} alt="Preview" className="h-14 w-14 rounded-lg object-cover border shrink-0" onError={(e) => (e.currentTarget.style.display = "none")} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-green-700">✅ Image ready</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{form.image.split('/').pop()}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
