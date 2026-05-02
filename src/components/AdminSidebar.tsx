@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -33,6 +33,7 @@ const toolsMenu = [
 ];
 
 const systemMenu = [
+  { title: "ERP", url: "/admin/erp", icon: Building2, badge: "NEW" },
   { title: "User & Roles", url: "/admin/users", icon: UserCog, badge: "" },
   { title: "Reports", url: "/admin/reports", icon: BarChart3, badge: "" },
   { title: "Settings", url: "/admin/settings", icon: Settings, badge: "" },
