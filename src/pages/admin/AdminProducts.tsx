@@ -355,8 +355,7 @@ const AdminProducts = () => {
                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      setForm(f => ({ ...f, _uploading: true }));
-                      // Compress image before upload
+                      setForm(f => ({ ...f, _uploading: true, _progress: 0 }));
                       const compressedFile = await new Promise<File>((resolve) => {
                         const img = new Image();
                         const url = URL.createObjectURL(file);
@@ -375,15 +374,24 @@ const AdminProducts = () => {
                       const fd = new FormData();
                       fd.append('files', compressedFile);
                       fd.append('folder', 'products');
-                      try {
-                        const res = await fetch('/api/media/upload', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: fd });
-                        const data = await res.json();
-                        if (data[0]?.url) setForm(f => ({ ...f, image: `https://ailaptopwala.com${data[0].url}`, _uploading: false }));
-                        else { toast.error('Upload failed: ' + JSON.stringify(data)); setForm(f => ({ ...f, _uploading: false })); }
-                      } catch(err: any) { toast.error('Upload error: ' + err.message); setForm(f => ({ ...f, _uploading: false })); }
+                      const xhr = new XMLHttpRequest();
+                      xhr.upload.onprogress = (ev) => {
+                        if (ev.lengthComputable) setForm(f => ({ ...f, _progress: Math.round(ev.loaded / ev.total * 100) }));
+                      };
+                      xhr.onload = () => {
+                        try {
+                          const data = JSON.parse(xhr.responseText);
+                          if (data[0]?.url) setForm(f => ({ ...f, image: `https://ailaptopwala.com${data[0].url}`, _uploading: false, _progress: 100 }));
+                          else { toast.error('Upload failed'); setForm(f => ({ ...f, _uploading: false, _progress: 0 })); }
+                        } catch { toast.error('Upload error'); setForm(f => ({ ...f, _uploading: false, _progress: 0 })); }
+                      };
+                      xhr.onerror = () => { toast.error('Network error'); setForm(f => ({ ...f, _uploading: false, _progress: 0 })); };
+                      xhr.open('POST', '/api/media/upload');
+                      xhr.setRequestHeader('Authorization', `Bearer ${localStorage.getItem('ailaptopwala_token')}`);
+                      xhr.send(fd);
                     }} />
                     <span className={`flex items-center justify-center gap-2 h-10 rounded-md border text-xs font-medium w-full ${form._uploading ? 'bg-primary/10 text-primary' : 'bg-muted hover:bg-accent'}`}>
-                      {form._uploading ? '⏳ Uploading...' : '📁 Gallery / File'}
+                      {form._uploading ? `⏳ ${form._progress || 0}%` : '📁 Gallery / File'}
                     </span>
                   </label>
                   <label className="flex-1 cursor-pointer">
@@ -406,7 +414,13 @@ const AdminProducts = () => {
                     </span>
                   </label>
                 </div>
-                {/* Preview + Save button after upload */}
+                {/* Progress bar */}
+                {form._uploading && (
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: `${form._progress || 0}%` }} />
+                  </div>
+                )}
+                {/* Preview */}
                 {form.image && !form._uploading && (
                   <div className="flex items-center gap-3 p-2 bg-green-50 border border-green-200 rounded-lg">
                     <img src={form.image} alt="Preview" className="h-14 w-14 rounded-lg object-cover border shrink-0" onError={(e) => (e.currentTarget.style.display = "none")} />
