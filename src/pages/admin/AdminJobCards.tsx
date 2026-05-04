@@ -27,6 +27,7 @@ const emptyForm = {
   issue_description: '', priority: 'normal', technician: '',
   diagnosis: '', parts_used: [], labour_charge: 0, parts_charge: 0,
   status: 'pending', payment_status: 'pending', payment_method: '', notes: '',
+  branch_id: 'branch-silver-mall',
 };
 
 export default function AdminJobCards() {
@@ -38,6 +39,7 @@ export default function AdminJobCards() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<any>(emptyForm);
   const [staff, setStaff] = useState<any[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
 
   const load = async () => {
     setLoading(true);
@@ -45,6 +47,8 @@ export default function AdminJobCards() {
     setJobs(Array.isArray(data) ? data : []);
     const s = await req('GET', '/staff');
     setStaff(Array.isArray(s) ? s : []);
+    const b = await req('GET', '/branches');
+    setBranches(Array.isArray(b) ? b : []);
     setLoading(false);
   };
 
@@ -176,6 +180,14 @@ export default function AdminJobCards() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div><Label className="text-xs">Branch</Label>
+                <Select value={form.branch_id || 'branch-silver-mall'} onValueChange={v => setForm((f:any) => ({...f, branch_id: v}))}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {branches.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div><Label className="text-xs">Diagnosis</Label><Textarea className="mt-1" rows={2} value={form.diagnosis} onChange={e => setForm((f:any) => ({...f, diagnosis: e.target.value}))} /></div>
               <div className="grid grid-cols-2 gap-3">
