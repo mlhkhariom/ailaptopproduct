@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import {
@@ -13,10 +13,13 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const erpSubMenu = [
   { title: "ERP Overview", url: "/admin/erp", icon: Building2 },
+  { title: "Job Cards", url: "/admin/erp/job-cards", icon: ClipboardList },
   { title: "Inventory", url: "/admin/inventory", icon: Package },
   { title: "Suppliers", url: "/admin/inventory?tab=suppliers", icon: Truck },
   { title: "Purchase Orders", url: "/admin/inventory?tab=po", icon: ClipboardList },
   { title: "Stock Movements", url: "/admin/inventory?tab=movements", icon: ArrowUpDown },
+  { title: "Expenses", url: "/admin/erp/expenses", icon: Wallet },
+  { title: "Staff", url: "/admin/erp/staff", icon: UserCheck },
 ];
 
 const mainMenu = [

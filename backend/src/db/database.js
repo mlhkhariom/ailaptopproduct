@@ -279,7 +279,30 @@ export const initDB = async () => {
     "ALTER TABLE media ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'image'",
     "ALTER TABLE media ADD COLUMN IF NOT EXISTS folder TEXT DEFAULT 'general'",
     "ALTER TABLE media ADD COLUMN IF NOT EXISTS alt TEXT",
-    // ERP — Inventory Management tables
+    // ERP — Job Cards columns on service_bookings
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS technician TEXT",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS diagnosis TEXT",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS parts_used JSONB DEFAULT '[]'",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS labour_charge REAL DEFAULT 0",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS parts_charge REAL DEFAULT 0",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS total_charge REAL DEFAULT 0",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'pending'",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS payment_method TEXT",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS priority TEXT DEFAULT 'normal'",
+    // ERP — Expenses
+    `CREATE TABLE IF NOT EXISTS expenses (
+      id TEXT PRIMARY KEY, category TEXT NOT NULL, amount REAL NOT NULL,
+      description TEXT, payment_method TEXT DEFAULT 'cash',
+      date DATE DEFAULT CURRENT_DATE, receipt_url TEXT,
+      created_by TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    // ERP — Staff
+    `CREATE TABLE IF NOT EXISTS staff (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, role TEXT, phone TEXT, email TEXT,
+      salary REAL DEFAULT 0, joining_date DATE, address TEXT,
+      is_active INTEGER DEFAULT 1, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     `CREATE TABLE IF NOT EXISTS suppliers (
       id TEXT PRIMARY KEY, name TEXT NOT NULL, contact_person TEXT, phone TEXT, email TEXT,
       address TEXT, gstin TEXT, payment_terms TEXT DEFAULT 'net30',

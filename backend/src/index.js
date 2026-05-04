@@ -28,8 +28,8 @@ import customerRoutes from './routes/customers.js';
 import notificationRoutes from './routes/notifications.js';
 import reportRoutes from './routes/reports.js';
 import inventoryRoutes from './routes/inventory.js';
-import inventoryRoutes from './routes/inventory.js';
 import mediaRoutes from './routes/media.js';
+import erpRoutes from './routes/erp.js';
 import aiRoutes from './routes/ai.js';
 import paymentRoutes from './routes/payment.js';
 import siteSettingsRoutes from './routes/siteSettings.js';
@@ -111,6 +111,7 @@ app.use('/uploads', express.static(path.resolve(__dirname, '../../uploads')));
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/erp', erpRoutes);
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
