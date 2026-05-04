@@ -20,6 +20,7 @@ const erpSubMenu = [
   { title: "Stock Movements", url: "/admin/inventory?tab=movements", icon: ArrowUpDown },
   { title: "Expenses", url: "/admin/erp/expenses", icon: Wallet },
   { title: "Billing", url: "/admin/erp/billing", icon: Receipt },
+  { title: "ERP Reports", url: "/admin/erp/reports", icon: BarChart3 },
   { title: "Staff", url: "/admin/erp/staff", icon: UserCheck },
 ];
 
