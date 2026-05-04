@@ -1,5 +1,6 @@
-import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2 } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { useState } from "react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
@@ -10,10 +11,18 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useNotificationStore } from "@/store/notificationStore";
 import { useAuth } from "@/contexts/AuthContext";
 
+const erpSubMenu = [
+  { title: "ERP Overview", url: "/admin/erp", icon: Building2 },
+  { title: "Inventory", url: "/admin/inventory", icon: Package },
+  { title: "Suppliers", url: "/admin/inventory?tab=suppliers", icon: Truck },
+  { title: "Purchase Orders", url: "/admin/inventory?tab=po", icon: ClipboardList },
+  { title: "Stock Movements", url: "/admin/inventory?tab=movements", icon: ArrowUpDown },
+];
+
 const mainMenu = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, badge: "" },
-  { title: "Products", url: "/admin/products", icon: Package, badge: "8" },
-  { title: "Orders", url: "/admin/orders", icon: ShoppingBag, badge: "3" },
+  { title: "Products", url: "/admin/products", icon: Package, badge: "" },
+  { title: "Orders", url: "/admin/orders", icon: ShoppingBag, badge: "" },
   { title: "Payments", url: "/admin/payments", icon: IndianRupee, badge: "" },
   { title: "Customers", url: "/admin/customers", icon: Users, badge: "" },
   { title: "Categories", url: "/admin/categories", icon: Tag, badge: "" },
@@ -27,14 +36,12 @@ const toolsMenu = [
   { title: "Services", url: "/admin/services", icon: Wrench, badge: "" },
   { title: "Reviews", url: "/admin/reviews", icon: Star, badge: "" },
   { title: "Reels", url: "/admin/reels", icon: Play, badge: "" },
-  { title: "CMS / Pages", url: "/admin/cms", icon: Palette, badge: "NEW" },
-  { title: "Contact Queries", url: "/admin/contacts", icon: Mail, badge: "3" },
-  { title: "Coupons", url: "/admin/coupons", icon: Ticket, badge: "NEW" },
+  { title: "CMS / Pages", url: "/admin/cms", icon: Palette, badge: "" },
+  { title: "Contact Queries", url: "/admin/contacts", icon: Mail, badge: "" },
+  { title: "Coupons", url: "/admin/coupons", icon: Ticket, badge: "" },
 ];
 
 const systemMenu = [
-  { title: "ERP", url: "/admin/erp", icon: Building2, badge: "NEW" },
-  { title: "Inventory", url: "/admin/inventory", icon: Package, badge: "" },
   { title: "User & Roles", url: "/admin/users", icon: UserCog, badge: "" },
   { title: "Reports", url: "/admin/reports", icon: BarChart3, badge: "" },
   { title: "Settings", url: "/admin/settings", icon: Settings, badge: "" },
@@ -45,6 +52,7 @@ export function AdminSidebar() {
   const collapsed = state === "collapsed";
   const unreadCount = useNotificationStore((s) => s.unreadCount());
   const { user } = useAuth();
+  const [erpOpen, setErpOpen] = useState(true);
 
   const renderMenu = (items: typeof mainMenu) => (
     <SidebarMenu>
@@ -90,6 +98,30 @@ export function AdminSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-2">
+        {/* ERP — top section */}
+        <SidebarGroup>
+          <button onClick={() => setErpOpen(o => !o)} className="flex items-center justify-between w-full px-3 py-1.5 text-[10px] uppercase tracking-wider text-sidebar-foreground/40 hover:text-sidebar-foreground/70 transition-colors">
+            {!collapsed && <span>ERP</span>}
+            {!collapsed && (erpOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />)}
+          </button>
+          {erpOpen && (
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {erpSubMenu.map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild className="h-9">
+                      <NavLink to={item.url} className="rounded-lg hover:bg-sidebar-accent/50 transition-all px-3" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm">
+                        <item.icon className="h-4 w-4 shrink-0" />
+                        {!collapsed && <span className="text-sm ml-2">{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          )}
+        </SidebarGroup>
+        {!collapsed && <Separator className="mx-3 bg-sidebar-border/50" />}
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "Main"}</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenu(mainMenu)}</SidebarGroupContent>
