@@ -49,6 +49,8 @@ import AdminStaff from "./pages/admin/AdminStaff";
 import AdminBilling from "./pages/admin/AdminBilling";
 import AdminERPReports from "./pages/admin/AdminERPReports";
 import AdminCRM from "./pages/admin/AdminCRM";
+import AdminBranches from "./pages/admin/AdminBranches";
+import AdminBranches from "./pages/admin/AdminBranches";
 import AdminEvolution from "./pages/admin/AdminEvolution";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminCategories from "./pages/admin/AdminCategories";
@@ -120,6 +122,7 @@ const App = () => (
             <Route path="/admin/erp/billing" element={<AdminRoute><AdminBilling /></AdminRoute>} />
             <Route path="/admin/erp/reports" element={<AdminRoute><AdminERPReports /></AdminRoute>} />
             <Route path="/admin/erp/crm" element={<AdminRoute><AdminCRM /></AdminRoute>} />
+            <Route path="/admin/erp/branches" element={<AdminRoute><AdminBranches /></AdminRoute>} />
             <Route path="/admin/inventory" element={<AdminRoute><AdminInventory /></AdminRoute>} />
             <Route path="/admin/evolution" element={<AdminRoute><AdminEvolution /></AdminRoute>} />
             <Route path="/admin/customers" element={<AdminRoute><AdminCustomers /></AdminRoute>} />

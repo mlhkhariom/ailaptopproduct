@@ -233,3 +233,33 @@ router.post('/leads/:id/followups', authMiddleware, adminOnly, async (req, res) 
   if (next_date) await db.prepare('UPDATE leads SET next_followup=?,updated_at=NOW() WHERE id=?').run(next_date, req.params.id);
   res.status(201).json({ id });
 });
+
+// ── BRANCHES ──────────────────────────────────────────────
+
+router.get('/branches', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM branches ORDER BY name ASC').all() || []);
+});
+
+router.post('/branches', authMiddleware, adminOnly, async (req, res) => {
+  const { name, address, phone, manager } = req.body;
+  if (!name) return res.status(400).json({ error: 'name required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO branches (id,name,address,phone,manager) VALUES (?,?,?,?,?)').run(id, name, address, phone, manager);
+  res.status(201).json({ id });
+});
+
+router.put('/branches/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { name, address, phone, manager, is_active } = req.body;
+  await db.prepare('UPDATE branches SET name=?,address=?,phone=?,manager=?,is_active=? WHERE id=?').run(name, address, phone, manager, is_active ? 1 : 0, req.params.id);
+  res.json({ message: 'Updated' });
+});
+
+// Branch stats
+router.get('/branches/:id/stats', authMiddleware, adminOnly, async (req, res) => {
+  const bid = req.params.id;
+  const [orders, jobs] = await Promise.all([
+    db.prepare("SELECT COUNT(*) as c, COALESCE(SUM(total),0) as rev FROM orders WHERE branch_id=? AND payment_status='paid'").get(bid),
+    db.prepare("SELECT COUNT(*) as c, COALESCE(SUM(total_charge),0) as rev FROM service_bookings WHERE branch_id=? AND payment_status='paid'").get(bid),
+  ]);
+  res.json({ orders: orders?.c || 0, orderRevenue: orders?.rev || 0, jobs: jobs?.c || 0, jobRevenue: jobs?.rev || 0 });
+});

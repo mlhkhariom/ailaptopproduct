@@ -303,6 +303,13 @@ export const initDB = async () => {
       salary REAL DEFAULT 0, joining_date DATE, address TEXT,
       is_active INTEGER DEFAULT 1, created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
+    // Multi-Branch
+    `CREATE TABLE IF NOT EXISTS branches (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, address TEXT, phone TEXT,
+      manager TEXT, is_active INTEGER DEFAULT 1, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS branch_id TEXT",
+    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS branch_id TEXT",
     // CRM tables
     `CREATE TABLE IF NOT EXISTS leads (
       id TEXT PRIMARY KEY, name TEXT NOT NULL, phone TEXT, email TEXT,

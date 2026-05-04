@@ -219,4 +219,11 @@ IMPORTANT: Only use products from CURRENT CONTEXT. Never invent prices or specs.
   }
 
   console.log('✅ Seeder complete');
+
+  // Seed default branches
+  if (!(await db.prepare("SELECT id FROM branches LIMIT 1").get())) {
+    await db.prepare("INSERT INTO branches (id,name,address,phone,manager) VALUES (?,?,?,?,?)").run('branch-silver-mall', 'Silver Mall (Main)', 'LB-21, Block-B, Silver Mall, 8-A, RNT Marg, Indore 452001', '+91 98934 96163', 'Nitin Asati');
+    await db.prepare("INSERT INTO branches (id,name,address,phone,manager) VALUES (?,?,?,?,?)").run('branch-bangali', 'Bangali Chouraha', '21, G3, Sai Residency, Near Bangali Chouraha, Indore 452016', '+91 98934 96163', 'Bhagwan Das Asati');
+    console.log('✅ Branches seeded');
+  }
 };
