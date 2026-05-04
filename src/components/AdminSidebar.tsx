@@ -34,6 +34,7 @@ const toolsMenu = [
 
 const systemMenu = [
   { title: "ERP", url: "/admin/erp", icon: Building2, badge: "NEW" },
+  { title: "Inventory", url: "/admin/inventory", icon: Package, badge: "" },
   { title: "User & Roles", url: "/admin/users", icon: UserCog, badge: "" },
   { title: "Reports", url: "/admin/reports", icon: BarChart3, badge: "" },
   { title: "Settings", url: "/admin/settings", icon: Settings, badge: "" },

@@ -27,6 +27,8 @@ import whatsappRoutes from './routes/whatsapp.js';
 import customerRoutes from './routes/customers.js';
 import notificationRoutes from './routes/notifications.js';
 import reportRoutes from './routes/reports.js';
+import inventoryRoutes from './routes/inventory.js';
+import inventoryRoutes from './routes/inventory.js';
 import mediaRoutes from './routes/media.js';
 import aiRoutes from './routes/ai.js';
 import paymentRoutes from './routes/payment.js';
@@ -108,6 +110,7 @@ app.use('/api/evolution', evolutionRoutes);
 app.use('/uploads', express.static(path.resolve(__dirname, '../../uploads')));
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/inventory', inventoryRoutes);
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 

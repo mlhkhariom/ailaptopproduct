@@ -279,6 +279,28 @@ export const initDB = async () => {
     "ALTER TABLE media ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'image'",
     "ALTER TABLE media ADD COLUMN IF NOT EXISTS folder TEXT DEFAULT 'general'",
     "ALTER TABLE media ADD COLUMN IF NOT EXISTS alt TEXT",
+    // ERP — Inventory Management tables
+    `CREATE TABLE IF NOT EXISTS suppliers (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, contact_person TEXT, phone TEXT, email TEXT,
+      address TEXT, gstin TEXT, payment_terms TEXT DEFAULT 'net30',
+      notes TEXT, is_active INTEGER DEFAULT 1, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS purchase_orders (
+      id TEXT PRIMARY KEY, po_number TEXT UNIQUE NOT NULL, supplier_id TEXT,
+      status TEXT DEFAULT 'draft', items JSONB DEFAULT '[]',
+      subtotal REAL DEFAULT 0, tax REAL DEFAULT 0, total REAL DEFAULT 0,
+      expected_date DATE, received_date DATE, notes TEXT,
+      created_by TEXT, created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS stock_movements (
+      id TEXT PRIMARY KEY, product_id TEXT NOT NULL, type TEXT NOT NULL,
+      quantity INTEGER NOT NULL, reference_id TEXT, reference_type TEXT,
+      notes TEXT, created_by TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS inventory_alerts (
+      id TEXT PRIMARY KEY, product_id TEXT NOT NULL, alert_type TEXT DEFAULT 'low_stock',
+      threshold INTEGER DEFAULT 5, is_active INTEGER DEFAULT 1, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
   ];
   for (const m of migrations) {
     try { await pool.query(m); } catch {}
