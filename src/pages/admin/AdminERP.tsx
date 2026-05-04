@@ -1,83 +1,99 @@
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Package, Users, ShoppingBag, Wrench, BarChart3, IndianRupee, Truck, ClipboardList, Settings2 } from "lucide-react";
+import { Building2, Package, Users, Wrench, BarChart3, IndianRupee, Truck, ClipboardList, Wallet, UserCheck, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
+import { Link } from "react-router-dom";
 
-const modules = [
-  { title: "Inventory Management", desc: "Stock tracking, low stock alerts, purchase orders, supplier management", icon: Package, status: "planned", priority: "High" },
-  { title: "Purchase Orders", desc: "Create POs, track supplier deliveries, manage vendor payments", icon: Truck, status: "planned", priority: "High" },
-  { title: "Sales & CRM", desc: "Lead tracking, customer history, follow-ups, sales pipeline", icon: Users, status: "planned", priority: "High" },
-  { title: "Repair Job Cards", desc: "Job card creation, technician assignment, parts used, billing", icon: Wrench, status: "planned", priority: "High" },
-  { title: "Billing & Invoicing", desc: "GST invoices, quotations, receipts, payment tracking", icon: IndianRupee, status: "planned", priority: "High" },
-  { title: "Expense Tracking", desc: "Daily expenses, salary, rent, utilities, profit/loss", icon: ClipboardList, status: "planned", priority: "Medium" },
-  { title: "Staff Management", desc: "Employee records, attendance, salary, performance", icon: Users, status: "planned", priority: "Medium" },
-  { title: "Analytics & Reports", desc: "Sales reports, profit analysis, top products, customer insights", icon: BarChart3, status: "partial", priority: "Medium" },
-  { title: "Multi-Branch", desc: "Silver Mall + Bangali Chouraha — separate stock, sales, staff", icon: Building2, status: "planned", priority: "Low" },
-  { title: "WhatsApp Integration", desc: "Auto-send invoices, job card updates, payment reminders via WhatsApp", icon: Settings2, status: "partial", priority: "Medium" },
-];
-
-const statusColor: Record<string, string> = {
-  planned: "secondary",
-  partial: "default",
-  done: "outline",
-};
+const req = (path: string) =>
+  fetch(`/api/erp${path}`, { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json());
 
 export default function AdminERP() {
+  const [stats, setStats] = useState<any>({});
+  const [invStats, setInvStats] = useState<any>({});
+
+  useEffect(() => {
+    req('/dashboard').then(d => setStats(d || {}));
+    fetch('/api/inventory/stats', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setInvStats(d || {}));
+  }, []);
+
+  const modules = [
+    { title: "Job Cards", desc: "Repair tracking & billing", url: "/admin/erp/job-cards", icon: ClipboardList, stat: `${stats.pendingJobs || 0} pending`, color: "text-blue-600" },
+    { title: "Inventory", desc: "Stock & products", url: "/admin/inventory", icon: Package, stat: `${invStats.lowStock || 0} low stock`, color: "text-orange-600" },
+    { title: "Suppliers", desc: "Vendor management", url: "/admin/inventory?tab=suppliers", icon: Truck, stat: `${invStats.totalSuppliers || 0} active`, color: "text-purple-600" },
+    { title: "Purchase Orders", desc: "Stock procurement", url: "/admin/inventory?tab=po", icon: ClipboardList, stat: `${invStats.pendingPOs || 0} pending`, color: "text-yellow-600" },
+    { title: "Expenses", desc: "Cost tracking", url: "/admin/erp/expenses", icon: Wallet, stat: `₹${(stats.monthExpenses || 0).toLocaleString('en-IN')} this month`, color: "text-red-600" },
+    { title: "Staff", desc: "Team management", url: "/admin/erp/staff", icon: UserCheck, stat: `${stats.totalStaff || 0} members`, color: "text-green-600" },
+  ];
+
   return (
     <AdminLayout>
-      <div className="p-6 max-w-5xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-black flex items-center gap-2"><Building2 className="h-6 w-6 text-primary" /> ERP — Enterprise Resource Planning</h1>
-          <p className="text-muted-foreground text-sm mt-1">AI Laptop Wala ke liye complete business management system ka roadmap</p>
+      <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6">
+        <div className="flex items-center gap-2">
+          <Building2 className="h-6 w-6 text-primary" />
+          <h1 className="text-xl font-black">ERP Dashboard</h1>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <Card className="border-primary/30 bg-primary/5">
-            <CardContent className="p-4">
-              <p className="text-sm font-semibold mb-1">Current Status</p>
-              <p className="text-xs text-muted-foreground">E-commerce, Orders, WhatsApp AI, Services booking — already working ✅</p>
-            </CardContent>
-          </Card>
-          <Card className="border-orange-300/30 bg-orange-50/50">
-            <CardContent className="p-4">
-              <p className="text-sm font-semibold mb-1">Next Priority</p>
-              <p className="text-xs text-muted-foreground">Repair Job Cards + Purchase Orders + GST Billing — most needed for daily operations</p>
-            </CardContent>
-          </Card>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card><CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Pending Jobs</p>
+            <p className="text-2xl font-black text-blue-600">{stats.pendingJobs || 0}</p>
+          </CardContent></Card>
+          <Card><CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Completed Today</p>
+            <p className="text-2xl font-black text-green-600">{stats.completedToday || 0}</p>
+          </CardContent></Card>
+          <Card><CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Month Revenue</p>
+            <p className="text-xl font-black text-primary">₹{(stats.monthRevenue || 0).toLocaleString('en-IN')}</p>
+          </CardContent></Card>
+          <Card><CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Net Profit</p>
+            <p className={`text-xl font-black ${(stats.netProfit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ₹{(stats.netProfit || 0).toLocaleString('en-IN')}
+            </p>
+          </CardContent></Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {modules.map((m) => (
-            <Card key={m.title} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2 pt-4 px-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <m.icon className="h-4 w-4 text-primary" />
-                    </div>
-                    <CardTitle className="text-sm font-bold">{m.title}</CardTitle>
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Badge variant={statusColor[m.status] as any} className="text-[10px]">{m.status}</Badge>
-                    <Badge variant="outline" className={`text-[10px] ${m.priority === 'High' ? 'border-red-300 text-red-600' : m.priority === 'Medium' ? 'border-yellow-300 text-yellow-600' : 'border-gray-300'}`}>{m.priority}</Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <p className="text-xs text-muted-foreground">{m.desc}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="mt-8 p-4 bg-muted/50 rounded-xl border">
-          <p className="text-sm font-semibold mb-2">Implementation Plan</p>
-          <div className="space-y-1 text-xs text-muted-foreground">
-            <p>📌 <strong>Phase 1 (1-2 weeks):</strong> Repair Job Cards — create, assign technician, track status, generate bill</p>
-            <p>📌 <strong>Phase 2 (2-3 weeks):</strong> GST Billing — invoices, quotations, payment tracking</p>
-            <p>📌 <strong>Phase 3 (3-4 weeks):</strong> Purchase Orders — supplier management, stock receiving</p>
-            <p>📌 <strong>Phase 4 (4-6 weeks):</strong> Expense tracking, staff management, multi-branch</p>
+        {/* Alerts */}
+        {(stats.pendingPayments > 0 || invStats.lowStock > 0) && (
+          <div className="space-y-2">
+            {stats.pendingPayments > 0 && (
+              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
+                <AlertTriangle className="h-4 w-4 text-yellow-600 shrink-0" />
+                <span><strong>{stats.pendingPayments}</strong> completed jobs have pending payment</span>
+                <Link to="/admin/erp/job-cards" className="ml-auto text-xs text-primary underline">View</Link>
+              </div>
+            )}
+            {invStats.lowStock > 0 && (
+              <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
+                <AlertTriangle className="h-4 w-4 text-orange-600 shrink-0" />
+                <span><strong>{invStats.lowStock}</strong> products have low stock (≤5 units)</span>
+                <Link to="/admin/inventory" className="ml-auto text-xs text-primary underline">View</Link>
+              </div>
+            )}
           </div>
+        )}
+
+        {/* Module Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {modules.map(m => (
+            <Link key={m.url} to={m.url}>
+              <Card className="hover:shadow-md transition-all hover:border-primary/30 cursor-pointer h-full">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className={`h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center`}>
+                      <m.icon className={`h-5 w-5 ${m.color}`} />
+                    </div>
+                  </div>
+                  <p className="font-bold text-sm">{m.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{m.desc}</p>
+                  <p className={`text-xs font-semibold mt-2 ${m.color}`}>{m.stat}</p>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
         </div>
       </div>
     </AdminLayout>
