@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import {
@@ -19,6 +19,7 @@ const erpSubMenu = [
   { title: "Purchase Orders", url: "/admin/inventory?tab=po", icon: ClipboardList },
   { title: "Stock Movements", url: "/admin/inventory?tab=movements", icon: ArrowUpDown },
   { title: "Expenses", url: "/admin/erp/expenses", icon: Wallet },
+  { title: "Billing", url: "/admin/erp/billing", icon: Receipt },
   { title: "Staff", url: "/admin/erp/staff", icon: UserCheck },
 ];
 

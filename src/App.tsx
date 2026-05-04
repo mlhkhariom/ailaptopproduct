@@ -46,6 +46,7 @@ import AdminInventory from "./pages/admin/AdminInventory";
 import AdminJobCards from "./pages/admin/AdminJobCards";
 import AdminStaffExpenses from "./pages/admin/AdminStaffExpenses";
 import AdminStaff from "./pages/admin/AdminStaff";
+import AdminBilling from "./pages/admin/AdminBilling";
 import AdminEvolution from "./pages/admin/AdminEvolution";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminCategories from "./pages/admin/AdminCategories";
@@ -114,6 +115,7 @@ const App = () => (
             <Route path="/admin/erp/job-cards" element={<AdminRoute><AdminJobCards /></AdminRoute>} />
             <Route path="/admin/erp/expenses" element={<AdminRoute><AdminStaffExpenses /></AdminRoute>} />
             <Route path="/admin/erp/staff" element={<AdminRoute><AdminStaff /></AdminRoute>} />
+            <Route path="/admin/erp/billing" element={<AdminRoute><AdminBilling /></AdminRoute>} />
             <Route path="/admin/inventory" element={<AdminRoute><AdminInventory /></AdminRoute>} />
             <Route path="/admin/evolution" element={<AdminRoute><AdminEvolution /></AdminRoute>} />
             <Route path="/admin/customers" element={<AdminRoute><AdminCustomers /></AdminRoute>} />
