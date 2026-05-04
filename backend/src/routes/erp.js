@@ -55,6 +55,19 @@ router.put('/job-cards/:id', authMiddleware, adminOnly, async (req, res) => {
       labour_charge || 0, parts_charge || 0, total_charge,
       payment_status, payment_method, notes, priority || 'normal',
       completed_at, req.params.id);
+
+  // WhatsApp notification on status change
+  try {
+    const job = await db.prepare('SELECT * FROM service_bookings WHERE id=?').get(req.params.id);
+    if (job?.customer_phone) {
+      const { queueNotification } = await import('../whatsapp/notifications.js');
+      let msg = null;
+      if (status === 'in_progress') msg = `🔧 *Job Update — AI Laptop Wala*\n\nNamaste ${job.customer_name}! 🙏\n\nAapka ${job.device_brand} ${job.device_model} repair shuru ho gaya hai.\n*Job ID:* ${job.booking_number}\n*Technician:* ${technician || 'Our Expert'}\n\nUpdate milte rahenge. 📞 +91 98934 96163`;
+      if (status === 'completed') msg = `✅ *Repair Complete — AI Laptop Wala*\n\nNamaste ${job.customer_name}! 🙏\n\nAapka ${job.device_brand} ${job.device_model} repair ho gaya hai!\n*Job ID:* ${job.booking_number}\n*Total:* ₹${((labour_charge || 0) + (parts_charge || 0)).toLocaleString('en-IN')}\n\nPickup ke liye call karein: 📞 +91 98934 96163\nSilver Mall, RNT Marg, Indore`;
+      if (msg) await queueNotification(job.customer_phone, msg, 'job_update');
+    }
+  } catch {}
+
   res.json({ message: 'Updated' });
 });
 
