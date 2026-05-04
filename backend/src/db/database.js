@@ -303,6 +303,19 @@ export const initDB = async () => {
       salary REAL DEFAULT 0, joining_date DATE, address TEXT,
       is_active INTEGER DEFAULT 1, created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
+    // CRM tables
+    `CREATE TABLE IF NOT EXISTS leads (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, phone TEXT, email TEXT,
+      source TEXT DEFAULT 'whatsapp', interest TEXT, budget REAL,
+      status TEXT DEFAULT 'new', priority TEXT DEFAULT 'normal',
+      assigned_to TEXT, notes TEXT, next_followup DATE,
+      created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS followups (
+      id TEXT PRIMARY KEY, lead_id TEXT NOT NULL, type TEXT DEFAULT 'call',
+      notes TEXT, outcome TEXT, next_date DATE,
+      created_by TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     `CREATE TABLE IF NOT EXISTS suppliers (
       id TEXT PRIMARY KEY, name TEXT NOT NULL, contact_person TEXT, phone TEXT, email TEXT,
       address TEXT, gstin TEXT, payment_terms TEXT DEFAULT 'net30',

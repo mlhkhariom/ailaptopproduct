@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const erpSubMenu = [
   { title: "ERP Overview", url: "/admin/erp", icon: Building2 },
   { title: "Job Cards", url: "/admin/erp/job-cards", icon: ClipboardList },
+  { title: "Sales CRM", url: "/admin/erp/crm", icon: Users },
   { title: "Inventory", url: "/admin/inventory", icon: Package },
   { title: "Suppliers", url: "/admin/inventory?tab=suppliers", icon: Truck },
   { title: "Purchase Orders", url: "/admin/inventory?tab=po", icon: ClipboardList },

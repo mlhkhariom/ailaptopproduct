@@ -142,4 +142,94 @@ router.get('/dashboard', authMiddleware, adminOnly, async (req, res) => {
   });
 });
 
+// ── CRM / LEADS ───────────────────────────────────────────
+
+router.get('/leads', authMiddleware, adminOnly, async (req, res) => {
+  const { status } = req.query;
+  let q = 'SELECT * FROM leads WHERE 1=1';
+  const params = [];
+  if (status && status !== 'all') { q += ' AND status=?'; params.push(status); }
+  q += ' ORDER BY next_followup ASC NULLS LAST, created_at DESC';
+  res.json(await db.prepare(q).all(...params) || []);
+});
+
+router.post('/leads', authMiddleware, adminOnly, async (req, res) => {
+  const { name, phone, email, source, interest, budget, status, priority, assigned_to, notes, next_followup } = req.body;
+  if (!name) return res.status(400).json({ error: 'name required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO leads (id,name,phone,email,source,interest,budget,status,priority,assigned_to,notes,next_followup) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(id, name, phone, email, source || 'walk-in', interest, budget, status || 'new', priority || 'normal', assigned_to, notes, next_followup);
+  res.status(201).json({ id });
+});
+
+router.put('/leads/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { name, phone, email, source, interest, budget, status, priority, assigned_to, notes, next_followup } = req.body;
+  await db.prepare('UPDATE leads SET name=?,phone=?,email=?,source=?,interest=?,budget=?,status=?,priority=?,assigned_to=?,notes=?,next_followup=?,updated_at=NOW() WHERE id=?')
+    .run(name, phone, email, source, interest, budget, status, priority, assigned_to, notes, next_followup, req.params.id);
+  res.json({ message: 'Updated' });
+});
+
+router.delete('/leads/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM leads WHERE id=?').run(req.params.id);
+  res.json({ message: 'Deleted' });
+});
+
+router.get('/leads/:id/followups', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM followups WHERE lead_id=? ORDER BY created_at DESC').all(req.params.id) || []);
+});
+
+router.post('/leads/:id/followups', authMiddleware, adminOnly, async (req, res) => {
+  const { type, notes, outcome, next_date } = req.body;
+  const id = uuid();
+  await db.prepare('INSERT INTO followups (id,lead_id,type,notes,outcome,next_date,created_by) VALUES (?,?,?,?,?,?,?)')
+    .run(id, req.params.id, type || 'call', notes, outcome, next_date, req.user.id);
+  if (next_date) await db.prepare('UPDATE leads SET next_followup=?,updated_at=NOW() WHERE id=?').run(next_date, req.params.id);
+  res.status(201).json({ id });
+});
+
 export default router;
+
+// ── CRM / LEADS ───────────────────────────────────────────
+
+router.get('/leads', authMiddleware, adminOnly, async (req, res) => {
+  const { status } = req.query;
+  let q = 'SELECT * FROM leads WHERE 1=1';
+  const params = [];
+  if (status && status !== 'all') { q += ' AND status=?'; params.push(status); }
+  q += ' ORDER BY next_followup ASC NULLS LAST, created_at DESC';
+  res.json(await db.prepare(q).all(...params) || []);
+});
+
+router.post('/leads', authMiddleware, adminOnly, async (req, res) => {
+  const { name, phone, email, source, interest, budget, status, priority, assigned_to, notes, next_followup } = req.body;
+  if (!name) return res.status(400).json({ error: 'name required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO leads (id,name,phone,email,source,interest,budget,status,priority,assigned_to,notes,next_followup) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(id, name, phone, email, source || 'walk-in', interest, budget, status || 'new', priority || 'normal', assigned_to, notes, next_followup);
+  res.status(201).json({ id });
+});
+
+router.put('/leads/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { name, phone, email, source, interest, budget, status, priority, assigned_to, notes, next_followup } = req.body;
+  await db.prepare('UPDATE leads SET name=?,phone=?,email=?,source=?,interest=?,budget=?,status=?,priority=?,assigned_to=?,notes=?,next_followup=?,updated_at=NOW() WHERE id=?')
+    .run(name, phone, email, source, interest, budget, status, priority, assigned_to, notes, next_followup, req.params.id);
+  res.json({ message: 'Updated' });
+});
+
+router.delete('/leads/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM leads WHERE id=?').run(req.params.id);
+  res.json({ message: 'Deleted' });
+});
+
+router.get('/leads/:id/followups', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM followups WHERE lead_id=? ORDER BY created_at DESC').all(req.params.id) || []);
+});
+
+router.post('/leads/:id/followups', authMiddleware, adminOnly, async (req, res) => {
+  const { type, notes, outcome, next_date } = req.body;
+  const id = uuid();
+  await db.prepare('INSERT INTO followups (id,lead_id,type,notes,outcome,next_date,created_by) VALUES (?,?,?,?,?,?,?)')
+    .run(id, req.params.id, type || 'call', notes, outcome, next_date, req.user.id);
+  if (next_date) await db.prepare('UPDATE leads SET next_followup=?,updated_at=NOW() WHERE id=?').run(next_date, req.params.id);
+  res.status(201).json({ id });
+});
