@@ -38,6 +38,7 @@ export default function AdminCRM() {
   const [staff, setStaff] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sourceFilter, setSourceFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [followupOpen, setFollowupOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
@@ -62,10 +63,11 @@ export default function AdminCRM() {
   useEffect(() => { load(); }, [statusFilter]);
 
   const filtered = leads.filter(l =>
-    !search ||
-    l.name?.toLowerCase().includes(search.toLowerCase()) ||
-    l.phone?.includes(search) ||
-    l.interest?.toLowerCase().includes(search.toLowerCase())
+    (!search ||
+      l.name?.toLowerCase().includes(search.toLowerCase()) ||
+      l.phone?.includes(search) ||
+      l.interest?.toLowerCase().includes(search.toLowerCase())) &&
+    (sourceFilter === 'all' || l.source === sourceFilter)
   );
 
   // Pipeline counts
@@ -172,11 +174,20 @@ export default function AdminCRM() {
           ))}
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search name, phone, interest..." className="pl-8 h-8 text-sm"
-            value={search} onChange={e => setSearch(e.target.value)} />
+        {/* Search + Source filter */}
+        <div className="flex gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-48">
+            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Search name, phone, interest..." className="pl-8 h-8 text-sm"
+              value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <Select value={sourceFilter} onValueChange={setSourceFilter}>
+            <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Sources</SelectItem>
+              {SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Table */}

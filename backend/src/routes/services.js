@@ -59,7 +59,11 @@ router.post('/book', async (req, res) => {
   notifyServiceBooked(booking, customer_phone);
 
   // Admin notification
-  await db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)').run(uuid(), 'service', 'New Service Booking', `${customer_name} booked ${service.name}`, '/admin/services');
+  await db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)').run(uuid(), 'service', 'New Service Booking', `${customer_name} booked ${service.name}`, '/admin/erp/job-cards');
+
+  // Auto-upgrade to Job Card (add ERP columns)
+  await db.prepare(`UPDATE service_bookings SET priority='normal', payment_status='pending', labour_charge=?, total_charge=? WHERE id=?`)
+    .run(service.price || 0, service.price || 0, id);
 
   res.status(201).json({ booking_number, id, message: 'Booking confirmed! You will receive WhatsApp confirmation.' });
 });

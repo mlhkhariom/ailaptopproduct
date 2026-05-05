@@ -13,6 +13,7 @@ export default function AdminERP() {
   const [invStats, setInvStats] = useState<any>({});
   const [branchCount, setBranchCount] = useState(0);
   const [pendingBilling, setPendingBilling] = useState(0);
+  const [ecomStats, setEcomStats] = useState<any>({});
 
   useEffect(() => {
     const h = { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` };
@@ -20,6 +21,7 @@ export default function AdminERP() {
     fetch('/api/inventory/stats', { headers: h }).then(r => r.json()).then(d => setInvStats(d || {}));
     req('/branches').then(d => setBranchCount(Array.isArray(d) ? d.filter((b: any) => b.is_active).length : 0));
     fetch('/api/erp/billing?status=pending', { headers: h }).then(r => r.json()).then(d => setPendingBilling(Array.isArray(d) ? d.length : 0));
+    fetch('/api/reports/dashboard', { headers: h }).then(r => r.json()).then(d => setEcomStats(d || {}));
   }, []);
 
   const modules = [
@@ -43,7 +45,7 @@ export default function AdminERP() {
           <h1 className="text-xl font-black">ERP Dashboard</h1>
         </div>
 
-        {/* KPI Cards */}
+        {/* KPI Cards — ERP */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card><CardContent className="p-4">
             <p className="text-xs text-muted-foreground">Pending Jobs</p>
@@ -64,6 +66,31 @@ export default function AdminERP() {
             </p>
           </CardContent></Card>
         </div>
+
+        {/* KPI Cards — Ecommerce */}
+        {(ecomStats.totalOrders > 0 || ecomStats.todayOrders > 0) && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">🛒 Ecommerce</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card><CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">Today's Orders</p>
+                <p className="text-2xl font-black text-blue-600">{ecomStats.todayOrders || 0}</p>
+              </CardContent></Card>
+              <Card><CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">Pending Orders</p>
+                <p className="text-2xl font-black text-orange-600">{ecomStats.pendingOrders || 0}</p>
+              </CardContent></Card>
+              <Card><CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">Month Sales</p>
+                <p className="text-xl font-black text-green-600">₹{(ecomStats.monthRevenue || 0).toLocaleString('en-IN')}</p>
+              </CardContent></Card>
+              <Card><CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">Total Products</p>
+                <p className="text-2xl font-black">{invStats.totalProducts || 0}</p>
+              </CardContent></Card>
+            </div>
+          </div>
+        )}
 
         {/* Alerts */}
         {(stats.pendingPayments > 0 || invStats.lowStock > 0) && (

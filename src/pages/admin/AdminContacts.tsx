@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Mail, Phone, Eye, Trash2, MessageCircle, CheckCircle, AlertCircle, Search, Reply, Star, RefreshCw, Clock } from "lucide-react";
+import { Mail, Phone, Eye, Trash2, MessageCircle, CheckCircle, AlertCircle, Search, Reply, Star, RefreshCw, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -71,6 +71,19 @@ const AdminContacts = () => {
   const toggleStar = async (c: any) => {
     await update(c.id, { status: c.status, priority: c.priority, starred: !c.starred, reply: c.reply });
     load();
+  };
+
+  const convertToLead = async (c: any) => {
+    try {
+      await fetch('/api/erp/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` },
+        body: JSON.stringify({ name: c.name, phone: c.phone || '', email: c.email, source: 'Website', interest: c.subject || '', notes: c.message, status: 'new' }),
+      });
+      await update(c.id, { status: 'resolved', priority: c.priority, starred: c.starred, reply: c.reply });
+      toast.success('Converted to CRM lead!');
+      setViewContact(null); load();
+    } catch { toast.error('Failed to convert'); }
   };
 
   const filtered = contacts.filter(c =>
@@ -208,6 +221,9 @@ const AdminContacts = () => {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setViewContact(null)}>Close</Button>
+            <Button variant="outline" className="gap-1.5 text-blue-600 border-blue-200" onClick={() => convertToLead(viewContact)}>
+              <Users className="h-4 w-4" /> Convert to Lead
+            </Button>
             <Button onClick={sendReply} disabled={replying || !replyText.trim()} className="gap-2"><Reply className="h-4 w-4" />{replying ? 'Saving...' : 'Save Reply'}</Button>
           </DialogFooter>
         </DialogContent>

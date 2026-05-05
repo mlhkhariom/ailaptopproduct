@@ -14,6 +14,17 @@ router.post('/', async (req, res) => {
   await db.prepare('INSERT INTO contact_queries (id, name, email, phone, subject, message) VALUES (?, ?, ?, ?, ?, ?)').run(id, name, email, phone, subject, message);
   await db.prepare('INSERT INTO notifications (id, type, title, message, link) VALUES (?, ?, ?, ?, ?)')
     .run(uuid(), 'contact', 'New Contact Query', `${name} ne message bheja: ${subject || message.slice(0, 40)}`, '/admin/contacts');
+
+  // Auto-create CRM lead
+  try {
+    const existing = await db.prepare('SELECT id FROM leads WHERE phone=? OR email=?').get(phone || '', email);
+    if (!existing) {
+      await db.prepare(`INSERT INTO leads (id,name,phone,email,source,interest,status,notes)
+        VALUES (?,?,?,?,'Website',?,  'new',?)`)
+        .run(uuid(), name, phone || '', email, subject || 'Contact Us inquiry', message.slice(0, 200));
+    }
+  } catch {}
+
   res.status(201).json({ message: 'Query submitted' });
 });
 

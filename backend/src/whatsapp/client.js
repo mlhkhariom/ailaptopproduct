@@ -156,6 +156,18 @@ export const initWhatsApp = async () => {
     await db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
       .run(msg.id._serialized, msg.from, 'me', msg.hasMedia ? `[${msg.type}]` : (msg.body || `[${msg.type}]`), 'incoming');
 
+    // Auto-create CRM lead for new WhatsApp contacts (first message only)
+    if (!msg.isGroup && msg.type === 'chat') {
+      try {
+        const phone = msg.from.replace('@c.us', '');
+        const existing = await db.prepare('SELECT id FROM leads WHERE phone=?').get(phone);
+        if (!existing) {
+          await db.prepare(`INSERT INTO leads (id,name,phone,source,interest,status,notes) VALUES (?,?,?,'WhatsApp','WhatsApp Inquiry','new',?)`)
+            .run(uuid(), contact.pushname || contact.name || phone, phone, msg.body?.slice(0, 200) || '');
+        }
+      } catch {}
+    }
+
     // AI Agent processing
     if (msg.body && msg.type === 'chat') {
       try {
