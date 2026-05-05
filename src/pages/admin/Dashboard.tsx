@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { IndianRupee, ShoppingBag, Users, Package, ArrowUpRight, Clock, CheckCircle, Truck, AlertTriangle, RefreshCw, TrendingUp } from "lucide-react";
+import { IndianRupee, ShoppingBag, Users, Package, ArrowUpRight, Clock, CheckCircle, Truck, AlertTriangle, RefreshCw, TrendingUp, ClipboardList, Wrench, UserCheck, MessageSquare } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -185,6 +185,52 @@ const AdminDashboard = () => {
               </Button>
             </CardContent>
           </Card>
+        )}
+
+        {/* ERP Stats */}
+        {data?.erp && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-bold flex items-center gap-2">
+                <Wrench className="h-4 w-4 text-primary" /> ERP Overview
+              </h2>
+              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate('/admin/erp')}>
+                Full ERP →
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: 'Pending Jobs', value: data.erp.pendingJobs, icon: ClipboardList, color: 'text-blue-600', bg: 'bg-blue-100', url: '/admin/erp/job-cards', alert: data.erp.pendingJobs > 5 },
+                { label: 'Pending Payments', value: data.erp.pendingPayments, icon: IndianRupee, color: 'text-red-600', bg: 'bg-red-100', url: '/admin/erp/billing', alert: data.erp.pendingPayments > 0 },
+                { label: 'Active Leads', value: data.erp.activeLeads, icon: MessageSquare, color: 'text-indigo-600', bg: 'bg-indigo-100', url: '/admin/erp/crm', alert: data.erp.overdueFollowups > 0, sub: data.erp.overdueFollowups > 0 ? `${data.erp.overdueFollowups} overdue` : undefined },
+                { label: 'Staff', value: data.erp.totalStaff, icon: UserCheck, color: 'text-teal-600', bg: 'bg-teal-100', url: '/admin/erp/staff', alert: false },
+              ].map(s => (
+                <Card key={s.label} className={`hover:shadow-md transition-all cursor-pointer ${s.alert ? 'border-red-200' : ''}`} onClick={() => navigate(s.url)}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`h-9 w-9 rounded-xl ${s.bg} flex items-center justify-center`}>
+                        <s.icon className={`h-4 w-4 ${s.color}`} />
+                      </div>
+                      {s.alert && <span className="h-2 w-2 rounded-full bg-red-500" />}
+                    </div>
+                    <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
+                    <p className="text-xs text-muted-foreground">{s.label}</p>
+                    {s.sub && <p className="text-xs text-red-600 font-medium mt-0.5">{s.sub}</p>}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            {/* ERP month revenue */}
+            {data.erp.monthRevenue > 0 && (
+              <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-700">ERP Service Revenue This Month</span>
+                </div>
+                <span className="text-base font-black text-green-700">₹{data.erp.monthRevenue.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </AdminLayout>

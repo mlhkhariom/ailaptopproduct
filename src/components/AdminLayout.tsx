@@ -1,11 +1,11 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ExternalLink, Bell, Search, RefreshCw, ChevronRight, CheckCheck, LogOut, Settings, BarChart3, User } from "lucide-react";
+import { ExternalLink, Bell, Search, RefreshCw, ChevronRight, CheckCheck, LogOut, Settings, BarChart3, User, X, Package, ShoppingBag, Users, ClipboardList, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel,
@@ -14,27 +14,142 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 const routeNames: Record<string, string> = {
-  "/admin": "Dashboard",
-  "/admin/products": "Products",
-  "/admin/orders": "Orders",
-  "/admin/customers": "Customers",
-  "/admin/categories": "Categories",
-  "/admin/blog": "Blog",
-  "/admin/social": "Social Automation",
-  "/admin/media": "Media Library",
-  "/admin/whatsapp": "WhatsApp",
-  "/admin/services": "Service Bookings",
-  "/admin/reviews": "Product Reviews",
-  "/admin/reels": "Reels & Videos",
-  "/admin/evolution": "Evolution API",
-  "/admin/settings": "Settings",
+  "/admin": "Dashboard", "/admin/products": "Products", "/admin/orders": "Orders",
+  "/admin/customers": "Customers", "/admin/categories": "Categories", "/admin/blog": "Blog",
+  "/admin/social": "Social Automation", "/admin/media": "Media Library",
+  "/admin/whatsapp": "WhatsApp", "/admin/services": "Service Bookings",
+  "/admin/reviews": "Product Reviews", "/admin/reels": "Reels & Videos",
+  "/admin/evolution": "Evolution API", "/admin/settings": "Settings",
+  "/admin/erp": "ERP", "/admin/erp/job-cards": "Job Cards",
+  "/admin/erp/crm": "Sales CRM", "/admin/erp/billing": "Billing",
 };
 
-const notifications = [
-  { id: 1, text: "New order received", time: "2 min ago", read: false },
-  { id: 2, text: "Check admin panel for updates", time: "1 hour ago", read: false },
-  { id: 3, text: "Instagram reel published successfully", time: "3 hours ago", read: true },
+// Quick nav links for search
+const QUICK_LINKS = [
+  { label: 'Products', url: '/admin/products', icon: Package },
+  { label: 'Orders', url: '/admin/orders', icon: ShoppingBag },
+  { label: 'Customers', url: '/admin/customers', icon: Users },
+  { label: 'Job Cards', url: '/admin/erp/job-cards', icon: ClipboardList },
+  { label: 'CRM Leads', url: '/admin/erp/crm', icon: MessageSquare },
 ];
+
+function GlobalSearch() {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<any[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Keyboard shortcut ⌘K / Ctrl+K
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault(); setOpen(true); setTimeout(() => inputRef.current?.focus(), 50);
+      }
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Click outside close
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  useEffect(() => {
+    if (!query.trim()) { setResults([]); return; }
+    const t = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const [products, orders, customers] = await Promise.all([
+          api.getProducts({ search: query, limit: '3' }).catch(() => ({ products: [] })),
+          api.getOrders({ search: query }).catch(() => []),
+          api.getCustomers().catch(() => []),
+        ]);
+        const r: any[] = [];
+        (products?.products || products || []).slice(0, 3).forEach((p: any) =>
+          r.push({ type: 'product', label: p.name, sub: `₹${p.price}`, url: `/admin/products`, icon: 'Package' }));
+        (Array.isArray(orders) ? orders : []).slice(0, 3).forEach((o: any) =>
+          r.push({ type: 'order', label: o.order_number, sub: o.customer_name || 'Guest', url: `/admin/orders`, icon: 'ShoppingBag' }));
+        (Array.isArray(customers) ? customers : []).filter((c: any) =>
+          c.name?.toLowerCase().includes(query.toLowerCase()) || c.email?.toLowerCase().includes(query.toLowerCase())
+        ).slice(0, 2).forEach((c: any) =>
+          r.push({ type: 'customer', label: c.name, sub: c.email, url: `/admin/customers`, icon: 'Users' }));
+        setResults(r);
+      } catch {}
+      setLoading(false);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const go = (url: string) => { navigate(url); setOpen(false); setQuery(''); };
+
+  const ICONS: Record<string, any> = { Package, ShoppingBag, Users, ClipboardList, MessageSquare };
+
+  return (
+    <div ref={ref} className="relative hidden md:block">
+      <div className="relative cursor-pointer" onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 50); }}>
+        <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+        <Input
+          ref={inputRef}
+          placeholder="Search... (⌘K)"
+          className="pl-8 w-56 h-8 text-xs bg-muted/50 border-0 focus-visible:ring-1"
+          value={query}
+          onChange={e => { setQuery(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+        />
+        {query && <button className="absolute right-2 top-1.5" onClick={() => setQuery('')}><X className="h-4 w-4 text-muted-foreground" /></button>}
+      </div>
+
+      {open && (
+        <div className="absolute top-10 left-0 w-80 bg-popover border rounded-xl shadow-xl z-50 overflow-hidden">
+          {!query && (
+            <div className="p-2">
+              <p className="text-xs text-muted-foreground px-2 py-1">Quick Navigation</p>
+              {QUICK_LINKS.map(l => {
+                const Icon = l.icon;
+                return (
+                  <button key={l.url} onClick={() => go(l.url)}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors text-left">
+                    <Icon className="h-4 w-4 text-muted-foreground" />{l.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {query && (
+            <div className="p-2">
+              {loading && <p className="text-xs text-muted-foreground text-center py-4">Searching...</p>}
+              {!loading && results.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">No results for "{query}"</p>}
+              {results.map((r, i) => {
+                const Icon = ICONS[r.icon] || Package;
+                return (
+                  <button key={i} onClick={() => go(r.url)}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-muted transition-colors text-left">
+                    <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{r.label}</p>
+                      <p className="text-xs text-muted-foreground truncate">{r.sub}</p>
+                    </div>
+                    <Badge variant="outline" className="text-[10px] shrink-0">{r.type}</Badge>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
@@ -81,10 +196,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="relative hidden md:block">
-                <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search... (⌘K)" className="pl-8 w-56 h-8 text-xs bg-muted/50 border-0 focus-visible:ring-1" />
-              </div>
+              <GlobalSearch />
 
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <RefreshCw className="h-4 w-4 text-muted-foreground" />

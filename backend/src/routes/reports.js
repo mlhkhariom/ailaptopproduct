@@ -7,24 +7,55 @@ const router = Router();
 
 // GET /api/reports/dashboard
 router.get('/dashboard', authMiddleware, adminOnly, async (req, res) => {
-  const totalRevenue = (await db.prepare("SELECT COALESCE(SUM(total),0) as val FROM orders WHERE payment_status='paid'").get())?.val || 0;
-  const totalOrders = (await db.prepare('SELECT COUNT(*) as val FROM orders').get())?.val || 0;
-  const totalCustomers = (await db.prepare("SELECT COUNT(*) as val FROM users WHERE role='customer'").get())?.val || 0;
-  const totalProducts = (await db.prepare("SELECT COUNT(*) as val FROM products WHERE status='active'").get())?.val || 0;
-  const pendingOrders = (await db.prepare("SELECT COUNT(*) as val FROM orders WHERE status='placed' OR status='processing'").get())?.val || 0;
-  const lowStock = (await db.prepare("SELECT COUNT(*) as val FROM products WHERE stock <= 5 AND status='active'").get())?.val || 0;
-  const recentOrders = await db.prepare('SELECT o.*, u.name as customer_name FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 5').all()
-    .then(rows => (rows || []).map(o => ({ ...o, items: JSON.parse(o.items || '[]') })));
-  const topProducts = await db.prepare(`
-    SELECT p.name, p.price, p.stock, p.category,
-      COUNT(DISTINCT o.id) as order_count
-    FROM products p
-    LEFT JOIN orders o ON o.items LIKE '%' || p.id || '%'
-    GROUP BY p.id ORDER BY order_count DESC LIMIT 5
-  `).all()
-    .then(rows => rows || []);
+  const today = new Date().toISOString().split('T')[0];
+  const monthStart = today.slice(0, 7) + '-01';
 
-  res.json({ totalRevenue, totalOrders, totalCustomers, totalProducts, pendingOrders, lowStock, recentOrders, topProducts });
+  const [
+    totalRevenue, totalOrders, totalCustomers, totalProducts,
+    pendingOrders, lowStock, recentOrders, topProducts,
+    // ERP stats
+    pendingJobs, completedToday, erpMonthRevenue, pendingPayments,
+    crmLeads, overdueFollowups, totalStaff,
+  ] = await Promise.all([
+    db.prepare("SELECT COALESCE(SUM(total),0) as val FROM orders WHERE payment_status='paid'").get(),
+    db.prepare('SELECT COUNT(*) as val FROM orders').get(),
+    db.prepare("SELECT COUNT(*) as val FROM users WHERE role='customer'").get(),
+    db.prepare("SELECT COUNT(*) as val FROM products WHERE status='active'").get(),
+    db.prepare("SELECT COUNT(*) as val FROM orders WHERE status='placed' OR status='processing'").get(),
+    db.prepare("SELECT COUNT(*) as val FROM products WHERE stock <= 5 AND status='active'").get(),
+    db.prepare('SELECT o.*, u.name as customer_name FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 5').all()
+      .then(rows => (rows || []).map(o => ({ ...o, items: JSON.parse(o.items || '[]') }))),
+    db.prepare(`SELECT p.name, p.price, p.stock, p.category, COUNT(DISTINCT o.id) as order_count FROM products p LEFT JOIN orders o ON o.items LIKE '%' || p.id || '%' GROUP BY p.id ORDER BY order_count DESC LIMIT 5`).all().then(rows => rows || []),
+    // ERP
+    db.prepare("SELECT COUNT(*) as val FROM service_bookings WHERE status IN ('pending','in_progress')").get(),
+    db.prepare("SELECT COUNT(*) as val FROM service_bookings WHERE DATE(completed_at)=?").get(today),
+    db.prepare("SELECT COALESCE(SUM(total_charge),0) as val FROM service_bookings WHERE payment_status='paid' AND DATE(created_at)>=?").get(monthStart),
+    db.prepare("SELECT COUNT(*) as val FROM service_bookings WHERE payment_status='pending' AND status='completed'").get(),
+    db.prepare("SELECT COUNT(*) as val FROM leads WHERE status NOT IN ('won','lost')").get(),
+    db.prepare("SELECT COUNT(*) as val FROM leads WHERE next_followup < CURRENT_DATE AND status NOT IN ('won','lost')").get(),
+    db.prepare("SELECT COUNT(*) as val FROM staff WHERE is_active=1").get(),
+  ]);
+
+  res.json({
+    totalRevenue: totalRevenue?.val || 0,
+    totalOrders: totalOrders?.val || 0,
+    totalCustomers: totalCustomers?.val || 0,
+    totalProducts: totalProducts?.val || 0,
+    pendingOrders: pendingOrders?.val || 0,
+    lowStock: lowStock?.val || 0,
+    recentOrders,
+    topProducts,
+    // ERP
+    erp: {
+      pendingJobs: pendingJobs?.val || 0,
+      completedToday: completedToday?.val || 0,
+      monthRevenue: erpMonthRevenue?.val || 0,
+      pendingPayments: pendingPayments?.val || 0,
+      activeLeads: crmLeads?.val || 0,
+      overdueFollowups: overdueFollowups?.val || 0,
+      totalStaff: totalStaff?.val || 0,
+    },
+  });
 });
 
 // GET /api/reports/sales?period=7d|30d|90d|1y
