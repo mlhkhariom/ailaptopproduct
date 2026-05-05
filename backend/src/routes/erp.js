@@ -493,4 +493,100 @@ router.get('/branches/:id/stats', authMiddleware, adminOnly, async (req, res) =>
   res.json({ orders: orders?.c || 0, orderRevenue: orders?.rev || 0, jobs: jobs?.c || 0, jobRevenue: jobs?.rev || 0 });
 });
 
+// ── JOB CARD TIMELINE ─────────────────────────────────────
+
+router.get('/job-cards/:id/timeline', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM job_card_timeline WHERE job_id=? ORDER BY created_at ASC').all(req.params.id) || []);
+});
+
+router.post('/job-cards/:id/timeline', authMiddleware, adminOnly, async (req, res) => {
+  const { status, notes } = req.body;
+  const id = uuid();
+  await db.prepare('INSERT INTO job_card_timeline (id,job_id,status,notes,created_by) VALUES (?,?,?,?,?)').run(id, req.params.id, status, notes, req.user.id);
+  res.status(201).json({ id });
+});
+
+// ── WARRANTY ──────────────────────────────────────────────
+
+router.get('/warranty/expiring', authMiddleware, adminOnly, async (req, res) => {
+  const rows = await db.prepare(`SELECT * FROM service_bookings WHERE warranty_expires_at IS NOT NULL AND warranty_expires_at >= CURRENT_DATE AND warranty_expires_at <= CURRENT_DATE + INTERVAL '30 days' ORDER BY warranty_expires_at ASC`).all();
+  res.json(rows || []);
+});
+
+// ── ATTENDANCE ────────────────────────────────────────────
+
+router.get('/attendance', authMiddleware, adminOnly, async (req, res) => {
+  const { date, staff_id, month } = req.query;
+  let q = `SELECT a.*, s.name as staff_name, s.role FROM attendance a LEFT JOIN staff s ON a.staff_id=s.id WHERE 1=1`;
+  const p = [];
+  if (date) { q += ' AND a.date=?'; p.push(date); }
+  if (staff_id) { q += ' AND a.staff_id=?'; p.push(staff_id); }
+  if (month) { q += ' AND TO_CHAR(a.date,\'YYYY-MM\')=?'; p.push(month); }
+  q += ' ORDER BY a.date DESC, s.name ASC';
+  res.json(await db.prepare(q).all(...p) || []);
+});
+
+router.post('/attendance', authMiddleware, adminOnly, async (req, res) => {
+  const { staff_id, date, status, check_in, check_out, notes } = req.body;
+  if (!staff_id || !date) return res.status(400).json({ error: 'staff_id and date required' });
+  const id = uuid();
+  await db.prepare(`INSERT INTO attendance (id,staff_id,date,status,check_in,check_out,notes) VALUES (?,?,?,?,?,?,?)
+    ON CONFLICT (staff_id,date) DO UPDATE SET status=EXCLUDED.status,check_in=EXCLUDED.check_in,check_out=EXCLUDED.check_out,notes=EXCLUDED.notes`)
+    .run(id, staff_id, date, status || 'present', check_in, check_out, notes);
+  res.status(201).json({ message: 'Saved' });
+});
+
+router.get('/attendance/stats', authMiddleware, adminOnly, async (req, res) => {
+  const { month } = req.query;
+  const m = month || new Date().toISOString().slice(0, 7);
+  const rows = await db.prepare(`SELECT s.id, s.name, s.role,
+    COUNT(CASE WHEN a.status='present' THEN 1 END) as present,
+    COUNT(CASE WHEN a.status='absent' THEN 1 END) as absent,
+    COUNT(CASE WHEN a.status='half_day' THEN 1 END) as half_day,
+    COUNT(CASE WHEN a.status='leave' THEN 1 END) as leave
+    FROM staff s LEFT JOIN attendance a ON s.id=a.staff_id AND TO_CHAR(a.date,'YYYY-MM')=?
+    WHERE s.is_active=1 GROUP BY s.id, s.name, s.role ORDER BY s.name`).all(m);
+  res.json(rows || []);
+});
+
+// ── WHATSAPP TEMPLATES ────────────────────────────────────
+
+router.get('/wa-templates', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM whatsapp_templates WHERE is_active=1 ORDER BY category, name').all() || []);
+});
+
+router.post('/wa-templates', authMiddleware, adminOnly, async (req, res) => {
+  const { name, category, message, variables } = req.body;
+  if (!name || !message) return res.status(400).json({ error: 'name and message required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO whatsapp_templates (id,name,category,message,variables) VALUES (?,?,?,?,?)').run(id, name, category || 'general', message, JSON.stringify(variables || []));
+  res.status(201).json({ id });
+});
+
+router.put('/wa-templates/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { name, category, message, variables, is_active } = req.body;
+  await db.prepare('UPDATE whatsapp_templates SET name=?,category=?,message=?,variables=?,is_active=? WHERE id=?').run(name, category, message, JSON.stringify(variables || []), is_active ? 1 : 0, req.params.id);
+  res.json({ message: 'Updated' });
+});
+
+router.delete('/wa-templates/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM whatsapp_templates WHERE id=?').run(req.params.id);
+  res.json({ message: 'Deleted' });
+});
+
+// Send template to a contact
+router.post('/wa-templates/:id/send', authMiddleware, adminOnly, async (req, res) => {
+  const { phone, variables } = req.body;
+  if (!phone) return res.status(400).json({ error: 'phone required' });
+  const tmpl = await db.prepare('SELECT * FROM whatsapp_templates WHERE id=?').get(req.params.id);
+  if (!tmpl) return res.status(404).json({ error: 'Template not found' });
+  let msg = tmpl.message;
+  if (variables) Object.entries(variables).forEach(([k, v]) => { msg = msg.replace(new RegExp(`{{${k}}}`, 'g'), v); });
+  try {
+    const { queueNotification } = await import('../whatsapp/notifications.js');
+    await queueNotification(phone, msg, 'template');
+    res.json({ message: 'Queued' });
+  } catch { res.status(500).json({ error: 'Failed to queue' }); }
+});
+
 export default router;

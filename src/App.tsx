@@ -58,7 +58,8 @@ import AdminReports from "./pages/admin/AdminReports";
 import AdminCMS from "./pages/admin/AdminCMS";
 import AdminContacts from "./pages/admin/AdminContacts";
 import AdminUsers from "./pages/admin/AdminUsers";
-import AdminCoupons from "./pages/admin/AdminCoupons";
+import AdminAttendance from "./pages/admin/AdminAttendance";
+import AdminWATemplates from "./pages/admin/AdminWATemplates";
 import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
 
@@ -132,6 +133,8 @@ const App = () => (
             <Route path="/admin/contacts" element={<AdminRoute><AdminContacts /></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
             <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
+            <Route path="/admin/erp/attendance" element={<AdminRoute><AdminAttendance /></AdminRoute>} />
+            <Route path="/admin/erp/wa-templates" element={<AdminRoute><AdminWATemplates /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, PersonStanding, Box } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, PersonStanding, Box, Calendar, MessageSquare } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import {
@@ -35,7 +35,9 @@ const erpGroups = [
     labelIcon: UserCheck,
     items: [
       { title: "Staff", url: "/admin/erp/staff", icon: UserCheck },
+      { title: "Attendance", url: "/admin/erp/attendance", icon: Calendar },
       { title: "Branches", url: "/admin/erp/branches", icon: Building2 },
+      { title: "WA Templates", url: "/admin/erp/wa-templates", icon: MessageCircle },
     ],
   },
   {

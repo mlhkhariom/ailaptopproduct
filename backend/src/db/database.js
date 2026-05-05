@@ -355,13 +355,29 @@ export const initDB = async () => {
     )`,
     "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS gst_enabled INTEGER DEFAULT 0",
     "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS gst_enabled INTEGER DEFAULT 0",
-    // Sprint 1 — reorder level per product
+    // Sprint 1
     "ALTER TABLE products ADD COLUMN IF NOT EXISTS reorder_level INTEGER DEFAULT 5",
-    // Sprint 1 — lead days_in_stage (computed, no column needed)
-    // Sprint 1 — payment reminder sent flag
     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS reminder_sent INTEGER DEFAULT 0",
     "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS reminder_sent INTEGER DEFAULT 0",
     "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS reminder_sent INTEGER DEFAULT 0",
+    // Sprint 2
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS warranty_days INTEGER DEFAULT 0",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS warranty_expires_at DATE",
+    `CREATE TABLE IF NOT EXISTS job_card_timeline (
+      id TEXT PRIMARY KEY, job_id TEXT NOT NULL, status TEXT NOT NULL,
+      notes TEXT, created_by TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS attendance (
+      id TEXT PRIMARY KEY, staff_id TEXT NOT NULL, date DATE NOT NULL,
+      status TEXT DEFAULT 'present', check_in TIME, check_out TIME,
+      notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(staff_id, date)
+    )`,
+    `CREATE TABLE IF NOT EXISTS whatsapp_templates (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, category TEXT DEFAULT 'general',
+      message TEXT NOT NULL, variables TEXT DEFAULT '[]',
+      is_active INTEGER DEFAULT 1, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     // CRM enhancements
     "ALTER TABLE leads ADD COLUMN IF NOT EXISTS expected_close DATE",
     "ALTER TABLE leads ADD COLUMN IF NOT EXISTS lost_reason TEXT",

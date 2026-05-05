@@ -88,6 +88,21 @@ export default function AdminCRM() {
     } catch { toast.error('Failed'); }
   };
 
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const selectAll = () => setSelected(filtered.length === selected.size ? new Set() : new Set(filtered.map(l => l.id)));
+
+  const bulkStatusChange = async (status: string) => {
+    await Promise.all([...selected].map(id => req('PATCH', `/leads/${id}/status`, { status })));
+    toast.success(`${selected.size} leads updated`); setSelected(new Set()); load();
+  };
+
+  const bulkAssign = async (name: string) => {
+    await Promise.all([...selected].map(id => req('PUT', `/leads/${id}`, { ...leads.find(l => l.id === id), assigned_to: name })));
+    toast.success(`${selected.size} leads assigned`); setSelected(new Set()); load();
+  };
+
   const handleStatusChange = async (id: string, status: string) => {
     await req('PATCH', `/leads/${id}/status`, { status });
     load();
@@ -286,11 +301,32 @@ export default function AdminCRM() {
               ))}
             </div>
 
+            {/* Bulk action bar */}
+            {selected.size > 0 && (
+              <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-xl flex-wrap">
+                <span className="text-sm font-semibold">{selected.size} selected</span>
+                <Select onValueChange={bulkStatusChange}>
+                  <SelectTrigger className="h-8 w-36 text-xs"><SelectValue placeholder="Change Status" /></SelectTrigger>
+                  <SelectContent>
+                    {['contacted','interested','negotiating','won','lost'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select onValueChange={bulkAssign}>
+                  <SelectTrigger className="h-8 w-36 text-xs"><SelectValue placeholder="Assign To" /></SelectTrigger>
+                  <SelectContent>
+                    {staff.map(s => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setSelected(new Set())}>Clear</Button>
+              </div>
+            )}
+
             {/* Desktop Table */}
             <div className="border rounded-xl overflow-x-auto hidden md:block">
               <table className="w-full text-sm min-w-[800px]">
                 <thead className="bg-muted/50">
                   <tr>
+                    <th className="p-3.5 w-10"><input type="checkbox" checked={selected.size === filtered.length && filtered.length > 0} onChange={selectAll} className="h-4 w-4" /></th>
                     <th className="text-left p-3.5 text-xs font-semibold">Name</th>
                     <th className="text-left p-3.5 text-xs font-semibold">Interest / Value</th>
                     <th className="text-left p-3.5 text-xs font-semibold">Source</th>
@@ -305,6 +341,7 @@ export default function AdminCRM() {
                     const overdue = l.next_followup && new Date(l.next_followup) < new Date() && !['won','lost'].includes(l.status);
                     return (
                       <tr key={l.id} className="border-t hover:bg-muted/30 cursor-pointer" onClick={() => openDetail(l)}>
+                        <td className="p-3.5" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selected.has(l.id)} onChange={() => toggleSelect(l.id)} className="h-4 w-4" /></td>
                         <td className="p-3.5">
                           <p className="font-medium">{l.name}</p>
                           <p className="text-xs text-muted-foreground">{l.phone}</p>

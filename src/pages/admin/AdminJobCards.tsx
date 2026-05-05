@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ERPLayout from "@/components/ERPLayout";
+import JobCardTimeline from "@/components/JobCardTimeline";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -454,10 +455,16 @@ export default function AdminJobCards() {
               </div>
 
               {/* Notes */}
-              <div>
-                <Label className="text-xs">Internal Notes</Label>
+              <div><Label className="text-xs">Internal Notes</Label>
                 <Textarea className="mt-1" rows={2} value={form.notes} onChange={e => setForm((f: any) => ({ ...f, notes: e.target.value }))} placeholder="Any internal notes..." />
               </div>
+
+              {/* Timeline — only when editing */}
+              {editingId && (
+                <div className="border rounded-xl p-3">
+                  <JobCardTimeline jobId={editingId} currentStatus={form.status} />
+                </div>
+              )}
             </div>
 
             <DialogFooter className="gap-2">
