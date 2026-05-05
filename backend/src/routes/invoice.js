@@ -89,7 +89,13 @@ tbody td:last-child{font-weight:700;color:#1a1a2e}
 const buildInvoiceHTML = ({ invoiceNumber, invoiceType, date, billTo, paymentInfo, lineItems, subtotal, discount, gst, total, notes, paymentStatus }) => {
   const typeLabel = invoiceType === 'service' ? 'SERVICE INVOICE' : invoiceType === 'custom' ? 'INVOICE' : 'TAX INVOICE';
   const statusClass = paymentStatus === 'paid' ? 'paid' : paymentStatus === 'partial' ? 'partial' : 'pending';
-  const statusText = paymentStatus === 'paid' ? '✓ PAID' : paymentStatus === 'partial' ? '◑ PARTIAL' : '⏳ PENDING';
+  // SVG icons inline for print compatibility
+  const statusIcon = paymentStatus === 'paid'
+    ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+    : paymentStatus === 'partial'
+    ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+    : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`;
+  const statusText = paymentStatus === 'paid' ? 'PAID' : paymentStatus === 'partial' ? 'PARTIAL' : 'PENDING';
 
   const itemRows = lineItems.map((item, i) => `
     <tr>
@@ -132,7 +138,7 @@ const buildInvoiceHTML = ({ invoiceNumber, invoiceType, date, billTo, paymentInf
       <div class="inv-type">${typeLabel}</div>
       <div class="inv-num">${invoiceNumber}</div>
       <div class="inv-date">Date: ${date}</div>
-      <span class="status-pill ${statusClass}">${statusText}</span>
+      <span class="status-pill ${statusClass}" style="display:inline-flex;align-items:center;gap:5px">${statusIcon} ${statusText}</span>
     </div>
   </div>
 
