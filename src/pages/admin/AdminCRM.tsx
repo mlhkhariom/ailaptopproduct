@@ -279,8 +279,8 @@ export default function AdminCRM() {
               ))}
             </div>
 
-            {/* Table */}
-            <div className="border rounded-xl overflow-x-auto">
+            {/* Desktop Table */}
+            <div className="border rounded-xl overflow-x-auto hidden md:block">
               <table className="w-full text-sm min-w-[800px]">
                 <thead className="bg-muted/50">
                   <tr>
@@ -332,6 +332,39 @@ export default function AdminCRM() {
                   {!filtered.length && <tr><td colSpan={7} className="p-12 text-center text-muted-foreground">No leads found</td></tr>}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-2">
+              {filtered.map(l => {
+                const overdue = l.next_followup && new Date(l.next_followup) < new Date() && !['won','lost'].includes(l.status);
+                return (
+                  <div key={l.id} className="border rounded-xl p-4 bg-card space-y-2" onClick={() => openDetail(l)}>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-semibold">{l.name}</p>
+                        <p className="text-sm text-muted-foreground">{l.phone}</p>
+                      </div>
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_COLORS[l.status]}`}>{l.status}</span>
+                    </div>
+                    {l.interest && <p className="text-sm text-muted-foreground">{l.interest}</p>}
+                    <div className="flex items-center justify-between">
+                      <div className="flex gap-2 text-xs text-muted-foreground">
+                        <span>{l.source}</span>
+                        {overdue && <span className="text-red-600 font-bold flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{l.next_followup}</span>}
+                      </div>
+                      {(l.deal_value || l.budget) > 0 && <p className="text-sm font-bold text-green-600">₹{(l.deal_value || l.budget).toLocaleString('en-IN')}</p>}
+                    </div>
+                    <div className="flex gap-2 pt-1" onClick={e => e.stopPropagation()}>
+                      <Button size="sm" variant="outline" className="flex-1 h-8 text-xs gap-1" onClick={() => openConvert(l)}><ClipboardList className="h-3.5 w-3.5" /> Job Card</Button>
+                      <a href={`https://wa.me/91${l.phone?.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" className="flex-1">
+                        <Button size="sm" variant="outline" className="w-full h-8 text-xs gap-1 text-green-600"><MessageCircle className="h-3.5 w-3.5" /> WhatsApp</Button>
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+              {!filtered.length && <p className="text-center text-muted-foreground py-10">No leads found</p>}
             </div>
           </TabsContent>
         </Tabs>

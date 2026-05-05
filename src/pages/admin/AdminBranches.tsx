@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Building2, Plus, Edit, MapPin, Phone, RefreshCw } from "lucide-react";
+import { Building2, Plus, Edit, MapPin, Phone, RefreshCw, TrendingUp, ShoppingBag, Wrench } from "lucide-react";
 import { toast } from "sonner";
 
 const req = (method: string, path: string, body?: any) =>
@@ -77,16 +77,33 @@ export default function AdminBranches() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 border-t pt-3">
                     <div className="text-center">
-                      <p className="text-xs text-muted-foreground">Orders</p>
+                      <p className="text-xs text-muted-foreground flex items-center justify-center gap-1"><ShoppingBag className="h-3 w-3" /> Orders</p>
                       <p className="font-bold text-sm">{s.orders || 0}</p>
-                      <p className="text-[10px] text-green-600">₹{(s.orderRevenue || 0).toLocaleString('en-IN')}</p>
+                      <p className="text-xs text-green-600 font-medium">₹{(s.orderRevenue || 0).toLocaleString('en-IN')}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-xs text-muted-foreground">Service Jobs</p>
+                      <p className="text-xs text-muted-foreground flex items-center justify-center gap-1"><Wrench className="h-3 w-3" /> Service Jobs</p>
                       <p className="font-bold text-sm">{s.jobs || 0}</p>
-                      <p className="text-[10px] text-green-600">₹{(s.jobRevenue || 0).toLocaleString('en-IN')}</p>
+                      <p className="text-xs text-green-600 font-medium">₹{(s.jobRevenue || 0).toLocaleString('en-IN')}</p>
                     </div>
                   </div>
+                  {/* Revenue bar */}
+                  {(s.orderRevenue + s.jobRevenue) > 0 && (() => {
+                    const total = s.orderRevenue + s.jobRevenue;
+                    const maxRevenue = Math.max(...branches.map(br => (stats[br.id]?.orderRevenue || 0) + (stats[br.id]?.jobRevenue || 0)), 1);
+                    const pct = Math.round((total / maxRevenue) * 100);
+                    return (
+                      <div className="border-t pt-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs text-muted-foreground flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Total Revenue</p>
+                          <p className="text-sm font-black text-primary">₹{total.toLocaleString('en-IN')}</p>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             );

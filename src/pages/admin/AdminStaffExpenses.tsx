@@ -161,7 +161,8 @@ export default function AdminExpenses() {
         </div>
 
         {/* Table */}
-        <div className="border rounded-lg overflow-hidden">
+        {/* Desktop Table */}
+        <div className="border rounded-lg overflow-hidden hidden md:block">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
@@ -185,21 +186,39 @@ export default function AdminExpenses() {
                   <td className="p-3 text-right text-xs font-bold text-red-600">₹{(e.amount || 0).toLocaleString('en-IN')}</td>
                   <td className="p-3">
                     <div className="flex gap-1 justify-center">
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(e)}>
-                        <Edit className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => del(e.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(e)}><Edit className="h-3.5 w-3.5" /></Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => del(e.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </td>
                 </tr>
               ))}
-              {!filtered.length && (
-                <tr><td colSpan={6} className="p-10 text-center text-muted-foreground text-xs">No expenses found</td></tr>
-              )}
+              {!filtered.length && <tr><td colSpan={6} className="p-10 text-center text-muted-foreground text-xs">No expenses found</td></tr>}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-2">
+          {filtered.map(e => (
+            <div key={e.id} className="border rounded-xl p-4 bg-card flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-medium px-2 py-0.5 bg-red-50 text-red-700 rounded-full">{e.category}</span>
+                  <span className="text-xs text-muted-foreground">{e.date}</span>
+                </div>
+                {e.description && <p className="text-xs text-muted-foreground truncate">{e.description}</p>}
+                <p className="text-xs text-muted-foreground">{e.payment_method}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="font-bold text-red-600">₹{(e.amount || 0).toLocaleString('en-IN')}</p>
+                <div className="flex gap-1 mt-1">
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(e)}><Edit className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => del(e.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                </div>
+              </div>
+            </div>
+          ))}
+          {!filtered.length && <p className="text-center text-muted-foreground text-xs py-10">No expenses found</p>}
         </div>
 
         {/* Dialog */}

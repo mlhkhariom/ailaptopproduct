@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart3, TrendingUp, TrendingDown, RefreshCw, IndianRupee, Package, Wrench, Wallet, Users, Printer } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 const authFetch = (url: string) =>
   fetch(url, { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json());
@@ -205,24 +206,48 @@ export default function AdminERPReports() {
 
         {/* Expense Breakdown */}
         {Object.keys(data.expByCategory || {}).length > 0 && (
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Expense Breakdown</CardTitle></CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {Object.entries(data.expByCategory || {})
-                  .sort(([, a]: any, [, b]: any) => b - a)
-                  .map(([cat, amt]: any) => (
-                    <div key={cat} className="flex items-center gap-2">
-                      <span className="text-xs w-32 shrink-0">{cat}</span>
-                      <div className="flex-1 bg-muted rounded-full h-2">
-                        <div className="bg-red-400 h-2 rounded-full" style={{ width: `${Math.min(100, (amt / (data.totalExpenses || 1)) * 100)}%` }} />
-                      </div>
-                      <span className="text-xs font-bold w-24 text-right">₹{amt.toLocaleString('en-IN')}</span>
-                    </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Bar chart */}
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Expense by Category</CardTitle></CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={Object.entries(data.expByCategory || {}).sort(([,a]:any,[,b]:any) => b-a).slice(0,6).map(([cat,amt]) => ({ cat, amt }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="cat" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(v: any) => [`₹${Number(v).toLocaleString('en-IN')}`, 'Amount']} />
+                    <Bar dataKey="amt" fill="#ef4444" radius={[4,4,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Pie chart — Revenue split */}
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Revenue Split</CardTitle></CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'Product Sales', value: data.orderRevenue || 0 },
+                        { name: 'Service', value: data.serviceRevenue || 0 },
+                        { name: 'Custom', value: data.customRevenue || 0 },
+                      ].filter(d => d.value > 0)}
+                      cx="50%" cy="50%" outerRadius={70}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent*100).toFixed(0)}%`}
+                      labelLine={false}
+                    >
+                      {['#FF8000','#3b82f6','#8b5cf6'].map((color, i) => <Cell key={i} fill={color} />)}
+                    </Pie>
+                    <Tooltip formatter={(v: any) => `₹${Number(v).toLocaleString('en-IN')}`} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Job + Order breakdown */}
