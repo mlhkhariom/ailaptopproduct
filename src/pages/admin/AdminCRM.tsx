@@ -9,10 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Users, Plus, Edit, Trash2, RefreshCw, Search, Phone, MessageCircle, ClipboardList, TrendingUp, Download, LayoutGrid, List, BarChart3, AlertTriangle, CheckCircle, Target } from "lucide-react";
+import { Users, Plus, Edit, Trash2, RefreshCw, Search, Phone, MessageCircle, ClipboardList, TrendingUp, Download, Upload, LayoutGrid, List, BarChart3, AlertTriangle, CheckCircle, Target } from "lucide-react";
 import { toast } from "sonner";
 import CRMKanban from "@/components/CRMKanban";
 import CRMLeadDetail from "@/components/CRMLeadDetail";
+import LeadImportCSV from "@/components/LeadImportCSV";
 
 const req = (method: string, path: string, body?: any) =>
   fetch(`/api/erp${path}`, {
@@ -42,6 +43,7 @@ export default function AdminCRM() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedLead, setSelectedLead] = useState<any>(null);
@@ -157,6 +159,7 @@ export default function AdminCRM() {
             </TabsList>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={exportCSV} className="gap-1.5 h-8 text-xs"><Download className="h-3.5 w-3.5" /> Export</Button>
+            <Button size="sm" variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5 h-8 text-xs"><Upload className="h-3.5 w-3.5" /> Import</Button>
               <Button size="sm" variant="outline" onClick={load} disabled={loading} className="h-8"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></Button>
               <Button size="sm" className="h-8" onClick={() => { setForm(emptyForm); setEditingId(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Add Lead</Button>
             </div>
@@ -509,6 +512,7 @@ export default function AdminCRM() {
           </DialogContent>
         </Dialog>
       </div>
+      <LeadImportCSV open={importOpen} onClose={() => setImportOpen(false)} onDone={load} />
     </ERPLayout>
   );
 }

@@ -378,6 +378,14 @@ export const initDB = async () => {
       message TEXT NOT NULL, variables TEXT DEFAULT '[]',
       is_active INTEGER DEFAULT 1, created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
+    // Sprint 3
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS photos_before TEXT DEFAULT '[]'",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS photos_after TEXT DEFAULT '[]'",
+    `CREATE TABLE IF NOT EXISTS invoice_payments (
+      id TEXT PRIMARY KEY, invoice_type TEXT NOT NULL, invoice_id TEXT NOT NULL,
+      amount REAL NOT NULL, payment_method TEXT DEFAULT 'cash',
+      notes TEXT, created_by TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     // CRM enhancements
     "ALTER TABLE leads ADD COLUMN IF NOT EXISTS expected_close DATE",
     "ALTER TABLE leads ADD COLUMN IF NOT EXISTS lost_reason TEXT",

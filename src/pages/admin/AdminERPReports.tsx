@@ -4,8 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, TrendingUp, TrendingDown, RefreshCw, IndianRupee, Package, Wrench, Wallet, Users, Printer } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { BarChart3, TrendingUp, TrendingDown, RefreshCw, IndianRupee, Package, Wrench, Wallet, Users, Printer } from "lucide-react";import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 const authFetch = (url: string) =>
   fetch(url, { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json());
@@ -32,7 +31,7 @@ export default function AdminERPReports() {
   const load = async () => {
     setLoading(true);
     try {
-      const [erpDash, invStats, expenses, orders, jobCards, customInvoices, staff] = await Promise.all([
+      const [erpDash, invStats, expenses, orders, jobCards, customInvoices, staff, techPerf] = await Promise.all([
         authFetch('/api/erp/dashboard'),
         authFetch('/api/inventory/stats'),
         authFetch(`/api/erp/expenses?from=${from}&to=${to}`),
@@ -40,6 +39,7 @@ export default function AdminERPReports() {
         authFetch(`/api/erp/job-cards?from=${from}&to=${to}`),
         authFetch(`/api/erp/billing?type=custom&from=${from}&to=${to}`),
         authFetch('/api/erp/staff'),
+        authFetch(`/api/erp/technician-performance?from=${from}&to=${to}`),
       ]);
 
       const expTotal = Array.isArray(expenses) ? expenses.reduce((s: number, e: any) => s + (e.amount || 0), 0) : 0;
@@ -70,6 +70,7 @@ export default function AdminERPReports() {
         totalJobs: Array.isArray(jobCards) ? jobCards.length : 0,
         totalOrders: Array.isArray(orders) ? orders.length : 0,
         staffCount: Array.isArray(staff) ? staff.length : 0,
+        techPerf: Array.isArray(techPerf) ? techPerf : [],
       });
     } catch { }
     setLoading(false);
@@ -251,7 +252,7 @@ export default function AdminERPReports() {
         )}
 
         {/* Job + Order breakdown */}
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-sm">Job Cards by Status</CardTitle></CardHeader>
             <CardContent>
@@ -278,6 +279,24 @@ export default function AdminERPReports() {
                 ))}
                 {!Object.keys(data.orderByStatus || {}).length && <p className="text-xs text-muted-foreground">No data</p>}
               </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Users className="h-4 w-4 text-primary" /> Technician Performance</CardTitle></CardHeader>
+            <CardContent className="p-0">
+              {(data.techPerf || []).length === 0
+                ? <p className="text-xs text-muted-foreground text-center py-4">No data</p>
+                : (data.techPerf || []).map((t: any, i: number) => (
+                  <div key={t.technician} className="flex items-center gap-3 px-4 py-2.5 border-t first:border-t-0">
+                    <span className="text-sm font-black text-muted-foreground w-5">{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{t.technician}</p>
+                      <p className="text-xs text-muted-foreground">{t.completed}/{t.total_jobs} done · {Math.round(t.avg_hours || 0)}h avg</p>
+                    </div>
+                    <span className="text-sm font-bold text-green-600">₹{(t.revenue || 0).toLocaleString('en-IN')}</span>
+                  </div>
+                ))
+              }
             </CardContent>
           </Card>
         </div>

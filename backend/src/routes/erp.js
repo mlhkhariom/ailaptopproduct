@@ -590,3 +590,54 @@ router.post('/wa-templates/:id/send', authMiddleware, adminOnly, async (req, res
 });
 
 export default router;
+
+// ── JOB CARD PHOTOS ───────────────────────────────────────
+
+router.put('/job-cards/:id/photos', authMiddleware, adminOnly, async (req, res) => {
+  const { photos_before, photos_after } = req.body;
+  await db.prepare('UPDATE service_bookings SET photos_before=?,photos_after=? WHERE id=?')
+    .run(JSON.stringify(photos_before || []), JSON.stringify(photos_after || []), req.params.id);
+  res.json({ message: 'Updated' });
+});
+
+// ── PARTIAL PAYMENTS ──────────────────────────────────────
+
+router.get('/payments/:type/:id', authMiddleware, adminOnly, async (req, res) => {
+  const payments = await db.prepare('SELECT * FROM invoice_payments WHERE invoice_type=? AND invoice_id=? ORDER BY created_at ASC').all(req.params.type, req.params.id) || [];
+  const total = payments.reduce((s, p) => s + (p.amount || 0), 0);
+  res.json({ payments, total_paid: total });
+});
+
+router.post('/payments/:type/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { amount, payment_method, notes } = req.body;
+  if (!amount || amount <= 0) return res.status(400).json({ error: 'amount required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO invoice_payments (id,invoice_type,invoice_id,amount,payment_method,notes,created_by) VALUES (?,?,?,?,?,?,?)')
+    .run(id, req.params.type, req.params.id, amount, payment_method || 'cash', notes, req.user.id);
+  const allPayments = await db.prepare('SELECT COALESCE(SUM(amount),0) as s FROM invoice_payments WHERE invoice_type=? AND invoice_id=?').get(req.params.type, req.params.id);
+  const paid = allPayments?.s || 0;
+  let total_charge = 0;
+  if (req.params.type === 'service') { const j = await db.prepare('SELECT total_charge FROM service_bookings WHERE id=?').get(req.params.id); total_charge = j?.total_charge || 0; }
+  if (req.params.type === 'custom') { const c = await db.prepare('SELECT total FROM custom_invoices WHERE id=?').get(req.params.id); total_charge = c?.total || 0; }
+  const newStatus = paid >= total_charge ? 'paid' : paid > 0 ? 'partial' : 'pending';
+  if (req.params.type === 'service') await db.prepare('UPDATE service_bookings SET payment_status=? WHERE id=?').run(newStatus, req.params.id);
+  if (req.params.type === 'custom') await db.prepare('UPDATE custom_invoices SET payment_status=? WHERE id=?').run(newStatus, req.params.id);
+  res.status(201).json({ id, payment_status: newStatus, total_paid: paid });
+});
+
+// ── TECHNICIAN PERFORMANCE ────────────────────────────────
+
+router.get('/technician-performance', authMiddleware, adminOnly, async (req, res) => {
+  const { from, to } = req.query;
+  let q = `SELECT technician, COUNT(*) as total_jobs,
+    COUNT(CASE WHEN status='completed' THEN 1 END) as completed,
+    COUNT(CASE WHEN status IN ('pending','in_progress') THEN 1 END) as active,
+    COALESCE(SUM(CASE WHEN payment_status='paid' THEN total_charge ELSE 0 END),0) as revenue,
+    COALESCE(AVG(CASE WHEN completed_at IS NOT NULL THEN EXTRACT(EPOCH FROM (completed_at::timestamptz - created_at::timestamptz))/3600 END),0) as avg_hours
+    FROM service_bookings WHERE technician IS NOT NULL AND technician!=''`;
+  const p = [];
+  if (from) { q += ' AND DATE(created_at)>=?'; p.push(from); }
+  if (to) { q += ' AND DATE(created_at)<=?'; p.push(to); }
+  q += ' GROUP BY technician ORDER BY revenue DESC';
+  res.json(await db.prepare(q).all(...p) || []);
+});
