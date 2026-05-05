@@ -84,7 +84,7 @@ export function AdminSidebar() {
   const { user } = useAuth();
   const [erpOpen, setErpOpen] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    "🔧 Operations": true, "💰 Finance": true, "👥 People": false, "📦 Procurement": false,
+    "Operations": true, "Finance": true, "People": false, "Procurement": false,
   });
 
   const toggleGroup = (label: string) =>
