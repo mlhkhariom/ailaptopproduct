@@ -189,8 +189,8 @@ export default function AdminJobCards() {
           )}
         </div>
 
-        {/* Table */}
-        <div className="border rounded-lg overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="border rounded-lg overflow-x-auto hidden md:block">
           <table className="w-full text-sm min-w-[900px]">
             <thead className="bg-muted/50">
               <tr>
@@ -268,6 +268,39 @@ export default function AdminJobCards() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-2">
+          {filtered.map(j => (
+            <div key={j.id} className="border rounded-lg p-3 bg-card space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-mono text-xs font-bold text-primary">{j.booking_number}</p>
+                  <p className="font-semibold text-sm">{j.customer_name}</p>
+                  <p className="text-xs text-muted-foreground">{j.customer_phone}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <Badge variant={STATUS_COLORS[j.status] as any} className="text-[10px]">{STATUS_LABELS[j.status]}</Badge>
+                  <Badge variant={j.priority === 'urgent' ? 'destructive' : 'outline'} className="text-[10px]">{j.priority}</Badge>
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground">{j.device_brand} {j.device_model} {j.technician ? `• ${j.technician}` : ''}</div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold">₹{(j.total_charge || 0).toLocaleString('en-IN')}</p>
+                  <Badge variant={j.payment_status === 'paid' ? 'default' : 'secondary'} className="text-[10px]">{j.payment_status}</Badge>
+                </div>
+                <div className="flex gap-1">
+                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => window.open(`/api/invoice/${j.booking_number}`, '_blank')}><ExternalLink className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={() => sendWhatsApp(j)}><Send className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(j)}><Edit className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteJob(j.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                </div>
+              </div>
+            </div>
+          ))}
+          {!filtered.length && <p className="text-center text-muted-foreground text-xs py-10">No job cards found</p>}
         </div>
 
         {/* Job Card Dialog */}
