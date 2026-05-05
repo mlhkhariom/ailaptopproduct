@@ -161,15 +161,20 @@ We'll contact you to confirm the appointment.
 
 // Invoice link notification
 export const notifyInvoiceReady = async (order, phone, customerName) => {
-  const msg = `🧾 *Invoice Ready!*
+  const invoiceUrl = `${process.env.FRONTEND_URL || 'https://ailaptopwala.com'}/api/invoice/${order.order_number}`;
+  const msg = `🧾 *Invoice Ready — AI Laptop Wala*
 
 Hello ${customerName}!
 
 Your invoice for order *${order.order_number}* is ready.
 
-Download Invoice: ailaptopwala.com/invoice/${order.order_number}
+*Amount:* ₹${order.total?.toLocaleString('en-IN') || ''}
+*Status:* ✅ Paid
 
-*AI Laptop Wala* 💻`;
+📄 View & Download Invoice:
+${invoiceUrl}
+
+*AI Laptop Wala* 💻 | ${process.env.FRONTEND_URL || 'ailaptopwala.com'}`;
   queueNotification(phone, msg, 'invoice');
 };
 

@@ -344,6 +344,17 @@ export const initDB = async () => {
       id TEXT PRIMARY KEY, product_id TEXT NOT NULL, alert_type TEXT DEFAULT 'low_stock',
       threshold INTEGER DEFAULT 5, is_active INTEGER DEFAULT 1, created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
+    // Unified Billing — custom invoices
+    `CREATE TABLE IF NOT EXISTS custom_invoices (
+      id TEXT PRIMARY KEY, invoice_number TEXT UNIQUE NOT NULL,
+      customer_name TEXT NOT NULL, customer_phone TEXT, customer_email TEXT,
+      items JSONB DEFAULT '[]', subtotal REAL DEFAULT 0, discount REAL DEFAULT 0,
+      total REAL DEFAULT 0, notes TEXT, gst_enabled INTEGER DEFAULT 0,
+      payment_status TEXT DEFAULT 'pending', payment_method TEXT DEFAULT 'cash',
+      created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS gst_enabled INTEGER DEFAULT 0",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS gst_enabled INTEGER DEFAULT 0",
   ];
   for (const m of migrations) {
     try { await pool.query(m); } catch {}

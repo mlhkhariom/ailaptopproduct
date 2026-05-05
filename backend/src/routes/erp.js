@@ -200,51 +200,173 @@ router.post('/leads/:id/followups', authMiddleware, adminOnly, async (req, res) 
   res.status(201).json({ id });
 });
 
-export default router;
+// ── UNIFIED BILLING ───────────────────────────────────────
 
-// ── CRM / LEADS ───────────────────────────────────────────
+// GET /api/erp/billing — all invoices (orders + job cards + custom)
+router.get('/billing', authMiddleware, adminOnly, async (req, res) => {
+  const { type, status, from, to, search } = req.query;
+  const results = [];
 
-router.get('/leads', authMiddleware, adminOnly, async (req, res) => {
-  const { status } = req.query;
-  let q = 'SELECT * FROM leads WHERE 1=1';
-  const params = [];
-  if (status && status !== 'all') { q += ' AND status=?'; params.push(status); }
-  q += ' ORDER BY next_followup ASC NULLS LAST, created_at DESC';
-  res.json(await db.prepare(q).all(...params) || []);
+  if (!type || type === 'order') {
+    let q = `SELECT o.*, u.name as customer_name, u.phone as customer_phone
+      FROM orders o LEFT JOIN users u ON o.user_id=u.id WHERE 1=1`;
+    const p = [];
+    if (status && status !== 'all') { q += ' AND o.payment_status=?'; p.push(status); }
+    if (from) { q += ' AND DATE(o.created_at)>=?'; p.push(from); }
+    if (to) { q += ' AND DATE(o.created_at)<=?'; p.push(to); }
+    q += ' ORDER BY o.created_at DESC';
+    const orders = await db.prepare(q).all(...p) || [];
+    orders.forEach(o => {
+      const addr = typeof o.address === 'string' ? JSON.parse(o.address || '{}') : (o.address || {});
+      const name = o.customer_name || addr.name || 'Customer';
+      const phone = o.customer_phone || addr.phone || '';
+      if (search && !name.toLowerCase().includes(search.toLowerCase()) && !o.order_number?.includes(search)) return;
+      results.push({
+        id: o.id, invoice_number: o.order_number, type: 'order',
+        customer_name: name, customer_phone: phone,
+        amount: o.total, payment_status: o.payment_status,
+        payment_method: o.payment_method, created_at: o.created_at,
+        items: o.items, address: o.address, discount: o.discount,
+        subtotal: o.subtotal, razorpay_id: o.razorpay_id,
+      });
+    });
+  }
+
+  if (!type || type === 'service') {
+    let q = 'SELECT * FROM service_bookings WHERE 1=1';
+    const p = [];
+    if (status && status !== 'all') { q += ' AND payment_status=?'; p.push(status); }
+    if (from) { q += ' AND DATE(created_at)>=?'; p.push(from); }
+    if (to) { q += ' AND DATE(created_at)<=?'; p.push(to); }
+    q += ' ORDER BY created_at DESC';
+    const jobs = await db.prepare(q).all(...p) || [];
+    jobs.forEach(j => {
+      if (search && !j.customer_name?.toLowerCase().includes(search.toLowerCase()) && !j.booking_number?.includes(search)) return;
+      results.push({
+        id: j.id, invoice_number: j.booking_number, type: 'service',
+        customer_name: j.customer_name, customer_phone: j.customer_phone,
+        amount: j.total_charge || 0, payment_status: j.payment_status,
+        payment_method: j.payment_method, created_at: j.created_at,
+        device: `${j.device_brand || ''} ${j.device_model || ''}`.trim(),
+        service_name: j.service_name, labour_charge: j.labour_charge,
+        parts_charge: j.parts_charge, technician: j.technician,
+        diagnosis: j.diagnosis,
+      });
+    });
+  }
+
+  if (!type || type === 'custom') {
+    let q = 'SELECT * FROM custom_invoices WHERE 1=1';
+    const p = [];
+    if (status && status !== 'all') { q += ' AND payment_status=?'; p.push(status); }
+    if (from) { q += ' AND DATE(created_at)>=?'; p.push(from); }
+    if (to) { q += ' AND DATE(created_at)<=?'; p.push(to); }
+    q += ' ORDER BY created_at DESC';
+    const customs = await db.prepare(q).all(...p) || [];
+    customs.forEach(c => {
+      if (search && !c.customer_name?.toLowerCase().includes(search.toLowerCase()) && !c.invoice_number?.includes(search)) return;
+      results.push({
+        ...c, type: 'custom',
+        items: typeof c.items === 'string' ? JSON.parse(c.items || '[]') : (c.items || []),
+      });
+    });
+  }
+
+  // Sort all by date desc
+  results.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  res.json(results);
 });
 
-router.post('/leads', authMiddleware, adminOnly, async (req, res) => {
-  const { name, phone, email, source, interest, budget, status, priority, assigned_to, notes, next_followup } = req.body;
-  if (!name) return res.status(400).json({ error: 'name required' });
+// POST /api/erp/billing/custom — create custom invoice
+router.post('/billing/custom', authMiddleware, adminOnly, async (req, res) => {
+  const { customer_name, customer_phone, customer_email, items, notes, payment_status, payment_method, discount, gst_enabled, send_whatsapp } = req.body;
+  if (!customer_name || !items?.length) return res.status(400).json({ error: 'customer_name and items required' });
   const id = uuid();
-  await db.prepare('INSERT INTO leads (id,name,phone,email,source,interest,budget,status,priority,assigned_to,notes,next_followup) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
-    .run(id, name, phone, email, source || 'walk-in', interest, budget, status || 'new', priority || 'normal', assigned_to, notes, next_followup);
-  res.status(201).json({ id });
+  const invoice_number = 'ALW-' + Date.now().toString().slice(-6);
+  const subtotal = items.reduce((s, i) => s + (i.price * i.qty), 0);
+  const afterDiscount = subtotal - (discount || 0);
+  const gst = gst_enabled ? Math.round(afterDiscount * 0.18) : 0;
+  const total = afterDiscount + gst;
+  await db.prepare(`INSERT INTO custom_invoices
+    (id,invoice_number,customer_name,customer_phone,customer_email,items,subtotal,discount,total,notes,payment_status,payment_method,gst_enabled)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    .run(id, invoice_number, customer_name, customer_phone, customer_email,
+      JSON.stringify(items), subtotal, discount || 0, total, notes,
+      payment_status || 'pending', payment_method || 'cash', gst_enabled ? 1 : 0);
+
+  // WhatsApp send
+  if (send_whatsapp && customer_phone) {
+    try {
+      const { queueNotification } = await import('../whatsapp/notifications.js');
+      const invoiceUrl = `${process.env.FRONTEND_URL || 'https://ailaptopwala.com'}/api/invoice/${invoice_number}`;
+      const msg = `🧾 *Invoice from AI Laptop Wala*\n\nNamaste ${customer_name}! 🙏\n\n*Invoice #:* ${invoice_number}\n*Amount:* ₹${total.toLocaleString('en-IN')}\n*Status:* ${payment_status === 'paid' ? '✅ Paid' : '⏳ Pending'}\n\n📄 View Invoice:\n${invoiceUrl}\n\n📞 +91 98934 96163 | ailaptopwala.com`;
+      await queueNotification(customer_phone, msg, 'invoice');
+    } catch {}
+  }
+  res.status(201).json({ id, invoice_number, total });
 });
 
-router.put('/leads/:id', authMiddleware, adminOnly, async (req, res) => {
-  const { name, phone, email, source, interest, budget, status, priority, assigned_to, notes, next_followup } = req.body;
-  await db.prepare('UPDATE leads SET name=?,phone=?,email=?,source=?,interest=?,budget=?,status=?,priority=?,assigned_to=?,notes=?,next_followup=?,updated_at=NOW() WHERE id=?')
-    .run(name, phone, email, source, interest, budget, status, priority, assigned_to, notes, next_followup, req.params.id);
+// PUT /api/erp/billing/custom/:id — update custom invoice
+router.put('/billing/custom/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { customer_name, customer_phone, customer_email, items, notes, payment_status, payment_method, discount, gst_enabled, send_whatsapp } = req.body;
+  const subtotal = items.reduce((s, i) => s + (i.price * i.qty), 0);
+  const afterDiscount = subtotal - (discount || 0);
+  const gst = gst_enabled ? Math.round(afterDiscount * 0.18) : 0;
+  const total = afterDiscount + gst;
+  await db.prepare(`UPDATE custom_invoices SET customer_name=?,customer_phone=?,customer_email=?,
+    items=?,subtotal=?,discount=?,total=?,notes=?,payment_status=?,payment_method=?,gst_enabled=?,updated_at=NOW() WHERE id=?`)
+    .run(customer_name, customer_phone, customer_email, JSON.stringify(items),
+      subtotal, discount || 0, total, notes, payment_status, payment_method, gst_enabled ? 1 : 0, req.params.id);
+
+  if (send_whatsapp && customer_phone) {
+    try {
+      const inv = await db.prepare('SELECT invoice_number FROM custom_invoices WHERE id=?').get(req.params.id);
+      const { queueNotification } = await import('../whatsapp/notifications.js');
+      const invoiceUrl = `${process.env.FRONTEND_URL || 'https://ailaptopwala.com'}/api/invoice/${inv.invoice_number}`;
+      const msg = `🧾 *Invoice from AI Laptop Wala*\n\nNamaste ${customer_name}! 🙏\n\n*Invoice #:* ${inv.invoice_number}\n*Amount:* ₹${total.toLocaleString('en-IN')}\n*Status:* ${payment_status === 'paid' ? '✅ Paid' : '⏳ Pending'}\n\n📄 View Invoice:\n${invoiceUrl}\n\n📞 +91 98934 96163`;
+      await queueNotification(customer_phone, msg, 'invoice');
+    } catch {}
+  }
+  res.json({ message: 'Updated', total });
+});
+
+// PATCH /api/erp/billing/:type/:id/payment — mark payment on any type
+router.patch('/billing/:type/:id/payment', authMiddleware, adminOnly, async (req, res) => {
+  const { payment_status, payment_method, send_whatsapp, invoice_number, customer_name, amount } = req.body;
+  const { type, id } = req.params;
+  if (type === 'order') {
+    await db.prepare('UPDATE orders SET payment_status=? WHERE id=?').run(payment_status, id);
+  } else if (type === 'service') {
+    await db.prepare('UPDATE service_bookings SET payment_status=?,payment_method=? WHERE id=?').run(payment_status, payment_method, id);
+  } else if (type === 'custom') {
+    await db.prepare('UPDATE custom_invoices SET payment_status=?,payment_method=? WHERE id=?').run(payment_status, payment_method, id);
+  }
+
+  // WhatsApp invoice link send
+  if (send_whatsapp && invoice_number) {
+    try {
+      let phone = null;
+      if (type === 'order') {
+        const o = await db.prepare('SELECT o.*, u.phone as uphone FROM orders o LEFT JOIN users u ON o.user_id=u.id WHERE o.id=?').get(id);
+        const addr = JSON.parse(o?.address || '{}');
+        phone = o?.uphone || addr.phone;
+      } else if (type === 'service') {
+        const j = await db.prepare('SELECT customer_phone FROM service_bookings WHERE id=?').get(id);
+        phone = j?.customer_phone;
+      } else if (type === 'custom') {
+        const c = await db.prepare('SELECT customer_phone FROM custom_invoices WHERE id=?').get(id);
+        phone = c?.customer_phone;
+      }
+      if (phone) {
+        const { queueNotification } = await import('../whatsapp/notifications.js');
+        const invoiceUrl = `${process.env.FRONTEND_URL || 'https://ailaptopwala.com'}/api/invoice/${invoice_number}`;
+        const msg = `🧾 *Invoice — AI Laptop Wala*\n\nNamaste ${customer_name || 'Customer'}! 🙏\n\n*Invoice #:* ${invoice_number}\n*Amount:* ₹${Number(amount || 0).toLocaleString('en-IN')}\n*Status:* ${payment_status === 'paid' ? '✅ Paid' : '⏳ Pending'}\n\n📄 View Invoice:\n${invoiceUrl}\n\n📞 +91 98934 96163 | ailaptopwala.com`;
+        await queueNotification(phone, msg, 'invoice');
+      }
+    } catch {}
+  }
+
   res.json({ message: 'Updated' });
-});
-
-router.delete('/leads/:id', authMiddleware, adminOnly, async (req, res) => {
-  await db.prepare('DELETE FROM leads WHERE id=?').run(req.params.id);
-  res.json({ message: 'Deleted' });
-});
-
-router.get('/leads/:id/followups', authMiddleware, adminOnly, async (req, res) => {
-  res.json(await db.prepare('SELECT * FROM followups WHERE lead_id=? ORDER BY created_at DESC').all(req.params.id) || []);
-});
-
-router.post('/leads/:id/followups', authMiddleware, adminOnly, async (req, res) => {
-  const { type, notes, outcome, next_date } = req.body;
-  const id = uuid();
-  await db.prepare('INSERT INTO followups (id,lead_id,type,notes,outcome,next_date,created_by) VALUES (?,?,?,?,?,?,?)')
-    .run(id, req.params.id, type || 'call', notes, outcome, next_date, req.user.id);
-  if (next_date) await db.prepare('UPDATE leads SET next_followup=?,updated_at=NOW() WHERE id=?').run(next_date, req.params.id);
-  res.status(201).json({ id });
 });
 
 // ── BRANCHES ──────────────────────────────────────────────
@@ -276,3 +398,5 @@ router.get('/branches/:id/stats', authMiddleware, adminOnly, async (req, res) =>
   ]);
   res.json({ orders: orders?.c || 0, orderRevenue: orders?.rev || 0, jobs: jobs?.c || 0, jobRevenue: jobs?.rev || 0 });
 });
+
+export default router;

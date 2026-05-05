@@ -53,6 +53,12 @@ export const api = {
   // Invoice
   getInvoiceUrl: (orderNumber: string) => `${BASE.replace('/api', '')}/api/invoice/${orderNumber}`,
 
+  // Unified Billing
+  getBilling: (params?: Record<string, string>) => req('GET', '/erp/billing' + (params ? '?' + new URLSearchParams(params) : '')),
+  createCustomInvoice: (data: unknown) => req('POST', '/erp/billing/custom', data),
+  updateCustomInvoice: (id: string, data: unknown) => req('PUT', `/erp/billing/custom/${id}`, data),
+  updateBillingPayment: (type: string, id: string, data: unknown) => req('PATCH', `/erp/billing/${type}/${id}/payment`, data),
+
   // Site Settings
   getSiteSettings: () => req('GET', '/site-settings'),
   updateSiteSettings: (data: unknown) => req('PUT', '/site-settings', data),

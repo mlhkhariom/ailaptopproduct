@@ -27,7 +27,7 @@ const emptyForm = {
   issue_description: '', priority: 'normal', technician: '',
   diagnosis: '', parts_used: [], labour_charge: 0, parts_charge: 0,
   status: 'pending', payment_status: 'pending', payment_method: '', notes: '',
-  branch_id: 'branch-silver-mall',
+  branch_id: '',
 };
 
 export default function AdminJobCards() {
@@ -48,7 +48,9 @@ export default function AdminJobCards() {
     const s = await req('GET', '/staff');
     setStaff(Array.isArray(s) ? s : []);
     const b = await req('GET', '/branches');
-    setBranches(Array.isArray(b) ? b : []);
+    const branchList = Array.isArray(b) ? b : [];
+    setBranches(branchList);
+    setForm((f: any) => ({ ...f, branch_id: f.branch_id || branchList[0]?.id || '' }));
     setLoading(false);
   };
 
@@ -182,7 +184,7 @@ export default function AdminJobCards() {
                 </div>
               </div>
               <div><Label className="text-xs">Branch</Label>
-                <Select value={form.branch_id || 'branch-silver-mall'} onValueChange={v => setForm((f:any) => ({...f, branch_id: v}))}>
+                <Select value={form.branch_id || ''} onValueChange={v => setForm((f:any) => ({...f, branch_id: v}))}>
                   <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {branches.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}

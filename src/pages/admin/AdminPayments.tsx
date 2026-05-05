@@ -23,19 +23,32 @@ const AdminPayments = () => {
   const [methodFilter, setMethodFilter] = useState("all");
 
   useEffect(() => {
-    api.getOrders().then((orders: any[]) => {
-      // Build payment rows from orders
-      const rows = orders.map((o: any) => ({
-        id: o.razorpay_id || o.payment_id || `COD-${o.order_number}`,
-        orderId: o.order_number,
-        customer: o.customer_name || 'Customer',
-        amount: o.total,
-        method: o.payment_method || 'COD',
-        type: o.payment_method === 'COD' ? 'Cash' : 'Online',
-        status: o.payment_status === 'paid' ? 'captured' : o.payment_status || 'pending',
-        date: new Date(o.created_at).toLocaleDateString('en-IN'),
-        time: new Date(o.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-      }));
+    Promise.all([
+      api.getOrders(),
+      api.getBilling({ type: 'service' }),
+    ]).then(([orders, services]: [any[], any[]]) => {
+      const rows = [
+        ...orders.map((o: any) => ({
+          id: o.razorpay_id || o.payment_id || `COD-${o.order_number}`,
+          orderId: o.order_number, customer: o.customer_name || 'Customer',
+          amount: o.total, method: o.payment_method || 'COD',
+          type: o.payment_method === 'COD' ? 'Cash' : 'Online',
+          status: o.payment_status === 'paid' ? 'captured' : o.payment_status || 'pending',
+          date: new Date(o.created_at).toLocaleDateString('en-IN'),
+          time: new Date(o.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+          stream: 'order',
+        })),
+        ...services.map((s: any) => ({
+          id: s.invoice_number,
+          orderId: s.invoice_number, customer: s.customer_name || 'Customer',
+          amount: s.amount, method: s.payment_method || 'Cash',
+          type: 'Service', stream: 'service',
+          status: s.payment_status === 'paid' ? 'captured' : s.payment_status || 'pending',
+          date: new Date(s.created_at).toLocaleDateString('en-IN'),
+          time: new Date(s.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+        })),
+      ];
+      rows.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setPayments(rows);
     }).catch(() => {});
   }, []);
@@ -128,8 +141,7 @@ const AdminPayments = () => {
                 <th className="p-3 text-xs font-medium text-muted-foreground">Method</th>
                 <th className="p-3 text-xs font-medium text-muted-foreground">Type</th>
                 <th className="p-3 text-xs font-medium text-muted-foreground">Status</th>
-                <th className="p-3 text-xs font-medium text-muted-foreground">Date & Time</th>
-              </tr></thead>
+                <th className="p-3 text-xs font-medium text-muted-foreground">Date & Time</th>              </tr></thead>
               <tbody>
                 {filtered.map((p) => {
                   const sc = statusConfig[p.status];
@@ -146,8 +158,7 @@ const AdminPayments = () => {
                           {p.method}
                         </Badge>
                       </td>
-                      <td className="p-3 text-xs">{p.type}</td>
-                      <td className="p-3">
+                      <td className="p-3 text-xs">{p.type}</td>                      <td className="p-3">
                         <Badge variant="outline" className={`text-[10px] ${sc.color}`}>
                           <StatusIcon className="h-3 w-3 mr-1" /> {sc.label}
                         </Badge>
