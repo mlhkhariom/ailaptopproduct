@@ -10,9 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Package, TrendingDown, AlertTriangle, Plus, Edit, Trash2, RefreshCw, ArrowUpDown, Truck, Search, IndianRupee, CheckCircle, Clock, XCircle, BarChart3 } from "lucide-react";
+import { Package, TrendingDown, AlertTriangle, Plus, Edit, Trash2, RefreshCw, ArrowUpDown, Truck, Search, IndianRupee, CheckCircle, Clock, XCircle, BarChart3, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import InventoryStockChart from "@/components/InventoryStockChart";
+import SupplierCard from "@/components/SupplierCard";
+import { printPurchaseOrder } from "@/lib/poPrint";
 
 const req = (method: string, path: string, body?: any) =>
   fetch(`/api/inventory${path}`, {
@@ -148,6 +151,9 @@ export default function AdminInventory() {
               <Button size="sm" onClick={() => setMovementDialog(true)} className="gap-1.5"><Plus className="h-4 w-4" /> Adjust Stock</Button>
             </div>
 
+            {/* Stock chart */}
+            <InventoryStockChart products={products} />
+
             {/* Low stock alert banner */}
             {stats.lowStock > 0 && (
               <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-xl text-sm">
@@ -271,22 +277,14 @@ export default function AdminInventory() {
             </div>
             <div className="grid md:grid-cols-2 gap-3">
               {suppliers.map((s: any) => (
-                <Card key={s.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-bold text-sm">{s.name}</p>
-                        <p className="text-xs text-muted-foreground">{s.contact_person} • {s.phone}</p>
-                        {s.gstin && <p className="text-xs text-muted-foreground">GST: {s.gstin}</p>}
-                        <Badge variant="outline" className="text-[10px] mt-1">{s.payment_terms}</Badge>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingSupplier(s); setSupplierForm(s); setSupplierDialog(true); }}><Edit className="h-3.5 w-3.5" /></Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={async () => { await req('DELETE', `/suppliers/${s.id}`); loadAll(); }}><Trash2 className="h-3.5 w-3.5" /></Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <SupplierCard
+                  key={s.id}
+                  supplier={s}
+                  poCount={purchaseOrders.filter(po => po.supplier_id === s.id).length}
+                  onEdit={() => { setEditingSupplier(s); setSupplierForm(s); setSupplierDialog(true); }}
+                  onDelete={async () => { if (!confirm('Delete supplier?')) return; await req('DELETE', `/suppliers/${s.id}`); loadAll(); }}
+                  onNewPO={() => { setPoForm({ supplier_id: s.id, items:[{product_id:'',product_name:'',quantity:1,unit_price:0}], expected_date:'', notes:'' }); setPoDialog(true); }}
+                />
               ))}
               {!suppliers.length && <p className="text-sm text-muted-foreground col-span-2 text-center py-8">No suppliers added yet</p>}
             </div>
@@ -342,6 +340,7 @@ export default function AdminInventory() {
                     <div className="flex gap-2">
                       {po.status === 'draft' && <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => updatePOStatus(po.id, 'ordered')}><Clock className="h-3.5 w-3.5" /> Mark Ordered</Button>}
                       {po.status === 'ordered' && <Button size="sm" className="gap-1.5 h-8 text-xs" onClick={() => updatePOStatus(po.id, 'received')}><CheckCircle className="h-3.5 w-3.5" /> Mark Received</Button>}
+                      <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => printPurchaseOrder(po)}><Printer className="h-3.5 w-3.5" /> Print</Button>
                       <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive ml-auto" onClick={async () => { if (!confirm('Delete PO?')) return; await req('DELETE', `/purchase-orders/${po.id}`); loadAll(); }}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </div>
