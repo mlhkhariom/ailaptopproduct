@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import AdminLayout from "@/components/AdminLayout";
+import ERPLayout from "@/components/ERPLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Package, TrendingDown, AlertTriangle, Plus, Edit, Trash2, RefreshCw, ArrowUpDown, Truck, Users } from "lucide-react";
+import { Package, TrendingDown, AlertTriangle, Plus, Edit, Trash2, RefreshCw, ArrowUpDown, Truck, Search, IndianRupee, CheckCircle, Clock, XCircle, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 
@@ -29,6 +29,10 @@ export default function AdminInventory() {
   const [movements, setMovements] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [stockSearch, setStockSearch] = useState('');
+  const [movSearch, setMovSearch] = useState('');
+  const [editStockId, setEditStockId] = useState<string | null>(null);
+  const [editStockVal, setEditStockVal] = useState(0);
 
   // Dialogs
   const [supplierDialog, setSupplierDialog] = useState(false);
@@ -78,6 +82,17 @@ export default function AdminInventory() {
     toast.success('Stock updated!'); setMovementDialog(false); loadAll();
   };
 
+  const saveStockEdit = async (productId: string) => {
+    await fetch(`/api/products/${productId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` },
+      body: JSON.stringify({ stock: editStockVal, in_stock: editStockVal > 0 ? 1 : 0 }),
+    });
+    toast.success('Stock updated!'); setEditStockId(null);
+    api.getProducts().then((p: any) => setProducts(Array.isArray(p) ? p : p?.products || []));
+    loadAll();
+  };
+
   const updatePOStatus = async (id: string, status: string) => {
     const po = purchaseOrders.find(p => p.id === id);
     await req('PUT', `/purchase-orders/${id}`, { ...po, status, received_date: status === 'received' ? new Date().toISOString().split('T')[0] : po.received_date });
@@ -85,29 +100,30 @@ export default function AdminInventory() {
   };
 
   return (
-    <AdminLayout>
+    <ERPLayout>
       <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-black flex items-center gap-2"><Package className="h-5 w-5 text-primary" /> Inventory Management</h1>
           <Button size="sm" variant="outline" onClick={loadAll} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></Button>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* KPIs */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {[
             { label: 'Total Products', value: stats.totalProducts || 0, icon: Package, color: 'text-blue-600' },
-            { label: 'In Stock', value: stats.inStock || 0, icon: Package, color: 'text-green-600' },
-            { label: 'Out of Stock', value: stats.outOfStock || 0, icon: AlertTriangle, color: 'text-red-600' },
-            { label: 'Low Stock (≤5)', value: stats.lowStock || 0, icon: TrendingDown, color: 'text-orange-600' },
+            { label: 'In Stock', value: stats.inStock || 0, icon: CheckCircle, color: 'text-green-600' },
+            { label: 'Out of Stock', value: stats.outOfStock || 0, icon: XCircle, color: 'text-red-600' },
+            { label: 'Low Stock (≤5)', value: stats.lowStock || 0, icon: AlertTriangle, color: 'text-orange-600' },
+            { label: 'Inventory Value', value: `₹${(stats.totalValue || 0).toLocaleString('en-IN')}`, icon: IndianRupee, color: 'text-primary' },
           ].map(s => (
             <Card key={s.label}>
               <CardContent className="p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between">
                   <div>
                     <p className="text-xs text-muted-foreground">{s.label}</p>
-                    <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
+                    <p className={`text-2xl font-black mt-0.5 ${s.color}`}>{s.value}</p>
                   </div>
-                  <s.icon className={`h-8 w-8 opacity-20 ${s.color}`} />
+                  <s.icon className={`h-8 w-8 opacity-15 ${s.color}`} />
                 </div>
               </CardContent>
             </Card>
@@ -116,77 +132,130 @@ export default function AdminInventory() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex-wrap h-auto">
-            <TabsTrigger value="stock">📦 Stock Overview</TabsTrigger>
-            <TabsTrigger value="movements">🔄 Stock Movements</TabsTrigger>
-            <TabsTrigger value="suppliers">🏭 Suppliers</TabsTrigger>
-            <TabsTrigger value="po">📋 Purchase Orders</TabsTrigger>
+            <TabsTrigger value="stock" className="gap-1.5"><Package className="h-3.5 w-3.5" /> Stock</TabsTrigger>
+            <TabsTrigger value="movements" className="gap-1.5"><ArrowUpDown className="h-3.5 w-3.5" /> Movements</TabsTrigger>
+            <TabsTrigger value="suppliers" className="gap-1.5"><Truck className="h-3.5 w-3.5" /> Suppliers</TabsTrigger>
+            <TabsTrigger value="po" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Purchase Orders</TabsTrigger>
           </TabsList>
 
           {/* Stock Overview */}
           <TabsContent value="stock" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="font-bold text-sm">Low Stock Alert</h2>
-              <Button size="sm" onClick={() => setMovementDialog(true)}><Plus className="h-4 w-4 mr-1" /> Adjust Stock</Button>
+            <div className="flex gap-2 items-center flex-wrap">
+              <div className="relative flex-1 min-w-48">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search products..." className="pl-8 h-9" value={stockSearch} onChange={e => setStockSearch(e.target.value)} />
+              </div>
+              <Button size="sm" onClick={() => setMovementDialog(true)} className="gap-1.5"><Plus className="h-4 w-4" /> Adjust Stock</Button>
             </div>
-            <div className="border rounded-lg overflow-hidden">
+
+            {/* Low stock alert banner */}
+            {stats.lowStock > 0 && (
+              <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-xl text-sm">
+                <AlertTriangle className="h-4 w-4 text-orange-600 shrink-0" />
+                <span><strong>{stats.lowStock}</strong> products have low stock (≤5 units)</span>
+              </div>
+            )}
+
+            <div className="border rounded-xl overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-muted/50"><tr>
-                  <th className="text-left p-3 text-xs">Product</th>
-                  <th className="text-left p-3 text-xs">Category</th>
-                  <th className="text-center p-3 text-xs">Stock</th>
-                  <th className="text-center p-3 text-xs">Status</th>
-                </tr></thead>
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="text-left p-3 text-xs font-semibold">Product</th>
+                    <th className="text-left p-3 text-xs font-semibold">Category</th>
+                    <th className="text-right p-3 text-xs font-semibold">Price</th>
+                    <th className="text-center p-3 text-xs font-semibold">Stock</th>
+                    <th className="text-center p-3 text-xs font-semibold">Status</th>
+                    <th className="text-center p-3 text-xs font-semibold">Edit</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {(stats.lowStockProducts || []).map((p: any) => (
-                    <tr key={p.id} className="border-t hover:bg-muted/30">
-                      <td className="p-3 font-medium text-xs">{p.name}</td>
-                      <td className="p-3 text-xs text-muted-foreground">{p.category}</td>
-                      <td className="p-3 text-center font-bold text-orange-600">{p.stock}</td>
+                  {products
+                    .filter(p => !stockSearch || p.name?.toLowerCase().includes(stockSearch.toLowerCase()) || p.category?.toLowerCase().includes(stockSearch.toLowerCase()))
+                    .map((p: any) => (
+                    <tr key={p.id} className={`border-t hover:bg-muted/30 ${p.stock <= 5 && p.stock > 0 ? 'bg-orange-50/50' : ''} ${p.stock === 0 ? 'bg-red-50/50' : ''}`}>
+                      <td className="p-3">
+                        <p className="font-medium text-sm">{p.name}</p>
+                        {p.sku && <p className="text-xs text-muted-foreground">SKU: {p.sku}</p>}
+                      </td>
+                      <td className="p-3 text-sm text-muted-foreground">{p.category || '—'}</td>
+                      <td className="p-3 text-right text-sm font-medium">₹{(p.price || 0).toLocaleString('en-IN')}</td>
                       <td className="p-3 text-center">
-                        <Badge variant={p.stock === 0 ? 'destructive' : 'secondary'} className="text-[10px]">
-                          {p.stock === 0 ? 'Out of Stock' : 'Low Stock'}
+                        {editStockId === p.id ? (
+                          <div className="flex items-center gap-1 justify-center">
+                            <Input type="number" className="h-7 w-16 text-xs text-center" value={editStockVal} onChange={e => setEditStockVal(Number(e.target.value))} min={0} />
+                            <Button size="sm" className="h-7 text-xs px-2" onClick={() => saveStockEdit(p.id)}>Save</Button>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs px-1" onClick={() => setEditStockId(null)}>✕</Button>
+                          </div>
+                        ) : (
+                          <span className={`font-bold text-sm ${p.stock === 0 ? 'text-red-600' : p.stock <= 5 ? 'text-orange-600' : 'text-green-600'}`}>{p.stock}</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-center">
+                        <Badge variant={p.stock === 0 ? 'destructive' : p.stock <= 5 ? 'secondary' : 'default'} className="text-xs">
+                          {p.stock === 0 ? 'Out of Stock' : p.stock <= 5 ? 'Low Stock' : 'In Stock'}
                         </Badge>
+                      </td>
+                      <td className="p-3 text-center">
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditStockId(p.id); setEditStockVal(p.stock); }}>
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
                       </td>
                     </tr>
                   ))}
-                  {!(stats.lowStockProducts?.length) && <tr><td colSpan={4} className="p-6 text-center text-muted-foreground text-xs">✅ All products have sufficient stock</td></tr>}
+                  {!products.filter(p => !stockSearch || p.name?.toLowerCase().includes(stockSearch.toLowerCase())).length && (
+                    <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No products found</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">Total Inventory Value</p>
-                <p className="text-2xl font-black text-primary">₹{(stats.totalValue || 0).toLocaleString('en-IN')}</p>
-              </CardContent>
-            </Card>
           </TabsContent>
 
           {/* Stock Movements */}
           <TabsContent value="movements" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="font-bold text-sm">Stock Movement History</h2>
-              <Button size="sm" onClick={() => setMovementDialog(true)}><Plus className="h-4 w-4 mr-1" /> Add Movement</Button>
+            <div className="flex gap-2 items-center flex-wrap">
+              <div className="relative flex-1 min-w-48">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search product..." className="pl-8 h-9" value={movSearch} onChange={e => setMovSearch(e.target.value)} />
+              </div>
+              <Button size="sm" onClick={() => setMovementDialog(true)} className="gap-1.5"><Plus className="h-4 w-4" /> Add Movement</Button>
             </div>
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border rounded-xl overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-muted/50"><tr>
-                  <th className="text-left p-3 text-xs">Product</th>
-                  <th className="text-left p-3 text-xs">Type</th>
-                  <th className="text-center p-3 text-xs">Qty</th>
-                  <th className="text-left p-3 text-xs">Notes</th>
-                  <th className="text-left p-3 text-xs">Date</th>
-                </tr></thead>
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="text-left p-3 text-xs font-semibold">Product</th>
+                    <th className="text-left p-3 text-xs font-semibold">Type</th>
+                    <th className="text-center p-3 text-xs font-semibold">Qty Change</th>
+                    <th className="text-left p-3 text-xs font-semibold">Notes</th>
+                    <th className="text-left p-3 text-xs font-semibold">Date</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {movements.map((m: any) => (
-                    <tr key={m.id} className="border-t hover:bg-muted/30">
-                      <td className="p-3 text-xs font-medium">{m.product_name}</td>
-                      <td className="p-3"><Badge variant={['sale','damage','return_to_supplier'].includes(m.type) ? 'destructive' : 'default'} className="text-[10px]">{m.type}</Badge></td>
-                      <td className="p-3 text-center font-bold">{['sale','damage','return_to_supplier'].includes(m.type) ? '-' : '+'}{m.quantity}</td>
-                      <td className="p-3 text-xs text-muted-foreground">{m.notes}</td>
-                      <td className="p-3 text-xs text-muted-foreground">{new Date(m.created_at).toLocaleDateString('en-IN')}</td>
-                    </tr>
-                  ))}
-                  {!movements.length && <tr><td colSpan={5} className="p-6 text-center text-muted-foreground text-xs">No movements yet</td></tr>}
+                  {movements
+                    .filter(m => !movSearch || m.product_name?.toLowerCase().includes(movSearch.toLowerCase()))
+                    .map((m: any) => {
+                    const isOut = ['sale','damage','return_to_supplier','adjustment_remove'].includes(m.type);
+                    return (
+                      <tr key={m.id} className="border-t hover:bg-muted/30">
+                        <td className="p-3 font-medium text-sm">{m.product_name}</td>
+                        <td className="p-3">
+                          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${isOut ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                            {m.type.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td className="p-3 text-center">
+                          <span className={`font-bold text-base ${isOut ? 'text-red-600' : 'text-green-600'}`}>
+                            {isOut ? '−' : '+'}{m.quantity}
+                          </span>
+                        </td>
+                        <td className="p-3 text-sm text-muted-foreground">{m.notes || '—'}</td>
+                        <td className="p-3 text-sm text-muted-foreground">{new Date(m.created_at).toLocaleDateString('en-IN')}</td>
+                      </tr>
+                    );
+                  })}
+                  {!movements.filter(m => !movSearch || m.product_name?.toLowerCase().includes(movSearch.toLowerCase())).length && (
+                    <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No movements yet</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -226,43 +295,59 @@ export default function AdminInventory() {
           {/* Purchase Orders */}
           <TabsContent value="po" className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="font-bold text-sm">Purchase Orders</h2>
-              <Button size="sm" onClick={() => { setPoForm({ supplier_id:'', items:[{product_id:'',product_name:'',quantity:1,unit_price:0}], expected_date:'', notes:'' }); setPoDialog(true); }}>
-                <Plus className="h-4 w-4 mr-1" /> New PO
+              <p className="text-sm font-semibold text-muted-foreground">{purchaseOrders.length} purchase orders</p>
+              <Button size="sm" onClick={() => { setPoForm({ supplier_id:'', items:[{product_id:'',product_name:'',quantity:1,unit_price:0}], expected_date:'', notes:'' }); setPoDialog(true); }} className="gap-1.5">
+                <Plus className="h-4 w-4" /> New PO
               </Button>
             </div>
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50"><tr>
-                  <th className="text-left p-3 text-xs">PO #</th>
-                  <th className="text-left p-3 text-xs">Supplier</th>
-                  <th className="text-center p-3 text-xs">Items</th>
-                  <th className="text-right p-3 text-xs">Total</th>
-                  <th className="text-center p-3 text-xs">Status</th>
-                  <th className="text-center p-3 text-xs">Actions</th>
-                </tr></thead>
-                <tbody>
-                  {purchaseOrders.map((po: any) => (
-                    <tr key={po.id} className="border-t hover:bg-muted/30">
-                      <td className="p-3 font-mono text-xs font-bold">{po.po_number}</td>
-                      <td className="p-3 text-xs">{po.supplier_name || 'N/A'}</td>
-                      <td className="p-3 text-center text-xs">{po.items?.length || 0}</td>
-                      <td className="p-3 text-right text-xs font-bold">₹{(po.total || 0).toLocaleString('en-IN')}</td>
-                      <td className="p-3 text-center">
-                        <Badge variant={po.status === 'received' ? 'default' : po.status === 'ordered' ? 'secondary' : 'outline'} className="text-[10px]">{po.status}</Badge>
-                      </td>
-                      <td className="p-3 text-center">
-                        <div className="flex gap-1 justify-center">
-                          {po.status === 'draft' && <Button size="sm" variant="outline" className="h-6 text-[10px] px-2" onClick={() => updatePOStatus(po.id, 'ordered')}>Order</Button>}
-                          {po.status === 'ordered' && <Button size="sm" className="h-6 text-[10px] px-2" onClick={() => updatePOStatus(po.id, 'received')}>Receive</Button>}
-                          <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={async () => { await req('DELETE', `/purchase-orders/${po.id}`); loadAll(); }}><Trash2 className="h-3 w-3" /></Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {!purchaseOrders.length && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground text-xs">No purchase orders yet</td></tr>}
-                </tbody>
-              </table>
+            <div className="space-y-3">
+              {purchaseOrders.map((po: any) => {
+                const items = Array.isArray(po.items) ? po.items : [];
+                const statusColor = po.status === 'received' ? 'bg-green-100 text-green-700' : po.status === 'ordered' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700';
+                return (
+                  <div key={po.id} className="border rounded-xl p-4 hover:shadow-sm transition-all">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="font-bold font-mono">{po.po_number}</p>
+                        <p className="text-sm text-muted-foreground">{po.supplier_name || 'No supplier'}</p>
+                        {po.expected_date && <p className="text-xs text-muted-foreground">Expected: {po.expected_date}</p>}
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusColor}`}>{po.status}</span>
+                        <p className="text-lg font-black mt-1">₹{(po.total || 0).toLocaleString('en-IN')}</p>
+                      </div>
+                    </div>
+                    {items.length > 0 && (
+                      <div className="border rounded-lg overflow-hidden mb-3">
+                        <table className="w-full text-xs">
+                          <thead className="bg-muted/30"><tr>
+                            <th className="text-left p-2">Product</th>
+                            <th className="text-center p-2">Qty</th>
+                            <th className="text-right p-2">Unit Price</th>
+                            <th className="text-right p-2">Total</th>
+                          </tr></thead>
+                          <tbody>
+                            {items.map((item: any, i: number) => (
+                              <tr key={i} className="border-t">
+                                <td className="p-2">{item.product_name || 'Product'}</td>
+                                <td className="p-2 text-center">{item.quantity}</td>
+                                <td className="p-2 text-right">₹{(item.unit_price || 0).toLocaleString('en-IN')}</td>
+                                <td className="p-2 text-right font-medium">₹{((item.quantity || 0) * (item.unit_price || 0)).toLocaleString('en-IN')}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      {po.status === 'draft' && <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => updatePOStatus(po.id, 'ordered')}><Clock className="h-3.5 w-3.5" /> Mark Ordered</Button>}
+                      {po.status === 'ordered' && <Button size="sm" className="gap-1.5 h-8 text-xs" onClick={() => updatePOStatus(po.id, 'received')}><CheckCircle className="h-3.5 w-3.5" /> Mark Received</Button>}
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive ml-auto" onClick={async () => { if (!confirm('Delete PO?')) return; await req('DELETE', `/purchase-orders/${po.id}`); loadAll(); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </div>
+                );
+              })}
+              {!purchaseOrders.length && <p className="text-center text-muted-foreground py-10">No purchase orders yet</p>}
             </div>
           </TabsContent>
         </Tabs>
@@ -366,6 +451,6 @@ export default function AdminInventory() {
           </DialogContent>
         </Dialog>
       </div>
-    </AdminLayout>
+    </ERPLayout>
   );
 }
