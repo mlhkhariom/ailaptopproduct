@@ -9,10 +9,14 @@ const router = Router();
 // ── JOB CARDS (service_bookings extended) ────────────────
 
 router.get('/job-cards', authMiddleware, adminOnly, async (req, res) => {
-  const { status } = req.query;
+  const { status, branch_id, from, to, search } = req.query;
   let q = 'SELECT * FROM service_bookings WHERE 1=1';
   const params = [];
-  if (status) { q += ' AND status=?'; params.push(status); }
+  if (status && status !== 'all') { q += ' AND status=?'; params.push(status); }
+  if (branch_id) { q += ' AND branch_id=?'; params.push(branch_id); }
+  if (from) { q += ' AND DATE(created_at)>=?'; params.push(from); }
+  if (to) { q += ' AND DATE(created_at)<=?'; params.push(to); }
+  if (search) { q += ' AND (customer_name ILIKE ? OR booking_number ILIKE ? OR device_brand ILIKE ?)'; params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
   q += ' ORDER BY created_at DESC';
   const rows = await db.prepare(q).all(...params);
   res.json((rows || []).map(r => ({ ...r, parts_used: typeof r.parts_used === 'string' ? JSON.parse(r.parts_used || '[]') : (r.parts_used || []) })));
