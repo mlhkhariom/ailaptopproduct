@@ -220,10 +220,3 @@ export function AdminSidebar() {
     </Sidebar>
   );
 }
-import { NavLink } from "@/components/NavLink";
-import { useState } from "react";
-import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
-} from "@/components/ui/sidebar";
-import { Badge } from "@/components/ui/badge";
