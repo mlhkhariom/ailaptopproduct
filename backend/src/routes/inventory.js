@@ -9,8 +9,18 @@ const router = Router();
 // ── SUPPLIERS ─────────────────────────────────────────────
 
 router.get('/suppliers', authMiddleware, adminOnly, async (req, res) => {
-  const rows = await db.prepare('SELECT * FROM suppliers ORDER BY name ASC').all();
-  res.json(rows || []);
+  const { search, include_inactive } = req.query;
+  let q = include_inactive ? 'SELECT * FROM suppliers' : 'SELECT * FROM suppliers WHERE is_active=1';
+  const params = [];
+  if (search) { q += (include_inactive ? ' WHERE' : ' AND') + ' (name ILIKE ? OR contact_person ILIKE ? OR phone ILIKE ?)'; params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
+  q += ' ORDER BY name ASC';
+  const suppliers = await db.prepare(q).all(...params) || [];
+  // Attach PO stats per supplier
+  const withStats = await Promise.all(suppliers.map(async s => {
+    const poStats = await db.prepare("SELECT COUNT(*) as count, COALESCE(SUM(total),0) as total, MAX(created_at) as last_po FROM purchase_orders WHERE supplier_id=?").get(s.id);
+    return { ...s, po_count: poStats?.count || 0, total_spend: poStats?.total || 0, last_po: poStats?.last_po };
+  }));
+  res.json(withStats);
 });
 
 router.post('/suppliers', authMiddleware, adminOnly, async (req, res) => {
@@ -37,12 +47,13 @@ router.delete('/suppliers/:id', authMiddleware, adminOnly, async (req, res) => {
 // ── PURCHASE ORDERS ───────────────────────────────────────
 
 router.get('/purchase-orders', authMiddleware, adminOnly, async (req, res) => {
-  const rows = await db.prepare(`
-    SELECT po.*, s.name as supplier_name 
-    FROM purchase_orders po LEFT JOIN suppliers s ON po.supplier_id=s.id 
-    ORDER BY po.created_at DESC
-  `).all();
-  res.json((rows || []).map(r => ({ ...r, items: typeof r.items === 'string' ? JSON.parse(r.items) : r.items })));
+  const { status, search } = req.query;
+  let q = `SELECT po.*, s.name as supplier_name FROM purchase_orders po LEFT JOIN suppliers s ON po.supplier_id=s.id WHERE 1=1`;
+  const params = [];
+  if (status && status !== 'all') { q += ' AND po.status=?'; params.push(status); }
+  if (search) { q += ' AND (po.po_number ILIKE ? OR s.name ILIKE ?)'; params.push(`%${search}%`, `%${search}%`); }
+  q += ' ORDER BY po.created_at DESC';
+  res.json((await db.prepare(q).all(...params) || []).map(r => ({ ...r, items: typeof r.items === 'string' ? JSON.parse(r.items) : r.items })));
 });
 
 router.post('/purchase-orders', authMiddleware, adminOnly, async (req, res) => {

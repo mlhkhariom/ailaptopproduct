@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Package, TrendingDown, AlertTriangle, Plus, Edit, Trash2, RefreshCw, ArrowUpDown, Truck, Search, IndianRupee, CheckCircle, Clock, XCircle, BarChart3, Printer } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import InventoryStockChart from "@/components/InventoryStockChart";
@@ -34,6 +35,10 @@ export default function AdminInventory() {
   const [loading, setLoading] = useState(false);
   const [stockSearch, setStockSearch] = useState('');
   const [movSearch, setMovSearch] = useState('');
+  const [supplierSearch, setSupplierSearch] = useState('');
+  const [showInactiveSuppliers, setShowInactiveSuppliers] = useState(false);
+  const [poStatusFilter, setPoStatusFilter] = useState('all');
+  const [poSearch, setPoSearch] = useState('');
   const [editStockId, setEditStockId] = useState<string | null>(null);
   const [editStockVal, setEditStockVal] = useState(0);
 
@@ -50,9 +55,17 @@ export default function AdminInventory() {
 
   const loadAll = async () => {
     setLoading(true);
+    const supParams = new URLSearchParams();
+    if (showInactiveSuppliers) supParams.set('include_inactive', '1');
+    if (supplierSearch) supParams.set('search', supplierSearch);
+    const poParams = new URLSearchParams();
+    if (poStatusFilter !== 'all') poParams.set('status', poStatusFilter);
+    if (poSearch) poParams.set('search', poSearch);
     const [s, sup, po, mov] = await Promise.all([
-      req('GET', '/stats'), req('GET', '/suppliers'),
-      req('GET', '/purchase-orders'), req('GET', '/stock-movements')
+      req('GET', '/stats'),
+      req('GET', `/suppliers?${supParams}`),
+      req('GET', `/purchase-orders?${poParams}`),
+      req('GET', '/stock-movements'),
     ]);
     setStats(s); setSuppliers(Array.isArray(sup) ? sup : []);
     setPurchaseOrders(Array.isArray(po) ? po : []);
@@ -60,10 +73,18 @@ export default function AdminInventory() {
     setLoading(false);
   };
 
+  useEffect(() => { loadAll(); }, [showInactiveSuppliers, poStatusFilter]);
+
   useEffect(() => {
     loadAll();
     api.getProducts().then((p: any) => setProducts(Array.isArray(p) ? p : p?.products || []));
   }, []);
+
+  const toggleSupplierActive = async (s: any) => {
+    await req('PUT', `/suppliers/${s.id}`, { ...s, is_active: s.is_active ? 0 : 1 });
+    toast.success(s.is_active ? 'Supplier deactivated' : 'Supplier activated');
+    loadAll();
+  };
 
   const saveSupplier = async () => {
     if (!supplierForm.name) return toast.error('Name required');
@@ -269,10 +290,19 @@ export default function AdminInventory() {
 
           {/* Suppliers */}
           <TabsContent value="suppliers" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="font-bold text-sm">Suppliers ({suppliers.length})</h2>
-              <Button size="sm" onClick={() => { setEditingSupplier(null); setSupplierForm({ name:'',contact_person:'',phone:'',email:'',address:'',gstin:'',payment_terms:'net30',notes:'' }); setSupplierDialog(true); }}>
-                <Plus className="h-4 w-4 mr-1" /> Add Supplier
+            <div className="flex gap-2 items-center flex-wrap">
+              <div className="relative flex-1 min-w-48">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search suppliers..." className="pl-8 h-9"
+                  value={supplierSearch} onChange={e => setSupplierSearch(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && loadAll()} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={showInactiveSuppliers} onCheckedChange={setShowInactiveSuppliers} />
+                <span className="text-sm text-muted-foreground">Show Inactive</span>
+              </div>
+              <Button size="sm" onClick={() => { setEditingSupplier(null); setSupplierForm({ name:'',contact_person:'',phone:'',email:'',address:'',gstin:'',payment_terms:'net30',notes:'' }); setSupplierDialog(true); }} className="gap-1.5">
+                <Plus className="h-4 w-4" /> Add Supplier
               </Button>
             </div>
             <div className="grid md:grid-cols-2 gap-3">
@@ -280,28 +310,39 @@ export default function AdminInventory() {
                 <SupplierCard
                   key={s.id}
                   supplier={s}
-                  poCount={purchaseOrders.filter(po => po.supplier_id === s.id).length}
                   onEdit={() => { setEditingSupplier(s); setSupplierForm(s); setSupplierDialog(true); }}
                   onDelete={async () => { if (!confirm('Delete supplier?')) return; await req('DELETE', `/suppliers/${s.id}`); loadAll(); }}
                   onNewPO={() => { setPoForm({ supplier_id: s.id, items:[{product_id:'',product_name:'',quantity:1,unit_price:0}], expected_date:'', notes:'' }); setPoDialog(true); }}
+                  onToggleActive={() => toggleSupplierActive(s)}
                 />
               ))}
-              {!suppliers.length && <p className="text-sm text-muted-foreground col-span-2 text-center py-8">No suppliers added yet</p>}
+              {!suppliers.length && <p className="text-sm text-muted-foreground col-span-2 text-center py-8">No suppliers found</p>}
             </div>
           </TabsContent>
 
           {/* Purchase Orders */}
           <TabsContent value="po" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <p className="text-sm font-semibold text-muted-foreground">{purchaseOrders.length} purchase orders</p>
-              <Button size="sm" onClick={() => { setPoForm({ supplier_id:'', items:[{product_id:'',product_name:'',quantity:1,unit_price:0}], expected_date:'', notes:'' }); setPoDialog(true); }} className="gap-1.5">
+            <div className="flex gap-2 items-center flex-wrap">
+              <div className="relative flex-1 min-w-48">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search PO # or supplier..." className="pl-8 h-9"
+                  value={poSearch} onChange={e => setPoSearch(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && loadAll()} />
+              </div>
+              {['all','draft','ordered','received','cancelled'].map(s => (
+                <button key={s} onClick={() => setPoStatusFilter(s)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all capitalize ${poStatusFilter === s ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:border-primary/40'}`}>
+                  {s}
+                </button>
+              ))}
+              <Button size="sm" onClick={() => { setPoForm({ supplier_id:'', items:[{product_id:'',product_name:'',quantity:1,unit_price:0}], expected_date:'', notes:'' }); setPoDialog(true); }} className="gap-1.5 ml-auto">
                 <Plus className="h-4 w-4" /> New PO
               </Button>
             </div>
             <div className="space-y-3">
               {purchaseOrders.map((po: any) => {
                 const items = Array.isArray(po.items) ? po.items : [];
-                const statusColor = po.status === 'received' ? 'bg-green-100 text-green-700' : po.status === 'ordered' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700';
+                const statusColor = po.status === 'received' ? 'bg-green-100 text-green-700' : po.status === 'ordered' ? 'bg-blue-100 text-blue-700' : po.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700';
                 return (
                   <div key={po.id} className="border rounded-xl p-4 hover:shadow-sm transition-all">
                     <div className="flex items-start justify-between mb-3">
@@ -337,9 +378,10 @@ export default function AdminInventory() {
                         </table>
                       </div>
                     )}
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       {po.status === 'draft' && <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => updatePOStatus(po.id, 'ordered')}><Clock className="h-3.5 w-3.5" /> Mark Ordered</Button>}
                       {po.status === 'ordered' && <Button size="sm" className="gap-1.5 h-8 text-xs" onClick={() => updatePOStatus(po.id, 'received')}><CheckCircle className="h-3.5 w-3.5" /> Mark Received</Button>}
+                      {!['received','cancelled'].includes(po.status) && <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs text-red-600 border-red-200" onClick={() => updatePOStatus(po.id, 'cancelled')}><XCircle className="h-3.5 w-3.5" /> Cancel</Button>}
                       <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => printPurchaseOrder(po)}><Printer className="h-3.5 w-3.5" /> Print</Button>
                       <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive ml-auto" onClick={async () => { if (!confirm('Delete PO?')) return; await req('DELETE', `/purchase-orders/${po.id}`); loadAll(); }}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
