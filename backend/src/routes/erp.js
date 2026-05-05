@@ -116,7 +116,11 @@ router.put('/expenses/:id', authMiddleware, adminOnly, async (req, res) => {
 // ── STAFF ─────────────────────────────────────────────────
 
 router.get('/staff', authMiddleware, adminOnly, async (req, res) => {
-  res.json(await db.prepare('SELECT * FROM staff WHERE is_active=1 ORDER BY name ASC').all() || []);
+  const { include_inactive } = req.query;
+  const q = include_inactive
+    ? 'SELECT * FROM staff ORDER BY is_active DESC, name ASC'
+    : 'SELECT * FROM staff WHERE is_active=1 ORDER BY name ASC';
+  res.json(await db.prepare(q).all() || []);
 });
 
 router.post('/staff', authMiddleware, adminOnly, async (req, res) => {
