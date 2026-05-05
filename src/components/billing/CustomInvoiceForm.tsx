@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus, MessageCircle, Save, User, Package, CreditCard, Clock, CheckCircle, AlertCircle, Banknote, Smartphone, Search } from "lucide-react";
+import { Trash2, Plus, MessageCircle, Save, User, Package, CreditCard, Clock, CheckCircle, AlertCircle, Banknote, Smartphone, Search, Building2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 
@@ -192,38 +192,55 @@ export default function CustomInvoiceForm({ open, onClose, form, setForm, editin
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
               <CreditCard className="h-3.5 w-3.5" /> Payment
             </p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">Status</Label>
-                <Select value={form.payment_status} onValueChange={sf('payment_status')}>
-                  <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending"><span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-orange-500" /> Pending</span></SelectItem>
-                    <SelectItem value="paid"><span className="flex items-center gap-2"><CheckCircle className="h-3.5 w-3.5 text-green-500" /> Paid</span></SelectItem>
-                    <SelectItem value="partial"><span className="flex items-center gap-2"><AlertCircle className="h-3.5 w-3.5 text-yellow-500" /> Partial</span></SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">Mode</Label>
-                <Select value={form.payment_mode || 'cash'} onValueChange={sf('payment_mode')}>
-                  <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash"><span className="flex items-center gap-2"><Banknote className="h-3.5 w-3.5" /> Cash</span></SelectItem>
-                    <SelectItem value="online"><span className="flex items-center gap-2"><Smartphone className="h-3.5 w-3.5" /> Online</span></SelectItem>
-                  </SelectContent>
-                </Select>
+            {/* Status buttons */}
+            <div>
+              <Label className="text-xs mb-2 block">Status</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { v: 'pending', label: 'Pending', icon: Clock, active: 'border-orange-400 bg-orange-50 text-orange-700' },
+                  { v: 'paid',    label: 'Paid',    icon: CheckCircle, active: 'border-green-400 bg-green-50 text-green-700' },
+                  { v: 'partial', label: 'Partial', icon: AlertCircle, active: 'border-yellow-400 bg-yellow-50 text-yellow-700' },
+                ].map(s => (
+                  <button key={s.v} type="button" onClick={() => sf('payment_status')(s.v)}
+                    className={`flex items-center justify-center gap-1.5 border rounded-lg py-2 text-xs font-semibold transition-all ${form.payment_status === s.v ? s.active : 'border-border text-muted-foreground hover:border-primary/40'}`}>
+                    <s.icon className="h-3.5 w-3.5" />{s.label}
+                  </button>
+                ))}
               </div>
             </div>
+
+            {/* Payment mode buttons */}
+            <div>
+              <Label className="text-xs mb-2 block">Payment Mode</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { v: 'cash',   label: 'Cash',   icon: Banknote },
+                  { v: 'online', label: 'Online', icon: Smartphone },
+                ].map(m => (
+                  <button key={m.v} type="button" onClick={() => sf('payment_mode')(m.v)}
+                    className={`flex items-center justify-center gap-1.5 border rounded-lg py-2 text-xs font-semibold transition-all ${(form.payment_mode || 'cash') === m.v ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}>
+                    <m.icon className="h-3.5 w-3.5" />{m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {form.payment_mode === 'online' && (
               <div>
-                <Label className="text-xs">Online Method</Label>
-                <Select value={form.online_method || 'UPI'} onValueChange={sf('online_method')}>
-                  <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {ONLINE_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs mb-2 block">Online Method</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { v: 'UPI', icon: Smartphone },
+                    { v: 'Debit Card', icon: CreditCard },
+                    { v: 'Credit Card', icon: CreditCard },
+                    { v: 'Net Banking', icon: Building2 },
+                  ].map(m => (
+                    <button key={m.v} type="button" onClick={() => sf('online_method')(m.v)}
+                      className={`flex items-center justify-center gap-1.5 border rounded-lg py-2 text-xs font-semibold transition-all ${(form.online_method || 'UPI') === m.v ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}>
+                      <m.icon className="h-3.5 w-3.5" />{m.v}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
