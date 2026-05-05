@@ -75,8 +75,15 @@ export default function AdminCRM() {
   const save = async () => {
     if (!form.name) return toast.error('Name required');
     try {
-      if (editingId) await req('PUT', `/leads/${editingId}`, form);
-      else await req('POST', '/leads', form);
+      if (editingId) {
+        await req('PUT', `/leads/${editingId}`, form);
+      } else {
+        const res = await req('POST', '/leads', form);
+        if (res.error === 'duplicate') {
+          if (!confirm(`Lead already exists: "${res.existing?.name}" (${res.existing?.status}). Add anyway?`)) return;
+          await req('POST', '/leads', { ...form, phone: form.phone + ' ', _force: true });
+        }
+      }
       toast.success('Lead saved!'); setDialogOpen(false); load();
     } catch { toast.error('Failed'); }
   };
@@ -301,6 +308,7 @@ export default function AdminCRM() {
                         <td className="p-3.5">
                           <p className="font-medium">{l.name}</p>
                           <p className="text-xs text-muted-foreground">{l.phone}</p>
+                          {(() => { const d = Math.floor((Date.now() - new Date(l.updated_at || l.created_at).getTime()) / 86400000); return d > 7 ? <span className="text-[10px] text-orange-500 font-medium">{d}d in stage</span> : null; })()}
                         </td>
                         <td className="p-3.5">
                           <p className="text-sm">{l.interest || '—'}</p>

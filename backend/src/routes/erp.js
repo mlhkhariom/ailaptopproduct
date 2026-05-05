@@ -48,17 +48,35 @@ router.post('/job-cards', authMiddleware, adminOnly, async (req, res) => {
 
 router.put('/job-cards/:id', authMiddleware, adminOnly, async (req, res) => {
   const { status, technician, diagnosis, parts_used, labour_charge, parts_charge,
-    payment_status, payment_method, notes, priority } = req.body;
+    payment_status, payment_method, notes, priority, branch_id, gst_enabled } = req.body;
   const total_charge = (labour_charge || 0) + (parts_charge || 0);
   const completed_at = status === 'completed' ? new Date().toISOString() : null;
+
+  // Get previous status to detect transition
+  const prev = await db.prepare('SELECT status, parts_used FROM service_bookings WHERE id=?').get(req.params.id);
+
   await db.prepare(`UPDATE service_bookings SET status=?,technician=?,diagnosis=?,
     parts_used=?,labour_charge=?,parts_charge=?,total_charge=?,
-    payment_status=?,payment_method=?,notes=?,priority=?,
+    payment_status=?,payment_method=?,notes=?,priority=?,branch_id=?,gst_enabled=?,
     completed_at=COALESCE(?,completed_at) WHERE id=?`)
     .run(status, technician, diagnosis, JSON.stringify(parts_used || []),
       labour_charge || 0, parts_charge || 0, total_charge,
-      payment_status, payment_method, notes, priority || 'normal',
-      completed_at, req.params.id);
+      payment_status, payment_method, notes, priority || 'normal', branch_id,
+      gst_enabled ? 1 : 0, completed_at, req.params.id);
+
+  // Auto-deduct parts from inventory when job completed (only on first completion)
+  if (status === 'completed' && prev?.status !== 'completed' && parts_used?.length) {
+    for (const part of parts_used) {
+      if (part.product_id && part.qty > 0) {
+        try {
+          await db.prepare('UPDATE products SET stock=GREATEST(0,stock-?), in_stock=CASE WHEN stock-?>0 THEN 1 ELSE 0 END WHERE id=?')
+            .run(part.qty, part.qty, part.product_id);
+          await db.prepare('INSERT INTO stock_movements (id,product_id,type,quantity,reference_id,reference_type,notes,created_by) VALUES (?,?,?,?,?,?,?,?)')
+            .run(uuid(), part.product_id, 'sale', part.qty, req.params.id, 'job_card', `Job card ${prev?.booking_number || req.params.id}`, req.user?.id || 'system');
+        } catch {}
+      }
+    }
+  }
 
   // WhatsApp notification on status change
   try {
@@ -66,8 +84,10 @@ router.put('/job-cards/:id', authMiddleware, adminOnly, async (req, res) => {
     if (job?.customer_phone) {
       const { queueNotification } = await import('../whatsapp/notifications.js');
       let msg = null;
-      if (status === 'in_progress') msg = `🔧 *Job Update — AI Laptop Wala*\n\nNamaste ${job.customer_name}! 🙏\n\nAapka ${job.device_brand} ${job.device_model} repair shuru ho gaya hai.\n*Job ID:* ${job.booking_number}\n*Technician:* ${technician || 'Our Expert'}\n\nUpdate milte rahenge. 📞 +91 98934 96163`;
-      if (status === 'completed') msg = `✅ *Repair Complete — AI Laptop Wala*\n\nNamaste ${job.customer_name}! 🙏\n\nAapka ${job.device_brand} ${job.device_model} repair ho gaya hai!\n*Job ID:* ${job.booking_number}\n*Total:* ₹${((labour_charge || 0) + (parts_charge || 0)).toLocaleString('en-IN')}\n\nPickup ke liye call karein: 📞 +91 98934 96163\nSilver Mall, RNT Marg, Indore`;
+      if (status === 'in_progress' && prev?.status !== 'in_progress')
+        msg = `Job Update - AI Laptop Wala\n\nNamaste ${job.customer_name}!\n\nAapka ${job.device_brand} ${job.device_model} repair shuru ho gaya hai.\nJob ID: ${job.booking_number}\nTechnician: ${technician || 'Our Expert'}\n\n+91 98934 96163`;
+      if (status === 'completed' && prev?.status !== 'completed')
+        msg = `Repair Complete - AI Laptop Wala\n\nNamaste ${job.customer_name}!\n\nAapka ${job.device_brand} ${job.device_model} repair ho gaya hai!\nJob ID: ${job.booking_number}\nTotal: Rs.${total_charge.toLocaleString('en-IN')}\n\nPickup: +91 98934 96163\nSilver Mall, RNT Marg, Indore`;
       if (msg) await queueNotification(job.customer_phone, msg, 'job_update');
     }
   } catch {}
@@ -208,6 +228,13 @@ router.get('/leads', authMiddleware, adminOnly, async (req, res) => {
 router.post('/leads', authMiddleware, adminOnly, async (req, res) => {
   const { name, phone, email, source, interest, budget, deal_value, status, priority, assigned_to, notes, next_followup, expected_close, tags, score } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
+
+  // Duplicate detection (skip if _force flag)
+  if (!req.body._force && (phone || email)) {
+    const existing = await db.prepare('SELECT id, name, status FROM leads WHERE (phone=? AND phone!=\'\') OR (email=? AND email!=\'\') LIMIT 1').get(phone || '', email || '');
+    if (existing) return res.status(409).json({ error: 'duplicate', existing, message: `Lead already exists: ${existing.name} (${existing.status})` });
+  }
+
   const id = uuid();
   await db.prepare(`INSERT INTO leads (id,name,phone,email,source,interest,budget,deal_value,status,priority,assigned_to,notes,next_followup,expected_close,tags,score)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)

@@ -355,6 +355,13 @@ export const initDB = async () => {
     )`,
     "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS gst_enabled INTEGER DEFAULT 0",
     "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS gst_enabled INTEGER DEFAULT 0",
+    // Sprint 1 — reorder level per product
+    "ALTER TABLE products ADD COLUMN IF NOT EXISTS reorder_level INTEGER DEFAULT 5",
+    // Sprint 1 — lead days_in_stage (computed, no column needed)
+    // Sprint 1 — payment reminder sent flag
+    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS reminder_sent INTEGER DEFAULT 0",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS reminder_sent INTEGER DEFAULT 0",
+    "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS reminder_sent INTEGER DEFAULT 0",
     // CRM enhancements
     "ALTER TABLE leads ADD COLUMN IF NOT EXISTS expected_close DATE",
     "ALTER TABLE leads ADD COLUMN IF NOT EXISTS lost_reason TEXT",

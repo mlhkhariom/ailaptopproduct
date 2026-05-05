@@ -125,9 +125,18 @@ router.get('/stats', authMiddleware, adminOnly, async (req, res) => {
   const totalValue = (await db.prepare("SELECT COALESCE(SUM(price*stock),0) as v FROM products WHERE status='active' AND in_stock=1").get())?.v || 0;
   const totalSuppliers = (await db.prepare("SELECT COUNT(*) as c FROM suppliers WHERE is_active=1").get())?.c || 0;
   const pendingPOs = (await db.prepare("SELECT COUNT(*) as c FROM purchase_orders WHERE status IN ('draft','ordered')").get())?.c || 0;
-  const lowStockProducts = await db.prepare("SELECT id,name,stock,category FROM products WHERE status='active' AND stock<=5 AND stock>=0 ORDER BY stock ASC LIMIT 10").all();
+  const lowStockProducts = await db.prepare("SELECT id,name,stock,category,reorder_level FROM products WHERE status='active' AND stock<=COALESCE(reorder_level,5) AND stock>=0 ORDER BY stock ASC LIMIT 10").all();
+  // Products below their custom reorder level
+  const belowReorder = (await db.prepare("SELECT COUNT(*) as c FROM products WHERE status='active' AND stock<=COALESCE(reorder_level,5) AND stock>0").get())?.c || 0;
 
-  res.json({ totalProducts, inStock, outOfStock, lowStock, totalValue, totalSuppliers, pendingPOs, lowStockProducts: lowStockProducts || [] });
+  res.json({ totalProducts, inStock, outOfStock, lowStock, totalValue, totalSuppliers, pendingPOs, lowStockProducts: lowStockProducts || [], belowReorder });
+});
+
+// PUT /api/inventory/products/:id/reorder-level
+router.put('/products/:id/reorder-level', authMiddleware, adminOnly, async (req, res) => {
+  const { reorder_level } = req.body;
+  await db.prepare('UPDATE products SET reorder_level=? WHERE id=?').run(reorder_level || 5, req.params.id);
+  res.json({ message: 'Updated' });
 });
 
 export default router;

@@ -191,6 +191,7 @@ export default function AdminInventory() {
                     <th className="text-left p-3 text-xs font-semibold">Category</th>
                     <th className="text-right p-3 text-xs font-semibold">Price</th>
                     <th className="text-center p-3 text-xs font-semibold">Stock</th>
+                    <th className="text-center p-3 text-xs font-semibold">Reorder</th>
                     <th className="text-center p-3 text-xs font-semibold">Status</th>
                     <th className="text-center p-3 text-xs font-semibold">Edit</th>
                   </tr>
@@ -218,8 +219,13 @@ export default function AdminInventory() {
                         )}
                       </td>
                       <td className="p-3 text-center">
-                        <Badge variant={p.stock === 0 ? 'destructive' : p.stock <= 5 ? 'secondary' : 'default'} className="text-xs">
-                          {p.stock === 0 ? 'Out of Stock' : p.stock <= 5 ? 'Low Stock' : 'In Stock'}
+                        <span className={`text-xs font-medium ${p.stock <= (p.reorder_level || 5) && p.stock > 0 ? 'text-orange-600' : 'text-muted-foreground'}`}>
+                          {p.reorder_level || 5}
+                        </span>
+                      </td>
+                      <td className="p-3 text-center">
+                        <Badge variant={p.stock === 0 ? 'destructive' : p.stock <= (p.reorder_level || 5) ? 'secondary' : 'default'} className="text-xs">
+                          {p.stock === 0 ? 'Out of Stock' : p.stock <= (p.reorder_level || 5) ? 'Low Stock' : 'In Stock'}
                         </Badge>
                       </td>
                       <td className="p-3 text-center">
