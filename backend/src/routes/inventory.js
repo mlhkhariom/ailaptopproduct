@@ -82,7 +82,7 @@ router.delete('/purchase-orders/:id', authMiddleware, adminOnly, async (req, res
 router.get('/stock-movements', authMiddleware, adminOnly, async (req, res) => {
   const { product_id, limit = 50 } = req.query;
   let q = `SELECT sm.*, p.name as product_name FROM stock_movements sm LEFT JOIN products p ON sm.product_id=p.id WHERE 1=1`;
-  const params: any[] = [];
+  const params = [];
   if (product_id) { q += ' AND sm.product_id=?'; params.push(product_id); }
   q += ` ORDER BY sm.created_at DESC LIMIT ${limit}`;
   const rows = await db.prepare(q).all(...params);
