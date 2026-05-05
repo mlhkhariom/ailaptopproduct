@@ -184,37 +184,50 @@ export default function AdminBilling() {
 
         {/* Payment Update Dialog */}
         <Dialog open={payOpen} onOpenChange={setPayOpen}>
-          <DialogContent className="max-w-xs">
-            <DialogHeader><DialogTitle>Update Payment — {payRow?.invoice_number}</DialogTitle></DialogHeader>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Update Payment</DialogTitle>
+              {payRow && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {payRow.invoice_number} · {payRow.customer_name} · <span className="font-bold">₹{(payRow.amount || 0).toLocaleString('en-IN')}</span>
+                </p>
+              )}
+            </DialogHeader>
             <div className="space-y-3">
-              <div><Label className="text-xs">Payment Status</Label>
-                <Select value={payForm.payment_status} onValueChange={v => setPayForm(f => ({ ...f, payment_status: v }))}>
-                  <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="partial">Partial</SelectItem>
-                    <SelectItem value="refunded">Refunded</SelectItem>
-                  </SelectContent>
-                </Select>
+              {/* Quick status buttons */}
+              <div>
+                <Label className="text-xs mb-2 block">Quick Status</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { v: 'paid', label: '✅ Paid', cls: 'border-green-300 bg-green-50 text-green-700' },
+                    { v: 'pending', label: '⏳ Pending', cls: 'border-orange-300 bg-orange-50 text-orange-700' },
+                    { v: 'partial', label: '🔶 Partial', cls: 'border-yellow-300 bg-yellow-50 text-yellow-700' },
+                  ].map(s => (
+                    <button key={s.v} onClick={() => setPayForm(f => ({ ...f, payment_status: s.v }))}
+                      className={`border rounded-lg py-2 text-xs font-semibold transition-all ${payForm.payment_status === s.v ? s.cls + ' ring-2 ring-offset-1 ring-current' : 'border-border hover:border-primary/40'}`}>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div><Label className="text-xs">Payment Method</Label>
+              <div>
+                <Label className="text-xs">Payment Method</Label>
                 <Select value={payForm.payment_method} onValueChange={v => setPayForm(f => ({ ...f, payment_method: v }))}>
                   <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Cash">Cash</SelectItem>
-                    <SelectItem value="UPI">UPI</SelectItem>
-                    <SelectItem value="Debit Card">Debit Card</SelectItem>
-                    <SelectItem value="Credit Card">Credit Card</SelectItem>
-                    <SelectItem value="Net Banking">Net Banking</SelectItem>
-                    <SelectItem value="Razorpay">Razorpay</SelectItem>
+                    <SelectItem value="Cash">💵 Cash</SelectItem>
+                    <SelectItem value="UPI">📱 UPI</SelectItem>
+                    <SelectItem value="Debit Card">💳 Debit Card</SelectItem>
+                    <SelectItem value="Credit Card">💳 Credit Card</SelectItem>
+                    <SelectItem value="Net Banking">🏦 Net Banking</SelectItem>
+                    <SelectItem value="Razorpay">🔵 Razorpay</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setPayOpen(false)}>Cancel</Button>
-              <Button onClick={savePay}>Update</Button>
+              <Button onClick={savePay} className="gap-1.5">Save Payment</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

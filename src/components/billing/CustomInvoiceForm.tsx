@@ -1,11 +1,11 @@
-// CustomInvoiceForm — full invoice builder dialog
+// CustomInvoiceForm — clean invoice builder
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus, MessageCircle, Save } from "lucide-react";
+import { Trash2, Plus, MessageCircle, Save, User, Package, CreditCard } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -25,132 +25,176 @@ export default function CustomInvoiceForm({ open, onClose, form, setForm, editin
     setForm((f: any) => {
       const items = [...f.items];
       items[i] = { ...items[i], [field]: val };
-      const parts_charge = items.reduce((s: number, it: any) => s + ((it.price || 0) * (it.qty || 1)), 0);
-      return { ...f, items, _subtotal: parts_charge };
+      return { ...f, items };
     });
 
   const removeItem = (i: number) =>
     setForm((f: any) => ({ ...f, items: f.items.filter((_: any, j: number) => j !== i) }));
 
-  const subtotal = form.items?.reduce((s: number, i: any) => s + ((i.price || 0) * (i.qty || 1)), 0) || 0;
+  const addItem = () =>
+    setForm((f: any) => ({ ...f, items: [...f.items, { name: '', qty: 1, price: 0 }] }));
+
+  const subtotal = (form.items || []).reduce((s: number, i: any) => s + ((i.price || 0) * (i.qty || 1)), 0);
   const afterDiscount = subtotal - (form.discount || 0);
   const gst = form.gst_enabled ? Math.round(afterDiscount * 0.18) : 0;
   const total = afterDiscount + gst;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {editingId ? 'Edit' : 'New'} Custom Invoice
+          <DialogTitle className="text-lg font-black">
+            {editingId ? 'Edit Invoice' : 'New Custom Invoice'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Customer */}
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Customer</p>
+        <div className="space-y-5">
+
+          {/* ── Customer ── */}
+          <div className="border rounded-xl p-4 space-y-3">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+              <User className="h-3.5 w-3.5" /> Customer Details
+            </p>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs">Name *</Label><Input className="mt-1 h-9" value={form.customer_name} onChange={e => sf('customer_name')(e.target.value)} /></div>
-              <div><Label className="text-xs">Phone</Label><Input className="mt-1 h-9" value={form.customer_phone} onChange={e => sf('customer_phone')(e.target.value)} /></div>
-              <div className="col-span-2"><Label className="text-xs">Email</Label><Input className="mt-1 h-9" value={form.customer_email} onChange={e => sf('customer_email')(e.target.value)} /></div>
+              <div>
+                <Label className="text-xs">Name *</Label>
+                <Input className="mt-1 h-9" placeholder="Customer name" value={form.customer_name} onChange={e => sf('customer_name')(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Phone</Label>
+                <Input className="mt-1 h-9" placeholder="+91 98765 43210" value={form.customer_phone} onChange={e => sf('customer_phone')(e.target.value)} />
+              </div>
+              <div className="col-span-2">
+                <Label className="text-xs">Email</Label>
+                <Input className="mt-1 h-9" placeholder="customer@email.com" value={form.customer_email} onChange={e => sf('customer_email')(e.target.value)} />
+              </div>
             </div>
           </div>
 
-          {/* Line Items */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Items *</p>
-              <Button size="sm" variant="outline" className="h-7 text-xs gap-1"
-                onClick={() => setForm((f: any) => ({ ...f, items: [...f.items, { name: '', qty: 1, price: 0 }] }))}>
+          {/* ── Items ── */}
+          <div className="border rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 bg-muted/30 border-b">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <Package className="h-3.5 w-3.5" /> Items *
+              </p>
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={addItem}>
                 <Plus className="h-3 w-3" /> Add Row
               </Button>
             </div>
-            <div className="border rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="text-left p-2.5 text-xs">Item</th>
-                    <th className="text-center p-2.5 text-xs w-16">Qty</th>
-                    <th className="text-right p-2.5 text-xs w-24">Price</th>
-                    <th className="text-right p-2.5 text-xs w-20">Total</th>
-                    <th className="w-8" />
+
+            <table className="w-full text-sm">
+              <thead className="bg-muted/20">
+                <tr>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Description</th>
+                  <th className="text-center px-3 py-2.5 text-xs font-semibold text-muted-foreground w-20">Qty</th>
+                  <th className="text-right px-3 py-2.5 text-xs font-semibold text-muted-foreground w-28">Unit Price</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-muted-foreground w-24">Total</th>
+                  <th className="w-10" />
+                </tr>
+              </thead>
+              <tbody>
+                {(form.items || []).map((item: any, i: number) => (
+                  <tr key={i} className="border-t">
+                    <td className="px-3 py-2">
+                      <Input
+                        className="h-8 text-sm"
+                        placeholder="Item or service name"
+                        value={item.name}
+                        onChange={e => setItem(i, 'name', e.target.value)}
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <Input
+                        type="number" min={1}
+                        className="h-8 text-sm text-center"
+                        value={item.qty}
+                        onChange={e => setItem(i, 'qty', Number(e.target.value))}
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <Input
+                        type="number" min={0}
+                        className="h-8 text-sm text-right"
+                        placeholder="0"
+                        value={item.price || ''}
+                        onChange={e => setItem(i, 'price', Number(e.target.value))}
+                      />
+                    </td>
+                    <td className="px-4 py-2 text-right font-semibold text-sm">
+                      ₹{((item.qty || 1) * (item.price || 0)).toLocaleString('en-IN')}
+                    </td>
+                    <td className="px-2 py-2">
+                      {(form.items || []).length > 1 && (
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-red-50" onClick={() => removeItem(i)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {(form.items || []).map((item: any, i: number) => (
-                    <tr key={i} className="border-t">
-                      <td className="p-1.5">
-                        <Input className="h-8 text-xs border-0 bg-transparent focus-visible:ring-1" placeholder="Item name" value={item.name} onChange={e => setItem(i, 'name', e.target.value)} />
-                      </td>
-                      <td className="p-1.5">
-                        <Input type="number" className="h-8 text-xs text-center border-0 bg-transparent focus-visible:ring-1" value={item.qty} onChange={e => setItem(i, 'qty', Number(e.target.value))} min={1} />
-                      </td>
-                      <td className="p-1.5">
-                        <Input type="number" className="h-8 text-xs text-right border-0 bg-transparent focus-visible:ring-1" value={item.price} onChange={e => setItem(i, 'price', Number(e.target.value))} />
-                      </td>
-                      <td className="p-1.5 text-right text-xs font-medium pr-2">
-                        ₹{((item.qty || 1) * (item.price || 0)).toLocaleString('en-IN')}
-                      </td>
-                      <td className="p-1.5">
-                        {(form.items || []).length > 1 && (
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removeItem(i)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                ))}
+              </tbody>
+            </table>
 
-          {/* Totals */}
-          <div className="bg-muted/30 rounded-xl p-3 space-y-1.5">
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span>₹{subtotal.toLocaleString('en-IN')}</span></div>
-            <div className="flex items-center justify-between">
-              <Label className="text-sm text-muted-foreground">Discount (₹)</Label>
-              <Input type="number" className="h-7 w-24 text-xs text-right" value={form.discount || ''} onChange={e => sf('discount')(Number(e.target.value))} />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Switch checked={!!form.gst_enabled} onCheckedChange={sf('gst_enabled')} />
-                <span className="text-sm text-muted-foreground">GST 18% (CGST+SGST)</span>
+            {/* Totals inside items box */}
+            <div className="border-t bg-muted/10 px-4 py-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Subtotal</span>
+                <span className="text-sm font-semibold">₹{subtotal.toLocaleString('en-IN')}</span>
               </div>
-              {gst > 0 && <span className="text-sm">₹{gst.toLocaleString('en-IN')}</span>}
-            </div>
-            <div className="flex justify-between font-black text-base border-t pt-1.5">
-              <span>Total</span><span className="text-primary">₹{total.toLocaleString('en-IN')}</span>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm text-muted-foreground">Discount (₹)</Label>
+                <Input
+                  type="number" min={0}
+                  className="h-7 w-28 text-sm text-right"
+                  value={form.discount || ''}
+                  onChange={e => sf('discount')(Number(e.target.value))}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Switch checked={!!form.gst_enabled} onCheckedChange={sf('gst_enabled')} />
+                  <span className="text-sm text-muted-foreground">GST 18% (CGST 9% + SGST 9%)</span>
+                </div>
+                {gst > 0 && <span className="text-sm font-medium text-orange-600">+₹{gst.toLocaleString('en-IN')}</span>}
+              </div>
+              <div className="flex items-center justify-between border-t pt-2">
+                <span className="text-base font-black">Total Payable</span>
+                <span className="text-xl font-black text-primary">₹{total.toLocaleString('en-IN')}</span>
+              </div>
             </div>
           </div>
 
-          {/* Payment */}
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Payment</p>
+          {/* ── Payment ── */}
+          <div className="border rounded-xl p-4 space-y-3">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+              <CreditCard className="h-3.5 w-3.5" /> Payment
+            </p>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs">Status</Label>
+              <div>
+                <Label className="text-xs">Status</Label>
                 <Select value={form.payment_status} onValueChange={sf('payment_status')}>
                   <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="partial">Partial</SelectItem>
+                    <SelectItem value="pending">⏳ Pending</SelectItem>
+                    <SelectItem value="paid">✅ Paid</SelectItem>
+                    <SelectItem value="partial">🔶 Partial</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label className="text-xs">Mode</Label>
+              <div>
+                <Label className="text-xs">Mode</Label>
                 <Select value={form.payment_mode || 'cash'} onValueChange={sf('payment_mode')}>
                   <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="online">Online</SelectItem>
+                    <SelectItem value="cash">💵 Cash</SelectItem>
+                    <SelectItem value="online">📱 Online</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             {form.payment_mode === 'online' && (
-              <div className="mt-3"><Label className="text-xs">Online Method</Label>
+              <div>
+                <Label className="text-xs">Online Method</Label>
                 <Select value={form.online_method || 'UPI'} onValueChange={sf('online_method')}>
                   <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -161,28 +205,33 @@ export default function CustomInvoiceForm({ open, onClose, form, setForm, editin
             )}
           </div>
 
-          {/* Notes */}
-          <div><Label className="text-xs">Notes</Label>
-            <Input className="mt-1 h-9" value={form.notes || ''} onChange={e => sf('notes')(e.target.value)} placeholder="Any notes for this invoice..." />
+          {/* ── Notes ── */}
+          <div>
+            <Label className="text-xs">Notes (optional)</Label>
+            <Input className="mt-1 h-9" placeholder="Any additional notes..." value={form.notes || ''} onChange={e => sf('notes')(e.target.value)} />
           </div>
 
-          {/* WhatsApp toggle */}
-          <div className="flex items-center justify-between border rounded-xl p-3 bg-green-50/50">
-            <div className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-green-600" />
+          {/* ── WhatsApp ── */}
+          <div className="flex items-center justify-between border rounded-xl p-4 bg-green-50/50 border-green-200">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-green-100 flex items-center justify-center">
+                <MessageCircle className="h-4 w-4 text-green-600" />
+              </div>
               <div>
-                <p className="text-sm font-medium">Send on WhatsApp</p>
-                <p className="text-xs text-muted-foreground">Invoice link auto-sent to customer</p>
+                <p className="text-sm font-semibold">Send Invoice on WhatsApp</p>
+                <p className="text-xs text-muted-foreground">Invoice link auto-sent to customer after save</p>
               </div>
             </div>
             <Switch checked={!!form.send_whatsapp} onCheckedChange={sf('send_whatsapp')} />
           </div>
+
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 pt-2">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={onSave} className="gap-1.5">
-            <Save className="h-4 w-4" /> {editingId ? 'Update' : 'Create'} Invoice
+          <Button onClick={onSave} className="gap-1.5 px-6">
+            <Save className="h-4 w-4" />
+            {editingId ? 'Update Invoice' : 'Create Invoice'}
           </Button>
         </DialogFooter>
       </DialogContent>
