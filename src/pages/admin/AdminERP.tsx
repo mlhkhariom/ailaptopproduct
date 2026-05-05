@@ -11,22 +11,27 @@ const req = (path: string) =>
 export default function AdminERP() {
   const [stats, setStats] = useState<any>({});
   const [invStats, setInvStats] = useState<any>({});
+  const [branchCount, setBranchCount] = useState(0);
+  const [pendingBilling, setPendingBilling] = useState(0);
 
   useEffect(() => {
+    const h = { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` };
     req('/dashboard').then(d => setStats(d || {}));
-    fetch('/api/inventory/stats', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setInvStats(d || {}));
+    fetch('/api/inventory/stats', { headers: h }).then(r => r.json()).then(d => setInvStats(d || {}));
+    req('/branches').then(d => setBranchCount(Array.isArray(d) ? d.filter((b: any) => b.is_active).length : 0));
+    fetch('/api/erp/billing?status=pending', { headers: h }).then(r => r.json()).then(d => setPendingBilling(Array.isArray(d) ? d.length : 0));
   }, []);
 
   const modules = [
     { title: "Job Cards", desc: "Repair tracking & billing", url: "/admin/erp/job-cards", icon: ClipboardList, stat: `${stats.pendingJobs || 0} pending`, color: "text-blue-600" },
     { title: "Sales CRM", desc: "Leads & follow-ups", url: "/admin/erp/crm", icon: Users, stat: "Track leads", color: "text-indigo-600" },
-    { title: "Billing", desc: "GST invoices & payments", url: "/admin/erp/billing", icon: IndianRupee, stat: `${stats.pendingPayments || 0} pending`, color: "text-green-600" },
+    { title: "Billing", desc: "GST invoices & payments", url: "/admin/erp/billing", icon: IndianRupee, stat: `${pendingBilling} pending`, color: "text-green-600" },
     { title: "Inventory", desc: "Stock & products", url: "/admin/inventory", icon: Package, stat: `${invStats.lowStock || 0} low stock`, color: "text-orange-600" },
     { title: "Suppliers", desc: "Vendor management", url: "/admin/inventory?tab=suppliers", icon: Truck, stat: `${invStats.totalSuppliers || 0} active`, color: "text-purple-600" },
     { title: "Purchase Orders", desc: "Stock procurement", url: "/admin/inventory?tab=po", icon: ClipboardList, stat: `${invStats.pendingPOs || 0} pending`, color: "text-yellow-600" },
     { title: "Expenses", desc: "Cost tracking", url: "/admin/erp/expenses", icon: Wallet, stat: `₹${(stats.monthExpenses || 0).toLocaleString('en-IN')} this month`, color: "text-red-600" },
     { title: "Staff", desc: "Team management", url: "/admin/erp/staff", icon: UserCheck, stat: `${stats.totalStaff || 0} members`, color: "text-teal-600" },
-    { title: "Branches", desc: "Multi-branch ops", url: "/admin/erp/branches", icon: Building2, stat: "2 branches", color: "text-cyan-600" },
+    { title: "Branches", desc: "Multi-branch ops", url: "/admin/erp/branches", icon: Building2, stat: `${branchCount} active`, color: "text-cyan-600" },
     { title: "ERP Reports", desc: "P&L & analytics", url: "/admin/erp/reports", icon: BarChart3, stat: "View insights", color: "text-pink-600" },
   ];
 

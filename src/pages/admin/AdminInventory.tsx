@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import AdminLayout from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,8 @@ const req = (method: string, path: string, body?: any) =>
   }).then(r => r.json());
 
 export default function AdminInventory() {
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'stock');
   const [stats, setStats] = useState<any>({});
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
@@ -111,7 +114,7 @@ export default function AdminInventory() {
           ))}
         </div>
 
-        <Tabs defaultValue="stock">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="stock">📦 Stock Overview</TabsTrigger>
             <TabsTrigger value="movements">🔄 Stock Movements</TabsTrigger>
