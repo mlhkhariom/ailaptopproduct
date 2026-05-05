@@ -172,28 +172,65 @@ router.get('/dashboard', authMiddleware, adminOnly, async (req, res) => {
 
 // ── CRM / LEADS ───────────────────────────────────────────
 
+// CRM Analytics — registered FIRST to avoid :id conflict
+router.get('/leads/analytics', authMiddleware, adminOnly, async (req, res) => {
+  const [total, byStatus, bySource, byStaff, overdue, pipelineValue] = await Promise.all([
+    db.prepare('SELECT COUNT(*) as c FROM leads').get(),
+    db.prepare("SELECT status, COUNT(*) as count FROM leads GROUP BY status").all(),
+    db.prepare("SELECT source, COUNT(*) as count, SUM(CASE WHEN status='won' THEN 1 ELSE 0 END) as won FROM leads GROUP BY source ORDER BY count DESC").all(),
+    db.prepare("SELECT assigned_to, COUNT(*) as total, SUM(CASE WHEN status='won' THEN 1 ELSE 0 END) as won FROM leads WHERE assigned_to IS NOT NULL AND assigned_to!='' GROUP BY assigned_to ORDER BY won DESC").all(),
+    db.prepare("SELECT * FROM leads WHERE next_followup < CURRENT_DATE AND status NOT IN ('won','lost') ORDER BY next_followup ASC LIMIT 10").all(),
+    db.prepare("SELECT COALESCE(SUM(deal_value),0) as v FROM leads WHERE status NOT IN ('won','lost')").get(),
+  ]);
+  const statusMap = {};
+  (byStatus || []).forEach(r => { statusMap[r.status] = r.count; });
+  const conversionRate = total?.c ? Math.round(((statusMap.won || 0) / total.c) * 100) : 0;
+  res.json({
+    total: total?.c || 0, byStatus: statusMap, bySource: bySource || [],
+    byStaff: byStaff || [], overdue: overdue || [],
+    pipelineValue: pipelineValue?.v || 0, conversionRate,
+  });
+});
+
 router.get('/leads', authMiddleware, adminOnly, async (req, res) => {
-  const { status } = req.query;
+  const { status, source, priority, assigned_to, search } = req.query;
   let q = 'SELECT * FROM leads WHERE 1=1';
   const params = [];
   if (status && status !== 'all') { q += ' AND status=?'; params.push(status); }
+  if (source && source !== 'all') { q += ' AND source=?'; params.push(source); }
+  if (priority && priority !== 'all') { q += ' AND priority=?'; params.push(priority); }
+  if (assigned_to) { q += ' AND assigned_to=?'; params.push(assigned_to); }
+  if (search) { q += ' AND (name ILIKE ? OR phone ILIKE ? OR interest ILIKE ?)'; params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
   q += ' ORDER BY next_followup ASC NULLS LAST, created_at DESC';
   res.json(await db.prepare(q).all(...params) || []);
 });
 
 router.post('/leads', authMiddleware, adminOnly, async (req, res) => {
-  const { name, phone, email, source, interest, budget, status, priority, assigned_to, notes, next_followup } = req.body;
+  const { name, phone, email, source, interest, budget, deal_value, status, priority, assigned_to, notes, next_followup, expected_close, tags, score } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
   const id = uuid();
-  await db.prepare('INSERT INTO leads (id,name,phone,email,source,interest,budget,status,priority,assigned_to,notes,next_followup) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
-    .run(id, name, phone, email, source || 'walk-in', interest, budget, status || 'new', priority || 'normal', assigned_to, notes, next_followup);
+  await db.prepare(`INSERT INTO leads (id,name,phone,email,source,interest,budget,deal_value,status,priority,assigned_to,notes,next_followup,expected_close,tags,score)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    .run(id, name, phone, email, source || 'walk-in', interest, budget || 0, deal_value || budget || 0,
+      status || 'new', priority || 'normal', assigned_to, notes, next_followup, expected_close,
+      JSON.stringify(tags || []), score || 0);
   res.status(201).json({ id });
 });
 
 router.put('/leads/:id', authMiddleware, adminOnly, async (req, res) => {
-  const { name, phone, email, source, interest, budget, status, priority, assigned_to, notes, next_followup } = req.body;
-  await db.prepare('UPDATE leads SET name=?,phone=?,email=?,source=?,interest=?,budget=?,status=?,priority=?,assigned_to=?,notes=?,next_followup=?,updated_at=NOW() WHERE id=?')
-    .run(name, phone, email, source, interest, budget, status, priority, assigned_to, notes, next_followup, req.params.id);
+  const { name, phone, email, source, interest, budget, deal_value, status, priority, assigned_to, notes, next_followup, expected_close, lost_reason, tags, score } = req.body;
+  await db.prepare(`UPDATE leads SET name=?,phone=?,email=?,source=?,interest=?,budget=?,deal_value=?,
+    status=?,priority=?,assigned_to=?,notes=?,next_followup=?,expected_close=?,lost_reason=?,tags=?,score=?,updated_at=NOW() WHERE id=?`)
+    .run(name, phone, email, source, interest, budget || 0, deal_value || budget || 0,
+      status, priority, assigned_to, notes, next_followup, expected_close, lost_reason,
+      JSON.stringify(tags || []), score || 0, req.params.id);
+  res.json({ message: 'Updated' });
+});
+
+// PATCH — quick status update
+router.patch('/leads/:id/status', authMiddleware, adminOnly, async (req, res) => {
+  const { status, lost_reason } = req.body;
+  await db.prepare('UPDATE leads SET status=?,lost_reason=?,updated_at=NOW() WHERE id=?').run(status, lost_reason || null, req.params.id);
   res.json({ message: 'Updated' });
 });
 
@@ -212,9 +249,12 @@ router.post('/leads/:id/followups', authMiddleware, adminOnly, async (req, res) 
   await db.prepare('INSERT INTO followups (id,lead_id,type,notes,outcome,next_date,created_by) VALUES (?,?,?,?,?,?,?)')
     .run(id, req.params.id, type || 'call', notes, outcome, next_date, req.user.id);
   if (next_date) await db.prepare('UPDATE leads SET next_followup=?,updated_at=NOW() WHERE id=?').run(next_date, req.params.id);
+  // Auto-update lead score based on followup count
+  const count = (await db.prepare('SELECT COUNT(*) as c FROM followups WHERE lead_id=?').get(req.params.id))?.c || 0;
+  const score = Math.min(100, count * 15);
+  await db.prepare('UPDATE leads SET score=? WHERE id=?').run(score, req.params.id);
   res.status(201).json({ id });
 });
-
 // ── UNIFIED BILLING ───────────────────────────────────────
 
 // GET /api/erp/billing — all invoices (orders + job cards + custom)

@@ -355,6 +355,12 @@ export const initDB = async () => {
     )`,
     "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS gst_enabled INTEGER DEFAULT 0",
     "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS gst_enabled INTEGER DEFAULT 0",
+    // CRM enhancements
+    "ALTER TABLE leads ADD COLUMN IF NOT EXISTS expected_close DATE",
+    "ALTER TABLE leads ADD COLUMN IF NOT EXISTS lost_reason TEXT",
+    "ALTER TABLE leads ADD COLUMN IF NOT EXISTS tags TEXT DEFAULT '[]'",
+    "ALTER TABLE leads ADD COLUMN IF NOT EXISTS score INTEGER DEFAULT 0",
+    "ALTER TABLE leads ADD COLUMN IF NOT EXISTS deal_value REAL DEFAULT 0",
   ];
   for (const m of migrations) {
     try { await pool.query(m); } catch {}

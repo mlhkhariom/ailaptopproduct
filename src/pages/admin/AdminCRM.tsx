@@ -1,14 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ERPLayout from "@/components/ERPLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Plus, Edit, Trash2, RefreshCw, Search, Phone, MessageCircle, ClipboardList, TrendingUp } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Users, Plus, Edit, Trash2, RefreshCw, Search, Phone, MessageCircle, ClipboardList, TrendingUp, Download, LayoutGrid, List, BarChart3, AlertTriangle, CheckCircle, Target } from "lucide-react";
 import { toast } from "sonner";
+import CRMKanban from "@/components/CRMKanban";
+import CRMLeadDetail from "@/components/CRMLeadDetail";
 
 const req = (method: string, path: string, body?: any) =>
   fetch(`/api/erp${path}`, {
@@ -18,64 +22,55 @@ const req = (method: string, path: string, body?: any) =>
   }).then(r => r.json());
 
 const STATUS_COLORS: Record<string, string> = {
-  new: 'bg-gray-100 text-gray-700',
-  contacted: 'bg-blue-100 text-blue-700',
-  interested: 'bg-yellow-100 text-yellow-700',
-  negotiating: 'bg-orange-100 text-orange-700',
-  won: 'bg-green-100 text-green-700',
-  lost: 'bg-red-100 text-red-700',
+  new: 'bg-gray-100 text-gray-700', contacted: 'bg-blue-100 text-blue-700',
+  interested: 'bg-yellow-100 text-yellow-700', negotiating: 'bg-orange-100 text-orange-700',
+  won: 'bg-green-100 text-green-700', lost: 'bg-red-100 text-red-700',
 };
 const SOURCES = ['WhatsApp', 'Walk-in', 'Phone', 'Instagram', 'Facebook', 'Referral', 'Website', 'JustDial', 'Google'];
 
 const emptyForm = {
   name: '', phone: '', email: '', source: 'WhatsApp',
-  interest: '', budget: 0, status: 'new', priority: 'normal',
-  assigned_to: '', notes: '', next_followup: '',
+  interest: '', budget: 0, deal_value: 0, status: 'new', priority: 'normal',
+  assigned_to: '', notes: '', next_followup: '', expected_close: '',
 };
 
 export default function AdminCRM() {
   const [leads, setLeads] = useState<any[]>([]);
+  const [analytics, setAnalytics] = useState<any>({});
   const [staff, setStaff] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [followupOpen, setFollowupOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedLead, setSelectedLead] = useState<any>(null);
-  const [followups, setFollowups] = useState<any[]>([]);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [form, setForm] = useState<any>(emptyForm);
-  const [fuForm, setFuForm] = useState({ type: 'call', notes: '', outcome: '', next_date: '' });
   const [convertForm, setConvertForm] = useState({ device_brand: '', device_model: '', issue_description: '', priority: 'normal' });
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    const [d, s] = await Promise.all([
+    const [d, s, a] = await Promise.all([
       req('GET', `/leads?status=${statusFilter}`),
       req('GET', '/staff'),
+      req('GET', '/leads/analytics'),
     ]);
     setLeads(Array.isArray(d) ? d : []);
     setStaff(Array.isArray(s) ? s : []);
+    setAnalytics(a || {});
     setLoading(false);
   };
   useEffect(() => { load(); }, [statusFilter]);
 
   const filtered = leads.filter(l =>
-    (!search ||
-      l.name?.toLowerCase().includes(search.toLowerCase()) ||
-      l.phone?.includes(search) ||
-      l.interest?.toLowerCase().includes(search.toLowerCase())) &&
+    (!search || l.name?.toLowerCase().includes(search.toLowerCase()) || l.phone?.includes(search) || l.interest?.toLowerCase().includes(search.toLowerCase())) &&
     (sourceFilter === 'all' || l.source === sourceFilter)
   );
 
-  // Pipeline counts
   const counts: Record<string, number> = { all: leads.length };
   leads.forEach(l => { counts[l.status] = (counts[l.status] || 0) + 1; });
-
-  // Won revenue
-  const wonRevenue = leads.filter(l => l.status === 'won').reduce((s, l) => s + (l.budget || 0), 0);
 
   const save = async () => {
     if (!form.name) return toast.error('Name required');
@@ -83,28 +78,16 @@ export default function AdminCRM() {
       if (editingId) await req('PUT', `/leads/${editingId}`, form);
       else await req('POST', '/leads', form);
       toast.success('Lead saved!'); setDialogOpen(false); load();
-    } catch { toast.error('Failed to save'); }
+    } catch { toast.error('Failed'); }
   };
 
-  const openFollowup = async (lead: any) => {
-    setSelectedLead(lead);
-    const d = await req('GET', `/leads/${lead.id}/followups`);
-    setFollowups(Array.isArray(d) ? d : []);
-    setFuForm({ type: 'call', notes: '', outcome: '', next_date: '' });
-    setFollowupOpen(true);
+  const handleStatusChange = async (id: string, status: string) => {
+    await req('PATCH', `/leads/${id}/status`, { status });
+    load();
   };
 
-  const saveFollowup = async () => {
-    if (!fuForm.notes) return toast.error('Notes required');
-    await req('POST', `/leads/${selectedLead.id}/followups`, fuForm);
-    toast.success('Follow-up added!');
-    const d = await req('GET', `/leads/${selectedLead.id}/followups`);
-    setFollowups(Array.isArray(d) ? d : []);
-    // Update lead status if outcome provided
-    if (fuForm.next_date) load();
-  };
+  const openDetail = (lead: any) => { setSelectedLead(lead); setDetailOpen(true); };
 
-  // Convert lead → Job Card
   const openConvert = (lead: any) => {
     setSelectedLead(lead);
     setConvertForm({ device_brand: '', device_model: '', issue_description: lead.interest || '', priority: 'normal' });
@@ -114,291 +97,332 @@ export default function AdminCRM() {
   const convertToJobCard = async () => {
     try {
       const res = await req('POST', '/job-cards', {
-        customer_name: selectedLead.name,
-        customer_phone: selectedLead.phone,
-        customer_email: selectedLead.email || '',
-        service_name: 'General Repair',
-        ...convertForm,
-        technician: selectedLead.assigned_to || '',
+        customer_name: selectedLead.name, customer_phone: selectedLead.phone,
+        customer_email: selectedLead.email || '', service_name: 'General Repair',
+        ...convertForm, technician: selectedLead.assigned_to || '',
       });
-      // Mark lead as won
-      await req('PUT', `/leads/${selectedLead.id}`, { ...selectedLead, status: 'won' });
+      await req('PATCH', `/leads/${selectedLead.id}/status`, { status: 'won' });
       toast.success(`Job Card ${res.booking_number} created!`);
       setConvertOpen(false); load();
-    } catch { toast.error('Failed to convert'); }
+    } catch { toast.error('Failed'); }
   };
 
   const del = async (id: string) => {
-    if (!confirm('Delete this lead?')) return;
-    await req('DELETE', `/leads/${id}`); toast.success('Deleted'); load();
+    if (!confirm('Delete?')) return;
+    await req('DELETE', `/leads/${id}`); load();
   };
 
+  const exportCSV = () => {
+    const rows = [['Name','Phone','Email','Source','Interest','Budget','Status','Priority','Assigned','Next Followup']];
+    filtered.forEach(l => rows.push([l.name,l.phone,l.email,l.source,l.interest,l.budget,l.status,l.priority,l.assigned_to,l.next_followup]));
+    const csv = rows.map(r => r.map(c => `"${c||''}"`).join(',')).join('\n');
+    const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = 'leads.csv'; a.click();
+  };
+
+  const sf = (k: string) => (v: any) => setForm((f: any) => ({ ...f, [k]: v }));
+
   return (
-    <ERPLayout>
-      <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-4">
+    <ERPLayout onAction={() => { setForm(emptyForm); setEditingId(null); setDialogOpen(true); }}>
+      <div className="space-y-5 max-w-7xl mx-auto">
 
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <h1 className="text-xl font-black flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" /> Sales CRM
-          </h1>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={load} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
-            <Button size="sm" onClick={() => { setForm(emptyForm); setEditingId(null); setDialogOpen(true); }}>
-              <Plus className="h-4 w-4 mr-1" /> Add Lead
-            </Button>
+        <Tabs defaultValue="dashboard">
+          <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+            <TabsList className="h-9">
+              <TabsTrigger value="dashboard" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Dashboard</TabsTrigger>
+              <TabsTrigger value="kanban" className="gap-1.5"><LayoutGrid className="h-3.5 w-3.5" /> Pipeline</TabsTrigger>
+              <TabsTrigger value="list" className="gap-1.5"><List className="h-3.5 w-3.5" /> List</TabsTrigger>
+            </TabsList>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={exportCSV} className="gap-1.5 h-8 text-xs"><Download className="h-3.5 w-3.5" /> Export</Button>
+              <Button size="sm" variant="outline" onClick={load} disabled={loading} className="h-8"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></Button>
+              <Button size="sm" className="h-8" onClick={() => { setForm(emptyForm); setEditingId(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Add Lead</Button>
+            </div>
           </div>
-        </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="border rounded-lg p-3"><p className="text-xs text-muted-foreground">Total Leads</p><p className="text-2xl font-black">{leads.length}</p></div>
-          <div className="border rounded-lg p-3"><p className="text-xs text-muted-foreground">Won</p><p className="text-2xl font-black text-green-600">{counts.won || 0}</p></div>
-          <div className="border rounded-lg p-3"><p className="text-xs text-muted-foreground">Won Revenue</p><p className="text-xl font-black text-green-600">₹{wonRevenue.toLocaleString('en-IN')}</p></div>
-          <div className="border rounded-lg p-3"><p className="text-xs text-muted-foreground">Overdue Follow-ups</p>
-            <p className="text-2xl font-black text-red-600">
-              {leads.filter(l => l.next_followup && new Date(l.next_followup) < new Date() && l.status !== 'won' && l.status !== 'lost').length}
-            </p>
-          </div>
-        </div>
-
-        {/* Pipeline tabs */}
-        <div className="flex gap-2 flex-wrap">
-          {['all', 'new', 'contacted', 'interested', 'negotiating', 'won', 'lost'].map(s => (
-            <button key={s} onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${statusFilter === s ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:border-primary/50'}`}>
-              {s} {counts[s] ? `(${counts[s]})` : '(0)'}
-            </button>
-          ))}
-        </div>
-
-        {/* Search + Source filter */}
-        <div className="flex gap-2 flex-wrap">
-          <div className="relative flex-1 min-w-48">
-            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search name, phone, interest..." className="pl-8 h-8 text-sm"
-              value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <Select value={sourceFilter} onValueChange={setSourceFilter}>
-            <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Sources</SelectItem>
-              {SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Table */}
-        <div className="border rounded-lg overflow-x-auto">
-          <table className="w-full text-sm min-w-[800px]">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="text-left p-3 text-xs">Name</th>
-                <th className="text-left p-3 text-xs">Interest / Budget</th>
-                <th className="text-left p-3 text-xs">Source</th>
-                <th className="text-left p-3 text-xs">Assigned To</th>
-                <th className="text-center p-3 text-xs">Status</th>
-                <th className="text-left p-3 text-xs">Next Follow-up</th>
-                <th className="text-center p-3 text-xs">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(l => {
-                const overdue = l.next_followup && new Date(l.next_followup) < new Date() && l.status !== 'won' && l.status !== 'lost';
-                return (
-                  <tr key={l.id} className="border-t hover:bg-muted/30">
-                    <td className="p-3">
-                      <p className="text-xs font-medium">{l.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{l.phone}</p>
-                    </td>
-                    <td className="p-3 text-xs">
-                      <p>{l.interest || '—'}</p>
-                      {l.budget > 0 && <p className="text-[10px] text-green-600 font-medium">₹{Number(l.budget).toLocaleString('en-IN')}</p>}
-                    </td>
-                    <td className="p-3 text-xs text-muted-foreground">{l.source}</td>
-                    <td className="p-3 text-xs">{l.assigned_to || '—'}</td>
-                    <td className="p-3 text-center">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[l.status] || 'bg-gray-100 text-gray-700'}`}>
-                        {l.status}
-                      </span>
-                    </td>
-                    <td className="p-3 text-xs">
-                      {l.next_followup
-                        ? <span className={overdue ? 'text-red-600 font-bold' : ''}>{overdue ? '⚠️ ' : ''}{l.next_followup}</span>
-                        : '—'}
-                    </td>
-                    <td className="p-3">
-                      <div className="flex gap-1 justify-center">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" title="Follow-up" onClick={() => openFollowup(l)}>
-                          <MessageCircle className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-600" title="Convert to Job Card" onClick={() => openConvert(l)}>
-                          <ClipboardList className="h-3.5 w-3.5" />
-                        </Button>
-                        <a href={`https://wa.me/91${l.phone?.replace(/\D/g, '')}?text=Namaste ${l.name}! AI Laptop Wala se bol raha hoon.${l.interest ? ` Aapne ${l.interest} ke baare mein poochha tha.` : ''} Kya aap available hain?`}
-                          target="_blank" rel="noreferrer">
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-green-600" title="WhatsApp">
-                            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
-                          </Button>
-                        </a>
-                        <a href={`tel:${l.phone}`}>
-                          <Button size="icon" variant="ghost" className="h-7 w-7"><Phone className="h-3.5 w-3.5" /></Button>
-                        </a>
-                        <Button size="icon" variant="ghost" className="h-7 w-7"
-                          onClick={() => { setForm({ ...emptyForm, ...l }); setEditingId(l.id); setDialogOpen(true); }}>
-                          <Edit className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => del(l.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+          {/* ── DASHBOARD TAB ── */}
+          <TabsContent value="dashboard" className="space-y-5">
+            {/* KPI Row */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {[
+                { label: 'Total Leads', value: analytics.total || 0, color: 'text-foreground', icon: Users },
+                { label: 'Pipeline Value', value: `₹${(analytics.pipelineValue || 0).toLocaleString('en-IN')}`, color: 'text-blue-600', icon: Target },
+                { label: 'Won', value: analytics.byStatus?.won || 0, color: 'text-green-600', icon: CheckCircle },
+                { label: 'Conversion Rate', value: `${analytics.conversionRate || 0}%`, color: 'text-primary', icon: TrendingUp },
+                { label: 'Overdue', value: analytics.overdue?.length || 0, color: 'text-red-600', icon: AlertTriangle },
+              ].map(k => (
+                <Card key={k.label}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground">{k.label}</p>
+                        <p className={`text-2xl font-black mt-0.5 ${k.color}`}>{k.value}</p>
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {!filtered.length && (
-                <tr><td colSpan={7} className="p-10 text-center text-muted-foreground text-xs">No leads found</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                      <k.icon className={`h-8 w-8 opacity-15 ${k.color}`} />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-        {/* Lead Dialog */}
+            <div className="grid md:grid-cols-3 gap-4">
+              {/* Overdue Follow-ups */}
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-red-500" /> Overdue Follow-ups</CardTitle></CardHeader>
+                <CardContent className="p-0">
+                  {(analytics.overdue || []).length === 0
+                    ? <p className="text-xs text-muted-foreground text-center py-6">All caught up!</p>
+                    : (analytics.overdue || []).map((l: any) => (
+                      <div key={l.id} className="flex items-center gap-3 px-4 py-2.5 border-t first:border-t-0 hover:bg-muted/30 cursor-pointer" onClick={() => openDetail(l)}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{l.name}</p>
+                          <p className="text-xs text-red-600">{l.next_followup}</p>
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[l.status]}`}>{l.status}</span>
+                      </div>
+                    ))
+                  }
+                </CardContent>
+              </Card>
+
+              {/* Source Performance */}
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">Source Performance</CardTitle></CardHeader>
+                <CardContent className="space-y-2">
+                  {(analytics.bySource || []).slice(0, 6).map((s: any) => (
+                    <div key={s.source} className="flex items-center gap-2">
+                      <span className="text-xs w-20 shrink-0 truncate">{s.source}</span>
+                      <div className="flex-1 bg-muted rounded-full h-2">
+                        <div className="bg-primary h-2 rounded-full" style={{ width: `${Math.min(100, (s.count / (analytics.total || 1)) * 100)}%` }} />
+                      </div>
+                      <span className="text-xs font-bold w-8 text-right">{s.count}</span>
+                      <span className="text-xs text-green-600 w-8 text-right">{s.won}W</span>
+                    </div>
+                  ))}
+                  {!(analytics.bySource || []).length && <p className="text-xs text-muted-foreground text-center py-4">No data</p>}
+                </CardContent>
+              </Card>
+
+              {/* Staff Leaderboard */}
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">Staff Leaderboard</CardTitle></CardHeader>
+                <CardContent className="p-0">
+                  {(analytics.byStaff || []).length === 0
+                    ? <p className="text-xs text-muted-foreground text-center py-6">No assigned leads</p>
+                    : (analytics.byStaff || []).map((s: any, i: number) => (
+                      <div key={s.assigned_to} className="flex items-center gap-3 px-4 py-2.5 border-t first:border-t-0">
+                        <span className="text-sm font-black text-muted-foreground w-5">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{s.assigned_to}</p>
+                          <p className="text-xs text-muted-foreground">{s.total} leads · {s.won} won</p>
+                        </div>
+                        <span className="text-sm font-bold text-green-600">{s.total ? Math.round((s.won / s.total) * 100) : 0}%</span>
+                      </div>
+                    ))
+                  }
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Pipeline funnel */}
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Pipeline Funnel</CardTitle></CardHeader>
+              <CardContent>
+                <div className="flex gap-2 items-end h-24">
+                  {['new','contacted','interested','negotiating','won'].map(s => {
+                    const count = analytics.byStatus?.[s] || 0;
+                    const max = Math.max(...['new','contacted','interested','negotiating','won'].map(k => analytics.byStatus?.[k] || 0), 1);
+                    const pct = Math.max(10, (count / max) * 100);
+                    return (
+                      <div key={s} className="flex-1 flex flex-col items-center gap-1">
+                        <span className="text-xs font-bold">{count}</span>
+                        <div className={`w-full rounded-t-lg ${STATUS_COLORS[s]}`} style={{ height: `${pct}%` }} />
+                        <span className="text-[10px] text-muted-foreground capitalize">{s}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ── KANBAN TAB ── */}
+          <TabsContent value="kanban">
+            <CRMKanban leads={leads} onStatusChange={handleStatusChange} onOpenDetail={openDetail} onConvert={openConvert} />
+          </TabsContent>
+
+          {/* ── LIST TAB ── */}
+          <TabsContent value="list" className="space-y-3">
+            {/* Filters */}
+            <div className="flex gap-2 flex-wrap items-center">
+              <div className="relative flex-1 min-w-48">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search name, phone, interest..." className="pl-8 h-9"
+                  value={search} onChange={e => setSearch(e.target.value)} />
+              </div>
+              <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                <SelectTrigger className="h-9 w-36 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sources</SelectItem>
+                  {SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Status pills */}
+            <div className="flex gap-2 flex-wrap">
+              {['all','new','contacted','interested','negotiating','won','lost'].map(s => (
+                <button key={s} onClick={() => setStatusFilter(s)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${statusFilter === s ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:border-primary/50'}`}>
+                  {s} ({counts[s] || 0})
+                </button>
+              ))}
+            </div>
+
+            {/* Table */}
+            <div className="border rounded-xl overflow-x-auto">
+              <table className="w-full text-sm min-w-[800px]">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="text-left p-3.5 text-xs font-semibold">Name</th>
+                    <th className="text-left p-3.5 text-xs font-semibold">Interest / Value</th>
+                    <th className="text-left p-3.5 text-xs font-semibold">Source</th>
+                    <th className="text-left p-3.5 text-xs font-semibold">Assigned</th>
+                    <th className="text-center p-3.5 text-xs font-semibold">Status</th>
+                    <th className="text-left p-3.5 text-xs font-semibold">Follow-up</th>
+                    <th className="text-center p-3.5 text-xs font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(l => {
+                    const overdue = l.next_followup && new Date(l.next_followup) < new Date() && !['won','lost'].includes(l.status);
+                    return (
+                      <tr key={l.id} className="border-t hover:bg-muted/30 cursor-pointer" onClick={() => openDetail(l)}>
+                        <td className="p-3.5">
+                          <p className="font-medium">{l.name}</p>
+                          <p className="text-xs text-muted-foreground">{l.phone}</p>
+                        </td>
+                        <td className="p-3.5">
+                          <p className="text-sm">{l.interest || '—'}</p>
+                          {(l.deal_value || l.budget) > 0 && <p className="text-xs text-green-600 font-medium">₹{(l.deal_value || l.budget).toLocaleString('en-IN')}</p>}
+                        </td>
+                        <td className="p-3.5 text-sm text-muted-foreground">{l.source}</td>
+                        <td className="p-3.5 text-sm">{l.assigned_to || '—'}</td>
+                        <td className="p-3.5 text-center">
+                          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_COLORS[l.status]}`}>{l.status}</span>
+                        </td>
+                        <td className="p-3.5">
+                          {l.next_followup
+                            ? <span className={`text-sm ${overdue ? 'text-red-600 font-bold' : ''}`}>{overdue && <AlertTriangle className="h-3.5 w-3.5 inline mr-1" />}{l.next_followup}</span>
+                            : <span className="text-muted-foreground">—</span>}
+                        </td>
+                        <td className="p-3.5" onClick={e => e.stopPropagation()}>
+                          <div className="flex gap-1 justify-center">
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600" title="Convert" onClick={() => openConvert(l)}><ClipboardList className="h-3.5 w-3.5" /></Button>
+                            <a href={`https://wa.me/91${l.phone?.replace(/\D/g,'')}`} target="_blank" rel="noreferrer">
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600"><MessageCircle className="h-3.5 w-3.5" /></Button>
+                            </a>
+                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setForm({ ...emptyForm, ...l }); setEditingId(l.id); setDialogOpen(true); }}><Edit className="h-3.5 w-3.5" /></Button>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => del(l.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {!filtered.length && <tr><td colSpan={7} className="p-12 text-center text-muted-foreground">No leads found</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Lead Detail Drawer */}
+        <CRMLeadDetail lead={selectedLead} open={detailOpen} onClose={() => setDetailOpen(false)} onUpdate={load} staff={staff} onConvert={openConvert} />
+
+        {/* Add/Edit Lead Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editingId ? 'Edit' : 'Add'} Lead</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Name *</Label><Input className="mt-1 h-9" value={form.name} onChange={e => setForm((f: any) => ({ ...f, name: e.target.value }))} /></div>
-                <div><Label className="text-xs">Phone</Label><Input className="mt-1 h-9" value={form.phone} onChange={e => setForm((f: any) => ({ ...f, phone: e.target.value }))} /></div>
+                <div><Label className="text-xs">Name *</Label><Input className="mt-1 h-9" value={form.name} onChange={e => sf('name')(e.target.value)} /></div>
+                <div><Label className="text-xs">Phone</Label><Input className="mt-1 h-9" value={form.phone} onChange={e => sf('phone')(e.target.value)} /></div>
               </div>
-              <div><Label className="text-xs">Email</Label><Input className="mt-1 h-9" value={form.email} onChange={e => setForm((f: any) => ({ ...f, email: e.target.value }))} /></div>
-              <div><Label className="text-xs">Interest</Label><Input className="mt-1 h-9" value={form.interest} onChange={e => setForm((f: any) => ({ ...f, interest: e.target.value }))} placeholder="Dell laptop, Screen repair..." /></div>
+              <div><Label className="text-xs">Email</Label><Input className="mt-1 h-9" value={form.email} onChange={e => sf('email')(e.target.value)} /></div>
+              <div><Label className="text-xs">Interest</Label><Input className="mt-1 h-9" value={form.interest} onChange={e => sf('interest')(e.target.value)} placeholder="Dell laptop, Screen repair..." /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Budget (₹)</Label><Input type="number" className="mt-1 h-9" value={form.budget || ''} onChange={e => setForm((f: any) => ({ ...f, budget: Number(e.target.value) }))} /></div>
+                <div><Label className="text-xs">Deal Value (₹)</Label><Input type="number" className="mt-1 h-9" value={form.deal_value || form.budget || ''} onChange={e => { sf('deal_value')(Number(e.target.value)); sf('budget')(Number(e.target.value)); }} /></div>
                 <div><Label className="text-xs">Source</Label>
-                  <Select value={form.source} onValueChange={v => setForm((f: any) => ({ ...f, source: v }))}>
+                  <Select value={form.source} onValueChange={sf('source')}>
                     <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
                     <SelectContent>{SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div><Label className="text-xs">Status</Label>
-                  <Select value={form.status} onValueChange={v => setForm((f: any) => ({ ...f, status: v }))}>
+                  <Select value={form.status} onValueChange={sf('status')}>
                     <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {['new', 'contacted', 'interested', 'negotiating', 'won', 'lost'].map(s => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectContent>{['new','contacted','interested','negotiating','won','lost'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div><Label className="text-xs">Priority</Label>
-                  <Select value={form.priority} onValueChange={v => setForm((f: any) => ({ ...f, priority: v }))}>
+                  <Select value={form.priority} onValueChange={sf('priority')}>
                     <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low">🟢 Low</SelectItem>
-                      <SelectItem value="normal">🔵 Normal</SelectItem>
-                      <SelectItem value="high">🔴 High</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label className="text-xs">Assigned To</Label>
+                  <Select value={form.assigned_to || '__none'} onValueChange={v => sf('assigned_to')(v === '__none' ? '' : v)}>
+                    <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Assign" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Unassigned</SelectItem>
+                      {staff.map(s => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <div><Label className="text-xs">Assigned To</Label>
-                <Select value={form.assigned_to || '__none'} onValueChange={v => setForm((f: any) => ({ ...f, assigned_to: v === '__none' ? '' : v }))}>
-                  <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Assign staff" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none">Unassigned</SelectItem>
-                    {staff.map(s => <SelectItem key={s.id} value={s.name}>{s.name} ({s.role})</SelectItem>)}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">Next Follow-up</Label><Input type="date" className="mt-1 h-9" value={form.next_followup} onChange={e => sf('next_followup')(e.target.value)} /></div>
+                <div><Label className="text-xs">Expected Close</Label><Input type="date" className="mt-1 h-9" value={form.expected_close} onChange={e => sf('expected_close')(e.target.value)} /></div>
               </div>
-              <div><Label className="text-xs">Next Follow-up</Label><Input type="date" className="mt-1 h-9" value={form.next_followup} onChange={e => setForm((f: any) => ({ ...f, next_followup: e.target.value }))} /></div>
-              <div><Label className="text-xs">Notes</Label><Textarea className="mt-1" rows={2} value={form.notes} onChange={e => setForm((f: any) => ({ ...f, notes: e.target.value }))} /></div>
+              <div><Label className="text-xs">Notes</Label><Textarea className="mt-1" rows={2} value={form.notes} onChange={e => sf('notes')(e.target.value)} /></div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              <Button onClick={save}>💾 Save</Button>
+              <Button onClick={save}>Save Lead</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        {/* Follow-up Dialog */}
-        <Dialog open={followupOpen} onOpenChange={setFollowupOpen}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>Follow-ups — {selectedLead?.name}</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Type</Label>
-                  <Select value={fuForm.type} onValueChange={v => setFuForm(f => ({ ...f, type: v }))}>
-                    <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="call">📞 Call</SelectItem>
-                      <SelectItem value="whatsapp">💬 WhatsApp</SelectItem>
-                      <SelectItem value="visit">🏪 Visit</SelectItem>
-                      <SelectItem value="email">📧 Email</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div><Label className="text-xs">Next Follow-up</Label>
-                  <Input type="date" className="mt-1 h-9" value={fuForm.next_date} onChange={e => setFuForm(f => ({ ...f, next_date: e.target.value }))} />
-                </div>
-              </div>
-              <div><Label className="text-xs">Notes *</Label><Textarea className="mt-1" rows={2} value={fuForm.notes} onChange={e => setFuForm(f => ({ ...f, notes: e.target.value }))} /></div>
-              <div><Label className="text-xs">Outcome</Label><Input className="mt-1 h-9" value={fuForm.outcome} onChange={e => setFuForm(f => ({ ...f, outcome: e.target.value }))} placeholder="Interested, Will visit tomorrow..." /></div>
-              <Button className="w-full" onClick={saveFollowup}>Add Follow-up</Button>
-              {followups.length > 0 && (
-                <div className="border-t pt-3 space-y-2 max-h-48 overflow-y-auto">
-                  <p className="text-xs font-semibold">History ({followups.length})</p>
-                  {followups.map(f => (
-                    <div key={f.id} className="text-xs bg-muted/50 rounded p-2">
-                      <div className="flex justify-between">
-                        <span className="font-medium capitalize">{f.type}</span>
-                        <span className="text-muted-foreground">{new Date(f.created_at).toLocaleDateString('en-IN')}</span>
-                      </div>
-                      {f.notes && <p className="text-muted-foreground mt-0.5">{f.notes}</p>}
-                      {f.outcome && <p className="text-green-600 mt-0.5 font-medium">→ {f.outcome}</p>}
-                      {f.next_date && <p className="text-blue-600 mt-0.5">📅 Next: {f.next_date}</p>}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Convert to Job Card Dialog */}
+        {/* Convert to Job Card */}
         <Dialog open={convertOpen} onOpenChange={setConvertOpen}>
           <DialogContent className="max-w-sm">
-            <DialogHeader><DialogTitle>Convert to Job Card — {selectedLead?.name}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Convert to Job Card</DialogTitle></DialogHeader>
             <div className="space-y-3">
-              <div className="bg-muted/50 rounded-lg p-3 text-xs space-y-1">
-                <p><strong>Customer:</strong> {selectedLead?.name}</p>
-                <p><strong>Phone:</strong> {selectedLead?.phone}</p>
-                <p><strong>Interest:</strong> {selectedLead?.interest || '—'}</p>
+              <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
+                <p><strong>{selectedLead?.name}</strong> · {selectedLead?.phone}</p>
+                {selectedLead?.interest && <p className="text-muted-foreground">{selectedLead.interest}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Device Brand</Label><Input className="mt-1 h-9" value={convertForm.device_brand} onChange={e => setConvertForm(f => ({ ...f, device_brand: e.target.value }))} placeholder="Dell, HP..." /></div>
+                <div><Label className="text-xs">Device Brand</Label><Input className="mt-1 h-9" value={convertForm.device_brand} onChange={e => setConvertForm(f => ({ ...f, device_brand: e.target.value }))} /></div>
                 <div><Label className="text-xs">Device Model</Label><Input className="mt-1 h-9" value={convertForm.device_model} onChange={e => setConvertForm(f => ({ ...f, device_model: e.target.value }))} /></div>
               </div>
-              <div><Label className="text-xs">Issue Description</Label>
-                <Textarea className="mt-1" rows={2} value={convertForm.issue_description} onChange={e => setConvertForm(f => ({ ...f, issue_description: e.target.value }))} />
-              </div>
+              <div><Label className="text-xs">Issue</Label><Textarea className="mt-1" rows={2} value={convertForm.issue_description} onChange={e => setConvertForm(f => ({ ...f, issue_description: e.target.value }))} /></div>
               <div><Label className="text-xs">Priority</Label>
                 <Select value={convertForm.priority} onValueChange={v => setConvertForm(f => ({ ...f, priority: v }))}>
                   <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">🟢 Low</SelectItem>
-                    <SelectItem value="normal">🔵 Normal</SelectItem>
-                    <SelectItem value="high">🟠 High</SelectItem>
-                    <SelectItem value="urgent">🔴 Urgent</SelectItem>
+                    <SelectItem value="low">Low</SelectItem><SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="high">High</SelectItem><SelectItem value="urgent">Urgent</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-xs text-muted-foreground">Lead will be marked as <strong>Won</strong> after conversion.</p>
+              <p className="text-xs text-muted-foreground">Lead will be marked as <strong>Won</strong>.</p>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setConvertOpen(false)}>Cancel</Button>
