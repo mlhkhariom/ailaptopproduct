@@ -2,18 +2,16 @@ import { useState, useEffect } from "react";
 import ERPLayout from "@/components/ERPLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Package, Users, Wrench, BarChart3, IndianRupee, Truck, ClipboardList, Wallet, UserCheck, TrendingUp, TrendingDown, AlertTriangle, ShoppingCart, ArrowRight } from "lucide-react";
+import { Building2, Package, Users, Wrench, BarChart3, IndianRupee, Truck, ClipboardList, Wallet, UserCheck, TrendingUp, TrendingDown, AlertTriangle, ShoppingCart, ArrowRight, Cpu, DollarSign, Box } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const req = (path: string) =>
   fetch(`/api/erp${path}`, { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json());
 
-const authFetch = (url: string) =>
-  fetch(url, { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json());
-
 const MODULE_GROUPS = [
   {
-    label: "🔧 Operations",
+    label: "Operations",
+    icon: Cpu,
     color: "border-blue-200 bg-blue-50/50",
     modules: [
       { title: "Job Cards", desc: "Repair tracking", url: "/admin/erp/job-cards", icon: ClipboardList, statKey: "pendingJobs", statLabel: "pending", color: "text-blue-600", bg: "bg-blue-100" },
@@ -22,7 +20,8 @@ const MODULE_GROUPS = [
     ],
   },
   {
-    label: "💰 Finance",
+    label: "Finance",
+    icon: DollarSign,
     color: "border-green-200 bg-green-50/50",
     modules: [
       { title: "Billing", desc: "GST invoices", url: "/admin/erp/billing", icon: IndianRupee, statKey: "pendingPayments", statLabel: "pending", color: "text-green-600", bg: "bg-green-100" },
@@ -31,7 +30,8 @@ const MODULE_GROUPS = [
     ],
   },
   {
-    label: "👥 People",
+    label: "People",
+    icon: UserCheck,
     color: "border-purple-200 bg-purple-50/50",
     modules: [
       { title: "Staff", desc: "Team management", url: "/admin/erp/staff", icon: UserCheck, statKey: "totalStaff", statLabel: "members", color: "text-teal-600", bg: "bg-teal-100" },
@@ -39,7 +39,8 @@ const MODULE_GROUPS = [
     ],
   },
   {
-    label: "📦 Procurement",
+    label: "Procurement",
+    icon: Box,
     color: "border-orange-200 bg-orange-50/50",
     modules: [
       { title: "Inventory", desc: "Stock & products", url: "/admin/inventory", icon: Package, statKey: "lowStock", statLabel: "low stock", color: "text-orange-600", bg: "bg-orange-100" },
@@ -124,7 +125,9 @@ export default function AdminERP() {
         {/* Ecommerce KPIs */}
         {(ecomStats.totalOrders > 0 || ecomStats.todayOrders > 0) && (
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">🛒 Ecommerce Today</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+              <ShoppingCart className="h-3.5 w-3.5" /> Ecommerce Today
+            </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 { label: "Today's Orders", value: ecomStats.todayOrders || 0, color: 'text-blue-600', url: '/admin/orders' },
@@ -171,7 +174,9 @@ export default function AdminERP() {
         <div className="space-y-4">
           {MODULE_GROUPS.map(group => (
             <div key={group.label}>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{group.label}</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <group.icon className="h-3.5 w-3.5" />{group.label}
+              </p>
               <div className={`border rounded-xl p-3 ${group.color}`}>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {group.modules.map(m => {

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, PersonStanding, Box } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import {
@@ -12,7 +12,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const erpGroups = [
   {
-    label: "🔧 Operations",
+    label: "Operations",
+    labelIcon: Cpu,
     items: [
       { title: "ERP Overview", url: "/admin/erp", icon: Building2 },
       { title: "Job Cards", url: "/admin/erp/job-cards", icon: ClipboardList, badge: "core" },
@@ -21,7 +22,8 @@ const erpGroups = [
     ],
   },
   {
-    label: "💰 Finance",
+    label: "Finance",
+    labelIcon: DollarSign,
     items: [
       { title: "Billing", url: "/admin/erp/billing", icon: Receipt, badge: "core" },
       { title: "Expenses", url: "/admin/erp/expenses", icon: Wallet },
@@ -29,14 +31,16 @@ const erpGroups = [
     ],
   },
   {
-    label: "👥 People",
+    label: "People",
+    labelIcon: UserCheck,
     items: [
       { title: "Staff", url: "/admin/erp/staff", icon: UserCheck },
       { title: "Branches", url: "/admin/erp/branches", icon: Building2 },
     ],
   },
   {
-    label: "📦 Procurement",
+    label: "Procurement",
+    labelIcon: Box,
     items: [
       { title: "Inventory", url: "/admin/inventory", icon: Package },
       { title: "Suppliers", url: "/admin/inventory?tab=suppliers", icon: Truck },
@@ -154,7 +158,10 @@ export function AdminSidebar() {
                       onClick={() => toggleGroup(group.label)}
                       className="flex items-center justify-between w-full px-3 py-1 text-[10px] text-sidebar-foreground/40 hover:text-sidebar-foreground/70 transition-colors"
                     >
-                      <span>{group.label}</span>
+                      <span className="flex items-center gap-1.5">
+                        <group.labelIcon className="h-3 w-3" />
+                        {group.label}
+                      </span>
                       {openGroups[group.label]
                         ? <ChevronDown className="h-2.5 w-2.5" />
                         : <ChevronRight className="h-2.5 w-2.5" />}
