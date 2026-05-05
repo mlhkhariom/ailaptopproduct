@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import AdminLayout from "@/components/AdminLayout";
+import ERPLayout from "@/components/ERPLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,7 +87,7 @@ export default function AdminExpenses() {
   const topCats = Object.entries(byCategory).sort(([, a], [, b]) => b - a).slice(0, 5);
 
   return (
-    <AdminLayout>
+    <ERPLayout>
       <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4">
 
         {/* Header */}
@@ -243,6 +243,6 @@ export default function AdminExpenses() {
           </DialogContent>
         </Dialog>
       </div>
-    </AdminLayout>
+    </ERPLayout>
   );
 }

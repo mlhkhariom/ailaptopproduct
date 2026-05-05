@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import AdminLayout from "@/components/AdminLayout";
+import ERPLayout from "@/components/ERPLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,7 +47,7 @@ export default function AdminBranches() {
   };
 
   return (
-    <AdminLayout>
+    <ERPLayout>
       <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-black flex items-center gap-2"><Building2 className="h-5 w-5 text-primary" /> Branch Management</h1>
@@ -108,6 +108,6 @@ export default function AdminBranches() {
           </DialogContent>
         </Dialog>
       </div>
-    </AdminLayout>
+    </ERPLayout>
   );
 }

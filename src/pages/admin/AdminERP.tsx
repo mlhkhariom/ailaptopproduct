@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import AdminLayout from "@/components/AdminLayout";
+import ERPLayout from "@/components/ERPLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Package, Users, Wrench, BarChart3, IndianRupee, Truck, ClipboardList, Wallet, UserCheck, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
@@ -38,7 +38,7 @@ export default function AdminERP() {
   ];
 
   return (
-    <AdminLayout>
+    <ERPLayout>
       <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-2">
           <Building2 className="h-6 w-6 text-primary" />
@@ -132,6 +132,6 @@ export default function AdminERP() {
           ))}
         </div>
       </div>
-    </AdminLayout>
+    </ERPLayout>
   );
 }

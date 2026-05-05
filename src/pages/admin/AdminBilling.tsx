@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import AdminLayout from "@/components/AdminLayout";
+import ERPLayout from "@/components/ERPLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -141,7 +141,7 @@ export default function AdminBilling() {
   })();
 
   return (
-    <AdminLayout>
+    <ERPLayout>
       <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-2">
@@ -392,6 +392,6 @@ export default function AdminBilling() {
           </DialogContent>
         </Dialog>
       </div>
-    </AdminLayout>
+    </ERPLayout>
   );
 }
