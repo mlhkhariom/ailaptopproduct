@@ -99,7 +99,7 @@ export default function AdminERP() {
       <div className="space-y-6 max-w-6xl mx-auto">
 
         {/* Top KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Pending Jobs', value: stats.pendingJobs || 0, color: 'text-blue-600', icon: ClipboardList, url: '/admin/erp/job-cards' },
             { label: 'Completed Today', value: stats.completedToday || 0, color: 'text-green-600', icon: TrendingUp, url: '/admin/erp/job-cards' },
@@ -108,13 +108,13 @@ export default function AdminERP() {
           ].map(k => (
             <Link key={k.label} to={k.url}>
               <Card className="hover:shadow-md transition-all hover:border-primary/30 cursor-pointer">
-                <CardContent className="p-4">
+                <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-xs text-muted-foreground">{k.label}</p>
-                      <p className={`text-xl font-black mt-0.5 ${k.color}`}>{k.value}</p>
+                      <p className="text-sm text-muted-foreground">{k.label}</p>
+                      <p className={`text-3xl font-black mt-1 ${k.color}`}>{k.value}</p>
                     </div>
-                    <k.icon className={`h-8 w-8 opacity-15 ${k.color}`} />
+                    <k.icon className={`h-10 w-10 opacity-15 ${k.color}`} />
                   </div>
                 </CardContent>
               </Card>
@@ -125,10 +125,10 @@ export default function AdminERP() {
         {/* Ecommerce KPIs */}
         {(ecomStats.totalOrders > 0 || ecomStats.todayOrders > 0) && (
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-              <ShoppingCart className="h-3.5 w-3.5" /> Ecommerce Today
+            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4" /> Ecommerce Today
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: "Today's Orders", value: ecomStats.todayOrders || 0, color: 'text-blue-600', url: '/admin/orders' },
                 { label: 'Pending Orders', value: ecomStats.pendingOrders || 0, color: 'text-orange-600', url: '/admin/orders' },
@@ -136,9 +136,9 @@ export default function AdminERP() {
                 { label: 'Low Stock', value: invStats.lowStock || 0, color: 'text-red-600', url: '/admin/inventory' },
               ].map(k => (
                 <Link key={k.label} to={k.url}>
-                  <div className="border rounded-lg p-3 hover:shadow-sm transition-all hover:border-primary/30 bg-card cursor-pointer">
-                    <p className="text-xs text-muted-foreground">{k.label}</p>
-                    <p className={`text-xl font-black mt-0.5 ${k.color}`}>{k.value}</p>
+                  <div className="border rounded-xl p-5 hover:shadow-sm transition-all hover:border-primary/30 bg-card cursor-pointer">
+                    <p className="text-sm text-muted-foreground">{k.label}</p>
+                    <p className={`text-3xl font-black mt-1 ${k.color}`}>{k.value}</p>
                   </div>
                 </Link>
               ))}
@@ -151,18 +151,18 @@ export default function AdminERP() {
           <div className="space-y-2">
             {pendingBilling > 0 && (
               <Link to="/admin/erp/billing">
-                <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm hover:bg-yellow-100 transition-colors">
-                  <AlertTriangle className="h-4 w-4 text-yellow-600 shrink-0" />
-                  <span><strong>{pendingBilling}</strong> invoices have pending payment</span>
+                <div className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-sm hover:bg-yellow-100 transition-colors">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 shrink-0" />
+                  <span className="font-medium"><strong>{pendingBilling}</strong> invoices have pending payment</span>
                   <ArrowRight className="ml-auto h-4 w-4 text-yellow-600" />
                 </div>
               </Link>
             )}
             {invStats.lowStock > 0 && (
               <Link to="/admin/inventory">
-                <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm hover:bg-orange-100 transition-colors">
-                  <AlertTriangle className="h-4 w-4 text-orange-600 shrink-0" />
-                  <span><strong>{invStats.lowStock}</strong> products have low stock (≤5 units)</span>
+                <div className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl text-sm hover:bg-orange-100 transition-colors">
+                  <AlertTriangle className="h-5 w-5 text-orange-600 shrink-0" />
+                  <span className="font-medium"><strong>{invStats.lowStock}</strong> products have low stock (≤5 units)</span>
                   <ArrowRight className="ml-auto h-4 w-4 text-orange-600" />
                 </div>
               </Link>
@@ -171,13 +171,13 @@ export default function AdminERP() {
         )}
 
         {/* Module Groups */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           {MODULE_GROUPS.map(group => (
             <div key={group.label}>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                <group.icon className="h-3.5 w-3.5" />{group.label}
+              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
+                <group.icon className="h-4 w-4" />{group.label}
               </p>
-              <div className={`border rounded-xl p-3 ${group.color}`}>
+              <div className={`border rounded-xl p-4 ${group.color}`}>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {group.modules.map(m => {
                     const statVal = m.statKey ? allStats[m.statKey] : null;
@@ -186,13 +186,13 @@ export default function AdminERP() {
                       : m.statLabel;
                     return (
                       <Link key={m.url} to={m.url}>
-                        <div className="bg-white rounded-lg p-3 hover:shadow-md transition-all border border-transparent hover:border-primary/20 cursor-pointer">
-                          <div className={`h-8 w-8 rounded-lg ${m.bg} flex items-center justify-center mb-2`}>
-                            <m.icon className={`h-4 w-4 ${m.color}`} />
+                        <div className="bg-white rounded-xl p-4 hover:shadow-md transition-all border border-transparent hover:border-primary/20 cursor-pointer">
+                          <div className={`h-10 w-10 rounded-xl ${m.bg} flex items-center justify-center mb-3`}>
+                            <m.icon className={`h-5 w-5 ${m.color}`} />
                           </div>
-                          <p className="font-bold text-sm">{m.title}</p>
-                          <p className="text-xs text-muted-foreground">{m.desc}</p>
-                          <p className={`text-xs font-semibold mt-1.5 ${m.color}`}>
+                          <p className="font-bold text-base">{m.title}</p>
+                          <p className="text-sm text-muted-foreground mt-0.5">{m.desc}</p>
+                          <p className={`text-sm font-semibold mt-2 ${m.color}`}>
                             {m.statKey ? `${display} ${m.statLabel}` : m.statLabel}
                           </p>
                         </div>
@@ -207,22 +207,21 @@ export default function AdminERP() {
 
         {/* Recent Activity */}
         <div className="grid md:grid-cols-2 gap-4">
-          {/* Recent Job Cards */}
           <Card>
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm">Recent Job Cards</CardTitle>
-              <Link to="/admin/erp/job-cards" className="text-xs text-primary hover:underline flex items-center gap-1">View all <ArrowRight className="h-3 w-3" /></Link>
+              <CardTitle className="text-base">Recent Job Cards</CardTitle>
+              <Link to="/admin/erp/job-cards" className="text-sm text-primary hover:underline flex items-center gap-1">View all <ArrowRight className="h-3.5 w-3.5" /></Link>
             </CardHeader>
             <CardContent className="p-0">
               {recentJobs.length === 0
-                ? <p className="text-xs text-muted-foreground text-center py-6">No job cards yet</p>
+                ? <p className="text-sm text-muted-foreground text-center py-8">No job cards yet</p>
                 : recentJobs.map(j => (
-                  <div key={j.id} className="flex items-center gap-3 px-4 py-2.5 border-t first:border-t-0 hover:bg-muted/30">
+                  <div key={j.id} className="flex items-center gap-3 px-5 py-3 border-t first:border-t-0 hover:bg-muted/30">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">{j.customer_name}</p>
-                      <p className="text-[10px] text-muted-foreground">{j.device_brand} {j.device_model} • {j.booking_number}</p>
+                      <p className="text-sm font-medium truncate">{j.customer_name}</p>
+                      <p className="text-xs text-muted-foreground">{j.device_brand} {j.device_model} · {j.booking_number}</p>
                     </div>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[j.status] || 'bg-gray-100 text-gray-700'}`}>
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${STATUS_COLORS[j.status] || 'bg-gray-100 text-gray-700'}`}>
                       {j.status?.replace('_', ' ')}
                     </span>
                   </div>
@@ -231,22 +230,21 @@ export default function AdminERP() {
             </CardContent>
           </Card>
 
-          {/* Recent CRM Leads */}
           <Card>
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm">Recent Leads</CardTitle>
-              <Link to="/admin/erp/crm" className="text-xs text-primary hover:underline flex items-center gap-1">View all <ArrowRight className="h-3 w-3" /></Link>
+              <CardTitle className="text-base">Recent Leads</CardTitle>
+              <Link to="/admin/erp/crm" className="text-sm text-primary hover:underline flex items-center gap-1">View all <ArrowRight className="h-3.5 w-3.5" /></Link>
             </CardHeader>
             <CardContent className="p-0">
               {recentLeads.length === 0
-                ? <p className="text-xs text-muted-foreground text-center py-6">No leads yet</p>
+                ? <p className="text-sm text-muted-foreground text-center py-8">No leads yet</p>
                 : recentLeads.map(l => (
-                  <div key={l.id} className="flex items-center gap-3 px-4 py-2.5 border-t first:border-t-0 hover:bg-muted/30">
+                  <div key={l.id} className="flex items-center gap-3 px-5 py-3 border-t first:border-t-0 hover:bg-muted/30">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">{l.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{l.source} • {l.interest || 'No interest noted'}</p>
+                      <p className="text-sm font-medium truncate">{l.name}</p>
+                      <p className="text-xs text-muted-foreground">{l.source} · {l.interest || 'No interest noted'}</p>
                     </div>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[l.status] || 'bg-gray-100 text-gray-700'}`}>
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${STATUS_COLORS[l.status] || 'bg-gray-100 text-gray-700'}`}>
                       {l.status}
                     </span>
                   </div>
