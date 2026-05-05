@@ -349,12 +349,24 @@ router.post('/billing/custom', authMiddleware, adminOnly, async (req, res) => {
       JSON.stringify(items), subtotal, discount || 0, total, notes,
       payment_status || 'pending', payment_method || 'cash', gst_enabled ? 1 : 0);
 
+  // Real-time stock deduction for product items
+  for (const item of items) {
+    if (item.product_id && item.qty > 0) {
+      try {
+        await db.prepare('UPDATE products SET stock=GREATEST(0,stock-?), in_stock=CASE WHEN stock-?>0 THEN 1 ELSE 0 END WHERE id=?')
+          .run(item.qty, item.qty, item.product_id);
+        await db.prepare('INSERT INTO stock_movements (id,product_id,type,quantity,reference_id,reference_type,notes,created_by) VALUES (?,?,?,?,?,?,?,?)')
+          .run(uuid(), item.product_id, 'sale', item.qty, id, 'custom_invoice', `Custom invoice ${invoice_number}`, req.user.id);
+      } catch {}
+    }
+  }
+
   // WhatsApp send
   if (send_whatsapp && customer_phone) {
     try {
       const { queueNotification } = await import('../whatsapp/notifications.js');
       const invoiceUrl = `${process.env.FRONTEND_URL || 'https://ailaptopwala.com'}/api/invoice/${invoice_number}`;
-      const msg = `🧾 *Invoice from AI Laptop Wala*\n\nNamaste ${customer_name}! 🙏\n\n*Invoice #:* ${invoice_number}\n*Amount:* ₹${total.toLocaleString('en-IN')}\n*Status:* ${payment_status === 'paid' ? '✅ Paid' : '⏳ Pending'}\n\n📄 View Invoice:\n${invoiceUrl}\n\n📞 +91 98934 96163 | ailaptopwala.com`;
+      const msg = `🧾 *Invoice from AI Laptop Wala*\n\nNamaste ${customer_name}! 🙏\n\n*Invoice #:* ${invoice_number}\n*Amount:* ₹${total.toLocaleString('en-IN')}\n*Status:* ${payment_status === 'paid' ? 'Paid' : 'Pending'}\n\nView Invoice:\n${invoiceUrl}\n\n+91 98934 96163 | ailaptopwala.com`;
       await queueNotification(customer_phone, msg, 'invoice');
     } catch {}
   }

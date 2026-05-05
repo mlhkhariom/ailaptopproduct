@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus, MessageCircle, Save, User, Package, CreditCard } from "lucide-react";
+import { Trash2, Plus, MessageCircle, Save, User, Package, CreditCard, Clock, CheckCircle, AlertCircle, Banknote, Smartphone, Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
 
 interface Props {
   open: boolean;
@@ -20,6 +22,16 @@ const ONLINE_METHODS = ['UPI', 'Debit Card', 'Credit Card', 'Net Banking'];
 
 export default function CustomInvoiceForm({ open, onClose, form, setForm, editingId, onSave }: Props) {
   const sf = (k: string) => (v: any) => setForm((f: any) => ({ ...f, [k]: v }));
+  const [products, setProducts] = useState<any[]>([]);
+  const [productSearch, setProductSearch] = useState('');
+
+  useEffect(() => {
+    if (open) api.getProducts().then((p: any) => setProducts(Array.isArray(p) ? p : p?.products || []));
+  }, [open]);
+
+  const filteredProducts = products.filter(p =>
+    !productSearch || p.name?.toLowerCase().includes(productSearch.toLowerCase())
+  ).slice(0, 8);
 
   const setItem = (i: number, field: string, val: any) =>
     setForm((f: any) => {
@@ -82,6 +94,33 @@ export default function CustomInvoiceForm({ open, onClose, form, setForm, editin
               </Button>
             </div>
 
+            {/* Product quick-add search */}
+            <div className="px-4 py-2 border-b bg-muted/10">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  className="pl-8 h-8 text-xs"
+                  placeholder="Search & add product from inventory..."
+                  value={productSearch}
+                  onChange={e => setProductSearch(e.target.value)}
+                />
+              </div>
+              {productSearch && filteredProducts.length > 0 && (
+                <div className="mt-1 border rounded-lg bg-white shadow-sm max-h-40 overflow-y-auto">
+                  {filteredProducts.map(p => (
+                    <button key={p.id} className="flex items-center justify-between w-full px-3 py-2 text-xs hover:bg-muted/50 transition-colors text-left border-b last:border-b-0"
+                      onClick={() => {
+                        setForm((f: any) => ({ ...f, items: [...f.items, { name: p.name, qty: 1, price: p.price, product_id: p.id }] }));
+                        setProductSearch('');
+                      }}>
+                      <span className="font-medium">{p.name}</span>
+                      <span className="text-muted-foreground ml-2">₹{p.price?.toLocaleString('en-IN')} · Stock: {p.stock}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <table className="w-full text-sm">
               <thead className="bg-muted/20">
                 <tr>
@@ -96,29 +135,13 @@ export default function CustomInvoiceForm({ open, onClose, form, setForm, editin
                 {(form.items || []).map((item: any, i: number) => (
                   <tr key={i} className="border-t">
                     <td className="px-3 py-2">
-                      <Input
-                        className="h-8 text-sm"
-                        placeholder="Item or service name"
-                        value={item.name}
-                        onChange={e => setItem(i, 'name', e.target.value)}
-                      />
+                      <Input className="h-8 text-sm" placeholder="Item or service name" value={item.name} onChange={e => setItem(i, 'name', e.target.value)} />
                     </td>
                     <td className="px-2 py-2">
-                      <Input
-                        type="number" min={1}
-                        className="h-8 text-sm text-center"
-                        value={item.qty}
-                        onChange={e => setItem(i, 'qty', Number(e.target.value))}
-                      />
+                      <Input type="number" min={1} className="h-8 text-sm text-center" value={item.qty} onChange={e => setItem(i, 'qty', Number(e.target.value))} />
                     </td>
                     <td className="px-2 py-2">
-                      <Input
-                        type="number" min={0}
-                        className="h-8 text-sm text-right"
-                        placeholder="0"
-                        value={item.price || ''}
-                        onChange={e => setItem(i, 'price', Number(e.target.value))}
-                      />
+                      <Input type="number" min={0} className="h-8 text-sm text-right" placeholder="0" value={item.price || ''} onChange={e => setItem(i, 'price', Number(e.target.value))} />
                     </td>
                     <td className="px-4 py-2 text-right font-semibold text-sm">
                       ₹{((item.qty || 1) * (item.price || 0)).toLocaleString('en-IN')}
@@ -175,9 +198,9 @@ export default function CustomInvoiceForm({ open, onClose, form, setForm, editin
                 <Select value={form.payment_status} onValueChange={sf('payment_status')}>
                   <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">⏳ Pending</SelectItem>
-                    <SelectItem value="paid">✅ Paid</SelectItem>
-                    <SelectItem value="partial">🔶 Partial</SelectItem>
+                    <SelectItem value="pending"><span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 text-orange-500" /> Pending</span></SelectItem>
+                    <SelectItem value="paid"><span className="flex items-center gap-2"><CheckCircle className="h-3.5 w-3.5 text-green-500" /> Paid</span></SelectItem>
+                    <SelectItem value="partial"><span className="flex items-center gap-2"><AlertCircle className="h-3.5 w-3.5 text-yellow-500" /> Partial</span></SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -186,8 +209,8 @@ export default function CustomInvoiceForm({ open, onClose, form, setForm, editin
                 <Select value={form.payment_mode || 'cash'} onValueChange={sf('payment_mode')}>
                   <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">💵 Cash</SelectItem>
-                    <SelectItem value="online">📱 Online</SelectItem>
+                    <SelectItem value="cash"><span className="flex items-center gap-2"><Banknote className="h-3.5 w-3.5" /> Cash</span></SelectItem>
+                    <SelectItem value="online"><span className="flex items-center gap-2"><Smartphone className="h-3.5 w-3.5" /> Online</span></SelectItem>
                   </SelectContent>
                 </Select>
               </div>

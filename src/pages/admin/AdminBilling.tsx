@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { IndianRupee, Plus, RefreshCw, Download } from "lucide-react";
+import { IndianRupee, Plus, RefreshCw, Download, CheckCircle, Clock, AlertCircle, Banknote, Smartphone, CreditCard, Building2, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import BillingKPICards from "@/components/billing/BillingKPICards";
@@ -199,13 +199,13 @@ export default function AdminBilling() {
                 <Label className="text-xs mb-2 block">Quick Status</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { v: 'paid', label: '✅ Paid', cls: 'border-green-300 bg-green-50 text-green-700' },
-                    { v: 'pending', label: '⏳ Pending', cls: 'border-orange-300 bg-orange-50 text-orange-700' },
-                    { v: 'partial', label: '🔶 Partial', cls: 'border-yellow-300 bg-yellow-50 text-yellow-700' },
+                    { v: 'paid', label: 'Paid', icon: CheckCircle, cls: 'border-green-300 bg-green-50 text-green-700' },
+                    { v: 'pending', label: 'Pending', icon: Clock, cls: 'border-orange-300 bg-orange-50 text-orange-700' },
+                    { v: 'partial', label: 'Partial', icon: AlertCircle, cls: 'border-yellow-300 bg-yellow-50 text-yellow-700' },
                   ].map(s => (
                     <button key={s.v} onClick={() => setPayForm(f => ({ ...f, payment_status: s.v }))}
-                      className={`border rounded-lg py-2 text-xs font-semibold transition-all ${payForm.payment_status === s.v ? s.cls + ' ring-2 ring-offset-1 ring-current' : 'border-border hover:border-primary/40'}`}>
-                      {s.label}
+                      className={`border rounded-lg py-2 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${payForm.payment_status === s.v ? s.cls + ' ring-2 ring-offset-1 ring-current' : 'border-border hover:border-primary/40'}`}>
+                      <s.icon className="h-3.5 w-3.5" />{s.label}
                     </button>
                   ))}
                 </div>
@@ -215,12 +215,12 @@ export default function AdminBilling() {
                 <Select value={payForm.payment_method} onValueChange={v => setPayForm(f => ({ ...f, payment_method: v }))}>
                   <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Cash">💵 Cash</SelectItem>
-                    <SelectItem value="UPI">📱 UPI</SelectItem>
-                    <SelectItem value="Debit Card">💳 Debit Card</SelectItem>
-                    <SelectItem value="Credit Card">💳 Credit Card</SelectItem>
-                    <SelectItem value="Net Banking">🏦 Net Banking</SelectItem>
-                    <SelectItem value="Razorpay">🔵 Razorpay</SelectItem>
+                    <SelectItem value="Cash"><span className="flex items-center gap-2"><Banknote className="h-3.5 w-3.5" /> Cash</span></SelectItem>
+                    <SelectItem value="UPI"><span className="flex items-center gap-2"><Smartphone className="h-3.5 w-3.5" /> UPI</span></SelectItem>
+                    <SelectItem value="Debit Card"><span className="flex items-center gap-2"><CreditCard className="h-3.5 w-3.5" /> Debit Card</span></SelectItem>
+                    <SelectItem value="Credit Card"><span className="flex items-center gap-2"><CreditCard className="h-3.5 w-3.5" /> Credit Card</span></SelectItem>
+                    <SelectItem value="Net Banking"><span className="flex items-center gap-2"><Building2 className="h-3.5 w-3.5" /> Net Banking</span></SelectItem>
+                    <SelectItem value="Razorpay"><span className="flex items-center gap-2"><Zap className="h-3.5 w-3.5" /> Razorpay</span></SelectItem>
                   </SelectContent>
                 </Select>
               </div>
