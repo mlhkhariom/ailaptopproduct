@@ -60,6 +60,7 @@ import AdminContacts from "./pages/admin/AdminContacts";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminAttendance from "./pages/admin/AdminAttendance";
 import AdminWATemplates from "./pages/admin/AdminWATemplates";
+import AdminCoupons from "./pages/admin/AdminCoupons";
 import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
 
