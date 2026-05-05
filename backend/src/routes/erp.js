@@ -106,6 +106,13 @@ router.delete('/expenses/:id', authMiddleware, adminOnly, async (req, res) => {
   res.json({ message: 'Deleted' });
 });
 
+router.put('/expenses/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { category, amount, description, payment_method, date } = req.body;
+  await db.prepare('UPDATE expenses SET category=?,amount=?,description=?,payment_method=?,date=? WHERE id=?')
+    .run(category, amount, description, payment_method, date, req.params.id);
+  res.json({ message: 'Updated' });
+});
+
 // ── STAFF ─────────────────────────────────────────────────
 
 router.get('/staff', authMiddleware, adminOnly, async (req, res) => {
