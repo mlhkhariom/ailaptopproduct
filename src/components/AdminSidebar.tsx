@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import {
@@ -7,23 +7,43 @@ import {
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNotificationStore } from "@/store/notificationStore";
 import { useAuth } from "@/contexts/AuthContext";
 
-const erpSubMenu = [
-  { title: "ERP Overview", url: "/admin/erp", icon: Building2 },
-  { title: "Job Cards", url: "/admin/erp/job-cards", icon: ClipboardList },
-  { title: "Sales CRM", url: "/admin/erp/crm", icon: Users },
-  { title: "Inventory", url: "/admin/inventory", icon: Package },
-  { title: "Suppliers", url: "/admin/inventory?tab=suppliers", icon: Truck },
-  { title: "Purchase Orders", url: "/admin/inventory?tab=po", icon: ClipboardList },
-  { title: "Stock Movements", url: "/admin/inventory?tab=movements", icon: ArrowUpDown },
-  { title: "Expenses", url: "/admin/erp/expenses", icon: Wallet },
-  { title: "Billing", url: "/admin/erp/billing", icon: Receipt },
-  { title: "ERP Reports", url: "/admin/erp/reports", icon: BarChart3 },
-  { title: "Branches", url: "/admin/erp/branches", icon: Building2 },
-  { title: "Staff", url: "/admin/erp/staff", icon: UserCheck },
+const erpGroups = [
+  {
+    label: "🔧 Operations",
+    items: [
+      { title: "ERP Overview", url: "/admin/erp", icon: Building2 },
+      { title: "Job Cards", url: "/admin/erp/job-cards", icon: ClipboardList, badge: "core" },
+      { title: "Sales CRM", url: "/admin/erp/crm", icon: Users },
+      { title: "Services", url: "/admin/services", icon: Wrench },
+    ],
+  },
+  {
+    label: "💰 Finance",
+    items: [
+      { title: "Billing", url: "/admin/erp/billing", icon: Receipt, badge: "core" },
+      { title: "Expenses", url: "/admin/erp/expenses", icon: Wallet },
+      { title: "ERP Reports", url: "/admin/erp/reports", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "👥 People",
+    items: [
+      { title: "Staff", url: "/admin/erp/staff", icon: UserCheck },
+      { title: "Branches", url: "/admin/erp/branches", icon: Building2 },
+    ],
+  },
+  {
+    label: "📦 Procurement",
+    items: [
+      { title: "Inventory", url: "/admin/inventory", icon: Package },
+      { title: "Suppliers", url: "/admin/inventory?tab=suppliers", icon: Truck },
+      { title: "Purchase Orders", url: "/admin/inventory?tab=po", icon: ShoppingCart },
+      { title: "Stock Movements", url: "/admin/inventory?tab=movements", icon: ArrowUpDown },
+    ],
+  },
 ];
 
 const mainMenu = [
@@ -40,7 +60,6 @@ const toolsMenu = [
   { title: "Blog / Content", url: "/admin/blog", icon: FileText, badge: "" },
   { title: "Media Library", url: "/admin/media", icon: Image, badge: "" },
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageCircle, badge: "" },
-  { title: "Services", url: "/admin/services", icon: Wrench, badge: "" },
   { title: "Reviews", url: "/admin/reviews", icon: Star, badge: "" },
   { title: "Reels", url: "/admin/reels", icon: Play, badge: "" },
   { title: "CMS / Pages", url: "/admin/cms", icon: Palette, badge: "" },
@@ -50,7 +69,7 @@ const toolsMenu = [
 
 const systemMenu = [
   { title: "User & Roles", url: "/admin/users", icon: UserCog, badge: "" },
-  { title: "Reports", url: "/admin/reports", icon: BarChart3, badge: "" },
+  { title: "Reports", url: "/admin/reports", icon: TrendingUp, badge: "" },
   { title: "Settings", url: "/admin/settings", icon: Settings, badge: "" },
 ];
 
@@ -60,20 +79,26 @@ export function AdminSidebar() {
   const unreadCount = useNotificationStore((s) => s.unreadCount());
   const { user } = useAuth();
   const [erpOpen, setErpOpen] = useState(true);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    "🔧 Operations": true, "💰 Finance": true, "👥 People": false, "📦 Procurement": false,
+  });
 
-  const renderMenu = (items: typeof mainMenu) => (
+  const toggleGroup = (label: string) =>
+    setOpenGroups(g => ({ ...g, [label]: !g[label] }));
+
+  const renderMenu = (items: { title: string; url: string; icon: any; badge?: string }[]) => (
     <SidebarMenu>
       {items.map((item) => (
         <SidebarMenuItem key={item.url}>
-          <SidebarMenuButton asChild className="h-10">
+          <SidebarMenuButton asChild className="h-9">
             <NavLink to={item.url} end={item.url === "/admin"} className="rounded-lg hover:bg-sidebar-accent/50 transition-all px-3" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm">
               <item.icon className="h-4 w-4 shrink-0" />
               {!collapsed && (
                 <div className="flex items-center justify-between flex-1 ml-2">
                   <span className="text-sm">{item.title}</span>
                   {item.badge && (
-                    <Badge variant={item.badge === "NEW" ? "default" : "secondary"} className={`text-[9px] h-5 px-1.5 border-0 ${item.badge === "NEW" ? "bg-sidebar-ring text-sidebar-primary-foreground" : "bg-sidebar-ring/20 text-sidebar-ring"}`}>
-                      {item.badge}
+                    <Badge variant="secondary" className={`text-[9px] h-4 px-1 border-0 ${item.badge === "NEW" ? "bg-primary/20 text-primary" : item.badge === "core" ? "bg-orange-100 text-orange-600" : "bg-sidebar-ring/20 text-sidebar-ring"}`}>
+                      {item.badge === "core" ? "●" : item.badge}
                     </Badge>
                   )}
                 </div>
@@ -105,44 +130,67 @@ export function AdminSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-2">
-        {/* ERP — top section */}
+        {/* ── ERP Section ── */}
         <SidebarGroup>
-          <button onClick={() => setErpOpen(o => !o)} className="flex items-center justify-between w-full px-3 py-1.5 text-[10px] uppercase tracking-wider text-sidebar-foreground/40 hover:text-sidebar-foreground/70 transition-colors">
-            {!collapsed && <span>ERP</span>}
-            {!collapsed && (erpOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />)}
+          <button
+            onClick={() => setErpOpen(o => !o)}
+            className="flex items-center justify-between w-full px-3 py-1.5 rounded-lg hover:bg-sidebar-accent/30 transition-colors mb-1"
+          >
+            {!collapsed && (
+              <span className="text-[10px] uppercase tracking-wider text-sidebar-foreground/60 font-semibold">ERP</span>
+            )}
+            {!collapsed && (erpOpen
+              ? <ChevronDown className="h-3 w-3 text-sidebar-foreground/40" />
+              : <ChevronRight className="h-3 w-3 text-sidebar-foreground/40" />
+            )}
           </button>
+
           {erpOpen && (
             <SidebarGroupContent>
-              <SidebarMenu>
-                {erpSubMenu.map((item) => (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild className="h-9">
-                      <NavLink to={item.url} className="rounded-lg hover:bg-sidebar-accent/50 transition-all px-3" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm">
-                        <item.icon className="h-4 w-4 shrink-0" />
-                        {!collapsed && <span className="text-sm ml-2">{item.title}</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
+              {erpGroups.map(group => (
+                <div key={group.label} className="mb-1">
+                  {!collapsed && (
+                    <button
+                      onClick={() => toggleGroup(group.label)}
+                      className="flex items-center justify-between w-full px-3 py-1 text-[10px] text-sidebar-foreground/40 hover:text-sidebar-foreground/70 transition-colors"
+                    >
+                      <span>{group.label}</span>
+                      {openGroups[group.label]
+                        ? <ChevronDown className="h-2.5 w-2.5" />
+                        : <ChevronRight className="h-2.5 w-2.5" />}
+                    </button>
+                  )}
+                  {(collapsed || openGroups[group.label]) && renderMenu(group.items)}
+                </div>
+              ))}
             </SidebarGroupContent>
           )}
         </SidebarGroup>
+
         {!collapsed && <Separator className="mx-3 bg-sidebar-border/50" />}
+
+        {/* ── Main ── */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "Main"}</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenu(mainMenu)}</SidebarGroupContent>
         </SidebarGroup>
+
         {!collapsed && <Separator className="mx-3 bg-sidebar-border/50" />}
+
+        {/* ── Tools ── */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "Tools"}</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenu(toolsMenu)}</SidebarGroupContent>
         </SidebarGroup>
+
         {!collapsed && <Separator className="mx-3 bg-sidebar-border/50" />}
+
+        {/* ── System ── */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "System"}</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenu(systemMenu)}</SidebarGroupContent>
         </SidebarGroup>
+
         {user?.role === 'superadmin' && (
           <>
             {!collapsed && <Separator className="mx-3 bg-sidebar-border/50" />}
@@ -157,15 +205,14 @@ export function AdminSidebar() {
       <SidebarFooter className="p-3">
         {!collapsed && (
           <div className="rounded-xl bg-sidebar-accent/30 p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-7 w-7 rounded-full bg-sidebar-ring/20 flex items-center justify-center">
-                <span className="text-xs font-bold text-sidebar-ring">{user?.name?.split(' ').map(n => n[0]).join('') || 'A'}</span>
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-full bg-sidebar-ring/20 flex items-center justify-center shrink-0">
+                <span className="text-xs font-bold text-sidebar-ring">{user?.name?.split(' ').map((n: string) => n[0]).join('') || 'A'}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-sidebar-foreground truncate">{user?.name || 'Admin'}</p>
-                <p className="text-[10px] text-sidebar-foreground/50">Super Admin</p>
+                <p className="text-[10px] text-sidebar-foreground/50 capitalize">{(user as any)?.role || 'admin'}</p>
               </div>
-              <ChevronDown className="h-3.5 w-3.5 text-sidebar-foreground/40" />
             </div>
           </div>
         )}
@@ -173,3 +220,10 @@ export function AdminSidebar() {
     </Sidebar>
   );
 }
+import { NavLink } from "@/components/NavLink";
+import { useState } from "react";
+import {
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
+} from "@/components/ui/sidebar";
+import { Badge } from "@/components/ui/badge";
