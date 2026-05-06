@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import ERPLayout from "@/components/ERPLayout";
 import JobCardTimeline from "@/components/JobCardTimeline";
+import JobCardPhotos from "@/components/JobCardPhotos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,7 +36,7 @@ const emptyForm = {
   parts_used: [] as { name: string; qty: number; price: number }[],
   labour_charge: 0, parts_charge: 0,
   status: 'pending', payment_status: 'pending', payment_method: '', notes: '',
-  branch_id: '', gst_enabled: 0,
+  branch_id: '', gst_enabled: 0, warranty_days: 0,
 };
 
 export default function AdminJobCards() {
@@ -454,10 +455,31 @@ export default function AdminJobCards() {
                 </div>
               </div>
 
-              {/* Notes */}
+              {/* Warranty + Notes */}
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">Warranty (days)</Label>
+                  <Input type="number" min={0} className="mt-1 h-9" value={form.warranty_days || 0} onChange={e => setForm((f: any) => ({ ...f, warranty_days: Number(e.target.value) }))} placeholder="0 = no warranty" />
+                </div>
+                <div className="flex items-end pb-1">
+                  {form.warranty_days > 0 && <p className="text-xs text-green-600 font-medium">{form.warranty_days} days warranty after completion</p>}
+                </div>
+              </div>
               <div><Label className="text-xs">Internal Notes</Label>
                 <Textarea className="mt-1" rows={2} value={form.notes} onChange={e => setForm((f: any) => ({ ...f, notes: e.target.value }))} placeholder="Any internal notes..." />
               </div>
+
+              {/* Photos — only when editing */}
+              {editingId && (
+                <div className="border rounded-xl p-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Device Photos</p>
+                  <JobCardPhotos
+                    jobId={editingId}
+                    photosBefore={form.photos_before ? JSON.parse(typeof form.photos_before === 'string' ? form.photos_before : '[]') : []}
+                    photosAfter={form.photos_after ? JSON.parse(typeof form.photos_after === 'string' ? form.photos_after : '[]') : []}
+                    onUpdate={load}
+                  />
+                </div>
+              )}
 
               {/* Timeline — only when editing */}
               {editingId && (

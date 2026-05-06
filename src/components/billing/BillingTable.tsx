@@ -1,7 +1,7 @@
 // BillingTable — main invoice table + mobile cards
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Send, Edit, ShoppingBag, Wrench, FileText } from "lucide-react";
+import { ExternalLink, Send, Edit, ShoppingBag, Wrench, FileText, History } from "lucide-react";
 
 type BillingRow = {
   id: string; invoice_number: string; type: 'order' | 'service' | 'custom';
@@ -28,9 +28,10 @@ interface Props {
   onSendWA: (r: BillingRow) => void;
   onEdit: (r: BillingRow) => void;
   onPayClick: (r: BillingRow) => void;
+  onPartialClick?: (r: BillingRow) => void;
 }
 
-export default function BillingTable({ rows, onView, onSendWA, onEdit, onPayClick }: Props) {
+export default function BillingTable({ rows, onView, onSendWA, onEdit, onPayClick, onPartialClick }: Props) {
   if (!rows.length) return (
     <div className="border rounded-xl p-16 text-center text-muted-foreground">
       <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
@@ -92,6 +93,11 @@ export default function BillingTable({ rows, onView, onSendWA, onEdit, onPayClic
                       <Button size="icon" variant="ghost" className="h-8 w-8" title="View Invoice" onClick={() => onView(r)}>
                         <ExternalLink className="h-3.5 w-3.5" />
                       </Button>
+                      {onPartialClick && r.type !== 'order' && (
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600" title="Add Payment" onClick={() => onPartialClick(r)}>
+                          <History className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                       <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" title="Send WhatsApp" onClick={() => onSendWA(r)}>
                         <Send className="h-3.5 w-3.5" />
                       </Button>
