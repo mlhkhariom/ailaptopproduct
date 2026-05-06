@@ -8,6 +8,18 @@ const router = Router();
 
 // ── JOB CARDS (service_bookings extended) ────────────────
 
+// Public repair tracking — no auth required
+router.get('/job-cards/track/:query', async (req, res) => {
+  const q = req.params.query.trim();
+  const row = await db.prepare(`SELECT booking_number, customer_name, device_brand, device_model,
+    service_name, status, technician, diagnosis, total_charge, payment_status, gst_enabled,
+    created_at, completed_at, warranty_days, warranty_expires_at
+    FROM service_bookings WHERE booking_number=? OR customer_phone LIKE ?`)
+    .get(q, `%${q.slice(-10)}%`);
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  res.json(row);
+});
+
 router.get('/job-cards', authMiddleware, adminOnly, async (req, res) => {
   const { status, branch_id, from, to, search } = req.query;
   let q = 'SELECT * FROM service_bookings WHERE 1=1';

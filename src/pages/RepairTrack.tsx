@@ -22,15 +22,10 @@ export default function RepairTrack() {
     if (!query.trim()) return;
     setLoading(true); setError(''); setResult(null);
     try {
-      const res = await fetch(`/api/erp/job-cards?search=${encodeURIComponent(query.trim())}`);
+      const res = await fetch(`/api/erp/job-cards/track/${encodeURIComponent(query.trim())}`);
       const data = await res.json();
-      const jobs = Array.isArray(data) ? data : [];
-      const job = jobs.find(j =>
-        j.booking_number?.toLowerCase() === query.trim().toLowerCase() ||
-        j.customer_phone?.replace(/\D/g, '').endsWith(query.trim().replace(/\D/g, ''))
-      );
-      if (job) setResult(job);
-      else setError('No repair found. Please check your Job ID or phone number.');
+      if (data.error) setError('No repair found. Please check your Job ID or phone number.');
+      else setResult(data);
     } catch { setError('Something went wrong. Please try again.'); }
     setLoading(false);
   };
