@@ -61,8 +61,9 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminAttendance from "./pages/admin/AdminAttendance";
 import AdminWATemplates from "./pages/admin/AdminWATemplates";
 import AdminCoupons from "./pages/admin/AdminCoupons";
-import FAQ from "./pages/FAQ";
+import RepairTrack from "./pages/RepairTrack";
 import NotFound from "./pages/NotFound";
+import FAQ from "./pages/FAQ";
 
 const queryClient = new QueryClient();
 
@@ -98,6 +99,7 @@ const App = () => (
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/services" element={<Services />} />
             <Route path="/repair" element={<Repair />} />
+            <Route path="/track" element={<RepairTrack />} />
             <Route path="/wishlist" element={<Wishlist />} />
 
             {/* Protected Customer */}

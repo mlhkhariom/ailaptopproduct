@@ -183,8 +183,11 @@ export const api = {
   fetchInstagramReel: (url: string) => req('POST', '/reels/instagram', { url }),
   fetchInstagramProfile: () => req('GET', '/reels/fetch-profile'),
 
-  // Customers
-  getCustomers: () => req('GET', '/customers'),
+  // Sprint 4 — Customer 360, GST, Forecast, Stock Transfer
+  getCustomer360: (phone: string) => req('GET', `/erp/customer360/${encodeURIComponent(phone)}`),
+  getGSTReport: (from: string, to: string) => req('GET', `/erp/gst-report?from=${from}&to=${to}`),
+  getForecast: () => req('GET', '/erp/forecast'),
+  stockTransfer: (data: unknown) => req('POST', '/erp/stock-transfer', data),
   updateCustomer: (id: string, data: unknown) => req('PUT', `/customers/${id}`, data),
 
   // Notifications

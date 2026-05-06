@@ -641,3 +641,131 @@ router.get('/technician-performance', authMiddleware, adminOnly, async (req, res
   q += ' GROUP BY technician ORDER BY revenue DESC';
   res.json(await db.prepare(q).all(...p) || []);
 });
+
+// ── CUSTOMER 360 VIEW ─────────────────────────────────────
+
+router.get('/customer360/:phone', authMiddleware, adminOnly, async (req, res) => {
+  const phone = req.params.phone.replace(/[^0-9]/g, '');
+  const phoneVariants = [phone, `+91${phone}`, `91${phone}`, phone.slice(-10)];
+  const placeholders = phoneVariants.map(() => '?').join(',');
+
+  const [orders, jobs, invoices, leads, contacts] = await Promise.all([
+    db.prepare(`SELECT o.*, u.name as customer_name FROM orders o LEFT JOIN users u ON o.user_id=u.id WHERE u.phone IN (${placeholders}) OR JSON_EXTRACT(o.address,'$.phone') IN (${placeholders}) ORDER BY o.created_at DESC LIMIT 20`).all(...phoneVariants, ...phoneVariants),
+    db.prepare(`SELECT * FROM service_bookings WHERE customer_phone IN (${placeholders}) ORDER BY created_at DESC LIMIT 20`).all(...phoneVariants),
+    db.prepare(`SELECT * FROM custom_invoices WHERE customer_phone IN (${placeholders}) ORDER BY created_at DESC LIMIT 20`).all(...phoneVariants),
+    db.prepare(`SELECT * FROM leads WHERE phone IN (${placeholders}) ORDER BY created_at DESC LIMIT 10`).all(...phoneVariants),
+    db.prepare(`SELECT * FROM contact_queries WHERE phone IN (${placeholders}) ORDER BY created_at DESC LIMIT 10`).all(...phoneVariants),
+  ]);
+
+  const totalSpent = [
+    ...orders.filter(o => o.payment_status === 'paid').map(o => o.total || 0),
+    ...jobs.filter(j => j.payment_status === 'paid').map(j => j.total_charge || 0),
+    ...invoices.filter(i => i.payment_status === 'paid').map(i => i.total || 0),
+  ].reduce((s, v) => s + v, 0);
+
+  res.json({ phone, orders, jobs, invoices, leads, contacts, totalSpent, totalTransactions: orders.length + jobs.length + invoices.length });
+});
+
+// ── GST REPORT ────────────────────────────────────────────
+
+router.get('/gst-report', authMiddleware, adminOnly, async (req, res) => {
+  const { from, to } = req.query;
+  const today = new Date().toISOString().split('T')[0];
+  const f = from || today.slice(0, 7) + '-01';
+  const t = to || today;
+
+  // B2C sales (orders)
+  const orders = await db.prepare(`SELECT o.order_number, o.total, o.created_at, u.name as customer_name, u.phone
+    FROM orders o LEFT JOIN users u ON o.user_id=u.id
+    WHERE o.payment_status='paid' AND DATE(o.created_at) BETWEEN ? AND ?`).all(f, t) || [];
+
+  // Service invoices with GST
+  const services = await db.prepare(`SELECT booking_number, customer_name, customer_phone, total_charge, labour_charge, parts_charge, gst_enabled, created_at
+    FROM service_bookings WHERE payment_status='paid' AND DATE(created_at) BETWEEN ? AND ?`).all(f, t) || [];
+
+  // Custom invoices with GST
+  const customs = await db.prepare(`SELECT invoice_number, customer_name, customer_phone, total, subtotal, discount, gst_enabled, created_at
+    FROM custom_invoices WHERE payment_status='paid' AND DATE(created_at) BETWEEN ? AND ?`).all(f, t) || [];
+
+  const serviceGST = services.filter(s => s.gst_enabled).reduce((sum, s) => sum + Math.round((s.total_charge || 0) * 0.18), 0);
+  const customGST = customs.filter(c => c.gst_enabled).reduce((sum, c) => {
+    const after = (c.subtotal || 0) - (c.discount || 0);
+    return sum + Math.round(after * 0.18);
+  }, 0);
+  const totalGST = serviceGST + customGST;
+
+  res.json({
+    period: { from: f, to: t },
+    orders: { count: orders.length, total: orders.reduce((s, o) => s + (o.total || 0), 0), items: orders },
+    services: { count: services.length, total: services.reduce((s, j) => s + (j.total_charge || 0), 0), gst: serviceGST, items: services },
+    customs: { count: customs.length, total: customs.reduce((s, c) => s + (c.total || 0), 0), gst: customGST, items: customs },
+    summary: { totalGST, cgst: Math.round(totalGST / 2), sgst: Math.round(totalGST / 2) },
+  });
+});
+
+// ── SALES FORECASTING ─────────────────────────────────────
+
+router.get('/forecast', authMiddleware, adminOnly, async (req, res) => {
+  // Last 3 months revenue by week
+  const rows = await db.prepare(`
+    SELECT DATE_TRUNC('week', created_at::timestamptz) as week,
+      COALESCE(SUM(total),0) as order_rev
+    FROM orders WHERE payment_status='paid' AND created_at >= NOW() - INTERVAL '90 days'
+    GROUP BY week ORDER BY week ASC`).all() || [];
+
+  const serviceRows = await db.prepare(`
+    SELECT DATE_TRUNC('week', created_at::timestamptz) as week,
+      COALESCE(SUM(total_charge),0) as service_rev
+    FROM service_bookings WHERE payment_status='paid' AND created_at >= NOW() - INTERVAL '90 days'
+    GROUP BY week ORDER BY week ASC`).all() || [];
+
+  // Simple linear regression for next 4 weeks
+  const weekMap: Record<string, number> = {};
+  rows.forEach(r => { weekMap[r.week] = (weekMap[r.week] || 0) + (r.order_rev || 0); });
+  serviceRows.forEach(r => { weekMap[r.week] = (weekMap[r.week] || 0) + (r.service_rev || 0); });
+
+  const weeks = Object.entries(weekMap).sort(([a], [b]) => a.localeCompare(b));
+  const n = weeks.length;
+  const avgRevenue = n ? weeks.reduce((s, [, v]) => s + v, 0) / n : 0;
+  const trend = n > 1 ? (weeks[n - 1][1] - weeks[0][1]) / n : 0;
+
+  const forecast = [1, 2, 3, 4].map(i => ({
+    week: `Week +${i}`,
+    predicted: Math.max(0, Math.round(avgRevenue + trend * i)),
+  }));
+
+  // Pipeline value from CRM
+  const pipeline = await db.prepare("SELECT COALESCE(SUM(deal_value),0) as v FROM leads WHERE status NOT IN ('won','lost')").get();
+
+  res.json({ historical: weeks.map(([week, rev]) => ({ week, rev })), forecast, avgWeeklyRevenue: Math.round(avgRevenue), pipelineValue: pipeline?.v || 0 });
+});
+
+// ── INTER-BRANCH STOCK TRANSFER ───────────────────────────
+
+router.post('/stock-transfer', authMiddleware, adminOnly, async (req, res) => {
+  const { product_id, from_branch, to_branch, quantity, notes } = req.body;
+  if (!product_id || !from_branch || !to_branch || !quantity) return res.status(400).json({ error: 'All fields required' });
+  if (from_branch === to_branch) return res.status(400).json({ error: 'Same branch' });
+
+  const product = await db.prepare('SELECT * FROM products WHERE id=?').get(product_id);
+  if (!product) return res.status(404).json({ error: 'Product not found' });
+  if ((product.stock || 0) < quantity) return res.status(400).json({ error: `Insufficient stock. Available: ${product.stock}` });
+
+  const transferId = uuid();
+  // Deduct from source
+  await db.prepare('UPDATE products SET stock=stock-? WHERE id=?').run(quantity, product_id);
+  await db.prepare('INSERT INTO stock_movements (id,product_id,type,quantity,reference_id,reference_type,notes,created_by) VALUES (?,?,?,?,?,?,?,?)')
+    .run(uuid(), product_id, 'transfer_out', quantity, transferId, 'branch_transfer', `Transfer to ${to_branch}: ${notes || ''}`, req.user.id);
+
+  // In a real multi-branch system, each branch would have its own stock table
+  // For now, log the transfer and notify
+  await db.prepare('INSERT INTO stock_movements (id,product_id,type,quantity,reference_id,reference_type,notes,created_by) VALUES (?,?,?,?,?,?,?,?)')
+    .run(uuid(), product_id, 'transfer_in', quantity, transferId, 'branch_transfer', `Transfer from ${from_branch}: ${notes || ''}`, req.user.id);
+
+  await db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)')
+    .run(uuid(), 'inventory', 'Stock Transfer', `${quantity}x ${product.name} transferred to ${to_branch}`, '/admin/inventory');
+
+  res.status(201).json({ transfer_id: transferId, message: `${quantity} units transferred` });
+});
+
+export default router;

@@ -46,6 +46,9 @@ export default function AdminInventory() {
   const [supplierDialog, setSupplierDialog] = useState(false);
   const [poDialog, setPoDialog] = useState(false);
   const [movementDialog, setMovementDialog] = useState(false);
+  const [transferDialog, setTransferDialog] = useState(false);
+  const [transferForm, setTransferForm] = useState({ product_id: '', from_branch: '', to_branch: '', quantity: 1, notes: '' });
+  const [branches, setBranches] = useState<any[]>([]);
   const [editingSupplier, setEditingSupplier] = useState<any>(null);
   const [editingPO, setEditingPO] = useState<any>(null);
 
@@ -61,15 +64,17 @@ export default function AdminInventory() {
     const poParams = new URLSearchParams();
     if (poStatusFilter !== 'all') poParams.set('status', poStatusFilter);
     if (poSearch) poParams.set('search', poSearch);
-    const [s, sup, po, mov] = await Promise.all([
+    const [s, sup, po, mov, br] = await Promise.all([
       req('GET', '/stats'),
       req('GET', `/suppliers?${supParams}`),
       req('GET', `/purchase-orders?${poParams}`),
       req('GET', '/stock-movements'),
+      fetch('/api/erp/branches', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()),
     ]);
     setStats(s); setSuppliers(Array.isArray(sup) ? sup : []);
     setPurchaseOrders(Array.isArray(po) ? po : []);
     setMovements(Array.isArray(mov) ? mov : []);
+    setBranches(Array.isArray(br) ? br : []);
     setLoading(false);
   };
 
@@ -106,8 +111,22 @@ export default function AdminInventory() {
     toast.success('Stock updated!'); setMovementDialog(false); loadAll();
   };
 
-  const saveStockEdit = async (productId: string) => {
-    await fetch(`/api/products/${productId}`, {
+  const saveTransfer = async () => {
+    if (!transferForm.product_id || !transferForm.from_branch || !transferForm.to_branch || !transferForm.quantity)
+      return toast.error('All fields required');
+    try {
+      const res = await fetch('/api/erp/stock-transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` },
+        body: JSON.stringify(transferForm),
+      }).then(r => r.json());
+      if (res.error) return toast.error(res.error);
+      toast.success(res.message); setTransferDialog(false); loadAll();
+      api.getProducts().then((p: any) => setProducts(Array.isArray(p) ? p : p?.products || []));
+    } catch { toast.error('Transfer failed'); }
+  };
+
+  const saveStockEdit = async (productId: string) => {    await fetch(`/api/products/${productId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` },
       body: JSON.stringify({ stock: editStockVal, in_stock: editStockVal > 0 ? 1 : 0 }),
@@ -170,6 +189,7 @@ export default function AdminInventory() {
                 <Input placeholder="Search products..." className="pl-8 h-9" value={stockSearch} onChange={e => setStockSearch(e.target.value)} />
               </div>
               <Button size="sm" onClick={() => setMovementDialog(true)} className="gap-1.5"><Plus className="h-4 w-4" /> Adjust Stock</Button>
+              <Button size="sm" variant="outline" onClick={() => setTransferDialog(true)} className="gap-1.5"><ArrowUpDown className="h-4 w-4" /> Transfer</Button>
             </div>
 
             {/* Stock chart */}
@@ -495,6 +515,38 @@ export default function AdminInventory() {
               <div><Label className="text-xs">Notes</Label><Input className="mt-1 h-9" value={movForm.notes} onChange={e => setMovForm(f => ({...f, notes: e.target.value}))} /></div>
             </div>
             <DialogFooter><Button variant="outline" onClick={() => setMovementDialog(false)}>Cancel</Button><Button onClick={saveMovement}>Save</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Stock Transfer Dialog */}
+        <Dialog open={transferDialog} onOpenChange={setTransferDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader><DialogTitle>Inter-Branch Stock Transfer</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div><Label className="text-xs">Product *</Label>
+                <Select value={transferForm.product_id} onValueChange={v => setTransferForm(f => ({...f, product_id: v}))}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Select product" /></SelectTrigger>
+                  <SelectContent>{products.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name} (Stock: {p.stock})</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">From Branch *</Label>
+                  <Select value={transferForm.from_branch} onValueChange={v => setTransferForm(f => ({...f, from_branch: v}))}>
+                    <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="From" /></SelectTrigger>
+                    <SelectContent>{branches.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div><Label className="text-xs">To Branch *</Label>
+                  <Select value={transferForm.to_branch} onValueChange={v => setTransferForm(f => ({...f, to_branch: v}))}>
+                    <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="To" /></SelectTrigger>
+                    <SelectContent>{branches.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div><Label className="text-xs">Quantity *</Label><Input type="number" min={1} className="mt-1 h-9" value={transferForm.quantity} onChange={e => setTransferForm(f => ({...f, quantity: Number(e.target.value)}))} /></div>
+              <div><Label className="text-xs">Notes</Label><Input className="mt-1 h-9" value={transferForm.notes} onChange={e => setTransferForm(f => ({...f, notes: e.target.value}))} /></div>
+            </div>
+            <DialogFooter><Button variant="outline" onClick={() => setTransferDialog(false)}>Cancel</Button><Button onClick={saveTransfer}>Transfer</Button></DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

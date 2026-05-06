@@ -4,7 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, TrendingUp, TrendingDown, RefreshCw, IndianRupee, Package, Wrench, Wallet, Users, Printer } from "lucide-react";import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { BarChart3, TrendingUp, TrendingDown, RefreshCw, IndianRupee, Package, Wrench, Wallet, Users, Printer, FileText, TrendingUp as Forecast } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { api } from "@/lib/api";
 
 const authFetch = (url: string) =>
   fetch(url, { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json());
@@ -17,6 +20,8 @@ export default function AdminERPReports() {
   const [from, setFrom] = useState(daysAgo(30));
   const [to, setTo] = useState(today());
   const [data, setData] = useState<any>({});
+  const [gstData, setGstData] = useState<any>(null);
+  const [forecastData, setForecastData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   const applyPreset = (p: string) => {
@@ -72,6 +77,13 @@ export default function AdminERPReports() {
         staffCount: Array.isArray(staff) ? staff.length : 0,
         techPerf: Array.isArray(techPerf) ? techPerf : [],
       });
+      // GST + Forecast parallel
+      const [gst, forecast] = await Promise.all([
+        authFetch(`/api/erp/gst-report?from=${from}&to=${to}`),
+        authFetch('/api/erp/forecast'),
+      ]);
+      setGstData(gst);
+      setForecastData(forecast);
     } catch { }
     setLoading(false);
   };
@@ -300,6 +312,66 @@ export default function AdminERPReports() {
             </CardContent>
           </Card>
         </div>
+
+        {/* GST Report */}
+        {gstData && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /> GST Summary — {gstData.period?.from} to {gstData.period?.to}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                {[
+                  { label: 'Total GST Collected', value: `₹${(gstData.summary?.totalGST || 0).toLocaleString('en-IN')}`, color: 'text-primary' },
+                  { label: 'CGST (9%)', value: `₹${(gstData.summary?.cgst || 0).toLocaleString('en-IN')}`, color: 'text-blue-600' },
+                  { label: 'SGST (9%)', value: `₹${(gstData.summary?.sgst || 0).toLocaleString('en-IN')}`, color: 'text-purple-600' },
+                  { label: 'GST Invoices', value: (gstData.services?.count || 0) + (gstData.customs?.count || 0), color: 'text-green-600' },
+                ].map(k => (
+                  <div key={k.label} className="border rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">{k.label}</p>
+                    <p className={`text-xl font-black ${k.color}`}>{k.value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between py-1 border-b"><span className="text-muted-foreground">Product Sales (B2C)</span><span className="font-medium">{gstData.orders?.count || 0} invoices · ₹{(gstData.orders?.total || 0).toLocaleString('en-IN')}</span></div>
+                <div className="flex justify-between py-1 border-b"><span className="text-muted-foreground">Service (GST enabled)</span><span className="font-medium">{gstData.services?.count || 0} invoices · GST ₹{(gstData.services?.gst || 0).toLocaleString('en-IN')}</span></div>
+                <div className="flex justify-between py-1"><span className="text-muted-foreground">Custom Invoices (GST enabled)</span><span className="font-medium">{gstData.customs?.count || 0} invoices · GST ₹{(gstData.customs?.gst || 0).toLocaleString('en-IN')}</span></div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Sales Forecast */}
+        {forecastData && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-600" /> Sales Forecast (Next 4 Weeks)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="border rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Avg Weekly Revenue</p>
+                  <p className="text-xl font-black text-primary">₹{(forecastData.avgWeeklyRevenue || 0).toLocaleString('en-IN')}</p>
+                </div>
+                <div className="border rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Pipeline Value (CRM)</p>
+                  <p className="text-xl font-black text-blue-600">₹{(forecastData.pipelineValue || 0).toLocaleString('en-IN')}</p>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={forecastData.forecast || []}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="week" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
+                  <Tooltip formatter={(v: any) => [`₹${Number(v).toLocaleString('en-IN')}`, 'Predicted']} />
+                  <Bar dataKey="predicted" fill="#FF8000" radius={[4,4,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
       </div>
     </ERPLayout>
   );
