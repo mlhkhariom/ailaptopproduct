@@ -731,7 +731,7 @@ router.get('/forecast', authMiddleware, adminOnly, async (req, res) => {
     GROUP BY week ORDER BY week ASC`).all() || [];
 
   // Simple linear regression for next 4 weeks
-  const weekMap: Record<string, number> = {};
+  const weekMap = {};
   rows.forEach(r => { weekMap[r.week] = (weekMap[r.week] || 0) + (r.order_rev || 0); });
   serviceRows.forEach(r => { weekMap[r.week] = (weekMap[r.week] || 0) + (r.service_rev || 0); });
 
