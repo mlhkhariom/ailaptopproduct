@@ -36,7 +36,7 @@ const emptyForm = {
   parts_used: [] as { name: string; qty: number; price: number }[],
   labour_charge: 0, parts_charge: 0,
   status: 'pending', payment_status: 'pending', payment_method: '', notes: '',
-  branch_id: '', gst_enabled: 0, warranty_days: 0,
+  branch_id: '', gst_enabled: 0, warranty_days: 0, sla_hours: 24,
 };
 
 export default function AdminJobCards() {
@@ -215,6 +215,7 @@ export default function AdminJobCards() {
                   <td className="p-3">
                     <p className="text-xs font-medium">{j.customer_name}</p>
                     <p className="text-[10px] text-muted-foreground">{j.customer_phone}</p>
+                    {j.sla_breached ? <span className="text-[10px] text-red-600 font-bold">SLA Breached</span> : null}
                   </td>
                   <td className="p-3 text-xs">
                     <p>{j.device_brand} {j.device_model}</p>
@@ -455,13 +456,16 @@ export default function AdminJobCards() {
                 </div>
               </div>
 
-              {/* Warranty + Notes */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Warranty + SLA + Notes */}
+              <div className="grid grid-cols-3 gap-3">
                 <div><Label className="text-xs">Warranty (days)</Label>
-                  <Input type="number" min={0} className="mt-1 h-9" value={form.warranty_days || 0} onChange={e => setForm((f: any) => ({ ...f, warranty_days: Number(e.target.value) }))} placeholder="0 = no warranty" />
+                  <Input type="number" min={0} className="mt-1 h-9" value={form.warranty_days || 0} onChange={e => setForm((f: any) => ({ ...f, warranty_days: Number(e.target.value) }))} placeholder="0" />
+                </div>
+                <div><Label className="text-xs">SLA (hours)</Label>
+                  <Input type="number" min={1} className="mt-1 h-9" value={form.sla_hours || 24} onChange={e => setForm((f: any) => ({ ...f, sla_hours: Number(e.target.value) }))} placeholder="24" />
                 </div>
                 <div className="flex items-end pb-1">
-                  {form.warranty_days > 0 && <p className="text-xs text-green-600 font-medium">{form.warranty_days} days warranty after completion</p>}
+                  {form.warranty_days > 0 && <p className="text-xs text-green-600 font-medium">{form.warranty_days}d warranty</p>}
                 </div>
               </div>
               <div><Label className="text-xs">Internal Notes</Label>

@@ -22,6 +22,7 @@ export default function AdminERPReports() {
   const [data, setData] = useState<any>({});
   const [gstData, setGstData] = useState<any>(null);
   const [forecastData, setForecastData] = useState<any>(null);
+  const [branchComp, setBranchComp] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   const applyPreset = (p: string) => {
@@ -84,6 +85,8 @@ export default function AdminERPReports() {
       ]);
       setGstData(gst);
       setForecastData(forecast);
+      const bc = await authFetch(`/api/erp/branch-comparison?from=${from}&to=${to}`);
+      setBranchComp(bc);
     } catch { }
     setLoading(false);
   };
@@ -371,6 +374,55 @@ export default function AdminERPReports() {
             </CardContent>
           </Card>
         )}
+
+
+        {/* Branch Comparison */}
+        {branchComp && branchComp.branches?.length > 1 && (
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm">Branch Comparison</CardTitle>
+              <span className="text-xs text-muted-foreground">{branchComp.period?.from} → {branchComp.period?.to}</span>
+            </CardHeader>
+            <CardContent className="p-0">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50"><tr>
+                  <th className="text-left p-3 text-xs font-semibold">Branch</th>
+                  <th className="text-center p-3 text-xs font-semibold">Orders</th>
+                  <th className="text-right p-3 text-xs font-semibold text-blue-600">Order Revenue</th>
+                  <th className="text-center p-3 text-xs font-semibold">Service Jobs</th>
+                  <th className="text-right p-3 text-xs font-semibold text-orange-600">Service Revenue</th>
+                  <th className="text-right p-3 text-xs font-semibold text-green-600">Total Revenue</th>
+                </tr></thead>
+                <tbody>
+                  {branchComp.branches.map((b: any) => (
+                    <tr key={b.branch.id} className="border-t hover:bg-muted/30">
+                      <td className="p-3 font-bold">{b.branch.name}</td>
+                      <td className="p-3 text-center">{b.orders.count}</td>
+                      <td className="p-3 text-right">₹{(b.orders.revenue || 0).toLocaleString('en-IN')}</td>
+                      <td className="p-3 text-center">{b.jobs.count} ({b.jobs.completed} done)</td>
+                      <td className="p-3 text-right">₹{(b.jobs.revenue || 0).toLocaleString('en-IN')}</td>
+                      <td className="p-3 text-right font-black text-green-600">₹{(b.totalRevenue || 0).toLocaleString('en-IN')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* GSTR-1 Export */}
+        <Card>
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /> GSTR-1 Export</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-3">Export GST-enabled invoices in GSTR-1 format for filing. Period: {from} to {to}</p>
+            <a href={`/api/erp/gstr1-export?from=${from}&to=${to}`} download>
+              <Button className="gap-1.5"><FileText className="h-4 w-4" /> Download GSTR-1 CSV</Button>
+            </a>
+          </CardContent>
+        </Card>
+
 
       </div>
     </ERPLayout>

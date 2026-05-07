@@ -26,6 +26,7 @@ const erpGroups = [
     labelIcon: DollarSign,
     items: [
       { title: "Billing", url: "/admin/erp/billing", icon: Receipt, badge: "core" },
+      { title: "Recurring", url: "/admin/erp/recurring", icon: Calendar },
       { title: "Expenses", url: "/admin/erp/expenses", icon: Wallet },
       { title: "ERP Reports", url: "/admin/erp/reports", icon: BarChart3 },
     ],

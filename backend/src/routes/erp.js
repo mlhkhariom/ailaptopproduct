@@ -878,3 +878,167 @@ router.get('/commissions/summary', authMiddleware, adminOnly, async (req, res) =
 });
 
 export default router;
+
+// ── SLA TRACKING ──────────────────────────────────────────
+
+router.get('/sla-report', authMiddleware, adminOnly, async (req, res) => {
+  const rows = await db.prepare(`
+    SELECT *, 
+      EXTRACT(EPOCH FROM (NOW() - created_at::timestamptz))/3600 as hours_elapsed,
+      CASE WHEN EXTRACT(EPOCH FROM (NOW() - created_at::timestamptz))/3600 > COALESCE(sla_hours,24) 
+           AND status NOT IN ('completed','cancelled') THEN 1 ELSE 0 END as is_breached
+    FROM service_bookings 
+    WHERE status NOT IN ('completed','cancelled')
+    ORDER BY created_at ASC
+  `).all() || [];
+  // Auto-mark breached
+  for (const r of rows) {
+    if (r.is_breached && !r.sla_breached) {
+      await db.prepare('UPDATE service_bookings SET sla_breached=1 WHERE id=?').run(r.id);
+    }
+  }
+  res.json(rows);
+});
+
+router.patch('/job-cards/:id/sla', authMiddleware, adminOnly, async (req, res) => {
+  const { sla_hours } = req.body;
+  await db.prepare('UPDATE service_bookings SET sla_hours=? WHERE id=?').run(sla_hours || 24, req.params.id);
+  res.json({ message: 'SLA updated' });
+});
+
+// ── RECURRING INVOICES ────────────────────────────────────
+
+router.get('/recurring', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM recurring_invoices ORDER BY next_date ASC').all() || []);
+});
+
+router.post('/recurring', authMiddleware, adminOnly, async (req, res) => {
+  const { customer_name, customer_phone, customer_email, items, subtotal, discount, total, gst_enabled, payment_method, notes, frequency, next_date } = req.body;
+  if (!customer_name || !next_date) return res.status(400).json({ error: 'customer_name and next_date required' });
+  const id = uuid();
+  await db.prepare(`INSERT INTO recurring_invoices (id,customer_name,customer_phone,customer_email,items,subtotal,discount,total,gst_enabled,payment_method,notes,frequency,next_date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    .run(id, customer_name, customer_phone, customer_email, JSON.stringify(items || []), subtotal || 0, discount || 0, total || 0, gst_enabled ? 1 : 0, payment_method || 'cash', notes, frequency || 'monthly', next_date);
+  res.status(201).json({ id });
+});
+
+router.put('/recurring/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { is_active, next_date, frequency } = req.body;
+  await db.prepare('UPDATE recurring_invoices SET is_active=?,next_date=?,frequency=? WHERE id=?').run(is_active ? 1 : 0, next_date, frequency, req.params.id);
+  res.json({ message: 'Updated' });
+});
+
+// Process due recurring invoices — called by scheduler
+router.post('/recurring/process', authMiddleware, adminOnly, async (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+  const due = await db.prepare("SELECT * FROM recurring_invoices WHERE is_active=1 AND next_date<=?").all(today) || [];
+  const created = [];
+  for (const r of due) {
+    const invoice_number = 'ALW-' + Date.now().toString().slice(-6);
+    const id = uuid();
+    await db.prepare(`INSERT INTO custom_invoices (id,invoice_number,customer_name,customer_phone,customer_email,items,subtotal,discount,total,notes,payment_status,payment_method,gst_enabled) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(id, invoice_number, r.customer_name, r.customer_phone, r.customer_email, r.items, r.subtotal, r.discount, r.total, r.notes, 'pending', r.payment_method, r.gst_enabled);
+    // Calculate next date
+    const next = new Date(r.next_date);
+    if (r.frequency === 'monthly') next.setMonth(next.getMonth() + 1);
+    else if (r.frequency === 'quarterly') next.setMonth(next.getMonth() + 3);
+    else if (r.frequency === 'yearly') next.setFullYear(next.getFullYear() + 1);
+    await db.prepare('UPDATE recurring_invoices SET last_generated=?,next_date=? WHERE id=?').run(today, next.toISOString().split('T')[0], r.id);
+    created.push({ invoice_number, customer: r.customer_name });
+  }
+  res.json({ processed: created.length, invoices: created });
+});
+
+// ── PRODUCT BUNDLES ───────────────────────────────────────
+
+router.get('/bundles', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM product_bundles WHERE is_active=1 ORDER BY name ASC').all() || []);
+});
+
+router.post('/bundles', authMiddleware, adminOnly, async (req, res) => {
+  const { name, description, price, components } = req.body;
+  if (!name || !price) return res.status(400).json({ error: 'name and price required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO product_bundles (id,name,description,price,components) VALUES (?,?,?,?,?)').run(id, name, description, price, JSON.stringify(components || []));
+  res.status(201).json({ id });
+});
+
+router.put('/bundles/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { name, description, price, components, is_active } = req.body;
+  await db.prepare('UPDATE product_bundles SET name=?,description=?,price=?,components=?,is_active=? WHERE id=?').run(name, description, price, JSON.stringify(components || []), is_active ? 1 : 0, req.params.id);
+  res.json({ message: 'Updated' });
+});
+
+// ── STOCK AGING REPORT ────────────────────────────────────
+
+router.get('/stock-aging', authMiddleware, adminOnly, async (req, res) => {
+  const rows = await db.prepare(`
+    SELECT p.id, p.name, p.category, p.stock, p.price, p.created_at,
+      EXTRACT(DAY FROM NOW() - p.created_at::timestamptz) as days_in_stock,
+      p.stock * p.price as stock_value
+    FROM products p
+    WHERE p.status='active' AND p.stock > 0
+    ORDER BY days_in_stock DESC
+  `).all() || [];
+  const aged30 = rows.filter(r => r.days_in_stock >= 30 && r.days_in_stock < 60);
+  const aged60 = rows.filter(r => r.days_in_stock >= 60 && r.days_in_stock < 90);
+  const aged90 = rows.filter(r => r.days_in_stock >= 90);
+  res.json({ all: rows, aged30, aged60, aged90, totalValue: rows.reduce((s, r) => s + (r.stock_value || 0), 0) });
+});
+
+// ── BRANCH COMPARISON ─────────────────────────────────────
+
+router.get('/branch-comparison', authMiddleware, adminOnly, async (req, res) => {
+  const { from, to } = req.query;
+  const f = from || new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+  const t = to || new Date().toISOString().split('T')[0];
+  const branches = await db.prepare('SELECT * FROM branches WHERE is_active=1').all() || [];
+  const result = await Promise.all(branches.map(async b => {
+    const [orders, jobs, leads] = await Promise.all([
+      db.prepare("SELECT COUNT(*) as c, COALESCE(SUM(total),0) as rev FROM orders WHERE branch_id=? AND payment_status='paid' AND DATE(created_at) BETWEEN ? AND ?").get(b.id, f, t),
+      db.prepare("SELECT COUNT(*) as c, COALESCE(SUM(total_charge),0) as rev, COUNT(CASE WHEN status='completed' THEN 1 END) as completed FROM service_bookings WHERE branch_id=? AND DATE(created_at) BETWEEN ? AND ?").get(b.id, f, t),
+      db.prepare("SELECT COUNT(*) as c FROM leads WHERE DATE(created_at) BETWEEN ? AND ?").get(f, t),
+    ]);
+    return {
+      branch: b,
+      orders: { count: orders?.c || 0, revenue: orders?.rev || 0 },
+      jobs: { count: jobs?.c || 0, revenue: jobs?.rev || 0, completed: jobs?.completed || 0 },
+      totalRevenue: (orders?.rev || 0) + (jobs?.rev || 0),
+    };
+  }));
+  res.json({ period: { from: f, to: t }, branches: result });
+});
+
+// ── GSTR-1 EXPORT ─────────────────────────────────────────
+
+router.get('/gstr1-export', authMiddleware, adminOnly, async (req, res) => {
+  const { from, to } = req.query;
+  const f = from || new Date().toISOString().slice(0, 7) + '-01';
+  const t = to || new Date().toISOString().split('T')[0];
+
+  const services = await db.prepare(`SELECT booking_number as invoice_no, customer_name, customer_phone, total_charge as taxable_value, gst_enabled, created_at FROM service_bookings WHERE payment_status='paid' AND gst_enabled=1 AND DATE(created_at) BETWEEN ? AND ?`).all(f, t) || [];
+  const customs = await db.prepare(`SELECT invoice_number as invoice_no, customer_name, customer_phone, (subtotal-discount) as taxable_value, gst_enabled, created_at FROM custom_invoices WHERE payment_status='paid' AND gst_enabled=1 AND DATE(created_at) BETWEEN ? AND ?`).all(f, t) || [];
+
+  const allInvoices = [...services, ...customs].map(inv => ({
+    invoice_no: inv.invoice_no,
+    invoice_date: new Date(inv.created_at).toLocaleDateString('en-IN'),
+    customer_name: inv.customer_name,
+    customer_phone: inv.customer_phone,
+    taxable_value: Math.round(inv.taxable_value || 0),
+    cgst_rate: 9, cgst_amount: Math.round((inv.taxable_value || 0) * 0.09),
+    sgst_rate: 9, sgst_amount: Math.round((inv.taxable_value || 0) * 0.09),
+    total_tax: Math.round((inv.taxable_value || 0) * 0.18),
+    invoice_value: Math.round((inv.taxable_value || 0) * 1.18),
+  }));
+
+  const totalTaxable = allInvoices.reduce((s, i) => s + i.taxable_value, 0);
+  const totalTax = allInvoices.reduce((s, i) => s + i.total_tax, 0);
+
+  // CSV format
+  const headers = ['Invoice No', 'Invoice Date', 'Customer Name', 'Phone', 'Taxable Value', 'CGST Rate', 'CGST Amount', 'SGST Rate', 'SGST Amount', 'Total Tax', 'Invoice Value'];
+  const rows = allInvoices.map(i => [i.invoice_no, i.invoice_date, i.customer_name, i.customer_phone, i.taxable_value, i.cgst_rate + '%', i.cgst_amount, i.sgst_rate + '%', i.sgst_amount, i.total_tax, i.invoice_value]);
+  const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename=GSTR1_${f}_${t}.csv`);
+  res.send(csv);
+});

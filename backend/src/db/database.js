@@ -386,9 +386,25 @@ export const initDB = async () => {
       amount REAL NOT NULL, payment_method TEXT DEFAULT 'cash',
       notes TEXT, created_by TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
+    // Sprint 6 — SLA, Recurring Invoices, Product Bundles
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS sla_hours INTEGER DEFAULT 24",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS sla_breached INTEGER DEFAULT 0",
+    `CREATE TABLE IF NOT EXISTS recurring_invoices (
+      id TEXT PRIMARY KEY, customer_name TEXT NOT NULL, customer_phone TEXT,
+      customer_email TEXT, items JSONB DEFAULT '[]', subtotal REAL DEFAULT 0,
+      discount REAL DEFAULT 0, total REAL DEFAULT 0, gst_enabled INTEGER DEFAULT 0,
+      payment_method TEXT DEFAULT 'cash', notes TEXT,
+      frequency TEXT DEFAULT 'monthly', next_date DATE NOT NULL,
+      last_generated DATE, is_active INTEGER DEFAULT 1,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS product_bundles (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT,
+      price REAL NOT NULL, components JSONB DEFAULT '[]',
+      is_active INTEGER DEFAULT 1, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     // Sprint 5 — Leave Management + Serial Numbers + Commission
-    `CREATE TABLE IF NOT EXISTS leave_requests (
-      id TEXT PRIMARY KEY, staff_id TEXT NOT NULL, type TEXT DEFAULT 'casual',
+    `CREATE TABLE IF NOT EXISTS leave_requests (      id TEXT PRIMARY KEY, staff_id TEXT NOT NULL, type TEXT DEFAULT 'casual',
       from_date DATE NOT NULL, to_date DATE NOT NULL, days INTEGER DEFAULT 1,
       reason TEXT, status TEXT DEFAULT 'pending', approved_by TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()

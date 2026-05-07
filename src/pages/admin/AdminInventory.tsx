@@ -50,6 +50,7 @@ export default function AdminInventory() {
   const [transferForm, setTransferForm] = useState({ product_id: '', from_branch: '', to_branch: '', quantity: 1, notes: '' });
   const [branches, setBranches] = useState<any[]>([]);
   const [serials, setSerials] = useState<any[]>([]);
+  const [agingData, setAgingData] = useState<any>(null);
   const [serialSearch, setSerialSearch] = useState('');
   const [serialDialog, setSerialDialog] = useState(false);
   const [serialForm, setSerialForm] = useState({ product_id: '', serial: '', notes: '' });
@@ -79,6 +80,7 @@ export default function AdminInventory() {
     setPurchaseOrders(Array.isArray(po) ? po : []);
     setMovements(Array.isArray(mov) ? mov : []);
     setBranches(Array.isArray(br) ? br : []);
+    fetch('/api/erp/stock-aging', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setAgingData(d)).catch(() => {});
     // Load serials
     const sn = await fetch('/api/erp/serials', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json());
     setSerials(Array.isArray(sn) ? sn : []);
@@ -199,6 +201,7 @@ export default function AdminInventory() {
             <TabsTrigger value="suppliers" className="gap-1.5"><Truck className="h-3.5 w-3.5" /> Suppliers</TabsTrigger>
             <TabsTrigger value="po" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Purchase Orders</TabsTrigger>
             <TabsTrigger value="serials" className="gap-1.5"><Search className="h-3.5 w-3.5" /> Serial Numbers</TabsTrigger>
+            <TabsTrigger value="aging" className="gap-1.5"><AlertTriangle className="h-3.5 w-3.5" /> Stock Aging</TabsTrigger>
           </TabsList>
 
           {/* Stock Overview */}
@@ -480,6 +483,57 @@ export default function AdminInventory() {
               </table>
             </div>
           </TabsContent>
+
+          {/* Stock Aging */}
+          <TabsContent value="aging" className="space-y-4">
+            {agingData && (
+              <>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: '30-60 Days', items: agingData.aged30 || [], color: 'text-yellow-600' },
+                    { label: '60-90 Days', items: agingData.aged60 || [], color: 'text-orange-600' },
+                    { label: '90+ Days (Dead Stock)', items: agingData.aged90 || [], color: 'text-red-600' },
+                  ].map(g => (
+                    <div key={g.label} className="border rounded-xl p-4">
+                      <p className="text-xs text-muted-foreground">{g.label}</p>
+                      <p className={`text-2xl font-black ${g.color}`}>{g.items.length}</p>
+                      <p className="text-xs text-muted-foreground">₹{g.items.reduce((s: number, i: any) => s + (i.stock_value || 0), 0).toLocaleString('en-IN')}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="border rounded-xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50"><tr>
+                      <th className="text-left p-3 text-xs font-semibold">Product</th>
+                      <th className="text-left p-3 text-xs font-semibold">Category</th>
+                      <th className="text-center p-3 text-xs font-semibold">Stock</th>
+                      <th className="text-right p-3 text-xs font-semibold">Value</th>
+                      <th className="text-center p-3 text-xs font-semibold">Days in Stock</th>
+                      <th className="text-center p-3 text-xs font-semibold">Status</th>
+                    </tr></thead>
+                    <tbody>
+                      {(agingData.all || []).map((p: any) => (
+                        <tr key={p.id} className={`border-t hover:bg-muted/30 ${p.days_in_stock >= 90 ? 'bg-red-50/50' : p.days_in_stock >= 60 ? 'bg-orange-50/50' : p.days_in_stock >= 30 ? 'bg-yellow-50/50' : ''}`}>
+                          <td className="p-3 font-medium">{p.name}</td>
+                          <td className="p-3 text-sm text-muted-foreground">{p.category}</td>
+                          <td className="p-3 text-center font-bold">{p.stock}</td>
+                          <td className="p-3 text-right font-bold">₹{(p.stock_value || 0).toLocaleString('en-IN')}</td>
+                          <td className="p-3 text-center font-bold">{Math.round(p.days_in_stock || 0)}</td>
+                          <td className="p-3 text-center">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.days_in_stock >= 90 ? 'bg-red-100 text-red-700' : p.days_in_stock >= 60 ? 'bg-orange-100 text-orange-700' : p.days_in_stock >= 30 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
+                              {p.days_in_stock >= 90 ? 'Dead Stock' : p.days_in_stock >= 60 ? 'Slow Moving' : p.days_in_stock >= 30 ? 'Aging' : 'Fresh'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+            {!agingData && <p className="text-center text-muted-foreground py-10">Loading aging data...</p>}
+          </TabsContent>
+
         </Tabs>
 
         {/* Supplier Dialog */}
