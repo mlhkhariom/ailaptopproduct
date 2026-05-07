@@ -36,6 +36,7 @@ const erpGroups = [
     labelIcon: UserCheck,
     items: [
       { title: "Staff", url: "/admin/erp/staff", icon: UserCheck },
+      { title: "Payroll", url: "/admin/erp/payroll", icon: IndianRupee },
       { title: "Attendance", url: "/admin/erp/attendance", icon: Calendar },
       { title: "Leaves", url: "/admin/erp/leaves", icon: Calendar },
       { title: "Branches", url: "/admin/erp/branches", icon: Building2 },

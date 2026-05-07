@@ -61,6 +61,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminAttendance from "./pages/admin/AdminAttendance";
 import AdminLeaves from "./pages/admin/AdminLeaves";
 import AdminRecurring from "./pages/admin/AdminRecurring";
+import AdminPayroll from "./pages/admin/AdminPayroll";
 import AdminWATemplates from "./pages/admin/AdminWATemplates";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import RepairTrack from "./pages/RepairTrack";
@@ -138,6 +139,7 @@ const App = () => (
             <Route path="/admin/contacts" element={<AdminRoute><AdminContacts /></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
             <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
+            <Route path="/admin/erp/payroll" element={<AdminRoute><AdminPayroll /></AdminRoute>} />
             <Route path="/admin/erp/recurring" element={<AdminRoute><AdminRecurring /></AdminRoute>} />
             <Route path="/admin/erp/leaves" element={<AdminRoute><AdminLeaves /></AdminRoute>} />
             <Route path="/admin/erp/attendance" element={<AdminRoute><AdminAttendance /></AdminRoute>} />

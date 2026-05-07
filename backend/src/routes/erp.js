@@ -1177,3 +1177,91 @@ router.get('/einvoice/:invoice_id', authMiddleware, adminOnly, async (req, res) 
   if (!inv) return res.status(404).json({ error: 'Not found' });
   res.json(inv);
 });
+
+// ── PAYROLL ───────────────────────────────────────────────
+
+// List payroll — filter by month
+router.get('/payroll', authMiddleware, adminOnly, async (req, res) => {
+  const { month } = req.query;
+  const rows = month
+    ? await db.prepare(`SELECT p.*, s.name as staff_name, s.role, s.salary as base_salary FROM payroll p LEFT JOIN staff s ON s.id=p.staff_id WHERE p.month=? ORDER BY s.name`).all(month)
+    : await db.prepare(`SELECT p.*, s.name as staff_name, s.role, s.salary as base_salary FROM payroll p LEFT JOIN staff s ON s.id=p.staff_id ORDER BY p.month DESC, s.name`).all();
+  res.json(rows || []);
+});
+
+// Auto-generate payroll for all active staff for a month
+router.post('/payroll/generate', authMiddleware, adminOnly, async (req, res) => {
+  const { month } = req.body; // format: 2026-05
+  if (!month) return res.status(400).json({ error: 'month required (YYYY-MM)' });
+  const staff = await db.prepare("SELECT * FROM staff WHERE is_active=1").all() || [];
+  const created = [];
+  for (const s of staff) {
+    const exists = await db.prepare('SELECT id FROM payroll WHERE staff_id=? AND month=?').get(s.id, month);
+    if (exists) continue;
+    // Get present days from attendance
+    const att = await db.prepare(`SELECT COUNT(*) as c FROM attendance WHERE staff_id=? AND DATE(date) BETWEEN ? AND ? AND status='present'`).get(s.id, `${month}-01`, `${month}-31`);
+    const present = att?.c || 26;
+    const basic = s.salary || 0;
+    const perDay = basic / 26;
+    const earnedBasic = parseFloat((perDay * present).toFixed(2));
+    const hra = parseFloat((earnedBasic * 0.4).toFixed(2));
+    const gross = parseFloat((earnedBasic + hra).toFixed(2));
+    // PF: 12% employee + 12% employer on basic (if basic > 15000, cap at 1800)
+    const pfBase = Math.min(earnedBasic, 15000);
+    const pf_employee = parseFloat((pfBase * 0.12).toFixed(2));
+    const pf_employer = parseFloat((pfBase * 0.12).toFixed(2));
+    // ESI: 0.75% employee + 3.25% employer (if gross <= 21000)
+    const esi_employee = gross <= 21000 ? parseFloat((gross * 0.0075).toFixed(2)) : 0;
+    const esi_employer = gross <= 21000 ? parseFloat((gross * 0.0325).toFixed(2)) : 0;
+    // Advance deduction
+    const adv = await db.prepare("SELECT COALESCE(SUM(amount),0) as total FROM staff_advances WHERE staff_id=? AND month=? AND deducted=0").get(s.id, month);
+    const advance_deduction = adv?.total || 0;
+    const net = parseFloat((gross - pf_employee - esi_employee - advance_deduction).toFixed(2));
+    const id = uuid();
+    await db.prepare(`INSERT INTO payroll (id,staff_id,month,basic,hra,gross,pf_employee,pf_employer,esi_employee,esi_employer,advance_deduction,net,working_days,present_days) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(id, s.id, month, earnedBasic, hra, gross, pf_employee, pf_employer, esi_employee, esi_employer, advance_deduction, net, 26, present);
+    created.push({ id, staff: s.name, net });
+  }
+  res.json({ generated: created.length, records: created });
+});
+
+// Update single payroll record
+router.put('/payroll/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { basic, hra, allowances, pf_employee, esi_employee, tds, advance_deduction, other_deduction, present_days, notes, status, paid_on } = req.body;
+  const gross = (basic || 0) + (hra || 0) + (allowances || 0);
+  const net = gross - (pf_employee || 0) - (esi_employee || 0) - (tds || 0) - (advance_deduction || 0) - (other_deduction || 0);
+  await db.prepare(`UPDATE payroll SET basic=?,hra=?,allowances=?,pf_employee=?,esi_employee=?,tds=?,advance_deduction=?,other_deduction=?,gross=?,net=?,present_days=?,notes=?,status=?,paid_on=? WHERE id=?`)
+    .run(basic, hra, allowances || 0, pf_employee, esi_employee, tds || 0, advance_deduction, other_deduction || 0, gross, net, present_days, notes, status || 'draft', paid_on || null, req.params.id);
+  res.json({ message: 'Updated' });
+});
+
+// Mark as paid
+router.patch('/payroll/:id/pay', authMiddleware, adminOnly, async (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+  await db.prepare("UPDATE payroll SET status='paid', paid_on=? WHERE id=?").run(today, req.params.id);
+  res.json({ message: 'Marked as paid' });
+});
+
+// Salary slip data
+router.get('/payroll/:id/slip', authMiddleware, adminOnly, async (req, res) => {
+  const row = await db.prepare(`SELECT p.*, s.name as staff_name, s.role, s.phone FROM payroll p LEFT JOIN staff s ON s.id=p.staff_id WHERE p.id=?`).get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  res.json(row);
+});
+
+// Staff advances
+router.get('/staff-advances', authMiddleware, adminOnly, async (req, res) => {
+  const { staff_id } = req.query;
+  const rows = staff_id
+    ? await db.prepare('SELECT * FROM staff_advances WHERE staff_id=? ORDER BY created_at DESC').all(staff_id)
+    : await db.prepare('SELECT a.*, s.name as staff_name FROM staff_advances a LEFT JOIN staff s ON s.id=a.staff_id ORDER BY a.created_at DESC').all();
+  res.json(rows || []);
+});
+
+router.post('/staff-advances', authMiddleware, adminOnly, async (req, res) => {
+  const { staff_id, amount, month, reason } = req.body;
+  if (!staff_id || !amount) return res.status(400).json({ error: 'staff_id and amount required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO staff_advances (id,staff_id,amount,month,reason) VALUES (?,?,?,?,?)').run(id, staff_id, amount, month || new Date().toISOString().slice(0, 7), reason || '');
+  res.status(201).json({ id });
+});

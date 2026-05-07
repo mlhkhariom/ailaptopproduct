@@ -413,6 +413,22 @@ export const initDB = async () => {
       price REAL NOT NULL, components JSONB DEFAULT '[]',
       is_active INTEGER DEFAULT 1, created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
+    // Sprint 7 — Payroll
+    `CREATE TABLE IF NOT EXISTS payroll (      id TEXT PRIMARY KEY, staff_id TEXT NOT NULL, month TEXT NOT NULL,
+      basic REAL DEFAULT 0, hra REAL DEFAULT 0, allowances REAL DEFAULT 0,
+      pf_employee REAL DEFAULT 0, pf_employer REAL DEFAULT 0,
+      esi_employee REAL DEFAULT 0, esi_employer REAL DEFAULT 0,
+      tds REAL DEFAULT 0, advance_deduction REAL DEFAULT 0, other_deduction REAL DEFAULT 0,
+      gross REAL DEFAULT 0, net REAL DEFAULT 0,
+      working_days INTEGER DEFAULT 26, present_days INTEGER DEFAULT 26,
+      status TEXT DEFAULT 'draft', paid_on TEXT, notes TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS staff_advances (
+      id TEXT PRIMARY KEY, staff_id TEXT NOT NULL, amount REAL NOT NULL,
+      month TEXT, reason TEXT, deducted INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     // Sprint 5 — Leave Management + Serial Numbers + Commission
     `CREATE TABLE IF NOT EXISTS leave_requests (      id TEXT PRIMARY KEY, staff_id TEXT NOT NULL, type TEXT DEFAULT 'casual',
       from_date DATE NOT NULL, to_date DATE NOT NULL, days INTEGER DEFAULT 1,
