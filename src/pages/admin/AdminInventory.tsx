@@ -49,6 +49,10 @@ export default function AdminInventory() {
   const [transferDialog, setTransferDialog] = useState(false);
   const [transferForm, setTransferForm] = useState({ product_id: '', from_branch: '', to_branch: '', quantity: 1, notes: '' });
   const [branches, setBranches] = useState<any[]>([]);
+  const [serials, setSerials] = useState<any[]>([]);
+  const [serialSearch, setSerialSearch] = useState('');
+  const [serialDialog, setSerialDialog] = useState(false);
+  const [serialForm, setSerialForm] = useState({ product_id: '', serial: '', notes: '' });
   const [editingSupplier, setEditingSupplier] = useState<any>(null);
   const [editingPO, setEditingPO] = useState<any>(null);
 
@@ -75,6 +79,9 @@ export default function AdminInventory() {
     setPurchaseOrders(Array.isArray(po) ? po : []);
     setMovements(Array.isArray(mov) ? mov : []);
     setBranches(Array.isArray(br) ? br : []);
+    // Load serials
+    const sn = await fetch('/api/erp/serials', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json());
+    setSerials(Array.isArray(sn) ? sn : []);
     setLoading(false);
   };
 
@@ -109,6 +116,18 @@ export default function AdminInventory() {
     if (!movForm.product_id || !movForm.quantity) return toast.error('Product and quantity required');
     await req('POST', '/stock-movements', movForm);
     toast.success('Stock updated!'); setMovementDialog(false); loadAll();
+  };
+
+  const saveSerial = async () => {
+    if (!serialForm.product_id || !serialForm.serial) return toast.error('Product and serial required');
+    try {
+      await fetch('/api/erp/serials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` },
+        body: JSON.stringify(serialForm),
+      });
+      toast.success('Serial added!'); setSerialDialog(false); loadAll();
+    } catch { toast.error('Failed'); }
   };
 
   const saveTransfer = async () => {
@@ -179,6 +198,7 @@ export default function AdminInventory() {
             <TabsTrigger value="movements" className="gap-1.5"><ArrowUpDown className="h-3.5 w-3.5" /> Movements</TabsTrigger>
             <TabsTrigger value="suppliers" className="gap-1.5"><Truck className="h-3.5 w-3.5" /> Suppliers</TabsTrigger>
             <TabsTrigger value="po" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Purchase Orders</TabsTrigger>
+            <TabsTrigger value="serials" className="gap-1.5"><Search className="h-3.5 w-3.5" /> Serial Numbers</TabsTrigger>
           </TabsList>
 
           {/* Stock Overview */}
@@ -417,6 +437,49 @@ export default function AdminInventory() {
               {!purchaseOrders.length && <p className="text-center text-muted-foreground py-10">No purchase orders yet</p>}
             </div>
           </TabsContent>
+
+          {/* Serial Numbers */}
+          <TabsContent value="serials" className="space-y-4">
+            <div className="flex gap-2 items-center flex-wrap">
+              <div className="relative flex-1 min-w-48">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search serial number or product..." className="pl-8 h-9"
+                  value={serialSearch} onChange={e => setSerialSearch(e.target.value)} />
+              </div>
+              <Button size="sm" onClick={() => { setSerialForm({ product_id: '', serial: '', notes: '' }); setSerialDialog(true); }} className="gap-1.5">
+                <Plus className="h-4 w-4" /> Add Serial
+              </Button>
+            </div>
+            <div className="border rounded-xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="text-left p-3 text-xs font-semibold">Serial Number</th>
+                    <th className="text-left p-3 text-xs font-semibold">Product</th>
+                    <th className="text-center p-3 text-xs font-semibold">Status</th>
+                    <th className="text-left p-3 text-xs font-semibold">Notes</th>
+                    <th className="text-left p-3 text-xs font-semibold">Added</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {serials
+                    .filter(s => !serialSearch || s.serial?.toLowerCase().includes(serialSearch.toLowerCase()) || s.product_name?.toLowerCase().includes(serialSearch.toLowerCase()))
+                    .map((s: any) => (
+                    <tr key={s.id} className="border-t hover:bg-muted/30">
+                      <td className="p-3 font-mono font-bold text-primary">{s.serial}</td>
+                      <td className="p-3 text-sm">{s.product_name}</td>
+                      <td className="p-3 text-center">
+                        <Badge variant={s.status === 'in_stock' ? 'default' : s.status === 'sold' ? 'secondary' : 'outline'} className="text-xs capitalize">{s.status}</Badge>
+                      </td>
+                      <td className="p-3 text-sm text-muted-foreground">{s.notes || '—'}</td>
+                      <td className="p-3 text-sm text-muted-foreground">{new Date(s.created_at).toLocaleDateString('en-IN')}</td>
+                    </tr>
+                  ))}
+                  {!serials.length && <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No serial numbers added yet</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
         </Tabs>
 
         {/* Supplier Dialog */}
@@ -547,6 +610,24 @@ export default function AdminInventory() {
               <div><Label className="text-xs">Notes</Label><Input className="mt-1 h-9" value={transferForm.notes} onChange={e => setTransferForm(f => ({...f, notes: e.target.value}))} /></div>
             </div>
             <DialogFooter><Button variant="outline" onClick={() => setTransferDialog(false)}>Cancel</Button><Button onClick={saveTransfer}>Transfer</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Serial Number Dialog */}
+        <Dialog open={serialDialog} onOpenChange={setSerialDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader><DialogTitle>Add Serial Number</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div><Label className="text-xs">Product *</Label>
+                <Select value={serialForm.product_id} onValueChange={v => setSerialForm(f => ({...f, product_id: v}))}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Select product" /></SelectTrigger>
+                  <SelectContent>{products.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">Serial Number *</Label><Input className="mt-1 h-9 font-mono uppercase" value={serialForm.serial} onChange={e => setSerialForm(f => ({...f, serial: e.target.value.toUpperCase()}))} placeholder="SN123456789" /></div>
+              <div><Label className="text-xs">Notes</Label><Input className="mt-1 h-9" value={serialForm.notes} onChange={e => setSerialForm(f => ({...f, notes: e.target.value}))} /></div>
+            </div>
+            <DialogFooter><Button variant="outline" onClick={() => setSerialDialog(false)}>Cancel</Button><Button onClick={saveSerial}>Add Serial</Button></DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

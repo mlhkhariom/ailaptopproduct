@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserCheck, Plus, Edit, Trash2, RefreshCw, Search, Printer, Phone, Mail } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { UserCheck, Plus, Edit, Trash2, RefreshCw, Search, Printer, Phone, Mail, IndianRupee, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
 const req = (method: string, path: string, body?: any) =>
@@ -40,16 +41,23 @@ export default function AdminStaff() {
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [slipMonth, setSlipMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [commissions, setCommissions] = useState<any[]>([]);
+  const [commSummary, setCommSummary] = useState<any[]>([]);
+  const [commForm, setCommForm] = useState({ staff_id: '', staff_name: '', reference_type: 'manual', amount: 0, rate: 0, notes: '' });
+  const [commDialog, setCommDialog] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    // Fetch all (active + inactive)
-    const [active, inactive] = await Promise.all([
+    const [active, inactive, c, cs] = await Promise.all([
       req('GET', '/staff'),
       req('GET', '/staff?include_inactive=1'),
+      req('GET', '/commissions'),
+      req('GET', '/commissions/summary'),
     ]);
     const all = Array.isArray(inactive) ? inactive : (Array.isArray(active) ? active : []);
     setStaff(all);
+    setCommissions(Array.isArray(c) ? c : []);
+    setCommSummary(Array.isArray(cs) ? cs : []);
     setLoading(false);
   };
 
@@ -194,6 +202,13 @@ export default function AdminStaff() {
         </div>
 
         {/* Filters */}
+        <Tabs defaultValue="staff">
+          <TabsList className="h-9">
+            <TabsTrigger value="staff" className="gap-1.5"><UserCheck className="h-3.5 w-3.5" /> Staff ({activeStaff.length})</TabsTrigger>
+            <TabsTrigger value="commission" className="gap-1.5"><IndianRupee className="h-3.5 w-3.5" /> Commission ({commissions.length})</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="staff" className="space-y-4 mt-4">
         <div className="flex gap-3 items-center flex-wrap">
           <div className="relative flex-1 min-w-48">
             <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
@@ -258,6 +273,79 @@ export default function AdminStaff() {
             <p className="text-sm text-muted-foreground col-span-2 text-center py-10">No staff found</p>
           )}
         </div>
+          </TabsContent>
+
+          {/* Commission Tab */}
+          <TabsContent value="commission" className="space-y-4 mt-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">{commissions.length} commission entries</p>
+              <Button size="sm" onClick={() => { setCommForm({ staff_id: '', staff_name: '', reference_type: 'manual', amount: 0, rate: 0, notes: '' }); setCommDialog(true); }} className="gap-1.5">
+                <Plus className="h-4 w-4" /> Add Commission
+              </Button>
+            </div>
+
+            {/* Summary */}
+            {commSummary.length > 0 && (
+              <div className="border rounded-xl overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50"><tr>
+                    <th className="text-left p-3 text-xs font-semibold">Staff</th>
+                    <th className="text-right p-3 text-xs font-semibold text-green-600">Total</th>
+                    <th className="text-right p-3 text-xs font-semibold text-orange-600">Pending</th>
+                    <th className="text-right p-3 text-xs font-semibold text-blue-600">Paid</th>
+                    <th className="text-center p-3 text-xs font-semibold">Entries</th>
+                  </tr></thead>
+                  <tbody>
+                    {commSummary.map((s: any) => (
+                      <tr key={s.staff_id} className="border-t hover:bg-muted/30">
+                        <td className="p-3 font-medium">{s.staff_name}</td>
+                        <td className="p-3 text-right font-bold text-green-600">₹{(s.total || 0).toLocaleString('en-IN')}</td>
+                        <td className="p-3 text-right font-bold text-orange-600">₹{(s.pending || 0).toLocaleString('en-IN')}</td>
+                        <td className="p-3 text-right font-bold text-blue-600">₹{(s.paid || 0).toLocaleString('en-IN')}</td>
+                        <td className="p-3 text-center">{s.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Commission list */}
+            <div className="border rounded-xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50"><tr>
+                  <th className="text-left p-3 text-xs font-semibold">Staff</th>
+                  <th className="text-left p-3 text-xs font-semibold">Type</th>
+                  <th className="text-right p-3 text-xs font-semibold">Amount</th>
+                  <th className="text-center p-3 text-xs font-semibold">Status</th>
+                  <th className="text-left p-3 text-xs font-semibold">Date</th>
+                  <th className="text-center p-3 text-xs font-semibold">Action</th>
+                </tr></thead>
+                <tbody>
+                  {commissions.map((c: any) => (
+                    <tr key={c.id} className="border-t hover:bg-muted/30">
+                      <td className="p-3 font-medium">{c.staff_name}</td>
+                      <td className="p-3 text-sm text-muted-foreground capitalize">{c.reference_type}</td>
+                      <td className="p-3 text-right font-bold text-green-600">₹{(c.amount || 0).toLocaleString('en-IN')}</td>
+                      <td className="p-3 text-center">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${c.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>{c.status}</span>
+                      </td>
+                      <td className="p-3 text-sm text-muted-foreground">{new Date(c.created_at).toLocaleDateString('en-IN')}</td>
+                      <td className="p-3 text-center">
+                        {c.status === 'pending' && (
+                          <Button size="sm" className="h-7 text-xs gap-1 bg-green-600 hover:bg-green-700" onClick={async () => { await req('PATCH', `/commissions/${c.id}/pay`, {}); load(); }}>
+                            <CheckCircle className="h-3 w-3" /> Pay
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {!commissions.length && <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No commissions yet</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Dialog */}
         <Dialog open={open} onOpenChange={setOpen}>
@@ -301,6 +389,44 @@ export default function AdminStaff() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
               <Button onClick={save}>💾 Save</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Commission Dialog */}
+        <Dialog open={commDialog} onOpenChange={setCommDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader><DialogTitle>Add Commission</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div><Label className="text-xs">Staff *</Label>
+                <Select value={commForm.staff_id} onValueChange={v => { const s = staff.find((x: any) => x.id === v); setCommForm(f => ({ ...f, staff_id: v, staff_name: s?.name || '' })); }}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Select staff" /></SelectTrigger>
+                  <SelectContent>{staff.filter((s: any) => s.is_active).map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name} ({s.role})</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">Type</Label>
+                <Select value={commForm.reference_type} onValueChange={v => setCommForm(f => ({ ...f, reference_type: v }))}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual">Manual</SelectItem>
+                    <SelectItem value="sale">Sale</SelectItem>
+                    <SelectItem value="lead_won">Lead Won</SelectItem>
+                    <SelectItem value="service">Service</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">Amount (₹) *</Label><Input type="number" className="mt-1 h-9" value={commForm.amount || ''} onChange={e => setCommForm(f => ({ ...f, amount: Number(e.target.value) }))} /></div>
+                <div><Label className="text-xs">Rate (%)</Label><Input type="number" className="mt-1 h-9" value={commForm.rate || ''} onChange={e => setCommForm(f => ({ ...f, rate: Number(e.target.value) }))} /></div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCommDialog(false)}>Cancel</Button>
+              <Button onClick={async () => {
+                if (!commForm.staff_id || !commForm.amount) return toast.error('Staff and amount required');
+                await req('POST', '/commissions', commForm);
+                toast.success('Commission added!'); setCommDialog(false); load();
+              }}>Add Commission</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
