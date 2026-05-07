@@ -48,6 +48,14 @@ export default function AdminInventory() {
   const [movementDialog, setMovementDialog] = useState(false);
   const [transferDialog, setTransferDialog] = useState(false);
   const [transferForm, setTransferForm] = useState({ product_id: '', from_branch: '', to_branch: '', quantity: 1, notes: '' });
+  const [productDialog, setProductDialog] = useState(false);
+  const [productForm, setProductForm] = useState({ name: '', category: '', price: 0, stock: 0, sku: '', reorder_level: 5, description: '', branch_stocks: {} as Record<string, number> });
+  const [assignBranchOpen, setAssignBranchOpen] = useState(false);
+  const [assignProduct, setAssignProduct] = useState<any>(null);
+  const [assignStocks, setAssignStocks] = useState<Record<string, number>>({});
+  const [poReceiveOpen, setPoReceiveOpen] = useState(false);
+  const [poReceiveItem, setPoReceiveItem] = useState<any>(null);
+  const [poReceiveBranch, setPoReceiveBranch] = useState('');
   const [branches, setBranches] = useState<any[]>([]);
   const [serials, setSerials] = useState<any[]>([]);
   const [agingData, setAgingData] = useState<any>(null);
@@ -217,6 +225,7 @@ export default function AdminInventory() {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Search products..." className="pl-8 h-9" value={stockSearch} onChange={e => setStockSearch(e.target.value)} />
               </div>
+              <Button size="sm" onClick={() => { setProductForm({ name: '', category: '', price: 0, stock: 0, sku: '', reorder_level: 5, description: '', branch_stocks: {} }); setProductDialog(true); }} className="gap-1.5 bg-green-600 hover:bg-green-700"><Plus className="h-4 w-4" /> New Product</Button>
               <Button size="sm" onClick={() => setMovementDialog(true)} className="gap-1.5"><Plus className="h-4 w-4" /> Adjust Stock</Button>
               <Button size="sm" variant="outline" onClick={() => setTransferDialog(true)} className="gap-1.5"><ArrowUpDown className="h-4 w-4" /> Transfer</Button>
             </div>
@@ -278,9 +287,18 @@ export default function AdminInventory() {
                         </Badge>
                       </td>
                       <td className="p-3 text-center">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditStockId(p.id); setEditStockVal(p.stock); }}>
-                          <Edit className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex gap-1 justify-center">
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditStockId(p.id); setEditStockVal(p.stock); }}>
+                            <Edit className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-7 text-xs px-2" onClick={() => {
+                            setAssignProduct(p);
+                            const stocks: Record<string, number> = {};
+                            branchStock.filter((bs: any) => bs.product_id === p.id).forEach((bs: any) => { stocks[bs.branch_id] = bs.stock; });
+                            setAssignStocks(stocks);
+                            setAssignBranchOpen(true);
+                          }}>Branch</Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -787,6 +805,101 @@ export default function AdminInventory() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* ── NEW PRODUCT DIALOG ── */}
+      <Dialog open={productDialog} onOpenChange={setProductDialog}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Add New Product</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2"><Label className="text-xs">Product Name *</Label><Input className="mt-1 h-9" value={productForm.name} onChange={e => setProductForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. HP Laptop Screen 15.6 inch" /></div>
+              <div><Label className="text-xs">Category *</Label>
+                <Select value={productForm.category} onValueChange={v => setProductForm(f => ({ ...f, category: v }))}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectContent>
+                    {['Laptop Parts','Mobile Parts','Accessories','Tools','Cables','Batteries','Screens','Keyboards','Chargers','Other'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">SKU / Part No.</Label><Input className="mt-1 h-9" value={productForm.sku} onChange={e => setProductForm(f => ({ ...f, sku: e.target.value }))} placeholder="HP-SCR-156" /></div>
+              <div><Label className="text-xs">Price (₹) *</Label><Input type="number" className="mt-1 h-9" value={productForm.price || ''} onChange={e => setProductForm(f => ({ ...f, price: Number(e.target.value) }))} /></div>
+              <div><Label className="text-xs">Reorder Level</Label><Input type="number" className="mt-1 h-9" value={productForm.reorder_level} onChange={e => setProductForm(f => ({ ...f, reorder_level: Number(e.target.value) }))} /></div>
+            </div>
+            {/* Branch-wise initial stock */}
+            <div className="border rounded-lg p-3 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Initial Stock per Branch</p>
+              {branchStockSummary.map((b: any) => (
+                <div key={b.branch?.id} className="flex items-center gap-3">
+                  <span className="text-sm font-medium w-40">{b.branch?.name}</span>
+                  <Input type="number" min={0} className="h-8 w-24" placeholder="0"
+                    value={productForm.branch_stocks[b.branch?.id] || ''}
+                    onChange={e => setProductForm(f => ({ ...f, branch_stocks: { ...f.branch_stocks, [b.branch?.id]: Number(e.target.value) } }))} />
+                  <span className="text-xs text-muted-foreground">units</span>
+                </div>
+              ))}
+              <p className="text-xs text-muted-foreground">Total: {Object.values(productForm.branch_stocks).reduce((s: number, v: any) => s + (v || 0), 0)} units</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProductDialog(false)}>Cancel</Button>
+            <Button onClick={async () => {
+              if (!productForm.name || !productForm.category || !productForm.price) { alert('Name, category and price required'); return; }
+              const totalStock = Object.values(productForm.branch_stocks).reduce((s: number, v: any) => s + (v || 0), 0);
+              const res = await api.createProduct({ ...productForm, stock: totalStock, status: 'active' });
+              if (res?.id || res?.product?.id) {
+                const pid = res.id || res.product?.id;
+                // Set branch stock
+                for (const [bid, qty] of Object.entries(productForm.branch_stocks)) {
+                  if ((qty as number) > 0) {
+                    await fetch('/api/erp/branch-stock/adjust', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: JSON.stringify({ branch_id: bid, product_id: pid, qty, type: 'initial', note: 'Initial stock on product creation' }) });
+                  }
+                }
+                setProductDialog(false);
+                loadAll();
+                api.getProducts().then((p: any) => setProducts(Array.isArray(p) ? p : p?.products || []));
+                fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : []));
+                fetch('/api/erp/branch-stock/summary', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStockSummary(Array.isArray(d) ? d : []));
+              } else { alert('Failed to create product'); }
+            }}>Create Product</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── ASSIGN BRANCH STOCK DIALOG ── */}
+      <Dialog open={assignBranchOpen} onOpenChange={setAssignBranchOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Branch Stock — {assignProduct?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">Set current stock for each branch. Changes are saved as adjustments.</p>
+            {branchStockSummary.map((b: any) => (
+              <div key={b.branch?.id} className="flex items-center gap-3">
+                <span className="text-sm font-medium flex-1">{b.branch?.name}</span>
+                <Input type="number" min={0} className="h-9 w-24"
+                  value={assignStocks[b.branch?.id] ?? 0}
+                  onChange={e => setAssignStocks(s => ({ ...s, [b.branch?.id]: Number(e.target.value) }))} />
+                <span className="text-xs text-muted-foreground">units</span>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignBranchOpen(false)}>Cancel</Button>
+            <Button onClick={async () => {
+              for (const [bid, newQty] of Object.entries(assignStocks)) {
+                const existing = branchStock.find((bs: any) => bs.branch_id === bid && bs.product_id === assignProduct?.id);
+                const currentQty = existing?.stock || 0;
+                const diff = (newQty as number) - currentQty;
+                if (diff !== 0) {
+                  await fetch('/api/erp/branch-stock/adjust', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: JSON.stringify({ branch_id: bid, product_id: assignProduct?.id, qty: diff, type: 'manual_assign', note: 'Manual branch stock assignment' }) });
+                }
+              }
+              setAssignBranchOpen(false);
+              fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : []));
+              fetch('/api/erp/branch-stock/summary', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStockSummary(Array.isArray(d) ? d : []));
+            }}>Save Branch Stock</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </ERPLayout>
   );
 }
