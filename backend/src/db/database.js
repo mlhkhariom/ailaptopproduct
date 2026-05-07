@@ -308,6 +308,18 @@ export const initDB = async () => {
       id TEXT PRIMARY KEY, name TEXT NOT NULL, address TEXT, phone TEXT,
       manager TEXT, is_active INTEGER DEFAULT 1, created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
+    // Branch-wise stock
+    `CREATE TABLE IF NOT EXISTS branch_stock (
+      id TEXT PRIMARY KEY, branch_id TEXT NOT NULL, product_id TEXT NOT NULL,
+      stock INTEGER DEFAULT 0, reorder_level INTEGER DEFAULT 5,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(branch_id, product_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS branch_stock_movements (
+      id TEXT PRIMARY KEY, branch_id TEXT NOT NULL, product_id TEXT NOT NULL,
+      type TEXT NOT NULL, qty INTEGER NOT NULL, note TEXT,
+      ref_id TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS branch_id TEXT",
     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS branch_id TEXT",
     // CRM tables
@@ -457,7 +469,43 @@ export const initDB = async () => {
     try { await pool.query(m); } catch {}
   }
 
+  // Seed branches
+  await seedBranches();
+  // Seed branch stock
+  await seedBranchStock();
+
   console.log('✅ PostgreSQL tables ready');
 };
+
+async function seedBranches() {
+  const existing = await pool.query('SELECT COUNT(*) as c FROM branches');
+  if (parseInt(existing.rows[0].c) > 0) return;
+  const branches = [
+    { id: 'branch-silver-mall', name: 'Silver Mall', address: 'Silver Mall, Vijay Nagar, Indore', phone: '9893496163', manager: 'Owner' },
+    { id: 'branch-bangali', name: 'Bangali Chouraha', address: 'Bangali Chouraha, Indore', phone: '9893496163', manager: 'Manager' },
+  ];
+  for (const b of branches) {
+    try { await pool.query('INSERT INTO branches (id,name,address,phone,manager) VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING', [b.id, b.name, b.address, b.phone, b.manager]); } catch {}
+  }
+  console.log('✅ Branches seeded');
+}
+
+async function seedBranchStock() {
+  const existing = await pool.query('SELECT COUNT(*) as c FROM branch_stock');
+  if (parseInt(existing.rows[0].c) > 0) return;
+  const products = await pool.query('SELECT id FROM products LIMIT 20');
+  const branches = await pool.query('SELECT id FROM branches');
+  const { v4: uuid } = await import('uuid');
+  for (const b of branches.rows) {
+    for (const p of products.rows) {
+      const stock = Math.floor(Math.random() * 20) + 2;
+      try {
+        await pool.query('INSERT INTO branch_stock (id,branch_id,product_id,stock,reorder_level) VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING',
+          [uuid(), b.id, p.id, stock, 5]);
+      } catch {}
+    }
+  }
+  console.log('✅ Branch stock seeded');
+}
 
 export default db;

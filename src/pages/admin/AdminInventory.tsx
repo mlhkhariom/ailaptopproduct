@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Package, TrendingDown, AlertTriangle, Plus, Edit, Trash2, RefreshCw, ArrowUpDown, Truck, Search, IndianRupee, CheckCircle, Clock, XCircle, BarChart3, Printer } from "lucide-react";
+import { Package, TrendingDown, AlertTriangle, Plus, Edit, Trash2, RefreshCw, ArrowUpDown, Truck, Search, IndianRupee, CheckCircle, Clock, XCircle, BarChart3, Printer, Building2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -51,6 +51,9 @@ export default function AdminInventory() {
   const [branches, setBranches] = useState<any[]>([]);
   const [serials, setSerials] = useState<any[]>([]);
   const [agingData, setAgingData] = useState<any>(null);
+  const [branchStock, setBranchStock] = useState<any[]>([]);
+  const [branchStockSummary, setBranchStockSummary] = useState<any[]>([]);
+  const [transferOpen, setTransferOpen] = useState(false);
   const [serialSearch, setSerialSearch] = useState('');
   const [serialDialog, setSerialDialog] = useState(false);
   const [serialForm, setSerialForm] = useState({ product_id: '', serial: '', notes: '' });
@@ -81,6 +84,8 @@ export default function AdminInventory() {
     setMovements(Array.isArray(mov) ? mov : []);
     setBranches(Array.isArray(br) ? br : []);
     fetch('/api/erp/stock-aging', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setAgingData(d)).catch(() => {});
+    fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch('/api/erp/branch-stock/summary', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStockSummary(Array.isArray(d) ? d : [])).catch(() => {});
     // Load serials
     const sn = await fetch('/api/erp/serials', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json());
     setSerials(Array.isArray(sn) ? sn : []);
@@ -202,6 +207,7 @@ export default function AdminInventory() {
             <TabsTrigger value="po" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Purchase Orders</TabsTrigger>
             <TabsTrigger value="serials" className="gap-1.5"><Search className="h-3.5 w-3.5" /> Serial Numbers</TabsTrigger>
             <TabsTrigger value="aging" className="gap-1.5"><AlertTriangle className="h-3.5 w-3.5" /> Stock Aging</TabsTrigger>
+            <TabsTrigger value="branch-stock" className="gap-1.5"><Building2 className="h-3.5 w-3.5" /> Branch Stock</TabsTrigger>
           </TabsList>
 
           {/* Stock Overview */}
@@ -532,6 +538,102 @@ export default function AdminInventory() {
               </>
             )}
             {!agingData && <p className="text-center text-muted-foreground py-10">Loading aging data...</p>}
+          </TabsContent>
+
+
+          {/* Branch Stock */}
+          <TabsContent value="branch-stock" className="space-y-4">
+            {/* Summary cards */}
+            <div className="grid grid-cols-2 gap-3">
+              {branchStockSummary.map((b: any) => (
+                <div key={b.branch?.id} className="border rounded-xl p-4 space-y-1">
+                  <p className="font-black text-sm">{b.branch?.name}</p>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    <div><p className="text-xs text-muted-foreground">Products</p><p className="font-bold">{b.products || 0}</p></div>
+                    <div><p className="text-xs text-muted-foreground">Total Units</p><p className="font-bold">{b.total_stock || 0}</p></div>
+                    <div><p className="text-xs text-muted-foreground">Stock Value</p><p className="font-bold text-green-600">₹{Math.round(b.stock_value || 0).toLocaleString('en-IN')}</p></div>
+                  </div>
+                  {(b.low_stock || 0) > 0 && <p className="text-xs text-red-600 font-medium">{b.low_stock} items low stock</p>}
+                </div>
+              ))}
+            </div>
+
+            {/* Transfer button */}
+            <div className="flex justify-end">
+              <Button size="sm" onClick={() => setTransferOpen(true)} className="gap-1.5">
+                <ArrowUpDown className="h-4 w-4" /> Transfer Stock
+              </Button>
+            </div>
+
+            {/* Branch stock table */}
+            <div className="border rounded-xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50"><tr>
+                  <th className="text-left p-3 text-xs font-semibold">Product</th>
+                  <th className="text-left p-3 text-xs font-semibold">Category</th>
+                  <th className="text-center p-3 text-xs font-semibold">Branch</th>
+                  <th className="text-center p-3 text-xs font-semibold">Stock</th>
+                  <th className="text-center p-3 text-xs font-semibold">Reorder At</th>
+                  <th className="text-center p-3 text-xs font-semibold">Status</th>
+                </tr></thead>
+                <tbody>
+                  {branchStock.map((r: any) => (
+                    <tr key={r.id} className={`border-t hover:bg-muted/30 ${r.stock <= r.reorder_level ? 'bg-red-50/40' : ''}`}>
+                      <td className="p-3 font-medium">{r.product_name}</td>
+                      <td className="p-3 text-sm text-muted-foreground">{r.category}</td>
+                      <td className="p-3 text-center text-xs font-medium">{r.branch_name}</td>
+                      <td className="p-3 text-center font-black text-lg">{r.stock}</td>
+                      <td className="p-3 text-center text-sm">{r.reorder_level}</td>
+                      <td className="p-3 text-center">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.stock === 0 ? 'bg-red-100 text-red-700' : r.stock <= r.reorder_level ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+                          {r.stock === 0 ? 'Out of Stock' : r.stock <= r.reorder_level ? 'Low Stock' : 'In Stock'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {!branchStock.length && <tr><td colSpan={6} className="p-10 text-center text-muted-foreground">No branch stock data. Restart backend to seed.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Transfer Dialog */}
+            <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
+              <DialogContent className="max-w-sm">
+                <DialogHeader><DialogTitle>Transfer Stock Between Branches</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div><Label className="text-xs">From Branch</Label>
+                    <Select value={transferForm.from_branch} onValueChange={v => setTransferForm(f => ({ ...f, from_branch: v }))}>
+                      <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Select branch" /></SelectTrigger>
+                      <SelectContent>{branchStockSummary.map((b: any) => <SelectItem key={b.branch?.id} value={b.branch?.id}>{b.branch?.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label className="text-xs">To Branch</Label>
+                    <Select value={transferForm.to_branch} onValueChange={v => setTransferForm(f => ({ ...f, to_branch: v }))}>
+                      <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Select branch" /></SelectTrigger>
+                      <SelectContent>{branchStockSummary.map((b: any) => <SelectItem key={b.branch?.id} value={b.branch?.id}>{b.branch?.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label className="text-xs">Product</Label>
+                    <Select value={transferForm.product_id} onValueChange={v => setTransferForm(f => ({ ...f, product_id: v }))}>
+                      <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Select product" /></SelectTrigger>
+                      <SelectContent>{branchStock.filter((r: any) => r.branch_id === transferForm.from_branch).map((r: any) => <SelectItem key={r.product_id} value={r.product_id}>{r.product_name} (Stock: {r.stock})</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label className="text-xs">Quantity</Label><Input type="number" min={1} className="mt-1 h-9" value={transferForm.qty} onChange={e => setTransferForm(f => ({ ...f, qty: Number(e.target.value) }))} /></div>
+                  <div><Label className="text-xs">Note</Label><Input className="mt-1 h-9" value={transferForm.note} onChange={e => setTransferForm(f => ({ ...f, note: e.target.value }))} placeholder="Reason for transfer" /></div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setTransferOpen(false)}>Cancel</Button>
+                  <Button onClick={async () => {
+                    const res = await fetch('/api/erp/branch-stock/transfer', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: JSON.stringify(transferForm) }).then(r => r.json());
+                    if (res.error) { alert(res.error); return; }
+                    setTransferOpen(false);
+                    fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : []));
+                    fetch('/api/erp/branch-stock/summary', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStockSummary(Array.isArray(d) ? d : []));
+                  }}>Transfer</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
         </Tabs>

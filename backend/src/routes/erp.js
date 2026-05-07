@@ -1348,3 +1348,74 @@ router.post('/report-builder/export', authMiddleware, adminOnly, async (req, res
 router.get('/report-builder/sources', authMiddleware, adminOnly, (req, res) => {
   res.json(Object.entries(REPORT_SOURCES).map(([key, v]) => ({ key, label: v.label, fields: v.fields })));
 });
+
+// ── BRANCH-WISE INVENTORY ─────────────────────────────────
+
+// Get stock for all products in a branch
+router.get('/branch-stock', authMiddleware, adminOnly, async (req, res) => {
+  const { branch_id } = req.query;
+  const rows = branch_id
+    ? await db.prepare(`SELECT bs.*, p.name as product_name, p.category, p.price, p.sku FROM branch_stock bs LEFT JOIN products p ON p.id=bs.product_id WHERE bs.branch_id=? ORDER BY p.name`).all(branch_id)
+    : await db.prepare(`SELECT bs.*, p.name as product_name, p.category, p.price, p.sku, b.name as branch_name FROM branch_stock bs LEFT JOIN products p ON p.id=bs.product_id LEFT JOIN branches b ON b.id=bs.branch_id ORDER BY b.name, p.name`).all();
+  res.json(rows || []);
+});
+
+// Update stock for a product in a branch
+router.post('/branch-stock/adjust', authMiddleware, adminOnly, async (req, res) => {
+  const { branch_id, product_id, qty, type = 'manual', note = '' } = req.body;
+  if (!branch_id || !product_id || qty === undefined) return res.status(400).json({ error: 'branch_id, product_id, qty required' });
+
+  // Upsert branch_stock
+  const existing = await db.prepare('SELECT * FROM branch_stock WHERE branch_id=? AND product_id=?').get(branch_id, product_id);
+  if (existing) {
+    const newStock = Math.max(0, (existing.stock || 0) + qty);
+    await db.prepare('UPDATE branch_stock SET stock=? WHERE branch_id=? AND product_id=?').run(newStock, branch_id, product_id);
+  } else {
+    await db.prepare('INSERT INTO branch_stock (id,branch_id,product_id,stock) VALUES (?,?,?,?)').run(uuid(), branch_id, product_id, Math.max(0, qty));
+  }
+  // Log movement
+  await db.prepare('INSERT INTO branch_stock_movements (id,branch_id,product_id,type,qty,note) VALUES (?,?,?,?,?,?)').run(uuid(), branch_id, product_id, type, qty, note);
+  res.json({ message: 'Stock updated' });
+});
+
+// Transfer stock between branches
+router.post('/branch-stock/transfer', authMiddleware, adminOnly, async (req, res) => {
+  const { from_branch, to_branch, product_id, qty, note = '' } = req.body;
+  if (!from_branch || !to_branch || !product_id || !qty) return res.status(400).json({ error: 'All fields required' });
+
+  const src = await db.prepare('SELECT * FROM branch_stock WHERE branch_id=? AND product_id=?').get(from_branch, product_id);
+  if (!src || src.stock < qty) return res.status(400).json({ error: `Insufficient stock. Available: ${src?.stock || 0}` });
+
+  await db.prepare('UPDATE branch_stock SET stock=stock-? WHERE branch_id=? AND product_id=?').run(qty, from_branch, product_id);
+  const dest = await db.prepare('SELECT * FROM branch_stock WHERE branch_id=? AND product_id=?').get(to_branch, product_id);
+  if (dest) {
+    await db.prepare('UPDATE branch_stock SET stock=stock+? WHERE branch_id=? AND product_id=?').run(qty, to_branch, product_id);
+  } else {
+    await db.prepare('INSERT INTO branch_stock (id,branch_id,product_id,stock) VALUES (?,?,?,?)').run(uuid(), to_branch, product_id, qty);
+  }
+  // Log both movements
+  await db.prepare('INSERT INTO branch_stock_movements (id,branch_id,product_id,type,qty,note) VALUES (?,?,?,?,?,?)').run(uuid(), from_branch, product_id, 'transfer_out', -qty, note);
+  await db.prepare('INSERT INTO branch_stock_movements (id,branch_id,product_id,type,qty,note) VALUES (?,?,?,?,?,?)').run(uuid(), to_branch, product_id, 'transfer_in', qty, note);
+  res.json({ message: `Transferred ${qty} units` });
+});
+
+// Stock movements log
+router.get('/branch-stock/movements', authMiddleware, adminOnly, async (req, res) => {
+  const { branch_id, product_id } = req.query;
+  let sql = `SELECT m.*, p.name as product_name, b.name as branch_name FROM branch_stock_movements m LEFT JOIN products p ON p.id=m.product_id LEFT JOIN branches b ON b.id=m.branch_id WHERE 1=1`;
+  const params = [];
+  if (branch_id) { sql += ' AND m.branch_id=?'; params.push(branch_id); }
+  if (product_id) { sql += ' AND m.product_id=?'; params.push(product_id); }
+  sql += ' ORDER BY m.created_at DESC LIMIT 200';
+  res.json(await db.prepare(sql).all(...params) || []);
+});
+
+// Branch stock summary (for dashboard)
+router.get('/branch-stock/summary', authMiddleware, adminOnly, async (req, res) => {
+  const branches = await db.prepare('SELECT * FROM branches WHERE is_active=1').all() || [];
+  const result = await Promise.all(branches.map(async b => {
+    const stats = await db.prepare(`SELECT COUNT(*) as products, COALESCE(SUM(bs.stock),0) as total_stock, COALESCE(SUM(bs.stock * p.price),0) as stock_value, COUNT(CASE WHEN bs.stock <= bs.reorder_level THEN 1 END) as low_stock FROM branch_stock bs LEFT JOIN products p ON p.id=bs.product_id WHERE bs.branch_id=?`).get(b.id);
+    return { branch: b, ...stats };
+  }));
+  res.json(result);
+});
