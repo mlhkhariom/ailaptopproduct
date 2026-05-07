@@ -386,6 +386,24 @@ export const initDB = async () => {
       amount REAL NOT NULL, payment_method TEXT DEFAULT 'cash',
       notes TEXT, created_by TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
+    // Sprint 5 — Leave Management + Serial Numbers + Commission
+    `CREATE TABLE IF NOT EXISTS leave_requests (
+      id TEXT PRIMARY KEY, staff_id TEXT NOT NULL, type TEXT DEFAULT 'casual',
+      from_date DATE NOT NULL, to_date DATE NOT NULL, days INTEGER DEFAULT 1,
+      reason TEXT, status TEXT DEFAULT 'pending', approved_by TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS serial_numbers (
+      id TEXT PRIMARY KEY, product_id TEXT NOT NULL, serial TEXT UNIQUE NOT NULL,
+      status TEXT DEFAULT 'in_stock', job_card_id TEXT, order_id TEXT,
+      notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS commissions (
+      id TEXT PRIMARY KEY, staff_id TEXT NOT NULL, staff_name TEXT,
+      reference_type TEXT NOT NULL, reference_id TEXT NOT NULL,
+      amount REAL NOT NULL, rate REAL DEFAULT 0, status TEXT DEFAULT 'pending',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     // CRM enhancements
     "ALTER TABLE leads ADD COLUMN IF NOT EXISTS expected_close DATE",
     "ALTER TABLE leads ADD COLUMN IF NOT EXISTS lost_reason TEXT",

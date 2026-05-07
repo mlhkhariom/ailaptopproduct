@@ -601,7 +601,6 @@ router.post('/wa-templates/:id/send', authMiddleware, adminOnly, async (req, res
   } catch { res.status(500).json({ error: 'Failed to queue' }); }
 });
 
-export default router;
 
 // ── JOB CARD PHOTOS ───────────────────────────────────────
 
@@ -778,6 +777,104 @@ router.post('/stock-transfer', authMiddleware, adminOnly, async (req, res) => {
     .run(uuid(), 'inventory', 'Stock Transfer', `${quantity}x ${product.name} transferred to ${to_branch}`, '/admin/inventory');
 
   res.status(201).json({ transfer_id: transferId, message: `${quantity} units transferred` });
+});
+
+// ── LEAVE MANAGEMENT ─────────────────────────────────────
+
+router.get('/leaves', authMiddleware, adminOnly, async (req, res) => {
+  const { staff_id, status } = req.query;
+  let q = `SELECT l.*, s.name as staff_name, s.role FROM leave_requests l LEFT JOIN staff s ON l.staff_id=s.id WHERE 1=1`;
+  const p = [];
+  if (staff_id) { q += ' AND l.staff_id=?'; p.push(staff_id); }
+  if (status) { q += ' AND l.status=?'; p.push(status); }
+  q += ' ORDER BY l.created_at DESC';
+  res.json(await db.prepare(q).all(...p) || []);
+});
+
+router.post('/leaves', authMiddleware, adminOnly, async (req, res) => {
+  const { staff_id, type, from_date, to_date, reason } = req.body;
+  if (!staff_id || !from_date || !to_date) return res.status(400).json({ error: 'staff_id, from_date, to_date required' });
+  const days = Math.ceil((new Date(to_date) - new Date(from_date)) / 86400000) + 1;
+  const id = uuid();
+  await db.prepare('INSERT INTO leave_requests (id,staff_id,type,from_date,to_date,days,reason) VALUES (?,?,?,?,?,?,?)').run(id, staff_id, type || 'casual', from_date, to_date, days, reason);
+  res.status(201).json({ id, days });
+});
+
+router.patch('/leaves/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { status } = req.body;
+  await db.prepare('UPDATE leave_requests SET status=?,approved_by=? WHERE id=?').run(status, req.user.id, req.params.id);
+  if (status === 'approved') {
+    const leave = await db.prepare('SELECT * FROM leave_requests WHERE id=?').get(req.params.id);
+    if (leave) {
+      const d = new Date(leave.from_date);
+      while (d <= new Date(leave.to_date)) {
+        const ds = d.toISOString().split('T')[0];
+        await db.prepare(`INSERT INTO attendance (id,staff_id,date,status) VALUES (?,?,?,'leave') ON CONFLICT (staff_id,date) DO UPDATE SET status='leave'`).run(uuid(), leave.staff_id, ds);
+        d.setDate(d.getDate() + 1);
+      }
+    }
+  }
+  res.json({ message: 'Updated' });
+});
+
+// ── SERIAL NUMBERS ────────────────────────────────────────
+
+router.get('/serials', authMiddleware, adminOnly, async (req, res) => {
+  const { product_id, status } = req.query;
+  let q = `SELECT sn.*, p.name as product_name FROM serial_numbers sn LEFT JOIN products p ON sn.product_id=p.id WHERE 1=1`;
+  const p = [];
+  if (product_id) { q += ' AND sn.product_id=?'; p.push(product_id); }
+  if (status) { q += ' AND sn.status=?'; p.push(status); }
+  q += ' ORDER BY sn.created_at DESC';
+  res.json(await db.prepare(q).all(...p) || []);
+});
+
+router.post('/serials', authMiddleware, adminOnly, async (req, res) => {
+  const { product_id, serial, notes } = req.body;
+  if (!product_id || !serial) return res.status(400).json({ error: 'product_id and serial required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO serial_numbers (id,product_id,serial,notes) VALUES (?,?,?,?)').run(id, product_id, serial.trim().toUpperCase(), notes);
+  res.status(201).json({ id });
+});
+
+router.get('/serials/lookup/:serial', async (req, res) => {
+  const row = await db.prepare(`SELECT sn.*, p.name as product_name FROM serial_numbers sn LEFT JOIN products p ON sn.product_id=p.id WHERE sn.serial=?`).get(req.params.serial.trim().toUpperCase());
+  if (!row) return res.status(404).json({ error: 'Serial not found' });
+  res.json(row);
+});
+
+// ── COMMISSION TRACKING ───────────────────────────────────
+
+router.get('/commissions', authMiddleware, adminOnly, async (req, res) => {
+  const { staff_id, status } = req.query;
+  let q = 'SELECT * FROM commissions WHERE 1=1';
+  const p = [];
+  if (staff_id) { q += ' AND staff_id=?'; p.push(staff_id); }
+  if (status) { q += ' AND status=?'; p.push(status); }
+  q += ' ORDER BY created_at DESC';
+  res.json(await db.prepare(q).all(...p) || []);
+});
+
+router.post('/commissions', authMiddleware, adminOnly, async (req, res) => {
+  const { staff_id, staff_name, reference_type, reference_id, amount, rate } = req.body;
+  if (!staff_id || !amount) return res.status(400).json({ error: 'staff_id and amount required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO commissions (id,staff_id,staff_name,reference_type,reference_id,amount,rate) VALUES (?,?,?,?,?,?,?)').run(id, staff_id, staff_name, reference_type || 'manual', reference_id || '', amount, rate || 0);
+  res.status(201).json({ id });
+});
+
+router.patch('/commissions/:id/pay', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare("UPDATE commissions SET status='paid' WHERE id=?").run(req.params.id);
+  res.json({ message: 'Marked as paid' });
+});
+
+router.get('/commissions/summary', authMiddleware, adminOnly, async (req, res) => {
+  const rows = await db.prepare(`SELECT staff_id, staff_name,
+    COALESCE(SUM(amount),0) as total,
+    COALESCE(SUM(CASE WHEN status='pending' THEN amount ELSE 0 END),0) as pending,
+    COALESCE(SUM(CASE WHEN status='paid' THEN amount ELSE 0 END),0) as paid,
+    COUNT(*) as count FROM commissions GROUP BY staff_id, staff_name ORDER BY total DESC`).all();
+  res.json(rows || []);
 });
 
 export default router;
