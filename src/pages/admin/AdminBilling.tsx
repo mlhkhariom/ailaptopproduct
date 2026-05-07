@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import ERPLayout from "@/components/ERPLayout";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -44,13 +45,14 @@ export default function AdminBilling() {
   // Payment update
   const [partialOpen, setPartialOpen] = useState(false);
   const [partialRow, setPartialRow] = useState<BillingRow | null>(null);
+  const [payRow, setPayRow] = useState<BillingRow | null>(null);
+  const [payOpen, setPayOpen] = useState(false);
   const [irnOpen, setIrnOpen] = useState(false);
   const [irnRow, setIrnRow] = useState<BillingRow | null>(null);
   const [irnData, setIrnData] = useState<any>(null);
   const [irnLoading, setIrnLoading] = useState(false);
   const [partialHistory, setPartialHistory] = useState<any[]>([]);
   const [partialForm, setPartialForm] = useState({ amount: 0, payment_method: "Cash", notes: "" });
-  const [payOpen, setPayOpen] = useState(false);
   const [payForm, setPayForm] = useState({ payment_status: 'paid', payment_method: 'Cash' });
 
   const load = async () => {
