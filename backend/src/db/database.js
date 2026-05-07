@@ -389,6 +389,16 @@ export const initDB = async () => {
     // Sprint 6 — SLA, Recurring Invoices, Product Bundles
     "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS sla_hours INTEGER DEFAULT 24",
     "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS sla_breached INTEGER DEFAULT 0",
+    // E-Invoice IRN columns
+    "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS irn TEXT",
+    "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS ack_no TEXT",
+    "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS ack_date TEXT",
+    "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS irn_status TEXT DEFAULT 'pending'",
+    "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS qr_code TEXT",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS irn TEXT",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS ack_no TEXT",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS ack_date TEXT",
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS irn_status TEXT DEFAULT 'pending'",
     `CREATE TABLE IF NOT EXISTS recurring_invoices (
       id TEXT PRIMARY KEY, customer_name TEXT NOT NULL, customer_phone TEXT,
       customer_email TEXT, items JSONB DEFAULT '[]', subtotal REAL DEFAULT 0,

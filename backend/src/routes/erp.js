@@ -1042,3 +1042,138 @@ router.get('/gstr1-export', authMiddleware, adminOnly, async (req, res) => {
   res.setHeader('Content-Disposition', `attachment; filename=GSTR1_${f}_${t}.csv`);
   res.send(csv);
 });
+
+// ── E-INVOICE (IRN) ───────────────────────────────────────
+// NIC IRP API integration — sandbox mode by default
+// Set EINVOICE_USERNAME, EINVOICE_PASSWORD, EINVOICE_GSTIN in .env for live
+
+const EINVOICE_BASE = process.env.EINVOICE_BASE || 'https://einv-apisandbox.nic.in';
+const EINVOICE_GSTIN = process.env.EINVOICE_GSTIN || '23AABCU9603R1ZX'; // test GSTIN
+const EINVOICE_USER = process.env.EINVOICE_USERNAME || '';
+const EINVOICE_PASS = process.env.EINVOICE_PASSWORD || '';
+
+// Build invoice payload per NIC schema
+function buildIRNPayload(inv, gstin) {
+  const items = (() => { try { return typeof inv.items === 'string' ? JSON.parse(inv.items) : (inv.items || []); } catch { return []; } })();
+  const taxable = inv.subtotal || inv.total_charge || 0;
+  const discount = inv.discount || 0;
+  const net = taxable - discount;
+  const cgst = parseFloat((net * 0.09).toFixed(2));
+  const sgst = parseFloat((net * 0.09).toFixed(2));
+  const total = parseFloat((net + cgst + sgst).toFixed(2));
+
+  return {
+    Version: '1.1',
+    TranDtls: { TaxSch: 'GST', SupTyp: 'B2B', RegRev: 'N' },
+    DocDtls: {
+      Typ: 'INV',
+      No: inv.invoice_number || inv.booking_number || inv.id.slice(0, 16),
+      Dt: new Date(inv.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '/'),
+    },
+    SellerDtls: {
+      Gstin: gstin, LglNm: 'AI Laptop Wala',
+      Addr1: 'Silver Mall, Vijay Nagar', Loc: 'Indore', Pin: 452010, Stcd: '23',
+    },
+    BuyerDtls: {
+      Gstin: inv.buyer_gstin || 'URP',
+      LglNm: inv.customer_name || 'Consumer',
+      Pos: '23', Addr1: inv.customer_address || 'Indore', Loc: 'Indore', Pin: 452001, Stcd: '23',
+    },
+    ItemList: items.length ? items.map((item, i) => ({
+      SlNo: String(i + 1), PrdDesc: item.name || 'Service', IsServc: 'Y',
+      Qty: item.qty || 1, Unit: 'NOS', UnitPrice: item.price || 0,
+      TotAmt: (item.qty || 1) * (item.price || 0),
+      Discount: 0, AssAmt: (item.qty || 1) * (item.price || 0),
+      GstRt: 18, IgstAmt: 0, CgstAmt: parseFloat(((item.qty || 1) * (item.price || 0) * 0.09).toFixed(2)),
+      SgstAmt: parseFloat(((item.qty || 1) * (item.price || 0) * 0.09).toFixed(2)),
+      TotItemVal: parseFloat(((item.qty || 1) * (item.price || 0) * 1.18).toFixed(2)),
+    })) : [{
+      SlNo: '1', PrdDesc: 'Repair Service', IsServc: 'Y',
+      Qty: 1, Unit: 'NOS', UnitPrice: net, TotAmt: net,
+      Discount: 0, AssAmt: net, GstRt: 18,
+      IgstAmt: 0, CgstAmt: cgst, SgstAmt: sgst, TotItemVal: total,
+    }],
+    ValDtls: {
+      AssVal: net, CgstVal: cgst, SgstVal: sgst, IgstVal: 0,
+      TotInvVal: total, Discount: discount,
+    },
+  };
+}
+
+// Generate IRN for a custom invoice
+router.post('/einvoice/generate', authMiddleware, adminOnly, async (req, res) => {
+  const { invoice_id, invoice_type = 'custom', buyer_gstin, customer_address } = req.body;
+  if (!invoice_id) return res.status(400).json({ error: 'invoice_id required' });
+
+  const table = invoice_type === 'service' ? 'service_bookings' : 'custom_invoices';
+  const inv = await db.prepare(`SELECT * FROM ${table} WHERE id=?`).get(invoice_id);
+  if (!inv) return res.status(404).json({ error: 'Invoice not found' });
+  if (inv.irn) return res.status(400).json({ error: 'IRN already generated', irn: inv.irn });
+
+  const payload = buildIRNPayload({ ...inv, buyer_gstin, customer_address }, EINVOICE_GSTIN);
+
+  // If credentials set → call real NIC API, else mock
+  let irnData;
+  if (EINVOICE_USER && EINVOICE_PASS) {
+    try {
+      // Step 1: Authenticate
+      const authRes = await fetch(`${EINVOICE_BASE}/eivital/v1.03/Auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Gstin': EINVOICE_GSTIN, 'user_name': EINVOICE_USER, 'password': EINVOICE_PASS, 'AppKey': process.env.EINVOICE_APPKEY || '', 'AuthToken': '' },
+        body: JSON.stringify({ UserName: EINVOICE_USER, Password: EINVOICE_PASS, AppKey: process.env.EINVOICE_APPKEY || '', ForceRefreshAccessToken: false }),
+      });
+      const authData = await authRes.json();
+      const token = authData?.Data?.AuthToken;
+      if (!token) return res.status(502).json({ error: 'NIC auth failed', detail: authData });
+
+      // Step 2: Generate IRN
+      const irnRes = await fetch(`${EINVOICE_BASE}/eicore/v1.03/Invoice`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Gstin': EINVOICE_GSTIN, 'user_name': EINVOICE_USER, 'AuthToken': token },
+        body: JSON.stringify(payload),
+      });
+      irnData = await irnRes.json();
+      if (!irnData?.Data?.Irn) return res.status(502).json({ error: 'IRN generation failed', detail: irnData });
+      irnData = irnData.Data;
+    } catch (e) {
+      return res.status(502).json({ error: 'NIC API error', detail: e.message });
+    }
+  } else {
+    // Sandbox mock — generate fake IRN for testing
+    const hash = Buffer.from(`${EINVOICE_GSTIN}${payload.DocDtls.No}${payload.DocDtls.Dt}`).toString('hex').slice(0, 64);
+    irnData = {
+      Irn: hash,
+      AckNo: Math.floor(Math.random() * 9000000000) + 1000000000,
+      AckDt: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      SignedQRCode: `MOCK_QR_${hash.slice(0, 20)}`,
+      Status: 'ACT',
+      _mock: true,
+    };
+  }
+
+  // Save to DB
+  await db.prepare(`UPDATE ${table} SET irn=?,ack_no=?,ack_date=?,irn_status=?,qr_code=? WHERE id=?`)
+    .run(irnData.Irn, String(irnData.AckNo), irnData.AckDt, 'generated', irnData.SignedQRCode || '', invoice_id);
+
+  res.json({ success: true, irn: irnData.Irn, ack_no: irnData.AckNo, ack_date: irnData.AckDt, qr_code: irnData.SignedQRCode, mock: !!irnData._mock });
+});
+
+// Cancel IRN
+router.post('/einvoice/cancel', authMiddleware, adminOnly, async (req, res) => {
+  const { invoice_id, invoice_type = 'custom', reason = '1' } = req.body;
+  const table = invoice_type === 'service' ? 'service_bookings' : 'custom_invoices';
+  const inv = await db.prepare(`SELECT * FROM ${table} WHERE id=?`).get(invoice_id);
+  if (!inv?.irn) return res.status(400).json({ error: 'No IRN found for this invoice' });
+
+  await db.prepare(`UPDATE ${table} SET irn_status='cancelled' WHERE id=?`).run(invoice_id);
+  res.json({ success: true, message: 'IRN marked cancelled' });
+});
+
+// Get IRN status
+router.get('/einvoice/:invoice_id', authMiddleware, adminOnly, async (req, res) => {
+  const { type = 'custom' } = req.query;
+  const table = type === 'service' ? 'service_bookings' : 'custom_invoices';
+  const inv = await db.prepare(`SELECT id,irn,ack_no,ack_date,irn_status,qr_code FROM ${table} WHERE id=?`).get(req.params.invoice_id);
+  if (!inv) return res.status(404).json({ error: 'Not found' });
+  res.json(inv);
+});

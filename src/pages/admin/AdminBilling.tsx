@@ -44,6 +44,10 @@ export default function AdminBilling() {
   // Payment update
   const [partialOpen, setPartialOpen] = useState(false);
   const [partialRow, setPartialRow] = useState<BillingRow | null>(null);
+  const [irnOpen, setIrnOpen] = useState(false);
+  const [irnRow, setIrnRow] = useState<BillingRow | null>(null);
+  const [irnData, setIrnData] = useState<any>(null);
+  const [irnLoading, setIrnLoading] = useState(false);
   const [partialHistory, setPartialHistory] = useState<any[]>([]);
   const [partialForm, setPartialForm] = useState({ amount: 0, payment_method: "Cash", notes: "" });
   const [payOpen, setPayOpen] = useState(false);
@@ -99,6 +103,23 @@ export default function AdminBilling() {
   const handleView = (r: BillingRow) => window.open(`/api/invoice/${r.invoice_number}`, '_blank');
 
   // WhatsApp send
+
+  // E-Invoice IRN
+  const openIRN = async (r: BillingRow) => {
+    setIrnRow(r); setIrnOpen(true); setIrnData(null);
+    const type = r.type === "service" ? "service" : "custom";
+    const d = await fetch(`/api/erp/einvoice/${r.id}?type=${type}`, { headers: { Authorization: `Bearer ${localStorage.getItem("ailaptopwala_token")}` } }).then(x => x.json()).catch(() => null);
+    setIrnData(d);
+  };
+  const generateIRN = async () => {
+    if (!irnRow) return;
+    setIrnLoading(true);
+    const type = irnRow.type === "service" ? "service" : "custom";
+    const res = await fetch("/api/erp/einvoice/generate", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("ailaptopwala_token")}` }, body: JSON.stringify({ invoice_id: irnRow.id, invoice_type: type }) }).then(x => x.json());
+    setIrnLoading(false);
+    if (res.irn) { toast.success("IRN Generated: " + res.irn.slice(0, 16) + "..."); setIrnData(res); }
+    else toast.error(res.error || "IRN generation failed");
+  };
   const handleSendWA = async (r: BillingRow) => {
     if (!r.customer_phone) return toast.error('No phone number');
     try {
@@ -198,6 +219,7 @@ export default function AdminBilling() {
           onEdit={openEdit}
           onPayClick={openPay}
           onPartialClick={openPartial}
+          onIRN={openIRN}
         />
 
         {/* Custom Invoice Form */}
@@ -309,6 +331,39 @@ export default function AdminBilling() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* E-Invoice IRN Dialog */}
+      <Dialog open={irnOpen} onOpenChange={setIrnOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle className="flex items-center gap-2">E-Invoice (IRN) — {irnRow?.invoice_number}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            {irnData?.irn || irnData?.irn_status === 'generated' ? (
+              <div className="space-y-2">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-xs text-green-700 font-semibold mb-1">IRN Generated</p>
+                  <p className="text-xs font-mono break-all">{irnData.irn}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div><span className="text-muted-foreground">Ack No:</span> <span className="font-medium">{irnData.ack_no}</span></div>
+                  <div><span className="text-muted-foreground">Ack Date:</span> <span className="font-medium">{irnData.ack_date}</span></div>
+                </div>
+                {irnData.mock && <p className="text-xs text-orange-600 bg-orange-50 rounded p-2">Sandbox/Mock IRN — Set EINVOICE_USERNAME + EINVOICE_PASSWORD in backend .env for live NIC API</p>}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">No IRN generated yet for this invoice.</p>
+                {!irnRow?.gst_enabled && <p className="text-xs text-red-600">GST must be enabled on this invoice to generate IRN.</p>}
+                <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">IRN (Invoice Reference Number) is required for B2B invoices above ₹5 crore turnover. For testing, sandbox mode generates a mock IRN.</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIrnOpen(false)}>Close</Button>
+            {!irnData?.irn && <Button onClick={generateIRN} disabled={irnLoading}>{irnLoading ? 'Generating...' : 'Generate IRN'}</Button>}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </ERPLayout>
   );
 }
