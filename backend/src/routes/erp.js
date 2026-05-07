@@ -1265,3 +1265,86 @@ router.post('/staff-advances', authMiddleware, adminOnly, async (req, res) => {
   await db.prepare('INSERT INTO staff_advances (id,staff_id,amount,month,reason) VALUES (?,?,?,?,?)').run(id, staff_id, amount, month || new Date().toISOString().slice(0, 7), reason || '');
   res.status(201).json({ id });
 });
+
+// ── CUSTOM REPORT BUILDER ─────────────────────────────────
+
+const REPORT_SOURCES = {
+  orders: { table: 'orders', label: 'Orders', fields: ['id','invoice_number','customer_name','customer_phone','total','payment_status','payment_method','created_at'] },
+  service_bookings: { table: 'service_bookings', label: 'Job Cards', fields: ['booking_number','customer_name','customer_phone','service_name','device_brand','device_model','technician','status','total_charge','payment_status','created_at'] },
+  custom_invoices: { table: 'custom_invoices', label: 'Custom Invoices', fields: ['invoice_number','customer_name','customer_phone','subtotal','discount','total','payment_status','payment_method','created_at'] },
+  leads: { table: 'leads', label: 'CRM Leads', fields: ['name','phone','email','source','status','budget','assigned_to','created_at'] },
+  products: { table: 'products', label: 'Products', fields: ['name','category','price','stock','status','created_at'] },
+  staff: { table: 'staff', label: 'Staff', fields: ['name','role','phone','email','salary','is_active','created_at'] },
+  expenses: { table: 'expenses', label: 'Expenses', fields: ['title','category','amount','date','staff_name','notes'] },
+  payroll: { table: 'payroll', label: 'Payroll', fields: ['month','basic','hra','gross','pf_employee','esi_employee','net','status','paid_on'] },
+};
+
+router.post('/report-builder/run', authMiddleware, adminOnly, async (req, res) => {
+  const { source, fields, filters = [], sort_by, sort_dir = 'DESC', limit = 500 } = req.body;
+  const src = REPORT_SOURCES[source];
+  if (!src) return res.status(400).json({ error: 'Invalid source' });
+
+  // Only allow whitelisted fields
+  const allowed = src.fields;
+  const cols = (fields?.length ? fields.filter(f => allowed.includes(f)) : allowed);
+  if (!cols.length) return res.status(400).json({ error: 'No valid fields' });
+
+  // Build WHERE
+  const conditions = [];
+  const params = [];
+  for (const f of filters) {
+    if (!allowed.includes(f.field)) continue;
+    if (f.op === 'eq')   { conditions.push(`${f.field} = ?`); params.push(f.value); }
+    if (f.op === 'like') { conditions.push(`${f.field} ILIKE ?`); params.push(`%${f.value}%`); }
+    if (f.op === 'gte')  { conditions.push(`${f.field} >= ?`); params.push(f.value); }
+    if (f.op === 'lte')  { conditions.push(`${f.field} <= ?`); params.push(f.value); }
+    if (f.op === 'date_from') { conditions.push(`DATE(${f.field}) >= ?`); params.push(f.value); }
+    if (f.op === 'date_to')   { conditions.push(`DATE(${f.field}) <= ?`); params.push(f.value); }
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  const orderBy = sort_by && allowed.includes(sort_by) ? `ORDER BY ${sort_by} ${sort_dir === 'ASC' ? 'ASC' : 'DESC'}` : 'ORDER BY created_at DESC';
+  const sql = `SELECT ${cols.join(',')} FROM ${src.table} ${where} ${orderBy} LIMIT ?`;
+
+  try {
+    const rows = await db.prepare(sql).all(...params, Math.min(limit, 1000)) || [];
+    res.json({ rows, cols, total: rows.length, source: src.label });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Export CSV
+router.post('/report-builder/export', authMiddleware, adminOnly, async (req, res) => {
+  const { source, fields, filters = [], sort_by, sort_dir = 'DESC' } = req.body;
+  const src = REPORT_SOURCES[source];
+  if (!src) return res.status(400).json({ error: 'Invalid source' });
+  const allowed = src.fields;
+  const cols = (fields?.length ? fields.filter(f => allowed.includes(f)) : allowed);
+
+  const conditions = [];
+  const params = [];
+  for (const f of filters) {
+    if (!allowed.includes(f.field)) continue;
+    if (f.op === 'eq')   { conditions.push(`${f.field} = ?`); params.push(f.value); }
+    if (f.op === 'like') { conditions.push(`${f.field} ILIKE ?`); params.push(`%${f.value}%`); }
+    if (f.op === 'gte')  { conditions.push(`${f.field} >= ?`); params.push(f.value); }
+    if (f.op === 'lte')  { conditions.push(`${f.field} <= ?`); params.push(f.value); }
+    if (f.op === 'date_from') { conditions.push(`DATE(${f.field}) >= ?`); params.push(f.value); }
+    if (f.op === 'date_to')   { conditions.push(`DATE(${f.field}) <= ?`); params.push(f.value); }
+  }
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  const orderBy = sort_by && allowed.includes(sort_by) ? `ORDER BY ${sort_by} ${sort_dir === 'ASC' ? 'ASC' : 'DESC'}` : '';
+  const rows = await db.prepare(`SELECT ${cols.join(',')} FROM ${src.table} ${where} ${orderBy} LIMIT 10000`).all(...params) || [];
+
+  const csv = [cols, ...rows.map(r => cols.map(c => `"${(r[c] ?? '').toString().replace(/"/g, '""')}"`))]
+    .map(r => r.join(',')).join('\n');
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename=report_${source}_${Date.now()}.csv`);
+  res.send(csv);
+});
+
+// Get available sources + fields
+router.get('/report-builder/sources', authMiddleware, adminOnly, (req, res) => {
+  res.json(Object.entries(REPORT_SOURCES).map(([key, v]) => ({ key, label: v.label, fields: v.fields })));
+});

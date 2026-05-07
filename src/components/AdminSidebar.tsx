@@ -29,6 +29,7 @@ const erpGroups = [
       { title: "Recurring", url: "/admin/erp/recurring", icon: Calendar },
       { title: "Expenses", url: "/admin/erp/expenses", icon: Wallet },
       { title: "ERP Reports", url: "/admin/erp/reports", icon: BarChart3 },
+      { title: "Report Builder", url: "/admin/erp/report-builder", icon: BarChart3 },
     ],
   },
   {
