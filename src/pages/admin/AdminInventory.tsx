@@ -70,7 +70,7 @@ export default function AdminInventory() {
   const [editingPO, setEditingPO] = useState<any>(null);
 
   const [supplierForm, setSupplierForm] = useState({ name: '', contact_person: '', phone: '', email: '', address: '', gstin: '', payment_terms: 'net30', notes: '' });
-  const [poForm, setPoForm] = useState({ supplier_id: '', items: [{ product_id: '', product_name: '', quantity: 1, unit_price: 0 }], expected_date: '', notes: '' });
+  const [poForm, setPoForm] = useState({ supplier_id: '', branch_id: '', items: [{ product_id: '', product_name: '', quantity: 1, unit_price: 0 }], expected_date: '', notes: '' });
   const [movForm, setMovForm] = useState({ product_id: '', type: 'purchase', quantity: 1, notes: '' });
 
   const loadAll = async () => {
@@ -175,6 +175,17 @@ export default function AdminInventory() {
   const updatePOStatus = async (id: string, status: string) => {
     const po = purchaseOrders.find(p => p.id === id);
     await req('PUT', `/purchase-orders/${id}`, { ...po, status, received_date: status === 'received' ? new Date().toISOString().split('T')[0] : po.received_date });
+    // When received → add stock to branch
+    if (status === 'received' && po?.branch_id) {
+      const items = typeof po.items === 'string' ? JSON.parse(po.items) : (po.items || []);
+      for (const item of items) {
+        if (item.product_id && item.quantity > 0) {
+          await fetch('/api/erp/branch-stock/adjust', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: JSON.stringify({ branch_id: po.branch_id, product_id: item.product_id, qty: item.quantity, type: 'purchase', note: `PO received: ${po.po_number || id}` }) });
+        }
+      }
+      fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : []));
+      fetch('/api/erp/branch-stock/summary', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStockSummary(Array.isArray(d) ? d : []));
+    }
     toast.success(`PO marked as ${status}`); loadAll();
   };
 
@@ -387,7 +398,7 @@ export default function AdminInventory() {
                   supplier={s}
                   onEdit={() => { setEditingSupplier(s); setSupplierForm(s); setSupplierDialog(true); }}
                   onDelete={async () => { if (!confirm('Delete supplier?')) return; await req('DELETE', `/suppliers/${s.id}`); loadAll(); }}
-                  onNewPO={() => { setPoForm({ supplier_id: s.id, items:[{product_id:'',product_name:'',quantity:1,unit_price:0}], expected_date:'', notes:'' }); setPoDialog(true); }}
+                  onNewPO={() => { setPoForm({ supplier_id: s.id, branch_id: '', items:[{product_id:'',product_name:'',quantity:1,unit_price:0}], expected_date:'', notes:'' }); setPoDialog(true); }}
                   onToggleActive={() => toggleSupplierActive(s)}
                 />
               ))}
@@ -410,7 +421,7 @@ export default function AdminInventory() {
                   {s}
                 </button>
               ))}
-              <Button size="sm" onClick={() => { setPoForm({ supplier_id:'', items:[{product_id:'',product_name:'',quantity:1,unit_price:0}], expected_date:'', notes:'' }); setPoDialog(true); }} className="gap-1.5 ml-auto">
+              <Button size="sm" onClick={() => { setPoForm({ supplier_id:'', branch_id: '', items:[{product_id:'',product_name:'',quantity:1,unit_price:0}], expected_date:'', notes:'' }); setPoDialog(true); }} className="gap-1.5 ml-auto">
                 <Plus className="h-4 w-4" /> New PO
               </Button>
             </div>
@@ -424,6 +435,7 @@ export default function AdminInventory() {
                       <div>
                         <p className="font-bold font-mono">{po.po_number}</p>
                         <p className="text-sm text-muted-foreground">{po.supplier_name || 'No supplier'}</p>
+                        {po.branch_name && <p className="text-xs text-blue-600 font-medium">{po.branch_name}</p>}
                         {po.expected_date && <p className="text-xs text-muted-foreground">Expected: {po.expected_date}</p>}
                       </div>
                       <div className="text-right">
@@ -700,6 +712,12 @@ export default function AdminInventory() {
                 <Select value={poForm.supplier_id} onValueChange={v => setPoForm(f => ({...f, supplier_id: v}))}>
                   <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Select supplier" /></SelectTrigger>
                   <SelectContent>{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">Deliver to Branch *</Label>
+                <Select value={poForm.branch_id} onValueChange={v => setPoForm(f => ({...f, branch_id: v}))}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Select branch" /></SelectTrigger>
+                  <SelectContent>{branchList.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div><Label className="text-xs">Expected Date</Label><Input type="date" className="mt-1 h-9" value={poForm.expected_date} onChange={e => setPoForm(f => ({...f, expected_date: e.target.value}))} /></div>

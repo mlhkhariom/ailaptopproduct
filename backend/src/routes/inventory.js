@@ -48,7 +48,7 @@ router.delete('/suppliers/:id', authMiddleware, adminOnly, async (req, res) => {
 
 router.get('/purchase-orders', authMiddleware, adminOnly, async (req, res) => {
   const { status, search } = req.query;
-  let q = `SELECT po.*, s.name as supplier_name FROM purchase_orders po LEFT JOIN suppliers s ON po.supplier_id=s.id WHERE 1=1`;
+  let q = `SELECT po.*, s.name as supplier_name, b.name as branch_name FROM purchase_orders po LEFT JOIN suppliers s ON po.supplier_id=s.id LEFT JOIN branches b ON b.id=po.branch_id WHERE 1=1`;
   const params = [];
   if (status && status !== 'all') { q += ' AND po.status=?'; params.push(status); }
   if (search) { q += ' AND (po.po_number ILIKE ? OR s.name ILIKE ?)'; params.push(`%${search}%`, `%${search}%`); }
@@ -60,7 +60,7 @@ router.post('/purchase-orders', authMiddleware, adminOnly, async (req, res) => {
   const { supplier_id, items, subtotal, tax, total, expected_date, notes } = req.body;
   const id = uuid();
   const po_number = 'PO-' + Date.now().toString().slice(-6);
-  await db.prepare('INSERT INTO purchase_orders (id,po_number,supplier_id,items,subtotal,tax,total,expected_date,notes,created_by) VALUES (?,?,?,?,?,?,?,?,?,?)')
+  await db.prepare('INSERT INTO purchase_orders (id,po_number,supplier_id,branch_id,items,subtotal,tax,total,expected_date,notes,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
     .run(id, po_number, supplier_id, JSON.stringify(items || []), subtotal || 0, tax || 0, total || 0, expected_date, notes, req.user.id);
   res.status(201).json({ id, po_number });
 });
