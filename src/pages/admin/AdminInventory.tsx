@@ -60,6 +60,7 @@ export default function AdminInventory() {
   const [serials, setSerials] = useState<any[]>([]);
   const [agingData, setAgingData] = useState<any>(null);
   const [branchStock, setBranchStock] = useState<any[]>([]);
+  const [branchList, setBranchList] = useState<any[]>([]);
   const [branchStockSummary, setBranchStockSummary] = useState<any[]>([]);
   const [transferOpen, setTransferOpen] = useState(false);
   const [serialSearch, setSerialSearch] = useState('');
@@ -92,6 +93,7 @@ export default function AdminInventory() {
     setMovements(Array.isArray(mov) ? mov : []);
     setBranches(Array.isArray(br) ? br : []);
     fetch('/api/erp/stock-aging', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setAgingData(d)).catch(() => {});
+    fetch('/api/erp/branches', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchList(Array.isArray(d) ? d : [])).catch(() => {});
     fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : [])).catch(() => {});
     fetch('/api/erp/branch-stock/summary', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStockSummary(Array.isArray(d) ? d : [])).catch(() => {});
     // Load serials
@@ -622,13 +624,13 @@ export default function AdminInventory() {
                   <div><Label className="text-xs">From Branch</Label>
                     <Select value={transferForm.from_branch} onValueChange={v => setTransferForm(f => ({ ...f, from_branch: v }))}>
                       <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Select branch" /></SelectTrigger>
-                      <SelectContent>{branchStockSummary.map((b: any) => <SelectItem key={b.branch?.id} value={b.branch?.id}>{b.branch?.name}</SelectItem>)}</SelectContent>
+                      <SelectContent>{branchList.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div><Label className="text-xs">To Branch</Label>
                     <Select value={transferForm.to_branch} onValueChange={v => setTransferForm(f => ({ ...f, to_branch: v }))}>
                       <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Select branch" /></SelectTrigger>
-                      <SelectContent>{branchStockSummary.map((b: any) => <SelectItem key={b.branch?.id} value={b.branch?.id}>{b.branch?.name}</SelectItem>)}</SelectContent>
+                      <SelectContent>{branchList.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div><Label className="text-xs">Product</Label>
@@ -646,7 +648,8 @@ export default function AdminInventory() {
                     const res = await fetch('/api/erp/branch-stock/transfer', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: JSON.stringify(transferForm) }).then(r => r.json());
                     if (res.error) { alert(res.error); return; }
                     setTransferOpen(false);
-                    fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : []));
+                    fetch('/api/erp/branches', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchList(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : []));
                     fetch('/api/erp/branch-stock/summary', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStockSummary(Array.isArray(d) ? d : []));
                   }}>Transfer</Button>
                 </DialogFooter>
@@ -828,12 +831,12 @@ export default function AdminInventory() {
             {/* Branch-wise initial stock */}
             <div className="border rounded-lg p-3 space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Initial Stock per Branch</p>
-              {branchStockSummary.map((b: any) => (
-                <div key={b.branch?.id} className="flex items-center gap-3">
-                  <span className="text-sm font-medium w-40">{b.branch?.name}</span>
+              {branchList.map((b: any) => (
+                <div key={b.id} className="flex items-center gap-3">
+                  <span className="text-sm font-medium w-40">{b.name}</span>
                   <Input type="number" min={0} className="h-8 w-24" placeholder="0"
-                    value={productForm.branch_stocks[b.branch?.id] || ''}
-                    onChange={e => setProductForm(f => ({ ...f, branch_stocks: { ...f.branch_stocks, [b.branch?.id]: Number(e.target.value) } }))} />
+                    value={productForm.branch_stocks[b.id] || ''}
+                    onChange={e => setProductForm(f => ({ ...f, branch_stocks: { ...f.branch_stocks, [b.id]: Number(e.target.value) } }))} />
                   <span className="text-xs text-muted-foreground">units</span>
                 </div>
               ))}
@@ -857,7 +860,8 @@ export default function AdminInventory() {
                 setProductDialog(false);
                 loadAll();
                 api.getProducts().then((p: any) => setProducts(Array.isArray(p) ? p : p?.products || []));
-                fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : []));
+                fetch('/api/erp/branches', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchList(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : []));
                 fetch('/api/erp/branch-stock/summary', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStockSummary(Array.isArray(d) ? d : []));
               } else { alert('Failed to create product'); }
             }}>Create Product</Button>
@@ -871,12 +875,12 @@ export default function AdminInventory() {
           <DialogHeader><DialogTitle>Branch Stock — {assignProduct?.name}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">Set current stock for each branch. Changes are saved as adjustments.</p>
-            {branchStockSummary.map((b: any) => (
-              <div key={b.branch?.id} className="flex items-center gap-3">
-                <span className="text-sm font-medium flex-1">{b.branch?.name}</span>
+            {branchList.map((b: any) => (
+              <div key={b.id} className="flex items-center gap-3">
+                <span className="text-sm font-medium flex-1">{b.name}</span>
                 <Input type="number" min={0} className="h-9 w-24"
-                  value={assignStocks[b.branch?.id] ?? 0}
-                  onChange={e => setAssignStocks(s => ({ ...s, [b.branch?.id]: Number(e.target.value) }))} />
+                  value={assignStocks[b.id] ?? 0}
+                  onChange={e => setAssignStocks(s => ({ ...s, [b.id]: Number(e.target.value) }))} />
                 <span className="text-xs text-muted-foreground">units</span>
               </div>
             ))}
@@ -893,7 +897,8 @@ export default function AdminInventory() {
                 }
               }
               setAssignBranchOpen(false);
-              fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : []));
+              fetch('/api/erp/branches', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchList(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : []));
               fetch('/api/erp/branch-stock/summary', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStockSummary(Array.isArray(d) ? d : []));
             }}>Save Branch Stock</Button>
           </DialogFooter>
