@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ERPLayout from "@/components/ERPLayout";
+import BranchSelector from "@/components/BranchSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,6 +23,7 @@ const STATUS_CFG = {
 
 export default function AdminAttendance() {
   const [staff, setStaff] = useState<any[]>([]);
+  const [branchFilter, setBranchFilter] = useState('all');
   const [attendance, setAttendance] = useState<any[]>([]);
   const [stats, setStats] = useState<any[]>([]);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -32,7 +34,7 @@ export default function AdminAttendance() {
   const load = async () => {
     setLoading(true);
     const [s, a, st] = await Promise.all([
-      req('GET', '/staff'),
+      req('GET', '/staff?include_inactive=0'),
       req('GET', `/attendance?date=${date}`),
       req('GET', `/attendance/stats?month=${month}`),
     ]);
@@ -53,6 +55,8 @@ export default function AdminAttendance() {
 
   const presentCount = staff.filter(s => getStatus(s.id) === 'present').length;
 
+  const filteredStaff = staff.filter((s: any) => branchFilter === 'all' || s.branch_id === branchFilter);
+
   return (
     <ERPLayout>
       <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-5">
@@ -63,7 +67,8 @@ export default function AdminAttendance() {
               <button onClick={() => setView('daily')} className={`px-3 py-1.5 text-xs font-medium ${view === 'daily' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>Daily</button>
               <button onClick={() => setView('monthly')} className={`px-3 py-1.5 text-xs font-medium ${view === 'monthly' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>Monthly</button>
             </div>
-            <Button size="sm" variant="outline" onClick={load} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></Button>
+  <BranchSelector value={branchFilter} onChange={setBranchFilter} className="w-44" />
+          <Button size="sm" variant="outline" onClick={load} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></Button>
           </div>
         </div>
 

@@ -1024,12 +1024,13 @@ router.get('/branch-comparison', authMiddleware, adminOnly, async (req, res) => 
 // ── GSTR-1 EXPORT ─────────────────────────────────────────
 
 router.get('/gstr1-export', authMiddleware, adminOnly, async (req, res) => {
-  const { from, to } = req.query;
+  const { from, to, branch_id } = req.query;
   const f = from || new Date().toISOString().slice(0, 7) + '-01';
   const t = to || new Date().toISOString().split('T')[0];
 
-  const services = await db.prepare(`SELECT booking_number as invoice_no, customer_name, customer_phone, total_charge as taxable_value, gst_enabled, created_at FROM service_bookings WHERE payment_status='paid' AND gst_enabled=1 AND DATE(created_at) BETWEEN ? AND ?`).all(f, t) || [];
-  const customs = await db.prepare(`SELECT invoice_number as invoice_no, customer_name, customer_phone, (subtotal-discount) as taxable_value, gst_enabled, created_at FROM custom_invoices WHERE payment_status='paid' AND gst_enabled=1 AND DATE(created_at) BETWEEN ? AND ?`).all(f, t) || [];
+  const bCond = branch_id ? ` AND branch_id='${branch_id}'` : '';
+  const services = await db.prepare(`SELECT booking_number as invoice_no, customer_name, customer_phone, total_charge as taxable_value, gst_enabled, created_at FROM service_bookings WHERE payment_status='paid' AND gst_enabled=1 AND DATE(created_at) BETWEEN ? AND ?${bCond}`).all(f, t) || [];
+  const customs = await db.prepare(`SELECT invoice_number as invoice_no, customer_name, customer_phone, (subtotal-discount) as taxable_value, gst_enabled, created_at FROM custom_invoices WHERE payment_status='paid' AND gst_enabled=1 AND DATE(created_at) BETWEEN ? AND ?${bCond}`).all(f, t) || [];
 
   const allInvoices = [...services, ...customs].map(inv => ({
     invoice_no: inv.invoice_no,
