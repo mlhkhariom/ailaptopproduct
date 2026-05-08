@@ -85,6 +85,14 @@ router.put('/job-cards/:id', authMiddleware, adminOnly, async (req, res) => {
             .run(part.qty, part.qty, part.product_id);
           await db.prepare('INSERT INTO stock_movements (id,product_id,type,quantity,reference_id,reference_type,notes,created_by) VALUES (?,?,?,?,?,?,?,?)')
             .run(uuid(), part.product_id, 'sale', part.qty, req.params.id, 'job_card', `Job card ${prev?.booking_number || req.params.id}`, req.user?.id || 'system');
+          // Also deduct from branch_stock if branch_id set
+          if (branch_id) {
+            const bs = await db.prepare('SELECT * FROM branch_stock WHERE branch_id=? AND product_id=?').get(branch_id, part.product_id);
+            if (bs) {
+              await db.prepare('UPDATE branch_stock SET stock=GREATEST(0,stock-?) WHERE branch_id=? AND product_id=?').run(part.qty, branch_id, part.product_id);
+              await db.prepare('INSERT INTO branch_stock_movements (id,branch_id,product_id,type,qty,note,ref_id) VALUES (?,?,?,?,?,?,?)').run(uuid(), branch_id, part.product_id, 'job_card_use', -part.qty, `Job card ${req.params.id}`, req.params.id);
+            }
+          }
         } catch {}
       }
     }
@@ -1187,11 +1195,13 @@ router.get('/einvoice/:invoice_id', authMiddleware, adminOnly, async (req, res) 
 
 // List payroll — filter by month
 router.get('/payroll', authMiddleware, adminOnly, async (req, res) => {
-  const { month } = req.query;
-  const rows = month
-    ? await db.prepare(`SELECT p.*, s.name as staff_name, s.role, s.salary as base_salary FROM payroll p LEFT JOIN staff s ON s.id=p.staff_id WHERE p.month=? ORDER BY s.name`).all(month)
-    : await db.prepare(`SELECT p.*, s.name as staff_name, s.role, s.salary as base_salary FROM payroll p LEFT JOIN staff s ON s.id=p.staff_id ORDER BY p.month DESC, s.name`).all();
-  res.json(rows || []);
+  const { month, branch_id } = req.query;
+  let q = `SELECT p.*, s.name as staff_name, s.role, s.salary as base_salary, s.branch_id as staff_branch FROM payroll p LEFT JOIN staff s ON s.id=p.staff_id WHERE 1=1`;
+  const params = [];
+  if (month) { q += ' AND p.month=?'; params.push(month); }
+  if (branch_id) { q += ' AND s.branch_id=?'; params.push(branch_id); }
+  q += ' ORDER BY p.month DESC, s.name';
+  res.json(await db.prepare(q).all(...params) || []);
 });
 
 // Auto-generate payroll for all active staff for a month

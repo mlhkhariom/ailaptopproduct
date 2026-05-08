@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ERPLayout from "@/components/ERPLayout";
+import BranchSelector from "@/components/BranchSelector";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ export default function AdminERPReports() {
   const [gstData, setGstData] = useState<any>(null);
   const [forecastData, setForecastData] = useState<any>(null);
   const [branchComp, setBranchComp] = useState<any>(null);
+  const [branchFilter, setBranchFilter] = useState('all');
   const [loading, setLoading] = useState(false);
 
   const applyPreset = (p: string) => {
@@ -38,11 +40,11 @@ export default function AdminERPReports() {
     setLoading(true);
     try {
       const [erpDash, invStats, expenses, orders, jobCards, customInvoices, staff, techPerf] = await Promise.all([
-        authFetch('/api/erp/dashboard'),
+        authFetch(`/api/erp/dashboard${branchFilter !== 'all' ? '?branch_id=' + branchFilter : ''}`),
         authFetch('/api/inventory/stats'),
-        authFetch(`/api/erp/expenses?from=${from}&to=${to}`),
+        authFetch(`/api/erp/expenses?from=${from}&to=${to}${branchFilter !== 'all' ? '&branch_id=' + branchFilter : ''}`),
         authFetch(`/api/orders?from=${from}&to=${to}`),
-        authFetch(`/api/erp/job-cards?from=${from}&to=${to}`),
+        authFetch(`/api/erp/job-cards?from=${from}&to=${to}${branchFilter !== 'all' ? '&branch_id=' + branchFilter : ''}`),
         authFetch(`/api/erp/billing?type=custom&from=${from}&to=${to}`),
         authFetch('/api/erp/staff'),
         authFetch(`/api/erp/technician-performance?from=${from}&to=${to}`),
@@ -91,7 +93,7 @@ export default function AdminERPReports() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [from, to]);
+  useEffect(() => { load(); }, [from, to, branchFilter]);
 
   const printReport = () => {
     const win = window.open('', '_blank');
@@ -158,7 +160,8 @@ export default function AdminERPReports() {
                 {p === 'week' ? '7D' : p === 'month' ? '30D' : p === 'quarter' ? '90D' : p === 'year' ? '1Y' : 'Custom'}
               </button>
             ))}
-            <Button size="sm" variant="outline" onClick={load} disabled={loading}>
+  <BranchSelector value={branchFilter} onChange={setBranchFilter} className="w-44" />
+          <Button size="sm" variant="outline" onClick={load} disabled={loading}>
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
             <Button size="sm" variant="outline" onClick={printReport}>

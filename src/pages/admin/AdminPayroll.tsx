@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ERPLayout from "@/components/ERPLayout";
+import BranchSelector from "@/components/BranchSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,7 @@ const months = Array.from({ length: 12 }, (_, i) => {
 export default function AdminPayroll() {
   const [list, setList] = useState<any[]>([]);
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [branchFilter, setBranchFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editRow, setEditRow] = useState<any>(null);
@@ -32,15 +34,15 @@ export default function AdminPayroll() {
 
   const load = async () => {
     setLoading(true);
-    const d = await req('GET', `/payroll?month=${month}`);
+    const d = await req('GET', `/payroll?month=${month}${branchFilter !== 'all' ? '&branch_id=' + branchFilter : ''}`);
     setList(Array.isArray(d) ? d : []);
     setLoading(false);
   };
-  useEffect(() => { load(); }, [month]);
+  useEffect(() => { load(); }, [month, branchFilter]);
 
   const generate = async () => {
     setLoading(true);
-    const res = await req('POST', '/payroll/generate', { month });
+    const res = await req('POST', '/payroll/generate', { month, branch_id: branchFilter !== 'all' ? branchFilter : undefined });
     if (res.generated === 0) toast.info('Payroll already generated for this month');
     else toast.success(`Generated ${res.generated} payroll records`);
     load();
@@ -83,6 +85,7 @@ export default function AdminPayroll() {
               <SelectTrigger className="w-36 h-9"><SelectValue /></SelectTrigger>
               <SelectContent>{months.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
             </Select>
+<BranchSelector value={branchFilter} onChange={setBranchFilter} className="w-44" />
             <Button size="sm" variant="outline" onClick={load} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></Button>
             <Button size="sm" onClick={generate} className="gap-1.5"><Play className="h-4 w-4" /> Generate Payroll</Button>
           </div>
