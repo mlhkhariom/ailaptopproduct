@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ERPLayout from "@/components/ERPLayout";
+import BranchSelector from "@/components/BranchSelector";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Package, Users, Wrench, BarChart3, IndianRupee, Truck, ClipboardList, Wallet, UserCheck, TrendingUp, TrendingDown, AlertTriangle, ShoppingCart, ArrowRight, Cpu, DollarSign, Box } from "lucide-react";
@@ -52,6 +53,7 @@ const MODULE_GROUPS = [
 
 export default function AdminERP() {
   const [stats, setStats] = useState<any>({});
+  const [branchFilter, setBranchFilter] = useState('all');
   const [invStats, setInvStats] = useState<any>({});
   const [branchCount, setBranchCount] = useState(0);
   const [pendingBilling, setPendingBilling] = useState(0);
@@ -61,12 +63,12 @@ export default function AdminERP() {
 
   useEffect(() => {
     const h = { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` };
-    req('/dashboard').then(d => setStats(d || {}));
+    req(`/dashboard${branchFilter !== 'all' ? '?branch_id=' + branchFilter : ''}`).then(d => setStats(d || {}));
     fetch('/api/inventory/stats', { headers: h }).then(r => r.json()).then(d => setInvStats(d || {}));
     req('/branches').then(d => setBranchCount(Array.isArray(d) ? d.filter((b: any) => b.is_active).length : 0));
     fetch('/api/erp/billing?status=pending', { headers: h }).then(r => r.json()).then(d => setPendingBilling(Array.isArray(d) ? d.length : 0));
     fetch('/api/reports/dashboard', { headers: h }).then(r => r.json()).then(d => setEcomStats(d || {}));
-    req('/job-cards').then(d => setRecentJobs(Array.isArray(d) ? d.slice(0, 5) : []));
+    req(`/job-cards${branchFilter !== 'all' ? '?branch_id=' + branchFilter : ''}`).then(d => setRecentJobs(Array.isArray(d) ? d.slice(0, 5) : []));
     req('/leads?status=all').then(d => setRecentLeads(Array.isArray(d) ? d.slice(0, 5) : []));
   }, []);
 

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import BillingKPICards from "@/components/billing/BillingKPICards";
 import BillingFilters from "@/components/billing/BillingFilters";
+import BranchSelector from "@/components/BranchSelector";
 import BillingTable from "@/components/billing/BillingTable";
 import CustomInvoiceForm from "@/components/billing/CustomInvoiceForm";
 
@@ -32,6 +33,7 @@ export default function AdminBilling() {
   const [rows, setRows] = useState<BillingRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [typeFilter, setTypeFilter] = useState('all');
+  const [branchFilter, setBranchFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [from, setFrom] = useState('');
@@ -203,7 +205,8 @@ export default function AdminBilling() {
         <BillingKPICards rows={rows} />
 
         {/* Filters */}
-        <BillingFilters
+        <BranchSelector value={branchFilter} onChange={setBranchFilter} className="w-44" />
+          <BillingFilters
           typeFilter={typeFilter} setTypeFilter={setTypeFilter}
           statusFilter={statusFilter} setStatusFilter={setStatusFilter}
           search={search} setSearch={setSearch}

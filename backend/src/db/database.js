@@ -465,6 +465,13 @@ export const initDB = async () => {
     "ALTER TABLE leads ADD COLUMN IF NOT EXISTS tags TEXT DEFAULT '[]'",
     "ALTER TABLE leads ADD COLUMN IF NOT EXISTS score INTEGER DEFAULT 0",
     "ALTER TABLE leads ADD COLUMN IF NOT EXISTS deal_value REAL DEFAULT 0",
+    // Multi-branch Phase A
+    "ALTER TABLE staff ADD COLUMN IF NOT EXISTS branch_id TEXT",
+    "ALTER TABLE expenses ADD COLUMN IF NOT EXISTS branch_id TEXT",
+    "ALTER TABLE leads ADD COLUMN IF NOT EXISTS branch_id TEXT",
+    "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS branch_id TEXT",
+    "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS branch_id TEXT",
+    "ALTER TABLE payroll ADD COLUMN IF NOT EXISTS branch_id TEXT",
   ];
   for (const m of migrations) {
     try { await pool.query(m); } catch {}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ERPLayout from "@/components/ERPLayout";
+import BranchSelector from "@/components/BranchSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,7 @@ export default function AdminExpenses() {
   // Filters
   const [catFilter, setCatFilter] = useState('all');
   const [from, setFrom] = useState('');
+  const [branchFilter, setBranchFilter] = useState('all');
   const [to, setTo] = useState('');
 
   const load = async () => {
@@ -47,9 +49,7 @@ export default function AdminExpenses() {
 
   useEffect(() => { load(); }, [from, to]);
 
-  const filtered = expenses.filter(e =>
-    catFilter === 'all' || e.category === catFilter
-  );
+  const filtered = expenses.filter(e => (branchFilter === 'all' || e.branch_id === branchFilter) && (catFilter === 'all' || e.category === catFilter));
 
   const save = async () => {
     if (!form.category || !form.amount) return toast.error('Category and amount required');
@@ -153,8 +153,9 @@ export default function AdminExpenses() {
           <Input type="date" className="h-8 text-xs w-32" value={from} onChange={e => setFrom(e.target.value)} />
           <span className="text-xs text-muted-foreground">to</span>
           <Input type="date" className="h-8 text-xs w-32" value={to} onChange={e => setTo(e.target.value)} />
+          <BranchSelector value={branchFilter} onChange={setBranchFilter} className="w-40" />
           {(from || to || catFilter !== 'all') && (
-            <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setFrom(''); setTo(''); setCatFilter('all'); }}>
+            <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setFrom(''); setTo(''); setCatFilter('all'); setBranchFilter('all'); }}>
               <X className="h-3 w-3 mr-1" /> Clear
             </Button>
           )}

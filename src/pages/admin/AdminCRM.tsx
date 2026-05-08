@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ERPLayout from "@/components/ERPLayout";
+import BranchSelector from "@/components/BranchSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +43,7 @@ export default function AdminCRM() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
+  const [branchFilter, setBranchFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
@@ -66,7 +68,7 @@ export default function AdminCRM() {
   };
   useEffect(() => { load(); }, [statusFilter]);
 
-  const filtered = leads.filter(l =>
+  const filtered = leads.filter(l => (branchFilter === 'all' || l.branch_id === branchFilter) &&
     (!search || l.name?.toLowerCase().includes(search.toLowerCase()) || l.phone?.includes(search) || l.interest?.toLowerCase().includes(search.toLowerCase())) &&
     (sourceFilter === 'all' || l.source === sourceFilter)
   );

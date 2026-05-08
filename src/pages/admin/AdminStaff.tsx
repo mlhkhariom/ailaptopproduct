@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ERPLayout from "@/components/ERPLayout";
+import BranchSelector from "@/components/BranchSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +40,7 @@ export default function AdminStaff() {
   const [form, setForm] = useState<any>(emptyForm);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [branchFilter, setBranchFilter] = useState('all');
   const [showInactive, setShowInactive] = useState(false);
   const [slipMonth, setSlipMonth] = useState(new Date().toISOString().slice(0, 7));
   const [commissions, setCommissions] = useState<any[]>([]);
@@ -214,6 +216,7 @@ export default function AdminStaff() {
             <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search name, role, phone..." className="pl-8 h-8 text-sm"
               value={search} onChange={e => setSearch(e.target.value)} />
+              <BranchSelector value={branchFilter} onChange={setBranchFilter} className="w-44" />
           </div>
           <div className="flex items-center gap-2">
             <Switch checked={showInactive} onCheckedChange={setShowInactive} />
@@ -377,6 +380,9 @@ export default function AdminStaff() {
               </div>
               <div><Label className="text-xs">Joining Date</Label>
                 <Input type="date" className="mt-1 h-9" value={form.joining_date} onChange={e => setForm((f: any) => ({ ...f, joining_date: e.target.value }))} />
+              </div>
+              <div><Label className="text-xs">Branch</Label>
+                <BranchSelector value={form.branch_id || 'all'} onChange={v => setForm((f: any) => ({ ...f, branch_id: v === 'all' ? '' : v }))} allLabel="No Branch" className="mt-1 w-full" />
               </div>
               <div><Label className="text-xs">Address</Label>
                 <Input className="mt-1 h-9" value={form.address} onChange={e => setForm((f: any) => ({ ...f, address: e.target.value }))} />

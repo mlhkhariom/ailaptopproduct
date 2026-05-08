@@ -115,21 +115,22 @@ router.delete('/job-cards/:id', authMiddleware, adminOnly, async (req, res) => {
 // ── EXPENSES ──────────────────────────────────────────────
 
 router.get('/expenses', authMiddleware, adminOnly, async (req, res) => {
-  const { from, to } = req.query;
+  const { from, to, branch_id } = req.query;
   let q = 'SELECT * FROM expenses WHERE 1=1';
   const params = [];
   if (from) { q += ' AND date>=?'; params.push(from); }
   if (to) { q += ' AND date<=?'; params.push(to); }
+  if (branch_id) { q += ' AND branch_id=?'; params.push(branch_id); }
   q += ' ORDER BY date DESC, created_at DESC';
   res.json(await db.prepare(q).all(...params) || []);
 });
 
 router.post('/expenses', authMiddleware, adminOnly, async (req, res) => {
-  const { category, amount, description, payment_method, date } = req.body;
+  const { category, amount, description, payment_method, date, branch_id } = req.body;
   if (!category || !amount) return res.status(400).json({ error: 'category and amount required' });
   const id = uuid();
-  await db.prepare('INSERT INTO expenses (id,category,amount,description,payment_method,date,created_by) VALUES (?,?,?,?,?,?,?)')
-    .run(id, category, amount, description, payment_method || 'cash', date || new Date().toISOString().split('T')[0], req.user.id);
+  await db.prepare('INSERT INTO expenses (id,category,amount,description,payment_method,date,branch_id,created_by) VALUES (?,?,?,?,?,?,?,?)')
+    .run(id, category, amount, description, payment_method || 'cash', date || new Date().toISOString().split('T')[0], branch_id || null, req.user.id);
   res.status(201).json({ id });
 });
 
@@ -148,19 +149,20 @@ router.put('/expenses/:id', authMiddleware, adminOnly, async (req, res) => {
 // ── STAFF ─────────────────────────────────────────────────
 
 router.get('/staff', authMiddleware, adminOnly, async (req, res) => {
-  const { include_inactive } = req.query;
-  const q = include_inactive
-    ? 'SELECT * FROM staff ORDER BY is_active DESC, name ASC'
-    : 'SELECT * FROM staff WHERE is_active=1 ORDER BY name ASC';
-  res.json(await db.prepare(q).all() || []);
+  const { include_inactive, branch_id } = req.query;
+  let q = include_inactive ? 'SELECT * FROM staff WHERE 1=1' : 'SELECT * FROM staff WHERE is_active=1';
+  const params = [];
+  if (branch_id) { q += ' AND branch_id=?'; params.push(branch_id); }
+  q += ' ORDER BY is_active DESC, name ASC';
+  res.json(await db.prepare(q).all(...params) || []);
 });
 
 router.post('/staff', authMiddleware, adminOnly, async (req, res) => {
-  const { name, role, phone, email, salary, joining_date, address } = req.body;
+  const { name, role, phone, email, salary, joining_date, address, branch_id } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
   const id = uuid();
-  await db.prepare('INSERT INTO staff (id,name,role,phone,email,salary,joining_date,address) VALUES (?,?,?,?,?,?,?,?)')
-    .run(id, name, role, phone, email, salary || 0, joining_date, address);
+  await db.prepare('INSERT INTO staff (id,name,role,phone,email,salary,joining_date,address,branch_id) VALUES (?,?,?,?,?,?,?,?,?)')
+    .run(id, name, role, phone, email, salary || 0, joining_date, address, branch_id || null);
   res.status(201).json({ id });
 });
 
@@ -181,14 +183,16 @@ router.delete('/staff/:id', authMiddleware, adminOnly, async (req, res) => {
 router.get('/dashboard', authMiddleware, adminOnly, async (req, res) => {
   const today = new Date().toISOString().split('T')[0];
   const monthStart = today.slice(0, 7) + '-01';
+  const { branch_id } = req.query;
+  const bCond = branch_id ? ` AND branch_id='${branch_id}'` : '';
 
   const [pendingJobs, completedToday, monthRevenue, monthExpenses, totalStaff, pendingPayments] = await Promise.all([
-    db.prepare("SELECT COUNT(*) as c FROM service_bookings WHERE status IN ('pending','in_progress')").get(),
-    db.prepare("SELECT COUNT(*) as c FROM service_bookings WHERE DATE(completed_at)=?").get(today),
-    db.prepare("SELECT COALESCE(SUM(total_charge),0) as v FROM service_bookings WHERE payment_status='paid' AND DATE(created_at)>=?").get(monthStart),
-    db.prepare("SELECT COALESCE(SUM(amount),0) as v FROM expenses WHERE date>=?").get(monthStart),
-    db.prepare("SELECT COUNT(*) as c FROM staff WHERE is_active=1").get(),
-    db.prepare("SELECT COUNT(*) as c FROM service_bookings WHERE payment_status='pending' AND status='completed'").get(),
+    db.prepare(`SELECT COUNT(*) as c FROM service_bookings WHERE status IN ('pending','in_progress')${bCond}`).get(),
+    db.prepare(`SELECT COUNT(*) as c FROM service_bookings WHERE DATE(completed_at)=?${bCond}`).get(today),
+    db.prepare(`SELECT COALESCE(SUM(total_charge),0) as v FROM service_bookings WHERE payment_status='paid' AND DATE(created_at)>=?${bCond}`).get(monthStart),
+    db.prepare(`SELECT COALESCE(SUM(amount),0) as v FROM expenses WHERE date>=?${branch_id ? " AND branch_id='" + branch_id + "'" : ''}`).get(monthStart),
+    db.prepare(`SELECT COUNT(*) as c FROM staff WHERE is_active=1${bCond}`).get(),
+    db.prepare(`SELECT COUNT(*) as c FROM service_bookings WHERE payment_status='pending' AND status='completed'${bCond}`).get(),
   ]);
 
   res.json({
@@ -199,6 +203,7 @@ router.get('/dashboard', authMiddleware, adminOnly, async (req, res) => {
     netProfit: (monthRevenue?.v || 0) - (monthExpenses?.v || 0),
     totalStaff: totalStaff?.c || 0,
     pendingPayments: pendingPayments?.c || 0,
+    branch_id: branch_id || 'all',
   });
 });
 
@@ -935,7 +940,7 @@ router.post('/recurring/process', authMiddleware, adminOnly, async (req, res) =>
   for (const r of due) {
     const invoice_number = 'ALW-' + Date.now().toString().slice(-6);
     const id = uuid();
-    await db.prepare(`INSERT INTO custom_invoices (id,invoice_number,customer_name,customer_phone,customer_email,items,subtotal,discount,total,notes,payment_status,payment_method,gst_enabled) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    await db.prepare(`INSERT INTO custom_invoices (id,invoice_number,customer_name,customer_phone,customer_email,items,subtotal,discount,total,notes,payment_status,payment_method,gst_enabled,branch_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
       .run(id, invoice_number, r.customer_name, r.customer_phone, r.customer_email, r.items, r.subtotal, r.discount, r.total, r.notes, 'pending', r.payment_method, r.gst_enabled);
     // Calculate next date
     const next = new Date(r.next_date);
@@ -1193,7 +1198,9 @@ router.get('/payroll', authMiddleware, adminOnly, async (req, res) => {
 router.post('/payroll/generate', authMiddleware, adminOnly, async (req, res) => {
   const { month } = req.body; // format: 2026-05
   if (!month) return res.status(400).json({ error: 'month required (YYYY-MM)' });
-  const staff = await db.prepare("SELECT * FROM staff WHERE is_active=1").all() || [];
+  const { month, branch_id } = req.body;
+  const staffQ = branch_id ? "SELECT * FROM staff WHERE is_active=1 AND branch_id=?" : "SELECT * FROM staff WHERE is_active=1";
+  const staff = branch_id ? await db.prepare(staffQ).all(branch_id) || [] : await db.prepare(staffQ).all() || [];
   const created = [];
   for (const s of staff) {
     const exists = await db.prepare('SELECT id FROM payroll WHERE staff_id=? AND month=?').get(s.id, month);
