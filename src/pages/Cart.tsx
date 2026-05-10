@@ -21,16 +21,16 @@ const Cart = () => {
   const [applying, setApplying] = useState(false);
   const [shipping, setShipping] = useState<any>({ free: false, standard: 0, free_above: 499 });
 
+  const subtotal = getSubtotal();
+  const total = getTotal();
+  const suggested = products.filter((p) => !items.find((i) => i.product.id === p.id)).slice(0, 4);
+
   useEffect(() => {
     if (subtotal > 0) api.getShipping(subtotal).then(setShipping).catch(() => {});
   }, [subtotal]);
 
   const shippingCost = shipping.free ? 0 : (shipping.standard || 0);
   const finalTotal = total + shippingCost;
-
-  const subtotal = getSubtotal();
-  const total = getTotal();
-  const suggested = products.filter((p) => !items.find((i) => i.product.id === p.id)).slice(0, 4);
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return;
