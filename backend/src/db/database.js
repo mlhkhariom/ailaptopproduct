@@ -475,6 +475,17 @@ export const initDB = async () => {
     "ALTER TABLE staff ADD COLUMN IF NOT EXISTS bank_ifsc TEXT",
     "ALTER TABLE staff ADD COLUMN IF NOT EXISTS bank_name TEXT",
     "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS branch_id TEXT",
+    `CREATE TABLE IF NOT EXISTS shifts (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, start_time TEXT NOT NULL,
+      end_time TEXT NOT NULL, branch_id TEXT, is_active INTEGER DEFAULT 1,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    "ALTER TABLE staff ADD COLUMN IF NOT EXISTS shift_id TEXT",
+    `CREATE TABLE IF NOT EXISTS lead_assignment_rules (
+      id TEXT PRIMARY KEY, source TEXT NOT NULL, assigned_to TEXT NOT NULL,
+      branch_id TEXT, is_active INTEGER DEFAULT 1,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     `CREATE TABLE IF NOT EXISTS audit_log (
       id TEXT PRIMARY KEY, user_id TEXT, user_name TEXT,
       action TEXT NOT NULL, module TEXT NOT NULL, record_id TEXT,

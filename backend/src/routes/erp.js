@@ -297,6 +297,13 @@ router.post('/leads', authMiddleware, adminOnly, async (req, res) => {
     .run(id, name, phone, email, source || 'walk-in', interest, budget || 0, deal_value || budget || 0,
       status || 'new', priority || 'normal', assigned_to, notes, next_followup, expected_close,
       JSON.stringify(tags || []), score || 0);
+  // Auto-assign based on rules
+  try {
+    const rule = await db.prepare('SELECT * FROM lead_assignment_rules WHERE source=? AND is_active=1').get(source);
+    if (rule) {
+      await db.prepare('UPDATE leads SET assigned_to=?,branch_id=COALESCE(?,branch_id) WHERE id=?').run(rule.assigned_to, rule.branch_id, id);
+    }
+  } catch {}
   res.status(201).json({ id });
 });
 
@@ -1847,4 +1854,46 @@ router.get('/audit-log', authMiddleware, adminOnly, async (req, res) => {
   q += ' ORDER BY created_at DESC LIMIT ?';
   params.push(parseInt(limit));
   res.json(await db.prepare(q).all(...params) || []);
+});
+
+// ── SHIFT MANAGEMENT ──────────────────────────────────────
+router.get('/shifts', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM shifts WHERE is_active=1 ORDER BY start_time').all() || []);
+});
+router.post('/shifts', authMiddleware, adminOnly, async (req, res) => {
+  const { name, start_time, end_time, branch_id } = req.body;
+  if (!name || !start_time || !end_time) return res.status(400).json({ error: 'name, start_time, end_time required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO shifts (id,name,start_time,end_time,branch_id) VALUES (?,?,?,?,?)').run(id, name, start_time, end_time, branch_id || null);
+  res.status(201).json({ id });
+});
+router.put('/shifts/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { name, start_time, end_time, branch_id, is_active } = req.body;
+  await db.prepare('UPDATE shifts SET name=?,start_time=?,end_time=?,branch_id=?,is_active=? WHERE id=?').run(name, start_time, end_time, branch_id || null, is_active ? 1 : 0, req.params.id);
+  res.json({ message: 'Updated' });
+});
+router.delete('/shifts/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM shifts WHERE id=?').run(req.params.id);
+  res.json({ message: 'Deleted' });
+});
+// Assign shift to staff
+router.patch('/staff/:id/shift', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('UPDATE staff SET shift_id=? WHERE id=?').run(req.body.shift_id || null, req.params.id);
+  res.json({ message: 'Shift assigned' });
+});
+
+// ── LEAD AUTO-ASSIGNMENT RULES ────────────────────────────
+router.get('/lead-rules', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM lead_assignment_rules WHERE is_active=1 ORDER BY source').all() || []);
+});
+router.post('/lead-rules', authMiddleware, adminOnly, async (req, res) => {
+  const { source, assigned_to, branch_id } = req.body;
+  if (!source || !assigned_to) return res.status(400).json({ error: 'source and assigned_to required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO lead_assignment_rules (id,source,assigned_to,branch_id) VALUES (?,?,?,?)').run(id, source, assigned_to, branch_id || null);
+  res.status(201).json({ id });
+});
+router.delete('/lead-rules/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM lead_assignment_rules WHERE id=?').run(req.params.id);
+  res.json({ message: 'Deleted' });
 });

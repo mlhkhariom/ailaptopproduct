@@ -1,6 +1,7 @@
 import AdminLayout from "@/components/AdminLayout";
 import { Link, useLocation } from "react-router-dom";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { ChevronRight, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -24,6 +25,7 @@ interface ERPLayoutProps {
 
 export default function ERPLayout({ children, onAction }: ERPLayoutProps) {
   const location = useLocation();
+  useKeyboardShortcuts();
   const route = ERP_ROUTES[location.pathname] || { label: "ERP" };
 
   return (
