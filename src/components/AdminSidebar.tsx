@@ -93,6 +93,7 @@ const systemMenu = [
 export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const [sidebarSearch, setSidebarSearch] = useState("");
   const unreadCount = useNotificationStore((s) => s.unreadCount());
   const { user } = useAuth();
   const { can } = usePermissions();
