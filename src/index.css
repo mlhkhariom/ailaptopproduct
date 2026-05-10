@@ -109,3 +109,23 @@
   }
   .animate-float { animation: float 4s ease-in-out infinite; }
 }
+
+/* Mobile responsive tables */
+@media (max-width: 768px) {
+  .border.rounded-xl table { min-width: 600px; }
+  .border.rounded-xl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* Touch-friendly buttons */
+  button, a[role="button"], [role="menuitem"] { min-height: 44px; min-width: 44px; }
+  /* Compact padding on mobile */
+  td, th { padding: 8px 6px !important; font-size: 12px !important; }
+}
+
+/* Safe area for bottom nav */
+.safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Touch-friendly tap targets */
+@media (max-width: 768px) {
+  .h-7, .h-8 { min-height: 36px !important; }
+  input[type="checkbox"] { min-width: 20px; min-height: 20px; }
+  select, input, textarea { font-size: 16px !important; } /* prevent iOS zoom */
+}

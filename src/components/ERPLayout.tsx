@@ -1,5 +1,6 @@
 import AdminLayout from "@/components/AdminLayout";
 import { Link, useLocation } from "react-router-dom";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import { ChevronRight, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -44,6 +45,8 @@ export default function ERPLayout({ children, onAction }: ERPLayoutProps) {
       </div>
 
       {children}
+      <div className="h-16 md:hidden" /> {/* spacer for bottom nav */}
+      <MobileBottomNav />
     </AdminLayout>
   );
 }
