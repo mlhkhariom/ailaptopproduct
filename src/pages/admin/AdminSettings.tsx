@@ -242,6 +242,40 @@ const AdminSettings = () => {
 
                 <div className="p-4 rounded-xl border bg-muted/20">
                   <div className="flex items-center gap-2 mb-3">
+                    <CreditCard className="h-5 w-5 text-purple-500" />
+                    <div>
+                      <h3 className="font-medium text-sm">PhonePe Payment Gateway</h3>
+                      <p className="text-[10px] text-muted-foreground">India's #1 UPI app — direct PG integration</p>
+                    </div>
+                    <Badge variant="outline" className="text-[9px] ml-auto">Optional</Badge>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div><Label className="text-xs">Merchant ID</Label><Input className="mt-1 h-9 text-xs" value={s('phonepe_merchant_id')} onChange={e => setS('phonepe_merchant_id', e.target.value)} placeholder="PGTESTPAYUAT" /></div>
+                    <div><Label className="text-xs">Salt Key</Label><Input className="mt-1 h-9 text-xs" type="password" value={s('phonepe_salt_key')} onChange={e => setS('phonepe_salt_key', e.target.value)} placeholder="••••••••" /></div>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-3 mt-3">
+                    <div><Label className="text-xs">Salt Index</Label><Input className="mt-1 h-9 text-xs" value={s('phonepe_salt_index') || '1'} onChange={e => setS('phonepe_salt_index', e.target.value)} placeholder="1" /></div>
+                    <div className="flex items-center gap-2 mt-5">
+                      <Switch checked={s('phonepe_production') === 'true'} onCheckedChange={v => setS('phonepe_production', String(v))} />
+                      <Label className="text-xs">Production Mode</Label>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-3 border-t pt-3">
+                    <Switch checked={s('payment_phonepe') === 'true'} onCheckedChange={v => setS('payment_phonepe', String(v))} />
+                    <Label className="text-xs font-medium">Enable PhonePe</Label>
+                    <div className="ml-auto flex gap-1">
+                      {s('phonepe_merchant_id') && s('phonepe_salt_key') ? (
+                        <Badge variant="default" className="text-[9px] bg-green-600">✓ Ready</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[9px]">Add Merchant + Salt</Badge>
+                      )}
+                      {s('phonepe_production') === 'true' ? <Badge className="text-[9px] bg-red-600">LIVE</Badge> : <Badge variant="outline" className="text-[9px]">SANDBOX</Badge>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border bg-muted/20">
+                  <div className="flex items-center gap-2 mb-3">
                     <BarChart3 className="h-5 w-5 text-orange-500" />
                     <div>
                       <h3 className="font-medium text-sm">Google Analytics & Search Console</h3>
@@ -380,6 +414,7 @@ const AdminSettings = () => {
                 {[
                   { key: 'payment_razorpay', label: "Razorpay (Recommended)", desc: "One gateway — accepts UPI, Card, NetBanking, Wallets, EMI automatically. Configure sub-methods in Razorpay dashboard.", highlight: true },
                   { key: 'payment_cashfree', label: "Cashfree", desc: "Instant settlements, low fees, UPI-first" },
+                  { key: 'payment_phonepe', label: "PhonePe PG", desc: "India's #1 UPI — direct integration" },
                   { key: 'payment_paytm', label: "Paytm Gateway", desc: "Alternative — separate merchant account required" },
                   { key: 'payment_cod', label: "Cash on Delivery", desc: `+₹${s('shipping_cod_charge') || 30} handling fee (no gateway)` },
                 ].map((m) => (

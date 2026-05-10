@@ -46,6 +46,7 @@ router.get('/methods', async (req, res) => {
     razorpay: { enabled: await isEnabled('payment_razorpay'), key_id: await getSetting('razorpay_key_id') },
     paytm: { enabled: await isEnabled('payment_paytm') },
     cashfree: { enabled: await isEnabled('payment_cashfree'), app_id: await getSetting('cashfree_app_id') },
+    phonepe: { enabled: await isEnabled('payment_phonepe'), merchant_id: await getSetting('phonepe_merchant_id') },
     upi: { enabled: (await getSetting('payment_upi')) !== 'false' },
     card: { enabled: (await getSetting('payment_card')) !== 'false' },
     netbanking: { enabled: (await getSetting('payment_netbanking')) !== 'false' },
@@ -367,6 +368,124 @@ router.post('/cashfree/webhook', async (req, res) => {
     res.json({ received: true });
   } catch (e) {
     console.error('Cashfree webhook error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
+
+// ── PHONEPE ───────────────────────────────────────────────
+import { createHash as phonepeHash } from 'crypto';
+
+router.post('/phonepe/initiate', authMiddleware, async (req, res) => {
+  const merchantId = await getSetting('phonepe_merchant_id');
+  const saltKey = await getSetting('phonepe_salt_key');
+  const saltIndex = await getSetting('phonepe_salt_index') || '1';
+  const isProduction = (await getSetting('phonepe_production')) === 'true';
+
+  if (!merchantId || !saltKey) {
+    return res.status(400).json({ error: 'PhonePe not configured. Add Merchant ID + Salt Key in Admin → Settings → API Keys.' });
+  }
+
+  const { amount, orderId, customerPhone } = req.body;
+  if (!amount || !orderId) return res.status(400).json({ error: 'amount and orderId required' });
+
+  const host = isProduction
+    ? 'https://api.phonepe.com/apis/hermes'
+    : 'https://api-preprod.phonepe.com/apis/pg-sandbox';
+
+  const payload = {
+    merchantId,
+    merchantTransactionId: orderId,
+    merchantUserId: 'USR_' + (req.user?.id?.slice(0,10) || Date.now()),
+    amount: Math.round(Number(amount) * 100), // paise
+    redirectUrl: `${process.env.FRONTEND_URL || 'http://localhost:8080'}/order-success?order=${orderId}&gateway=phonepe`,
+    redirectMode: 'REDIRECT',
+    callbackUrl: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payment/phonepe/callback`,
+    mobileNumber: customerPhone || '9999999999',
+    paymentInstrument: { type: 'PAY_PAGE' },
+  };
+
+  // PhonePe X-VERIFY: sha256(base64(payload) + "/pg/v1/pay" + saltKey) + "###" + saltIndex
+  const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString('base64');
+  const stringToHash = payloadBase64 + '/pg/v1/pay' + saltKey;
+  const sha256 = phonepeHash('sha256').update(stringToHash).digest('hex');
+  const xVerify = sha256 + '###' + saltIndex;
+
+  try {
+    const response = await fetch(`${host}/pg/v1/pay`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-VERIFY': xVerify,
+        'accept': 'application/json',
+      },
+      body: JSON.stringify({ request: payloadBase64 }),
+    });
+    const data = await response.json();
+    if (data.success && data.data?.instrumentResponse?.redirectInfo?.url) {
+      res.json({
+        redirect_url: data.data.instrumentResponse.redirectInfo.url,
+        transaction_id: data.data.merchantTransactionId,
+        environment: isProduction ? 'production' : 'sandbox',
+      });
+    } else {
+      res.status(502).json({ error: data.message || 'PhonePe order failed', detail: data });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/phonepe/callback', async (req, res) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+  try {
+    const encoded = req.body.response;
+    if (encoded) {
+      const decoded = JSON.parse(Buffer.from(encoded, 'base64').toString());
+      const orderId = decoded?.data?.merchantTransactionId;
+      const status = decoded?.code;
+      if (status === 'PAYMENT_SUCCESS' && orderId) {
+        await db.prepare("UPDATE orders SET payment_status='paid', razorpay_id=? WHERE order_number=?")
+          .run(decoded.data.transactionId || '', orderId);
+        return res.redirect(`${frontendUrl}/order-success?order=${orderId}&gateway=phonepe&payment=success`);
+      }
+    }
+    res.redirect(`${frontendUrl}/checkout?payment=failed&gateway=phonepe`);
+  } catch (e) {
+    console.error('PhonePe callback error:', e.message);
+    res.redirect(`${frontendUrl}/checkout?payment=error`);
+  }
+});
+
+router.post('/phonepe/verify', authMiddleware, async (req, res) => {
+  const merchantId = await getSetting('phonepe_merchant_id');
+  const saltKey = await getSetting('phonepe_salt_key');
+  const saltIndex = await getSetting('phonepe_salt_index') || '1';
+  const isProduction = (await getSetting('phonepe_production')) === 'true';
+  const { orderId } = req.body;
+
+  if (!merchantId || !saltKey || !orderId) return res.status(400).json({ error: 'Missing config' });
+
+  const host = isProduction
+    ? 'https://api.phonepe.com/apis/hermes'
+    : 'https://api-preprod.phonepe.com/apis/pg-sandbox';
+
+  const statusPath = `/pg/v1/status/${merchantId}/${orderId}`;
+  const sha256 = phonepeHash('sha256').update(statusPath + saltKey).digest('hex');
+  const xVerify = sha256 + '###' + saltIndex;
+
+  try {
+    const response = await fetch(`${host}${statusPath}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json', 'X-VERIFY': xVerify, 'X-MERCHANT-ID': merchantId },
+    });
+    const data = await response.json();
+    if (data.code === 'PAYMENT_SUCCESS') {
+      await db.prepare("UPDATE orders SET payment_status='paid' WHERE order_number=?").run(orderId);
+    }
+    res.json(data);
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });

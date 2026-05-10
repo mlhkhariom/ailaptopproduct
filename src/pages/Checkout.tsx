@@ -42,6 +42,7 @@ const Checkout = () => {
       setPaymentMethods(d);
       // Auto-select first enabled method
       if (d.razorpay?.enabled) setPaymentMethod('razorpay');
+      else if (d.phonepe?.enabled) setPaymentMethod('phonepe');
       else if (d.cashfree?.enabled) setPaymentMethod('cashfree');
       else if (d.paytm?.enabled) setPaymentMethod('paytm');
       else setPaymentMethod('cod');
@@ -69,6 +70,36 @@ const Checkout = () => {
     clearCart();
     toast.success(`Order ${order_number} placed! 🎉`);
     navigate(`/order-success?order=${order_number}${paymentId ? `&payment_id=${paymentId}` : ''}`);
+  };
+
+  const handlePhonePe = async () => {
+    try {
+      const orderData = {
+        items: items.map(({ product, qty }) => ({ id: product.id, name: product.name, quantity: qty, price: product.price })),
+        subtotal, discount, shipping_charge: shippingCharge, total: finalTotal,
+        coupon_code: appliedCoupon || null,
+        payment_method: 'phonepe',
+        payment_status: 'pending',
+        address: { name: `${addr.firstName} ${addr.lastName}`, email: addr.email, phone: addr.phone, line: addr.address, city: addr.city, state: addr.state, pin: addr.pin },
+      };
+      const { order_number } = await api.placeOrder(orderData);
+
+      const token = localStorage.getItem('ailaptopwala_token');
+      const res = await fetch('/api/payment/phonepe/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ amount: finalTotal, orderId: order_number, customerPhone: addr.phone }),
+      }).then(r => r.json());
+
+      if (res.error) { toast.error(res.error); setLoading(false); return; }
+
+      clearCart();
+      // Redirect to PhonePe hosted page
+      window.location.href = res.redirect_url;
+    } catch (e: any) {
+      toast.error(e.message || 'PhonePe init failed');
+      setLoading(false);
+    }
   };
 
   const handleCashfree = async () => {
@@ -221,6 +252,8 @@ const Checkout = () => {
         await handleRazorpay();
       } else if (paymentMethod === 'cashfree') {
         await handleCashfree();
+      } else if (paymentMethod === 'phonepe') {
+        await handlePhonePe();
       } else if (paymentMethod === 'paytm') {
         await handlePaytm();
       } else {
@@ -274,6 +307,15 @@ const Checkout = () => {
                       <Label htmlFor="razorpay" className="cursor-pointer flex-1">
                         <div className="flex items-center gap-2"><CreditCard className="h-4 w-4 text-blue-600" /><span className="font-medium">Razorpay</span><Badge className="text-[9px] bg-blue-100 text-blue-700">Recommended</Badge></div>
                         <span className="block text-xs text-muted-foreground">UPI, Card, Net Banking, Wallets</span>
+                      </Label>
+                    </div>
+                  )}
+                  {paymentMethods.phonepe?.enabled && (
+                    <div className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:border-primary transition-colors">
+                      <RadioGroupItem value="phonepe" id="phonepe" />
+                      <Label htmlFor="phonepe" className="cursor-pointer flex-1">
+                        <span className="font-medium">PhonePe</span>
+                        <span className="block text-xs text-muted-foreground">Pay via UPI, Cards, Wallet</span>
                       </Label>
                     </div>
                   )}
@@ -348,7 +390,7 @@ const Checkout = () => {
               {shipping.free && paymentMethod !== 'cod' && <p className="text-xs text-primary text-center">🎉 Free shipping applied!</p>}
               <Button className="w-full gap-2" size="lg" onClick={handlePlaceOrder} disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-                {loading ? 'Processing...' : paymentMethod === 'razorpay' ? 'Pay with Razorpay' : paymentMethod === 'cashfree' ? 'Pay with Cashfree' : paymentMethod === 'paytm' ? 'Pay with Paytm' : 'Place Order'}
+                {loading ? 'Processing...' : paymentMethod === 'razorpay' ? 'Pay with Razorpay' : paymentMethod === 'phonepe' ? 'Pay with PhonePe' : paymentMethod === 'cashfree' ? 'Pay with Cashfree' : paymentMethod === 'paytm' ? 'Pay with Paytm' : 'Place Order'}
               </Button>
               <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
                 <Shield className="h-3 w-3" /> Secure & Encrypted Payment
