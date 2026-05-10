@@ -1,3 +1,4 @@
+import SEOHead from "@/components/SEOHead";
 import { useState } from "react";
 import { Search, Package, CheckCircle, Clock, Wrench, XCircle, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,8 @@ export default function RepairTrack() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col">
+      <SEOHead title="Track Repair Status — AI Laptop Wala" canonical="/track" />
+
       {/* Header */}
       <div className="bg-black/20 px-6 py-4 flex items-center gap-3">
         <img src="/assets/logo.png" alt="AI Laptop Wala" className="h-8 w-auto" onError={e => (e.currentTarget.style.display = 'none')} />

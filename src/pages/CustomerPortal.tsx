@@ -1,3 +1,4 @@
+import SEOHead from "@/components/SEOHead";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +42,8 @@ export default function CustomerPortal() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white">
+      <SEOHead title="My Account — AI Laptop Wala" canonical="/my-account" noindex={true} />
+
       {/* Header */}
       <div className="bg-white border-b shadow-sm px-4 py-3 flex items-center gap-3">
         <img src="/favicon.png" alt="Logo" className="h-8 w-8 rounded-lg" onError={e => (e.currentTarget.style.display = 'none')} />
