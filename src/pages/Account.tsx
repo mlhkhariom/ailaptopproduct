@@ -1,3 +1,4 @@
+import SEOHead from "@/components/SEOHead";
 import { useState, useEffect } from "react";
 import { User, Mail, Phone, MapPin, ShoppingBag, Heart, LogOut, Save, Loader2, Lock, FileText, Package, Truck, CheckCircle, Clock, Download, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -108,6 +109,8 @@ const Account = () => {
 
   return (
     <CustomerLayout>
+      <SEOHead title="My Account — AI Laptop Wala" canonical="/account" noindex={true} />
+
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-serif font-bold">My Account</h1>

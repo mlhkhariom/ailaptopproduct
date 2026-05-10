@@ -1,3 +1,4 @@
+import SEOHead from "@/components/SEOHead";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -123,6 +124,8 @@ const Checkout = () => {
 
   return (
     <CustomerLayout>
+      <SEOHead title="Checkout — AI Laptop Wala" canonical="/checkout" noindex={true} />
+
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-serif font-bold mb-6">Checkout</h1>
         <div className="grid lg:grid-cols-3 gap-8">
