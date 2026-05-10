@@ -60,6 +60,7 @@ export default function AdminJobCards() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedJobs, setSelectedJobs] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<any>(emptyForm);
   const [staff, setStaff] = useState<any[]>([]);
@@ -133,6 +134,12 @@ export default function AdminJobCards() {
     if (!confirm('Delete this job card?')) return;
     await req('DELETE', `/job-cards/${id}`);
     toast.success('Deleted'); load();
+  };
+
+  const bulkUpdateStatus = async (status: string) => {
+    if (!selectedJobs.size) return;
+    await Promise.all([...selectedJobs].map(id => req('PUT', `/job-cards/${id}`, { status })));
+    setSelectedJobs(new Set()); load();
   };
 
   const sendApproval = async (j: any) => {
@@ -231,6 +238,7 @@ export default function AdminJobCards() {
               {filtered.map(j => (
                 <tr key={j.id} className="border-t hover:bg-muted/30">
                   <td className="p-3 font-mono text-xs font-bold text-primary">{j.booking_number}</td>
+                  <td className="p-3 w-8"><input type="checkbox" checked={selectedJobs.has(j.id)} onChange={e => { const s = new Set(selectedJobs); e.target.checked ? s.add(j.id) : s.delete(j.id); setSelectedJobs(s); }} className="h-4 w-4" /></td>
                   <td className="p-3">
                     <p className="text-xs font-medium">{j.customer_name}</p>
                     <p className="text-[10px] text-muted-foreground">{j.customer_phone}</p>
