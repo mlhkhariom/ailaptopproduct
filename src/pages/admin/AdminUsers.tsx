@@ -1,36 +1,44 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, Edit, Trash2, RefreshCw, Shield, User, UserCheck, UserX } from "lucide-react";
+import { Search, Plus, Edit, RefreshCw, Shield, UserCheck, UserX, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import AdminLayout from "@/components/AdminLayout";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
-const ROLES = ['admin', 'manager', 'editor', 'customer'];
+const ALL_ROLES = ['superadmin', 'admin', 'manager', 'accountant', 'sales', 'technician', 'editor', 'customer'];
+
 const ROLE_COLOR: Record<string, string> = {
-  superadmin: 'bg-yellow-100 text-yellow-800 border border-yellow-300',
+  superadmin: 'bg-yellow-100 text-yellow-800',
   admin: 'bg-red-100 text-red-700',
   manager: 'bg-purple-100 text-purple-700',
-  editor: 'bg-blue-100 text-blue-700',
+  accountant: 'bg-green-100 text-green-700',
+  sales: 'bg-blue-100 text-blue-700',
+  technician: 'bg-orange-100 text-orange-700',
+  editor: 'bg-cyan-100 text-cyan-700',
   customer: 'bg-gray-100 text-gray-600',
 };
 
-const PERMISSIONS: Record<string, string[]> = {
-  admin:    ['Dashboard', 'Products', 'Orders', 'Payments', 'Customers', 'Blog', 'Social', 'Media', 'WhatsApp', 'CMS', 'Contacts', 'Users', 'Coupons', 'Reports', 'Settings'],
-  manager:  ['Dashboard', 'Products', 'Orders', 'Customers', 'Blog', 'Contacts', 'Reports'],
-  editor:   ['Dashboard', 'Products', 'Blog', 'CMS', 'Media'],
-  customer: ['Account', 'Orders'],
+const ROLE_PERMS: Record<string, string[]> = {
+  superadmin: ['Full Access — Everything'],
+  admin:      ['Full ERP + Admin Panel'],
+  manager:    ['Job Cards, CRM, Billing, Inventory, Staff, Reports'],
+  accountant: ['Billing, Expenses, Reports, Payroll'],
+  sales:      ['CRM, Loyalty, Customer 360'],
+  technician: ['Job Cards, Inventory'],
+  editor:     ['Blog, CMS, Media, Products'],
+  customer:   ['Account, Orders only'],
 };
 
-const AdminUsers = () => {
+const emptyForm = { name: '', email: '', password: '', role: 'technician', phone: '', is_active: true };
+
+export default function AdminUsers() {
   const { user: currentUser } = useAuth();
   const isSuperAdmin = (currentUser as any)?.role === 'superadmin';
   const [users, setUsers] = useState<any[]>([]);
@@ -39,54 +47,50 @@ const AdminUsers = () => {
   const [roleFilter, setRoleFilter] = useState('all');
   const [dialog, setDialog] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'customer', is_active: true });
-  const [permDialog, setPermDialog] = useState<any>(null);
+  const [form, setForm] = useState<any>(emptyForm);
 
   const load = async () => {
     setLoading(true);
     try {
-      // Get all users (customers + admins)
-      const [customers, me] = await Promise.all([
-        api.getCustomers(),
-        api.me(),
-      ]);
-      // Also fetch admin users via customers endpoint returns only customers
-      // We'll use customers list + current user
-      setUsers(customers);
-    } catch (e: any) { toast.error(e.message); }
+      const data = await api.getCustomers();
+      setUsers(Array.isArray(data) ? data : data?.customers || []);
+    } catch { toast.error('Failed to load users'); }
     finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, []);
 
-  const f = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: e.target.value }));
-
-  const openAdd = () => { setEditing(null); setForm({ name: '', email: '', password: '', role: 'customer', is_active: true }); setDialog(true); };
-  const openEdit = (u: any) => { setEditing(u); setForm({ name: u.name, email: u.email, password: '', role: u.role, is_active: !!u.is_active }); setDialog(true); };
+  const openAdd = () => { setEditing(null); setForm(emptyForm); setDialog(true); };
+  const openEdit = (u: any) => { setEditing(u); setForm({ name: u.name, email: u.email, password: '', role: u.role || 'customer', phone: u.phone || '', is_active: !!u.is_active }); setDialog(true); };
 
   const save = async () => {
     if (!form.name || !form.email) return toast.error('Name and email required');
     try {
       if (editing) {
-        await api.updateCustomer(editing.id, { role: form.role, is_active: form.is_active });
-        toast.success('User updated!');
+        await api.updateCustomer(editing.id, { name: form.name, role: form.role, phone: form.phone, is_active: form.is_active });
+        toast.success('User updated');
       } else {
-        await api.register(form.name, form.email, form.password || 'changeme123');
-        toast.success('User created! Default password: changeme123');
+        if (!form.password) return toast.error('Password required for new user');
+        await api.register(form.name, form.email, form.password, form.phone);
+        // Set role after creation
+        const users2 = await api.getCustomers();
+        const newUser = (Array.isArray(users2) ? users2 : users2?.customers || []).find((u: any) => u.email === form.email);
+        if (newUser) await api.updateCustomer(newUser.id, { role: form.role });
+        toast.success('User created');
       }
       setDialog(false); load();
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: any) { toast.error(e.message || 'Failed'); }
   };
 
   const toggleActive = async (u: any) => {
-    await api.updateCustomer(u.id, { role: u.role, is_active: !u.is_active });
+    await api.updateCustomer(u.id, { is_active: !u.is_active });
     toast.success(u.is_active ? 'Deactivated' : 'Activated');
     load();
   };
 
   const changeRole = async (u: any, role: string) => {
-    await api.updateCustomer(u.id, { role, is_active: u.is_active });
-    toast.success(`Role changed to ${role}`);
+    await api.updateCustomer(u.id, { role });
+    toast.success(`Role → ${role}`);
     load();
   };
 
@@ -96,151 +100,156 @@ const AdminUsers = () => {
     return true;
   });
 
-  const counts = { all: users.length, ...Object.fromEntries(ROLES.map(r => [r, users.filter(u => u.role === r).length])) };
+  const staffRoles = ['superadmin', 'admin', 'manager', 'accountant', 'sales', 'technician', 'editor'];
+  const staffUsers = filtered.filter(u => staffRoles.includes(u.role));
+  const customerUsers = filtered.filter(u => !staffRoles.includes(u.role));
 
   return (
     <AdminLayout>
-      <div className="p-4 md:p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-5">
+        {/* Header */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-serif font-bold">Users & Roles</h1>
-            <p className="text-sm text-muted-foreground">{users.length} users · {users.filter(u => u.is_active).length} active</p>
+            <h1 className="text-xl font-black flex items-center gap-2"><Shield className="h-5 w-5 text-primary" /> Users & Roles</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">{users.length} total users · {staffUsers.length} staff · {customerUsers.length} customers</p>
           </div>
-          <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={openAdd}><Plus className="h-3.5 w-3.5" /> Add User</Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={load} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></Button>
+            {isSuperAdmin && <Button size="sm" onClick={openAdd} className="gap-1.5"><Plus className="h-4 w-4" /> Add User</Button>}
+          </div>
         </div>
 
-        {/* Role Tabs */}
-        <Tabs value={roleFilter} onValueChange={setRoleFilter}>
-          <TabsList className="h-8">
-            <TabsTrigger value="all" className="text-xs h-7 px-3">All ({counts.all})</TabsTrigger>
-            {ROLES.map(r => <TabsTrigger key={r} value={r} className="text-xs h-7 px-3 capitalize">{r} ({(counts as any)[r] || 0})</TabsTrigger>)}
-          </TabsList>
-        </Tabs>
-
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search users..." className="pl-8 h-9" value={search} onChange={e => setSearch(e.target.value)} />
+        {/* Filters */}
+        <div className="flex gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-48">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input className="pl-8 h-9" placeholder="Search by name or email..." value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-36 h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              {ALL_ROLES.map(r => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Permissions Matrix */}
-        <Card className="bg-muted/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3"><Shield className="h-4 w-4 text-primary" /><p className="text-sm font-semibold">Role Permissions</p></div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {ROLES.map(role => (
-                <div key={role}>
-                  <Badge className={`${ROLE_COLOR[role]} mb-2 capitalize`}>{role}</Badge>
-                  <div className="space-y-0.5">
-                    {PERMISSIONS[role].map(p => <p key={p} className="text-[10px] text-muted-foreground">✓ {p}</p>)}
-                  </div>
-                </div>
-              ))}
+        {/* Role permissions reference */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {Object.entries(ROLE_PERMS).filter(([r]) => r !== 'customer').map(([role, perms]) => (
+            <div key={role} className="border rounded-lg p-2.5">
+              <Badge className={`text-xs mb-1 ${ROLE_COLOR[role]}`}>{role}</Badge>
+              <p className="text-xs text-muted-foreground">{perms[0]}</p>
             </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
 
-        {/* Users List */}
-        {loading ? (
-          <div className="text-center py-12"><RefreshCw className="h-6 w-6 animate-spin mx-auto text-muted-foreground" /></div>
-        ) : (
-          <div className="space-y-2">
-            {filtered.map(u => (
-              <Card key={u.id} className="hover:shadow-sm transition-shadow">
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
-                    {u.name?.charAt(0)?.toUpperCase() || '?'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium text-sm">{u.name}</p>
-                      <Badge className={`text-[10px] capitalize ${ROLE_COLOR[u.role] || ROLE_COLOR.customer}`}>{u.role}</Badge>
-                      <Badge className={`text-[10px] ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {u.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{u.email}</p>
-                    <p className="text-xs text-muted-foreground">{u.order_count || 0} orders · ₹{(u.total_spent || 0).toLocaleString()} spent</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {/* Role change — only superadmin */}
-                    {isSuperAdmin ? (
-                      <Select value={u.role} onValueChange={v => changeRole(u, v)}>
-                        <SelectTrigger className="h-7 w-24 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {ROLES.map(r => <SelectItem key={r} value={r} className="text-xs capitalize">{r}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Badge className={`text-[10px] capitalize ${ROLE_COLOR[u.role] || ROLE_COLOR.customer}`}>{u.role}</Badge>
-                    )}
-                    <button onClick={() => setPermDialog(u)} title="View permissions">
-                      <Shield className="h-4 w-4 text-muted-foreground hover:text-primary" />
-                    </button>
-                    {/* Cannot deactivate superadmin or other admins (unless superadmin) */}
-                    {(isSuperAdmin || (u.role !== 'admin' && u.role !== 'superadmin')) && (
-                      <button onClick={() => toggleActive(u)}>
-                        {u.is_active ? <UserX className="h-4 w-4 text-red-400 hover:text-red-600" /> : <UserCheck className="h-4 w-4 text-green-500 hover:text-green-600" />}
-                      </button>
-                    )}
-                    {/* Edit — only superadmin can edit admins */}
-                    {(isSuperAdmin || (u.role !== 'admin' && u.role !== 'superadmin')) && (
-                      <button onClick={() => openEdit(u)}>
-                        <Edit className="h-4 w-4 text-muted-foreground hover:text-primary" />
-                      </button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {filtered.length === 0 && <div className="text-center py-12 text-muted-foreground"><User className="h-10 w-10 mx-auto mb-2 opacity-30" /><p>No users found</p></div>}
+        {/* Staff Users */}
+        {staffUsers.length > 0 && (
+          <div className="border rounded-xl overflow-hidden">
+            <div className="bg-muted/50 px-4 py-2"><p className="text-sm font-semibold">Staff & Admin ({staffUsers.length})</p></div>
+            <table className="w-full text-sm">
+              <thead className="bg-muted/30"><tr>
+                <th className="text-left p-3 text-xs font-semibold">Name</th>
+                <th className="text-left p-3 text-xs font-semibold">Email</th>
+                <th className="text-left p-3 text-xs font-semibold">Phone</th>
+                <th className="text-center p-3 text-xs font-semibold">Role</th>
+                <th className="text-center p-3 text-xs font-semibold">Status</th>
+                <th className="text-center p-3 text-xs font-semibold">Actions</th>
+              </tr></thead>
+              <tbody>
+                {staffUsers.map(u => (
+                  <tr key={u.id} className={`border-t hover:bg-muted/20 ${!u.is_active ? 'opacity-50' : ''}`}>
+                    <td className="p-3 font-medium">{u.name}</td>
+                    <td className="p-3 text-sm text-muted-foreground">{u.email}</td>
+                    <td className="p-3 text-sm text-muted-foreground">{u.phone || '—'}</td>
+                    <td className="p-3 text-center">
+                      {isSuperAdmin && u.role !== 'superadmin' ? (
+                        <Select value={u.role} onValueChange={r => changeRole(u, r)}>
+                          <SelectTrigger className="h-7 text-xs w-32"><SelectValue /></SelectTrigger>
+                          <SelectContent>{ALL_ROLES.filter(r => r !== 'superadmin').map(r => <SelectItem key={r} value={r} className="text-xs capitalize">{r}</SelectItem>)}</SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge className={`text-xs ${ROLE_COLOR[u.role] || 'bg-gray-100'}`}>{u.role}</Badge>
+                      )}
+                    </td>
+                    <td className="p-3 text-center">
+                      <Switch checked={!!u.is_active} onCheckedChange={() => toggleActive(u)} disabled={u.role === 'superadmin'} />
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="flex gap-1 justify-center">
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(u)}><Edit className="h-3.5 w-3.5" /></Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialog} onOpenChange={setDialog}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>{editing ? 'Edit User' : 'Add User'}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label className="text-xs">Name *</Label><Input value={form.name} onChange={f('name')} className="mt-1 text-sm" disabled={!!editing} /></div>
-            <div><Label className="text-xs">Email *</Label><Input value={form.email} onChange={f('email')} className="mt-1 text-sm" disabled={!!editing} /></div>
-            {!editing && <div><Label className="text-xs">Password</Label><Input type="password" value={form.password} onChange={f('password')} className="mt-1 text-sm" placeholder="Default: changeme123" /></div>}
-            <div>
-              <Label className="text-xs">Role</Label>
-              <Select value={form.role} onValueChange={v => setForm(p => ({ ...p, role: v }))}>
-                <SelectTrigger className="mt-1 text-sm"><SelectValue /></SelectTrigger>
-                <SelectContent>{ROLES.map(r => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={v => setForm(p => ({ ...p, is_active: v }))} /><Label className="text-xs">Active</Label></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialog(false)}>Cancel</Button>
-            <Button onClick={save}>{editing ? 'Update' : 'Create'}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Permissions Dialog */}
-      <Dialog open={!!permDialog} onOpenChange={() => setPermDialog(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Shield className="h-4 w-4" /> {permDialog?.name}'s Permissions</DialogTitle></DialogHeader>
-          {permDialog && (
-            <div>
-              <Badge className={`${ROLE_COLOR[permDialog.role]} capitalize mb-3`}>{permDialog.role} Role</Badge>
-              <div className="grid grid-cols-2 gap-1.5">
-                {PERMISSIONS[permDialog.role]?.map(p => (
-                  <div key={p} className="flex items-center gap-1.5 text-xs bg-green-50 text-green-700 rounded px-2 py-1">
-                    <span className="text-green-500">✓</span> {p}
-                  </div>
+        {/* Customer Users */}
+        {customerUsers.length > 0 && (
+          <div className="border rounded-xl overflow-hidden">
+            <div className="bg-muted/50 px-4 py-2"><p className="text-sm font-semibold">Customers ({customerUsers.length})</p></div>
+            <table className="w-full text-sm">
+              <thead className="bg-muted/30"><tr>
+                <th className="text-left p-3 text-xs font-semibold">Name</th>
+                <th className="text-left p-3 text-xs font-semibold">Email</th>
+                <th className="text-left p-3 text-xs font-semibold">Phone</th>
+                <th className="text-center p-3 text-xs font-semibold">Status</th>
+                <th className="text-center p-3 text-xs font-semibold">Promote</th>
+              </tr></thead>
+              <tbody>
+                {customerUsers.slice(0, 50).map(u => (
+                  <tr key={u.id} className={`border-t hover:bg-muted/20 ${!u.is_active ? 'opacity-50' : ''}`}>
+                    <td className="p-3 font-medium">{u.name}</td>
+                    <td className="p-3 text-sm text-muted-foreground">{u.email}</td>
+                    <td className="p-3 text-sm text-muted-foreground">{u.phone || '—'}</td>
+                    <td className="p-3 text-center"><Switch checked={!!u.is_active} onCheckedChange={() => toggleActive(u)} /></td>
+                    <td className="p-3 text-center">
+                      {isSuperAdmin && (
+                        <Select value={u.role || 'customer'} onValueChange={r => changeRole(u, r)}>
+                          <SelectTrigger className="h-7 text-xs w-32"><SelectValue /></SelectTrigger>
+                          <SelectContent>{ALL_ROLES.map(r => <SelectItem key={r} value={r} className="text-xs capitalize">{r}</SelectItem>)}</SelectContent>
+                        </Select>
+                      )}
+                    </td>
+                  </tr>
                 ))}
+                {customerUsers.length > 50 && <tr><td colSpan={5} className="p-3 text-center text-xs text-muted-foreground">Showing 50 of {customerUsers.length} customers</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {!filtered.length && !loading && <div className="text-center py-12 text-muted-foreground">No users found</div>}
+
+        {/* Add/Edit Dialog */}
+        <Dialog open={dialog} onOpenChange={setDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader><DialogTitle>{editing ? 'Edit User' : 'Add New User'}</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div><Label className="text-xs">Full Name *</Label><Input className="mt-1 h-9" value={form.name} onChange={e => setForm((f: any) => ({ ...f, name: e.target.value }))} /></div>
+              <div><Label className="text-xs">Email *</Label><Input type="email" className="mt-1 h-9" value={form.email} onChange={e => setForm((f: any) => ({ ...f, email: e.target.value }))} disabled={!!editing} /></div>
+              <div><Label className="text-xs">Phone</Label><Input className="mt-1 h-9" value={form.phone} onChange={e => setForm((f: any) => ({ ...f, phone: e.target.value }))} /></div>
+              {!editing && <div><Label className="text-xs">Password *</Label><Input type="password" className="mt-1 h-9" value={form.password} onChange={e => setForm((f: any) => ({ ...f, password: e.target.value }))} placeholder="Min 8 characters" /></div>}
+              <div><Label className="text-xs">Role</Label>
+                <Select value={form.role} onValueChange={v => setForm((f: any) => ({ ...f, role: v }))}>
+                  <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>{ALL_ROLES.filter(r => r !== 'superadmin').map(r => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}</SelectContent>
+                </Select>
+                {form.role && ROLE_PERMS[form.role] && <p className="text-xs text-muted-foreground mt-1">{ROLE_PERMS[form.role][0]}</p>}
               </div>
+              <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={v => setForm((f: any) => ({ ...f, is_active: v }))} /><Label className="text-xs">Active</Label></div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDialog(false)}>Cancel</Button>
+              <Button onClick={save}>{editing ? 'Save' : 'Create'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </AdminLayout>
   );
-};
-
-export default AdminUsers;
+}

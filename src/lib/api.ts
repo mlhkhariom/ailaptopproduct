@@ -188,6 +188,7 @@ export const api = {
   getGSTReport: (from: string, to: string) => req('GET', `/erp/gst-report?from=${from}&to=${to}`),
   getForecast: () => req('GET', '/erp/forecast'),
   stockTransfer: (data: unknown) => req('POST', '/erp/stock-transfer', data),
+  getCustomers: (params?: Record<string, string>) => req('GET', '/customers' + (params ? '?' + new URLSearchParams(params) : '')),
   updateCustomer: (id: string, data: unknown) => req('PUT', `/customers/${id}`, data),
 
   // Notifications
