@@ -13,7 +13,15 @@ import { api } from "@/lib/api";
 const Products = () => {
   const { products, fetchProducts } = useProductStore();
   const [categories, setCategories] = useState<string[]>(["All"]);
-  const [category, setCategory] = useState("All");
+  const urlCategory = new URLSearchParams(window.location.search).get('category') || 'All';
+  const [category, setCategory] = useState(urlCategory);
+  const setCategoryWithURL = (c: string) => {
+    setCategory(c);
+    const url = new URL(window.location.href);
+    if (c === 'All') url.searchParams.delete('category');
+    else url.searchParams.set('category', c);
+    window.history.replaceState({}, '', url);
+  };
   const [sort, setSort] = useState("newest");
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('q') || "");
@@ -82,7 +90,7 @@ const Products = () => {
           {/* Category pills */}
           <div className="flex gap-2 flex-wrap">
             {categories.map((c) => (
-              <button key={c} onClick={() => setCategory(c)}
+              <button key={c} onClick={() => setCategoryWithURL(c)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${category === c ? "bg-primary text-white" : "bg-muted hover:bg-primary/10"}`}>
                 {c}
               </button>
