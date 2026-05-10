@@ -8,7 +8,8 @@ import SEOHead from "@/components/SEOHead";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import ProductCard from "@/components/ProductCard";
 import BusinessDetails from "@/components/BusinessDetails";
-import ReelsSection from "@/components/ReelsSection";
+import { lazy, Suspense } from "react";
+const ReelsSection = lazy(() => import("@/components/ReelsSection"));
 import { useProductStore } from "@/store/productStore";
 import { api } from "@/lib/api";
 import logo from "@/assets/logo.jpeg";
@@ -34,7 +35,7 @@ const Index = () => {
       <SEOHead canonical="/" />
 
       {/* ── HERO ─────────────────────────────────────────── */}
-      <section className="relative min-h-[90svh] flex items-center justify-center overflow-hidden"
+      <section className="relative min-h-[85svh] md:min-h-[90svh] flex items-center justify-center overflow-hidden"
         style={{ background: "linear-gradient(135deg, hsl(30 40% 8%) 0%, hsl(32 60% 14%) 40%, hsl(35 50% 18%) 70%, hsl(30 40% 6%) 100%)" }}>
         {/* Glow blobs */}
         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
@@ -50,8 +51,11 @@ const Index = () => {
           </div>
 
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-semibold text-orange-300 border border-primary/25 bg-primary/10 backdrop-blur-sm mb-6">
-            <Zap size={12} className="text-yellow-400" /> Powered by Asati Infotech — Since 2011
+          <div className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-semibold text-orange-200 border border-primary/30 bg-primary/15 backdrop-blur-md mb-6 shadow-lg shadow-primary/10">
+            <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+            <span>Open Now — Since 2011</span>
+            <span className="mx-1 text-white/30">•</span>
+            <span>Trusted by 5000+</span>
           </div>
 
           {/* Heading */}
@@ -67,7 +71,7 @@ const Index = () => {
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
             <Link to="/products">
               <Button size="lg" className="gap-2 px-8 h-12 text-base font-bold shadow-lg shadow-primary/30 pulse-glow">
                 <Laptop size={18} /> Shop Laptops <ArrowRight size={16} />
@@ -99,7 +103,7 @@ const Index = () => {
 
       {/* ── BENEFITS ─────────────────────────────────────── */}
       {benefits.length > 0 && (
-        <section className="py-10 bg-card border-y reveal-on-scroll">
+        <section className="py-8 bg-card border-y reveal-on-scroll">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {benefits.map((b) => {
@@ -120,7 +124,7 @@ const Index = () => {
       )}
 
       {/* ── FEATURED PRODUCTS ────────────────────────────── */}
-      <section className="py-16 reveal-on-scroll">
+      <section className="py-12 reveal-on-scroll">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -138,7 +142,7 @@ const Index = () => {
       </section>
 
       {/* ── HOME REPAIR BANNER ───────────────────────────── */}
-      <section className="py-16 bg-muted/40 reveal-on-scroll">
+      <section className="py-12 bg-muted/40 reveal-on-scroll">
         <div className="container mx-auto px-4 max-w-5xl">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="rounded-2xl overflow-hidden shadow-xl order-2 md:order-1">
@@ -170,7 +174,7 @@ const Index = () => {
 
       {/* ── MORE PRODUCTS ────────────────────────────────── */}
       {products.length > 4 && (
-        <section className="py-16 reveal-on-scroll">
+        <section className="py-12 reveal-on-scroll">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -187,34 +191,38 @@ const Index = () => {
       )}
 
       {/* ── STATS / WHY CHOOSE US ─────────────────────────── */}
-      <section className="py-16 bg-gradient-to-br from-orange-50 via-white to-orange-50 reveal-on-scroll">
+      <section className="py-12 bg-gradient-to-br from-orange-50 via-white to-orange-50 reveal-on-scroll">
         <div className="container mx-auto px-4 max-w-5xl">
-          <div className="text-center mb-10">
+          <div className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-black">Why Choose <span className="gradient-text">AI Laptop Wala</span></h2>
             <p className="text-sm text-muted-foreground mt-2">15+ years of trust, thousands of happy customers</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { num: '5000+', label: 'Happy Customers', icon: '👥', color: 'from-blue-500 to-blue-600' },
-              { num: '15+', label: 'Years Experience', icon: '🏆', color: 'from-yellow-500 to-orange-500' },
-              { num: '24/7', label: 'Home Service', icon: '🚀', color: 'from-green-500 to-emerald-600' },
-              { num: '4.8★', label: 'Google Rating', icon: '⭐', color: 'from-purple-500 to-pink-500' },
+              { num: '5000+', label: 'Happy Customers', Icon: Users2, color: 'from-blue-500 to-blue-600' },
+              { num: '15+', label: 'Years Experience', Icon: Trophy, color: 'from-yellow-500 to-orange-500' },
+              { num: '24/7', label: 'Home Service', Icon: Clock, color: 'from-green-500 to-emerald-600' },
+              { num: '4.8★', label: 'Google Rating', Icon: Star, color: 'from-purple-500 to-pink-500' },
             ].map(s => (
-              <div key={s.label} className="bg-white rounded-2xl p-5 text-center shadow-sm card-lift border">
-                <div className={`text-4xl mb-2 inline-block bg-gradient-to-br ${s.color} bg-clip-text text-transparent`}>{s.icon}</div>
+              <div key={s.label} className="bg-white dark:bg-card rounded-2xl p-5 text-center shadow-sm card-lift border group">
+                <div className={`w-12 h-12 rounded-xl mx-auto mb-3 bg-gradient-to-br ${s.color} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform`}>
+                  <s.Icon className="h-6 w-6 text-white" strokeWidth={2.5} />
+                </div>
                 <p className="text-3xl md:text-4xl font-black gradient-text">{s.num}</p>
-                <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">{s.label}</p>
               </div>
             ))}
           </div>
           <div className="mt-10 grid md:grid-cols-3 gap-4">
             {[
-              { icon: '✅', title: 'Certified Refurbished', desc: '6-month warranty on all products' },
-              { icon: '🏪', title: 'Physical Store', desc: 'Visit us at Silver Mall, Indore' },
-              { icon: '💬', title: 'WhatsApp Support', desc: 'Quick reply within 2 hours' },
+              { Icon: Shield, title: 'Certified Refurbished', desc: '6-month warranty on all products', color: 'text-green-600 bg-green-100' },
+              { Icon: MapPin, title: 'Physical Store', desc: 'Visit us at Silver Mall, Indore', color: 'text-blue-600 bg-blue-100' },
+              { Icon: Headphones, title: 'WhatsApp Support', desc: 'Quick reply within 2 hours', color: 'text-green-600 bg-green-100' },
             ].map(f => (
-              <div key={f.title} className="bg-white rounded-xl p-4 border card-lift flex items-start gap-3">
-                <span className="text-2xl">{f.icon}</span>
+              <div key={f.title} className="bg-white dark:bg-card rounded-xl p-4 border card-lift flex items-start gap-3">
+                <div className={`h-10 w-10 rounded-lg ${f.color} flex items-center justify-center shrink-0`}>
+                  <f.Icon className="h-5 w-5" strokeWidth={2} />
+                </div>
                 <div>
                   <h3 className="font-bold text-sm">{f.title}</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">{f.desc}</p>
@@ -227,11 +235,11 @@ const Index = () => {
 
       {/* ── TESTIMONIALS ─────────────────────────────────── */}
       {testimonials.length > 0 && (
-        <section className="py-16 bg-muted/40 reveal-on-scroll">
+        <section className="py-12 bg-muted/40 reveal-on-scroll">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl md:text-3xl font-black text-center mb-2">Happy <span className="gradient-text">Customers</span></h2>
             <p className="text-muted-foreground text-center text-sm mb-3">5000+ satisfied customers trust AI Laptop Wala</p>
-            <div className="section-divider mb-10" />
+            <div className="section-divider mb-8" />
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {testimonials.slice(0, 6).map((t) => (
                 <Card key={t._id || t.name} className="border-border/50 card-lift">
@@ -256,7 +264,9 @@ const Index = () => {
       )}
 
       {/* ── INSTAGRAM REELS ──────────────────────────────── */}
-      <ReelsSection />
+      <Suspense fallback={<div className="py-12 flex justify-center"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+        <ReelsSection />
+      </Suspense>
 
       {/* ── CATEGORIES ───────────────────────────────────── */}
       <section className="py-14 bg-muted/30">
