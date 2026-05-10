@@ -1,4 +1,4 @@
-import { LayoutDashboard, Tv2, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, PersonStanding, Box, Calendar, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Tv2, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, Box, Calendar, MessageSquare, CalendarCheck, CalendarX, RefreshCw, Table2, Gift, UserCircle, FileSpreadsheet } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import {
@@ -17,10 +17,9 @@ const erpGroups = [
     items: [
       { title: "ERP Overview", url: "/admin/erp", icon: Building2 },
       { title: "Live Dashboard", url: "/admin/erp/live", icon: Tv2 },
-      { title: "Loyalty Program", url: "/admin/erp/loyalty", icon: Star },
-      { title: "KPI Alerts", url: "/admin/erp/kpi-alerts", icon: Bell },
       { title: "Job Cards", url: "/admin/erp/job-cards", icon: ClipboardList, badge: "core" },
       { title: "Sales CRM", url: "/admin/erp/crm", icon: Users },
+      { title: "Customer 360", url: "/admin/erp/customer360", icon: UserCircle },
       { title: "Services", url: "/admin/services", icon: Wrench },
     ],
   },
@@ -29,10 +28,11 @@ const erpGroups = [
     labelIcon: DollarSign,
     items: [
       { title: "Billing", url: "/admin/erp/billing", icon: Receipt, badge: "core" },
-      { title: "Recurring", url: "/admin/erp/recurring", icon: Calendar },
+      { title: "Recurring", url: "/admin/erp/recurring", icon: RefreshCw },
       { title: "Expenses", url: "/admin/erp/expenses", icon: Wallet },
       { title: "ERP Reports", url: "/admin/erp/reports", icon: BarChart3 },
-      { title: "Report Builder", url: "/admin/erp/report-builder", icon: BarChart3 },
+      { title: "Report Builder", url: "/admin/erp/report-builder", icon: Table2 },
+      { title: "GSTR-1 Export", url: "/admin/erp/reports", icon: FileSpreadsheet },
     ],
   },
   {
@@ -41,8 +41,10 @@ const erpGroups = [
     items: [
       { title: "Staff", url: "/admin/erp/staff", icon: UserCheck },
       { title: "Payroll", url: "/admin/erp/payroll", icon: IndianRupee },
-      { title: "Attendance", url: "/admin/erp/attendance", icon: Calendar },
-      { title: "Leaves", url: "/admin/erp/leaves", icon: Calendar },
+      { title: "Attendance", url: "/admin/erp/attendance", icon: CalendarCheck },
+      { title: "Leaves", url: "/admin/erp/leaves", icon: CalendarX },
+      { title: "Loyalty Program", url: "/admin/erp/loyalty", icon: Gift },
+      { title: "KPI Alerts", url: "/admin/erp/kpi-alerts", icon: Bell },
       { title: "Branches", url: "/admin/erp/branches", icon: Building2 },
       { title: "WA Templates", url: "/admin/erp/wa-templates", icon: MessageCircle },
     ],
