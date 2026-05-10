@@ -23,6 +23,7 @@ const AdminSettings = () => {
   const [appSettings, setAppSettings] = useState<Record<string, string>>({});
   const [savingFeatures, setSavingFeatures] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [lastBackup, setLastBackup] = useState<string | null>(null);
 
   useEffect(() => {
     api.getSiteSettings().then(setSiteFeatures).catch(() => {});
@@ -464,12 +465,31 @@ const AdminSettings = () => {
                 <div className="p-4 rounded-xl border bg-muted/20">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-medium">Last Backup</p>
-                    <Badge variant="default" className="text-[9px] gap-1"><CheckCircle className="h-3 w-3" /> Healthy</Badge>
+                    <Badge variant={lastBackup ? 'default' : 'secondary'} className="text-[9px] gap-1">
+                      <CheckCircle className="h-3 w-3" /> {lastBackup ? 'Healthy' : 'Never'}
+                    </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground">January 22, 2024 at 3:00 AM</p>
+                  <p className="text-xs text-muted-foreground">
+                    {lastBackup ? new Date(lastBackup).toLocaleString('en-IN') : 'No backup yet. Click Download to create first backup.'}
+                  </p>
                   <div className="flex gap-2 mt-3">
-                    <Button variant="outline" size="sm" className="text-xs h-7 gap-1"><Download className="h-3 w-3" /> Download</Button>
-                    <Button variant="outline" size="sm" className="text-xs h-7 gap-1"><RotateCcw className="h-3 w-3" /> Restore</Button>
+                    <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={async () => {
+                      const token = localStorage.getItem('ailaptopwala_token');
+                      const res = await fetch('/api/erp/backup/download', { headers: { Authorization: `Bearer ${token}` } });
+                      if (!res.ok) { toast.error('Backup failed'); return; }
+                      const blob = await res.blob();
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a'); a.href = url; a.download = `ailaptopwala-backup-${new Date().toISOString().slice(0,10)}.json`; a.click();
+                      URL.revokeObjectURL(url);
+                      // Mark backup time
+                      await fetch('/api/erp/backup/run', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+                      const status = await fetch('/api/erp/backup/status', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+                      setLastBackup(status.last_backup);
+                      toast.success('Backup downloaded!');
+                    }}><Download className="h-3 w-3" /> Download</Button>
+                    <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={() => {
+                      toast.info('Restore: Upload backup JSON file manually via DB admin. Direct restore not yet supported for safety.');
+                    }}><RotateCcw className="h-3 w-3" /> Restore</Button>
                   </div>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg border">
@@ -484,8 +504,17 @@ const AdminSettings = () => {
                   <p className="text-sm font-medium text-destructive">Danger Zone</p>
                   <p className="text-[10px] text-muted-foreground mt-1">These actions are irreversible. Proceed with caution.</p>
                   <div className="flex gap-2 mt-3">
-                    <Button variant="outline" size="sm" className="text-xs h-7 text-destructive border-destructive/30">Clear Cache</Button>
-                    <Button variant="outline" size="sm" className="text-xs h-7 text-destructive border-destructive/30">Reset Settings</Button>
+                    <Button variant="outline" size="sm" className="text-xs h-7 text-destructive border-destructive/30" onClick={async () => {
+                      if (!confirm('Clear old notifications (30+ days) and audit logs (90+ days)?')) return;
+                      const res = await fetch('/api/erp/cache/clear', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json());
+                      toast.success(res.message || 'Cache cleared');
+                    }}>Clear Cache</Button>
+                    <Button variant="outline" size="sm" className="text-xs h-7 text-destructive border-destructive/30" onClick={async () => {
+                      if (!confirm('⚠️ This will delete ALL app settings (except API keys). Continue?')) return;
+                      const res = await fetch('/api/erp/settings/reset', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json());
+                      if (res.error) toast.error(res.error);
+                      else { toast.success(res.message); window.location.reload(); }
+                    }}>Reset Settings</Button>
                   </div>
                 </div>
               </CardContent>

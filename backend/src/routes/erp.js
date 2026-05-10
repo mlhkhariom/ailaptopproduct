@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import db from '../db/database.js';
 import { authMiddleware } from '../middleware/auth.js';
-import { adminOnly, canAccess } from '../middleware/adminOnly.js';
+import { adminOnly, canAccess, superAdminOnly } from '../middleware/adminOnly.js';
 
 const router = Router();
 
@@ -1962,4 +1962,55 @@ router.get('/invoice-settings', authMiddleware, adminOnly, async (req, res) => {
 router.put('/invoice-settings', authMiddleware, adminOnly, async (req, res) => {
   await db.prepare("INSERT INTO site_settings (key,value) VALUES ('invoice_settings',?) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value").run(JSON.stringify(req.body));
   res.json({ message: 'Saved' });
+});
+
+// ── BACKUP & DATA ─────────────────────────────────────────
+
+import { exec as execBackup } from 'child_process';
+import { promisify as promisifyBackup } from 'util';
+const execPromiseBackup = promisifyBackup(execBackup);
+
+router.get('/backup/download', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    // Export all main tables as JSON
+    const tables = ['users', 'products', 'orders', 'service_bookings', 'leads', 'staff', 'expenses', 'branches', 'branch_stock', 'custom_invoices', 'categories', 'app_settings', 'site_settings'];
+    const backup = { version: '1.0', created_at: new Date().toISOString(), data: {} };
+    for (const t of tables) {
+      try {
+        const rows = await db.prepare(`SELECT * FROM ${t}`).all() || [];
+        backup.data[t] = rows;
+      } catch (e) { backup.data[t] = { error: e.message }; }
+    }
+    const filename = `ailaptopwala-backup-${new Date().toISOString().slice(0,10)}.json`;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+    res.send(JSON.stringify(backup, null, 2));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get('/backup/status', authMiddleware, adminOnly, async (req, res) => {
+  const row = await db.prepare("SELECT value FROM app_settings WHERE key='last_backup_at'").get();
+  res.json({ last_backup: row?.value || null });
+});
+
+router.post('/backup/run', authMiddleware, adminOnly, async (req, res) => {
+  // Mark backup time
+  const now = new Date().toISOString();
+  await db.prepare(`INSERT INTO app_settings (key, value, category, updated_at) VALUES ('last_backup_at', ?, 'backup', NOW()) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, updated_at=NOW()`).run(now);
+  res.json({ message: 'Backup marked', timestamp: now });
+});
+
+router.post('/cache/clear', authMiddleware, adminOnly, async (req, res) => {
+  // Clear notification queue + stale sessions
+  try {
+    await db.prepare("DELETE FROM notifications WHERE created_at < NOW() - INTERVAL '30 days'").run();
+    await db.prepare("DELETE FROM audit_log WHERE created_at < NOW() - INTERVAL '90 days'").run();
+    res.json({ message: 'Cache cleared — old notifications + audit logs removed' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/settings/reset', authMiddleware, superAdminOnly, async (req, res) => {
+  // Reset non-critical app settings
+  await db.prepare("DELETE FROM app_settings WHERE category NOT IN ('critical', 'api')").run();
+  res.json({ message: 'Settings reset to defaults (API keys preserved)' });
 });
