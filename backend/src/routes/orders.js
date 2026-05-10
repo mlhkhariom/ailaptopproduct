@@ -9,7 +9,7 @@ const router = Router();
 
 // POST /api/orders — place order (auth required)
 router.post('/', authMiddleware, async (req, res) => {
-  const { items, subtotal, discount, total, coupon_code, payment_method, address, payment_status, branch_id } = req.body;
+  const { items, subtotal, discount, total, coupon_code, payment_method, address, payment_status, branch_id, shipping_charge } = req.body;
   if (!items || !total) return res.status(400).json({ error: 'items and total required' });
 
   const id = uuid();
@@ -17,9 +17,9 @@ router.post('/', authMiddleware, async (req, res) => {
 
   // Default to Silver Mall if no branch specified
   const selectedBranch = branch_id || 'branch-silver-mall';
-  await db.prepare(`INSERT INTO orders (id, order_number, user_id, items, subtotal, discount, total, coupon_code, payment_method, payment_status, address, branch_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .run(id, order_number, req.user.id, JSON.stringify(items), subtotal, discount || 0, total, coupon_code, payment_method, payment_status || 'pending', JSON.stringify(address), selectedBranch);
+  await db.prepare(`INSERT INTO orders (id, order_number, user_id, items, subtotal, discount, shipping_charge, total, coupon_code, payment_method, payment_status, address, branch_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(id, order_number, req.user.id, JSON.stringify(items), subtotal, discount || 0, shipping_charge || 0, total, coupon_code, payment_method, payment_status || 'pending', JSON.stringify(address), selectedBranch);
 
   if (coupon_code) await db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE code = ?').run(coupon_code);
   for (const item of items) {

@@ -86,7 +86,7 @@ tbody td:last-child{font-weight:700;color:#1a1a2e}
 .btn-print:hover{background:#e67300}
 `;
 
-const buildInvoiceHTML = ({ invoiceNumber, invoiceType, date, billTo, paymentInfo, lineItems, subtotal, discount, gst, total, notes, paymentStatus }) => {
+const buildInvoiceHTML = ({ invoiceNumber, invoiceType, date, billTo, paymentInfo, lineItems, subtotal, discount, shipping, gst, total, notes, paymentStatus }) => {
   const typeLabel = invoiceType === 'service' ? 'SERVICE INVOICE' : invoiceType === 'custom' ? 'INVOICE' : 'TAX INVOICE';
   const statusClass = paymentStatus === 'paid' ? 'paid' : paymentStatus === 'partial' ? 'partial' : 'pending';
   // SVG icons inline for print compatibility
@@ -191,6 +191,7 @@ const buildInvoiceHTML = ({ invoiceNumber, invoiceType, date, billTo, paymentInf
       <div class="totals-box">
         <div class="totals-row"><span>Subtotal</span><span>₹${subtotal.toLocaleString('en-IN')}</span></div>
         ${discount > 0 ? `<div class="totals-row discount"><span>Discount</span><span>−₹${discount.toLocaleString('en-IN')}</span></div>` : ''}
+        ${shipping > 0 ? `<div class="totals-row"><span>Shipping</span><span>₹${shipping.toLocaleString('en-IN')}</span></div>` : ''}
         ${cgst > 0 ? `<div class="totals-row gst"><span>CGST (9%)</span><span>₹${cgst.toLocaleString('en-IN')}</span></div>` : ''}
         ${sgst > 0 ? `<div class="totals-row gst"><span>SGST (9%)</span><span>₹${sgst.toLocaleString('en-IN')}</span></div>` : ''}
         <div class="totals-row grand"><span>Total Payable</span><span>₹${total.toLocaleString('en-IN')}</span></div>
@@ -227,6 +228,7 @@ router.get('/:number', async (req, res) => {
     const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]');
     const address = typeof order.address === 'string' ? JSON.parse(order.address || '{}') : (order.address || {});
     const subtotal = order.subtotal || order.total;
+    const shipping = order.shipping_charge || 0;
     const discount = order.discount || 0;
     return res.setHeader('Content-Type', 'text/html').send(buildInvoiceHTML({
       invoiceNumber: order.order_number, invoiceType: 'order',
@@ -234,7 +236,7 @@ router.get('/:number', async (req, res) => {
       billTo: { name: address.name || order.customer_name || 'Customer', address: [address.line, address.city, address.state, address.pin ? `- ${address.pin}` : ''].filter(Boolean).join(', '), phone: address.phone || order.customer_phone || '', email: address.email || order.customer_email || '' },
       paymentInfo: { method: order.payment_method, txnId: order.razorpay_id, tracking: order.tracking_id },
       lineItems: items.map(i => ({ name: i.name, qty: i.quantity, rate: i.price, amount: i.price * i.quantity, hsn: '8471' })),
-      subtotal, discount, gst: 0, total: order.total, notes: null, paymentStatus: order.payment_status,
+      subtotal, discount, shipping, gst: 0, total: order.total, notes: null, paymentStatus: order.payment_status,
     }));
   }
 

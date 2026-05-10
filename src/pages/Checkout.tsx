@@ -53,7 +53,7 @@ const Checkout = () => {
   const placeOrder = async (paymentId?: string, paymentStatus = 'pending') => {
     const orderData = {
       items: items.map(({ product, qty }) => ({ id: product.id, name: product.name, quantity: qty, price: product.price })),
-      subtotal, discount, total: finalTotal,
+      subtotal, discount, shipping_charge: shippingCharge, total: finalTotal,
       coupon_code: appliedCoupon || null,
       payment_method: paymentMethod,
       payment_status: paymentStatus,

@@ -1,5 +1,5 @@
 import SEOHead from "@/components/SEOHead";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,21 @@ import ProductCard from "@/components/ProductCard";
 import { useCartStore } from "@/store/cartStore";
 import { useProductStore } from "@/store/productStore";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
 
 const Cart = () => {
   const { items, updateQty, removeItem, getSubtotal, getTotal, discount, appliedCoupon, applyCoupon, removeCoupon } = useCartStore();
   const { products } = useProductStore();
   const [couponInput, setCouponInput] = useState("");
   const [applying, setApplying] = useState(false);
+  const [shipping, setShipping] = useState<any>({ free: false, standard: 0, free_above: 499 });
+
+  useEffect(() => {
+    if (subtotal > 0) api.getShipping(subtotal).then(setShipping).catch(() => {});
+  }, [subtotal]);
+
+  const shippingCost = shipping.free ? 0 : (shipping.standard || 0);
+  const finalTotal = total + shippingCost;
 
   const subtotal = getSubtotal();
   const total = getTotal();
@@ -79,7 +88,17 @@ const Cart = () => {
               <CardContent className="p-6 space-y-4">
                 <h3 className="font-semibold text-lg">Order Summary</h3>
                 <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal ({items.length} items)</span><span>₹{subtotal}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Delivery</span><span className="text-primary">Free</span></div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Delivery</span>
+                  {shipping.free ? (
+                    <span className="text-primary font-medium">Free</span>
+                  ) : (
+                    <span>₹{shippingCost}</span>
+                  )}
+                </div>
+                {!shipping.free && shipping.free_above && subtotal < shipping.free_above && (
+                  <p className="text-[10px] text-orange-600">Add ₹{shipping.free_above - subtotal} more for free shipping!</p>
+                )}
                 {discount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-primary flex items-center gap-1"><Tag className="h-3 w-3" /> {appliedCoupon}</span>
@@ -87,7 +106,7 @@ const Cart = () => {
                   </div>
                 )}
                 <Separator />
-                <div className="flex justify-between font-bold"><span>Total</span><span>₹{total}</span></div>
+                <div className="flex justify-between font-bold"><span>Total</span><span>₹{finalTotal}</span></div>
 
                 {/* Coupon */}
                 {!appliedCoupon ? (

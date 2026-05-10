@@ -327,6 +327,7 @@ export const initDB = async () => {
     )`,
     "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS branch_id TEXT",
     "ALTER TABLE orders ADD COLUMN IF NOT EXISTS branch_id TEXT",
+    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_charge REAL DEFAULT 0",
     "ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS branch_id TEXT",
     // CRM tables
     `CREATE TABLE IF NOT EXISTS leads (
