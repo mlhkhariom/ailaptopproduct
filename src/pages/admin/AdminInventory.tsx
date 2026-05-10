@@ -699,7 +699,7 @@ export default function AdminInventory() {
                   <Button variant="outline" onClick={() => setTransferOpen(false)}>Cancel</Button>
                   <Button onClick={async () => {
                     const res = await fetch('/api/erp/branch-stock/transfer', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: JSON.stringify(transferForm) }).then(r => r.json());
-                    if (res.error) { alert(res.error); return; }
+                    if (res.error) { toast.error(res.error); return; }
                     setTransferOpen(false);
                     fetch('/api/erp/branches', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchList(Array.isArray(d) ? d : [])).catch(() => {});
     fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : []));
@@ -905,7 +905,7 @@ export default function AdminInventory() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setProductDialog(false)}>Cancel</Button>
             <Button onClick={async () => {
-              if (!productForm.name || !productForm.category || !productForm.price) { alert('Name, category and price required'); return; }
+              if (!productForm.name || !productForm.category || !productForm.price) { toast.error('Name, category and price required'); return; }
               const totalStock = Object.values(productForm.branch_stocks).reduce((s: number, v: any) => s + (v || 0), 0);
               const res = await api.createProduct({ ...productForm, stock: totalStock, status: 'active' });
               if (res?.id || res?.product?.id) {
@@ -922,7 +922,7 @@ export default function AdminInventory() {
                 fetch('/api/erp/branches', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchList(Array.isArray(d) ? d : [])).catch(() => {});
     fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : []));
                 fetch('/api/erp/branch-stock/summary', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStockSummary(Array.isArray(d) ? d : []));
-              } else { alert('Failed to create product'); }
+              } else { toast.error('Failed to create product'); }
             }}>Create Product</Button>
           </DialogFooter>
         </DialogContent>

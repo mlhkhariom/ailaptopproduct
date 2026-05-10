@@ -15,12 +15,17 @@ pool.on('error', (err) => console.error('PG pool error:', err.message));
 // Convert SQLite ? to PostgreSQL $1, $2...
 const toPostgres = (sql) => {
   let i = 0;
-  // Handle INSERT OR IGNORE → INSERT ... ON CONFLICT DO NOTHING
-  sql = sql.replace(/INSERT OR IGNORE INTO/gi, 'INSERT INTO');
-  sql = sql.replace(/INSERT OR REPLACE INTO/gi, 'INSERT INTO');
-  // Add ON CONFLICT DO NOTHING if not already present
-  if (/^INSERT INTO/i.test(sql.trim()) && !/ON CONFLICT/i.test(sql)) {
-    sql = sql.trimEnd().replace(/;?\s*$/, '') + ' ON CONFLICT DO NOTHING';
+  // Handle INSERT OR IGNORE → add ON CONFLICT DO NOTHING
+  if (/^INSERT OR IGNORE INTO/i.test(sql.trim())) {
+    sql = sql.replace(/INSERT OR IGNORE INTO/gi, 'INSERT INTO');
+    if (!/ON CONFLICT/i.test(sql)) {
+      sql = sql.trimEnd().replace(/;?\s*$/, '') + ' ON CONFLICT DO NOTHING';
+    }
+  }
+  // INSERT OR REPLACE is ambiguous without explicit ON CONFLICT clause — log warning
+  if (/INSERT OR REPLACE INTO/i.test(sql)) {
+    console.warn('⚠️ INSERT OR REPLACE detected — convert to explicit ON CONFLICT UPDATE:', sql.slice(0, 80));
+    sql = sql.replace(/INSERT OR REPLACE INTO/gi, 'INSERT INTO');
   }
   // Handle datetime('now') → NOW()
   sql = sql.replace(/datetime\('now'\)/gi, 'NOW()');

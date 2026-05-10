@@ -31,8 +31,9 @@ router.get('/settings', authMiddleware, superAdminOnly, async (req, res) => {
 router.put('/settings', authMiddleware, superAdminOnly, async (req, res) => {
   const { api_url, api_key, default_instance, webhook_secret } = req.body;
   const existing = await getSettings();
-  await db.prepare(`INSERT OR REPLACE INTO evolution_settings (id, api_url, api_key, default_instance, webhook_secret, is_visible_to_admin, updated_at)
-    VALUES ('main', ?, ?, ?, ?, ?, datetime('now'))`)
+  await db.prepare(`INSERT INTO evolution_settings (id, api_url, api_key, default_instance, webhook_secret, is_visible_to_admin, updated_at)
+    VALUES ('main', ?, ?, ?, ?, ?, NOW())
+    ON CONFLICT (id) DO UPDATE SET api_url=EXCLUDED.api_url, api_key=EXCLUDED.api_key, default_instance=EXCLUDED.default_instance, webhook_secret=EXCLUDED.webhook_secret, updated_at=NOW()`)
     .run(api_url || existing.api_url, api_key && !api_key.includes('•') ? api_key : existing.api_key,
       default_instance || existing.default_instance, webhook_secret || existing.webhook_secret,
       existing.is_visible_to_admin || 0);

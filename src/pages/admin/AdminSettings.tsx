@@ -252,24 +252,24 @@ const AdminSettings = () => {
                   <div><Label className="text-xs">GST Rate (%)</Label><Input type="number" className="mt-1 h-9" defaultValue="8" /></div>
                   <div><Label className="text-xs">GSTIN Number</Label><Input className="mt-1 h-9" placeholder="22AAAAA0000A1Z5" /></div>
                 </div>
-                <div><Label className="text-xs">Legal Business Name</Label><Input className="mt-1 h-9" defaultValue="AI Laptop Wala Store Pvt Ltd" /></div>
-                <div><Label className="text-xs">PAN Number</Label><Input className="mt-1 h-9" placeholder="ABCDE1234F" /></div>
+                <div><Label className="text-xs">Legal Business Name</Label><Input className="mt-1 h-9" value={s('legal_name')} onChange={e => setS('legal_name', e.target.value)} /></div>
+                <div><Label className="text-xs">PAN Number</Label><Input className="mt-1 h-9" value={s('pan_number')} onChange={e => setS('pan_number', e.target.value)} placeholder="ABCDE1234F" /></div>
                 <Separator />
                 <div className="flex items-center justify-between p-3 rounded-lg border">
                   <div>
                     <p className="text-sm font-medium">Include Tax in Price</p>
                     <p className="text-[10px] text-muted-foreground">Prices shown are inclusive of GST</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch checked={s('tax_inclusive') === 'true'} onCheckedChange={v => setS('tax_inclusive', String(v))} />
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg border">
                   <div>
                     <p className="text-sm font-medium">Auto-generate Invoice</p>
                     <p className="text-[10px] text-muted-foreground">PDF invoice sent to customer email</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch checked={s('auto_invoice') === 'true'} onCheckedChange={v => setS('auto_invoice', String(v))} />
                 </div>
-                <Button className="gap-1.5 w-full" onClick={() => toast.success("Tax settings saved!")}><Save className="h-4 w-4" /> Save</Button>
+                <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Tax')}><Save className="h-4 w-4" /> Save</Button>
               </CardContent>
             </Card>
           </div>
@@ -339,7 +339,7 @@ const AdminSettings = () => {
                 <Separator />
                 <div className="flex items-center justify-between p-3 rounded-lg border">
                   <div><p className="text-sm font-medium">Auto-generate Sitemap</p><p className="text-[10px] text-muted-foreground">sitemap.xml updated on changes</p></div>
-                  <Switch defaultChecked />
+                  <Switch checked={s('auto_sitemap') === 'true'} onCheckedChange={v => setS('auto_sitemap', String(v))} />
                 </div>
                 <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('SEO')}><Save className="h-4 w-4" /> Save</Button>
               </CardContent>
@@ -350,12 +350,12 @@ const AdminSettings = () => {
                 <CardTitle className="text-base">Social Media & OG Tags</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div><Label className="text-xs">OG Title</Label><Input className="mt-1 h-9 text-xs" defaultValue="AI Laptop Wala – Ancient Laptop Wisdom" /></div>
-                <div><Label className="text-xs">OG Description</Label><Textarea className="mt-1 text-xs" rows={2} defaultValue="Authentic Laptop products for modern health. Shop now!" /></div>
-                <div><Label className="text-xs">OG Image URL</Label><Input className="mt-1 h-9 text-xs" placeholder="https://ailaptopwala.com/og-image.jpg" /></div>
+                <div><Label className="text-xs">OG Title</Label><Input className="mt-1 h-9 text-xs" value={s('og_title')} onChange={e => setS('og_title', e.target.value)} /></div>
+                <div><Label className="text-xs">OG Description</Label><Textarea className="mt-1 text-xs" rows={2} value={s('og_description')} onChange={e => setS('og_description', e.target.value)} /></div>
+                <div><Label className="text-xs">OG Image URL</Label><Input className="mt-1 h-9 text-xs" value={s('og_image')} onChange={e => setS('og_image', e.target.value)} placeholder="https://ailaptopwala.com/og-image.jpg" /></div>
                 <Separator />
                 <div><Label className="text-xs">Twitter Card Type</Label>
-                  <Select defaultValue="summary_large_image">
+                  <Select value={s('twitter_card') || 'summary_large_image'} onValueChange={v => setS('twitter_card', v)}>
                     <SelectTrigger className="mt-1 h-9 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="summary">Summary</SelectItem>
@@ -363,10 +363,10 @@ const AdminSettings = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div><Label className="text-xs">Twitter Handle</Label><Input className="mt-1 h-9 text-xs" defaultValue="@ailaptopwala" /></div>
+                <div><Label className="text-xs">Twitter Handle</Label><Input className="mt-1 h-9 text-xs" value={s('twitter_handle')} onChange={e => setS('twitter_handle', e.target.value)} placeholder="@ailaptopwala" /></div>
                 <Separator />
-                <div><Label className="text-xs">robots.txt Content</Label><Textarea className="mt-1 text-xs font-mono" rows={4} defaultValue={"User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: https://ailaptopwala.com/sitemap.xml"} /></div>
-                <Button className="gap-1.5 w-full" onClick={() => toast.success("OG settings saved!")}><Save className="h-4 w-4" /> Save</Button>
+                <div><Label className="text-xs">robots.txt Content</Label><Textarea className="mt-1 text-xs font-mono" rows={4} value={s('robots_txt') || "User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: https://ailaptopwala.com/sitemap.xml"} onChange={e => setS('robots_txt', e.target.value)} /></div>
+                <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Social & OG')}><Save className="h-4 w-4" /> Save</Button>
               </CardContent>
             </Card>
           </div>
@@ -477,7 +477,7 @@ const AdminSettings = () => {
                     <p className="text-sm font-medium">Auto Daily Backup</p>
                     <p className="text-[10px] text-muted-foreground">Backup at 3:00 AM daily</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch checked={s('auto_backup') === 'true'} onCheckedChange={v => setS('auto_backup', String(v))} />
                 </div>
                 <Separator />
                 <div className="p-4 rounded-xl border border-destructive/30 bg-destructive/5">

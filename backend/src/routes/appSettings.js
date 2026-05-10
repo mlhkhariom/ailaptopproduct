@@ -19,9 +19,8 @@ router.get('/', async (req, res) => {
 
 // PUT /api/app-settings — admin
 router.put('/', authMiddleware, adminOnly, async (req, res) => {
-  const update = await db.prepare("INSERT OR REPLACE INTO app_settings (key, value, category, updated_at) VALUES (?, ?, COALESCE((SELECT category FROM app_settings WHERE key=?), 'general'), datetime('now'))");
   for (const [key, value] of Object.entries(req.body)) {
-    await update.run(key, String(value), key);
+    await db.prepare(`INSERT INTO app_settings (key, value, category, updated_at) VALUES (?, ?, 'general', NOW()) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, updated_at=NOW()`).run(key, String(value));
   }
   res.json({ message: 'Settings saved' });
 });
