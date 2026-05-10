@@ -41,6 +41,7 @@ export default function AdminWATemplates() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<any>(emptyForm);
   const [sendPhone, setSendPhone] = useState('');
+  const [sendVars, setSendVars] = useState<Record<string, string>>({});
   const [sendTemplate, setSendTemplate] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
@@ -67,7 +68,7 @@ export default function AdminWATemplates() {
 
   const sendMsg = async () => {
     if (!sendPhone) return toast.error('Phone required');
-    await req('POST', `/wa-templates/${sendTemplate.id}/send`, { phone: sendPhone });
+    await req('POST', `/wa-templates/${sendTemplate.id}/send`, { phone: sendPhone, variables: sendVars });
     toast.success('Message queued!'); setSendOpen(false); setSendPhone('');
   };
 

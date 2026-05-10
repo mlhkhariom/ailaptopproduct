@@ -27,7 +27,7 @@ router.post('/suppliers', authMiddleware, adminOnly, async (req, res) => {
   const { name, contact_person, phone, email, address, gstin, payment_terms, notes } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
   const id = uuid();
-  await db.prepare('INSERT INTO suppliers (id,name,contact_person,phone,email,address,gstin,payment_terms,notes) VALUES (?,?,?,?,?,?,?,?,?)')
+  await db.prepare('INSERT INTO suppliers (id,name,contact_person,phone,email,address,gstin,payment_terms,notes,branch_id) VALUES (?,?,?,?,?,?,?,?,?,?)')
     .run(id, name, contact_person, phone, email, address, gstin, payment_terms || 'net30', notes);
   res.status(201).json(await db.prepare('SELECT * FROM suppliers WHERE id=?').get(id));
 });

@@ -474,6 +474,7 @@ export const initDB = async () => {
     "ALTER TABLE staff ADD COLUMN IF NOT EXISTS bank_account TEXT",
     "ALTER TABLE staff ADD COLUMN IF NOT EXISTS bank_ifsc TEXT",
     "ALTER TABLE staff ADD COLUMN IF NOT EXISTS bank_name TEXT",
+    "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS branch_id TEXT",
     `CREATE TABLE IF NOT EXISTS audit_log (
       id TEXT PRIMARY KEY, user_id TEXT, user_name TEXT,
       action TEXT NOT NULL, module TEXT NOT NULL, record_id TEXT,

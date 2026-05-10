@@ -70,6 +70,7 @@ export default function AdminERP() {
     fetch('/api/erp/billing?status=pending', { headers: h }).then(r => r.json()).then(d => setPendingBilling(Array.isArray(d) ? d.length : 0));
     fetch('/api/reports/dashboard', { headers: h }).then(r => r.json()).then(d => setEcomStats(d || {}));
     req(`/job-cards${branchFilter !== 'all' ? '?branch_id=' + branchFilter : ''}`).then(d => setRecentJobs(Array.isArray(d) ? d.slice(0, 5) : []));
+    fetch('/api/orders', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => { const orders = Array.isArray(d) ? d : d?.orders || []; setStats((s: any) => ({ ...s, totalOrders: orders.length, orderRevenue: orders.filter((o: any) => o.payment_status === 'paid').reduce((s: number, o: any) => s + (o.total || 0), 0), pendingOrders: orders.filter((o: any) => o.status === 'pending').length })); }).catch(() => {});
     req('/leads?status=all').then(d => setRecentLeads(Array.isArray(d) ? d.slice(0, 5) : []));
   }, []);
 
@@ -100,6 +101,13 @@ export default function AdminERP() {
   return (
     <ERPLayout>
       <div className="space-y-6 max-w-6xl mx-auto">
+
+        {/* Ecommerce KPIs */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="border rounded-xl p-4"><p className="text-xs text-muted-foreground">Total Orders</p><p className="text-xl font-black text-blue-600">{stats.totalOrders || 0}</p></div>
+          <div className="border rounded-xl p-4"><p className="text-xs text-muted-foreground">Order Revenue</p><p className="text-xl font-black text-green-600">₹{(stats.orderRevenue || 0).toLocaleString('en-IN')}</p></div>
+          <div className="border rounded-xl p-4"><p className="text-xs text-muted-foreground">Pending Orders</p><p className="text-xl font-black text-orange-600">{stats.pendingOrders || 0}</p></div>
+        </div>
 
         {/* Quick Actions */}
         <div className="flex flex-wrap gap-2">
