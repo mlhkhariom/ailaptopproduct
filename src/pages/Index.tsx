@@ -69,7 +69,7 @@ const Index = () => {
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10">
             <Link to="/products">
-              <Button size="lg" className="gap-2 px-8 h-12 text-base font-bold shadow-lg shadow-primary/30">
+              <Button size="lg" className="gap-2 px-8 h-12 text-base font-bold shadow-lg shadow-primary/30 pulse-glow">
                 <Laptop size={18} /> Shop Laptops <ArrowRight size={16} />
               </Button>
             </Link>
@@ -99,7 +99,7 @@ const Index = () => {
 
       {/* ── BENEFITS ─────────────────────────────────────── */}
       {benefits.length > 0 && (
-        <section className="py-10 bg-card border-y">
+        <section className="py-10 bg-card border-y reveal-on-scroll">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {benefits.map((b) => {
@@ -120,7 +120,7 @@ const Index = () => {
       )}
 
       {/* ── FEATURED PRODUCTS ────────────────────────────── */}
-      <section className="py-16">
+      <section className="py-16 reveal-on-scroll">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -138,7 +138,7 @@ const Index = () => {
       </section>
 
       {/* ── HOME REPAIR BANNER ───────────────────────────── */}
-      <section className="py-16 bg-muted/40">
+      <section className="py-16 bg-muted/40 reveal-on-scroll">
         <div className="container mx-auto px-4 max-w-5xl">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="rounded-2xl overflow-hidden shadow-xl order-2 md:order-1">
@@ -170,7 +170,7 @@ const Index = () => {
 
       {/* ── MORE PRODUCTS ────────────────────────────────── */}
       {products.length > 4 && (
-        <section className="py-16">
+        <section className="py-16 reveal-on-scroll">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -186,16 +186,55 @@ const Index = () => {
         </section>
       )}
 
+      {/* ── STATS / WHY CHOOSE US ─────────────────────────── */}
+      <section className="py-16 bg-gradient-to-br from-orange-50 via-white to-orange-50 reveal-on-scroll">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-black">Why Choose <span className="gradient-text">AI Laptop Wala</span></h2>
+            <p className="text-sm text-muted-foreground mt-2">15+ years of trust, thousands of happy customers</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { num: '5000+', label: 'Happy Customers', icon: '👥', color: 'from-blue-500 to-blue-600' },
+              { num: '15+', label: 'Years Experience', icon: '🏆', color: 'from-yellow-500 to-orange-500' },
+              { num: '24/7', label: 'Home Service', icon: '🚀', color: 'from-green-500 to-emerald-600' },
+              { num: '4.8★', label: 'Google Rating', icon: '⭐', color: 'from-purple-500 to-pink-500' },
+            ].map(s => (
+              <div key={s.label} className="bg-white rounded-2xl p-5 text-center shadow-sm card-lift border">
+                <div className={`text-4xl mb-2 inline-block bg-gradient-to-br ${s.color} bg-clip-text text-transparent`}>{s.icon}</div>
+                <p className="text-3xl md:text-4xl font-black gradient-text">{s.num}</p>
+                <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-10 grid md:grid-cols-3 gap-4">
+            {[
+              { icon: '✅', title: 'Certified Refurbished', desc: '6-month warranty on all products' },
+              { icon: '🏪', title: 'Physical Store', desc: 'Visit us at Silver Mall, Indore' },
+              { icon: '💬', title: 'WhatsApp Support', desc: 'Quick reply within 2 hours' },
+            ].map(f => (
+              <div key={f.title} className="bg-white rounded-xl p-4 border card-lift flex items-start gap-3">
+                <span className="text-2xl">{f.icon}</span>
+                <div>
+                  <h3 className="font-bold text-sm">{f.title}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">{f.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── TESTIMONIALS ─────────────────────────────────── */}
       {testimonials.length > 0 && (
-        <section className="py-16 bg-muted/40">
+        <section className="py-16 bg-muted/40 reveal-on-scroll">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl md:text-3xl font-black text-center mb-2">Happy <span className="gradient-text">Customers</span></h2>
             <p className="text-muted-foreground text-center text-sm mb-3">5000+ satisfied customers trust AI Laptop Wala</p>
             <div className="section-divider mb-10" />
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {testimonials.slice(0, 6).map((t) => (
-                <Card key={t._id || t.name} className="border-border/50 hover:shadow-md transition-shadow">
+                <Card key={t._id || t.name} className="border-border/50 card-lift">
                   <CardContent className="p-5">
                     <div className="flex gap-0.5 mb-3">
                       {Array.from({ length: t.rating }).map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />)}
