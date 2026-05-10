@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { api } from "@/lib/api";
+import { useWishlistStore } from "@/store/wishlistStore";
 
 export interface User {
   id: string;
@@ -38,6 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { token, user } = await api.login(email, password);
       localStorage.setItem('ailaptopwala_token', token);
+      // Sync wishlist to server
+      useWishlistStore.getState().syncToServer().then(() => useWishlistStore.getState().syncFromServer());
       setUser(user);
       return { success: true };
     } catch (e: any) {
@@ -49,6 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { token, user } = await api.register(name, email, password, phone);
       localStorage.setItem('ailaptopwala_token', token);
+      // Sync wishlist to server
+      useWishlistStore.getState().syncToServer().then(() => useWishlistStore.getState().syncFromServer());
       setUser(user);
       return { success: true };
     } catch (e: any) {

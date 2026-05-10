@@ -38,6 +38,26 @@ router.post('/', authMiddleware, async (req, res) => {
   await db.prepare('INSERT INTO notifications (id, type, title, message, link) VALUES (?, ?, ?, ?, ?)')
     .run(uuid(), 'order', 'New Order', `Order ${order_number} placed for ₹${total}`, `/admin/orders`);
 
+  // Email notification to customer (if email present + SMTP configured)
+  if (process.env.SMTP_HOST) {
+    try {
+      const user = await db.prepare('SELECT email, name FROM users WHERE id=?').get(req.user.id);
+      if (user?.email) {
+        const nodemailer = await import('nodemailer');
+        const transporter = nodemailer.default.createTransport({
+          host: process.env.SMTP_HOST, port: parseInt(process.env.SMTP_PORT || '587'),
+          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+        });
+        await transporter.sendMail({
+          from: process.env.SMTP_FROM || 'info@ailaptopwala.com',
+          to: user.email,
+          subject: `Order Confirmed #${order_number} — AI Laptop Wala`,
+          html: `<h2>Hi ${user.name},</h2><p>Your order <b>#${order_number}</b> has been placed successfully.</p><p>Total: <b>₹${total}</b></p><p>Track: <a href="https://ailaptopwala.com/track-order?number=${order_number}">Click here</a></p><p>Thank you for shopping with AI Laptop Wala!</p>`
+        });
+      }
+    } catch (e) { console.error('Order email error:', e.message); }
+  }
+
   // WhatsApp notification — phone from user profile OR checkout address
   const order = await db.prepare('SELECT * FROM orders WHERE id=?').get(id);
   const user = await db.prepare('SELECT name, phone FROM users WHERE id=?').get(req.user.id);
