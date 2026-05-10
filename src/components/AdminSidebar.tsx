@@ -33,7 +33,7 @@ const erpGroups = [
       { title: "Expenses", url: "/admin/erp/expenses", icon: Wallet },
       { title: "ERP Reports", url: "/admin/erp/reports", icon: BarChart3 },
       { title: "Report Builder", url: "/admin/erp/report-builder", icon: Table2 },
-      { title: "GSTR-1 Export", url: "/admin/erp/reports/gstr-1", icon: FileSpreadsheet },
+      { title: "GSTR-1 Export", url: "/admin/erp/reports", icon: FileSpreadsheet },
     ],
   },
   {
