@@ -42,15 +42,26 @@ router.get('/settings', authMiddleware, adminOnly, async (req, res) => {
 
 // PUT /api/social/settings — superadmin only
 router.put('/settings', authMiddleware, superAdminOnly, async (req, res) => {
-  const { meta_app_id, meta_app_secret, meta_access_token, meta_page_id, meta_ig_account_id } = req.body;
-  const existing = await db.prepare('SELECT id FROM social_settings WHERE id = ?').get('main');
-  if (existing) {
-    await db.prepare(`UPDATE social_settings SET meta_app_id=?, meta_app_secret=COALESCE(NULLIF(?,?),meta_app_secret), meta_access_token=?, meta_page_id=?, meta_ig_account_id=?, updated_at=datetime('now') WHERE id='main'`)
-      .run(meta_app_id, meta_app_secret, '***masked***', meta_access_token, meta_page_id, meta_ig_account_id);
-  } else {
-    await db.prepare(`INSERT INTO social_settings (id, meta_app_id, meta_app_secret, meta_access_token, meta_page_id, meta_ig_account_id) VALUES ('main',?,?,?,?,?)`)
-      .run(meta_app_id, meta_app_secret, meta_access_token, meta_page_id, meta_ig_account_id);
-  }
+  const { meta_app_id, meta_app_secret, meta_access_token, meta_page_id, meta_ig_account_id,
+    youtube_api_key, youtube_channel_id, tiktok_access_token } = req.body;
+
+  // PostgreSQL UPSERT (ON CONFLICT)
+  await db.prepare(`
+    INSERT INTO social_settings (id, meta_app_id, meta_app_secret, meta_access_token, meta_page_id, meta_ig_account_id, youtube_api_key, youtube_channel_id, tiktok_access_token, updated_at)
+    VALUES ('main', ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+    ON CONFLICT (id) DO UPDATE SET
+      meta_app_id = EXCLUDED.meta_app_id,
+      meta_app_secret = CASE WHEN EXCLUDED.meta_app_secret = '***masked***' THEN social_settings.meta_app_secret ELSE EXCLUDED.meta_app_secret END,
+      meta_access_token = COALESCE(NULLIF(EXCLUDED.meta_access_token,''), social_settings.meta_access_token),
+      meta_page_id = EXCLUDED.meta_page_id,
+      meta_ig_account_id = EXCLUDED.meta_ig_account_id,
+      youtube_api_key = COALESCE(NULLIF(EXCLUDED.youtube_api_key,''), social_settings.youtube_api_key),
+      youtube_channel_id = EXCLUDED.youtube_channel_id,
+      tiktok_access_token = COALESCE(NULLIF(EXCLUDED.tiktok_access_token,''), social_settings.tiktok_access_token),
+      updated_at = NOW()
+  `).run(meta_app_id || '', meta_app_secret || '', meta_access_token || '', meta_page_id || '', meta_ig_account_id || '',
+    youtube_api_key || '', youtube_channel_id || '', tiktok_access_token || '');
+
   res.json({ message: 'Settings saved' });
 });
 

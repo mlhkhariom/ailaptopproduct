@@ -13,7 +13,10 @@ import { useAuth } from "@/contexts/AuthContext";
 export const SocialSettings = () => {
   const { user } = useAuth();
   const isSuperAdmin = (user as any)?.role === 'superadmin';
-  const [form, setForm] = useState({ meta_app_id: '', meta_app_secret: '', meta_access_token: '', meta_page_id: '', meta_ig_account_id: '' });
+  const [form, setForm] = useState({
+    meta_app_id: '', meta_app_secret: '', meta_access_token: '', meta_page_id: '', meta_ig_account_id: '',
+    youtube_api_key: '', youtube_channel_id: '', tiktok_access_token: ''
+  });
   const [showSecret, setShowSecret] = useState(false);
   const [showToken, setShowToken] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -84,6 +87,27 @@ export const SocialSettings = () => {
             <Label className="text-xs">Instagram Business Account ID</Label>
             <Input value={form.meta_ig_account_id} onChange={f('meta_ig_account_id')} className="mt-1 text-sm font-mono" placeholder="987654321" />
           </div>
+        </div>
+
+        {/* YouTube */}
+        <div className="pt-3 border-t">
+          <h4 className="font-semibold text-xs mb-3 flex items-center gap-1.5">
+            <span className="inline-block w-2 h-2 rounded-full bg-red-500"></span> YouTube (optional)
+          </h4>
+          <div className="grid md:grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">YouTube Data API Key</Label>
+              <Input type="password" value={form.youtube_api_key} onChange={f('youtube_api_key')} className="mt-1 text-sm font-mono" placeholder="AIzaSy..." />
+            </div>
+            <div>
+              <Label className="text-xs">YouTube Channel ID</Label>
+              <Input value={form.youtube_channel_id} onChange={f('youtube_channel_id')} className="mt-1 text-sm font-mono" placeholder="UCxxxxxxxxxxxxx" />
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-2">
+            Get API key: <a href="https://console.cloud.google.com/apis/credentials" target="_blank" className="text-primary underline">console.cloud.google.com</a> → Enable YouTube Data API v3 → Create API Key.
+            Find Channel ID at: <a href="https://www.youtube.com/account_advanced" target="_blank" className="text-primary underline">youtube.com/account_advanced</a>
+          </p>
         </div>
         <div className="flex gap-2 pt-2">
           {isSuperAdmin ? (

@@ -8,6 +8,7 @@ import CustomerLayout from "@/components/CustomerLayout";
 import SEOHead from "@/components/SEOHead";
 import ReviewsSection from "@/components/ReviewsSection";
 import ProductCard from "@/components/ProductCard";
+import ProductReels from "@/components/ProductReels";
 import { useProductStore } from "@/store/productStore";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
@@ -163,13 +164,8 @@ const ProductDetail = () => {
               {product.stock <= 3 && product.inStock && <Badge className="absolute bottom-4 left-4 bg-destructive text-white text-xs">Only {product.stock} left!</Badge>}
             </div>
 
-            {/* Reels (enable_reels toggle) */}
-            {enable_reels && product.video_url && (
-              <div className="mt-4 rounded-xl overflow-hidden border">
-                <video src={product.video_url} controls className="w-full aspect-video bg-black" />
-                <p className="text-xs text-muted-foreground p-2 bg-muted/30">📹 Product demo video</p>
-              </div>
-            )}
+            {/* Reels linked to this product (enable_reels toggle) */}
+            {enable_reels && <ProductReels productId={product.id} />}
           </div>
 
           {/* ── DETAILS ───────────────────────────────────── */}

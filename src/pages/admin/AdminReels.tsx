@@ -28,16 +28,46 @@ const AdminReels = () => {
   const load = () => api.getReels().then(setReels).catch(() => {});
 
   const [fetchingProfile, setFetchingProfile] = useState(false);
+  const [fetchingYoutube, setFetchingYoutube] = useState(false);
+  const [syncingAll, setSyncingAll] = useState(false);
 
   const fetchFromProfile = async () => {
     setFetchingProfile(true);
     try {
       const result = await api.fetchInstagramProfile();
-      toast.success(`Fetched ${result.fetched} reels, ${result.added} new added!`);
+      toast.success(`Instagram: ${result.added} new, ${result.updated} updated`);
       load();
     } catch (e: any) {
-      toast.error(e.message || 'Configure Instagram credentials in Social Media → API Settings');
+      toast.error(e.message || 'Configure Instagram in Social → API Settings');
     } finally { setFetchingProfile(false); }
+  };
+
+  const fetchFromYoutube = async () => {
+    setFetchingYoutube(true);
+    try {
+      const token = localStorage.getItem('ailaptopwala_token');
+      const r = await fetch('/api/reels/fetch-youtube', { headers: { Authorization: `Bearer ${token}` } }).then(x => x.json());
+      if (r.error) throw new Error(r.error);
+      toast.success(`YouTube: ${r.added} new, ${r.updated} updated`);
+      load();
+    } catch (e: any) {
+      toast.error(e.message || 'Configure YouTube API in Social → API Settings');
+    } finally { setFetchingYoutube(false); }
+  };
+
+  const syncAll = async () => {
+    setSyncingAll(true);
+    try {
+      const token = localStorage.getItem('ailaptopwala_token');
+      const r = await fetch('/api/reels/sync-all', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).then(x => x.json());
+      const parts = [];
+      if (r.instagram?.added !== undefined) parts.push(`IG: +${r.instagram.added}/${r.instagram.updated}`);
+      if (r.youtube?.added !== undefined) parts.push(`YT: +${r.youtube.added}/${r.youtube.updated}`);
+      toast.success(parts.join(' • ') || 'Sync complete');
+      load();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally { setSyncingAll(false); }
   };
 
   useEffect(() => {
@@ -110,21 +140,29 @@ const AdminReels = () => {
             <h1 className="text-2xl font-bold">Reels & Videos</h1>
             <p className="text-sm text-muted-foreground">Manage Instagram/YouTube reels — link to products, show on homepage</p>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={fetchFromProfile} disabled={fetchingProfile} variant="outline" className="gap-2">
-              {fetchingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              Fetch from Instagram
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={syncAll} disabled={syncingAll} className="gap-2 bg-gradient-to-r from-pink-500 via-red-500 to-orange-500 text-white hover:opacity-90">
+              {syncingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Sync All Platforms
             </Button>
-            <Button onClick={openAdd} className="gap-2"><Plus className="h-4 w-4" /> Add Reel</Button>
+            <Button onClick={fetchFromProfile} disabled={fetchingProfile} variant="outline" className="gap-2">
+              {fetchingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Instagram className="h-4 w-4 text-pink-500" />}
+              Instagram
+            </Button>
+            <Button onClick={fetchFromYoutube} disabled={fetchingYoutube} variant="outline" className="gap-2">
+              {fetchingYoutube ? <Loader2 className="h-4 w-4 animate-spin" /> : <Youtube className="h-4 w-4 text-red-500" />}
+              YouTube
+            </Button>
+            <Button onClick={openAdd} className="gap-2"><Plus className="h-4 w-4" /> Add Manually</Button>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2 text-sm">
+        {/* Sync info banner */}
+        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex items-start gap-2 text-sm">
           <AlertCircle className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-blue-700">Auto-fetch from Instagram</p>
-            <p className="text-blue-600 text-xs mt-0.5">Configure Instagram credentials in <strong>Social Media → API Settings</strong> → then click "Fetch from Instagram" to auto-import latest reels.</p>
+            <p className="font-medium text-blue-700 dark:text-blue-400">Auto-sync from social accounts</p>
+            <p className="text-blue-600 dark:text-blue-500 text-xs mt-0.5">Configure credentials in <strong>Social Media → API Settings</strong>. "Sync All" imports from every connected platform at once. Updates existing reels + adds new ones.</p>
           </div>
         </div>
 

@@ -284,6 +284,16 @@ export const initDB = async () => {
     "ALTER TABLE media ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'image'",
     "ALTER TABLE media ADD COLUMN IF NOT EXISTS folder TEXT DEFAULT 'general'",
     "ALTER TABLE media ADD COLUMN IF NOT EXISTS alt TEXT",
+    // Social — YouTube + TikTok support
+    "ALTER TABLE social_settings ADD COLUMN IF NOT EXISTS youtube_api_key TEXT",
+    "ALTER TABLE social_settings ADD COLUMN IF NOT EXISTS youtube_channel_id TEXT",
+    "ALTER TABLE social_settings ADD COLUMN IF NOT EXISTS tiktok_access_token TEXT",
+    "ALTER TABLE social_settings ADD COLUMN IF NOT EXISTS last_sync_at TIMESTAMPTZ",
+    "ALTER TABLE reels ADD COLUMN IF NOT EXISTS external_id TEXT",
+    "ALTER TABLE reels ADD COLUMN IF NOT EXISTS caption TEXT",
+    "ALTER TABLE reels ADD COLUMN IF NOT EXISTS likes INTEGER DEFAULT 0",
+    "ALTER TABLE reels ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ",
+    "ALTER TABLE reels ADD COLUMN IF NOT EXISTS auto_synced INTEGER DEFAULT 0",
     // ERP — Job Cards columns on service_bookings
     "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS technician TEXT",
     "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS diagnosis TEXT",
