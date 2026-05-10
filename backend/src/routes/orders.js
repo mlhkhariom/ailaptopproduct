@@ -9,20 +9,27 @@ const router = Router();
 
 // POST /api/orders — place order (auth required)
 router.post('/', authMiddleware, async (req, res) => {
-  const { items, subtotal, discount, total, coupon_code, payment_method, address, payment_status } = req.body;
+  const { items, subtotal, discount, total, coupon_code, payment_method, address, payment_status, branch_id } = req.body;
   if (!items || !total) return res.status(400).json({ error: 'items and total required' });
 
   const id = uuid();
   const order_number = 'ALW-' + Date.now().toString().slice(-6);
 
-  await db.prepare(`INSERT INTO orders (id, order_number, user_id, items, subtotal, discount, total, coupon_code, payment_method, payment_status, address)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .run(id, order_number, req.user.id, JSON.stringify(items), subtotal, discount || 0, total, coupon_code, payment_method, payment_status || 'pending', JSON.stringify(address));
+  // Default to Silver Mall if no branch specified
+  const selectedBranch = branch_id || 'branch-silver-mall';
+  await db.prepare(`INSERT INTO orders (id, order_number, user_id, items, subtotal, discount, total, coupon_code, payment_method, payment_status, address, branch_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(id, order_number, req.user.id, JSON.stringify(items), subtotal, discount || 0, total, coupon_code, payment_method, payment_status || 'pending', JSON.stringify(address), selectedBranch);
 
   if (coupon_code) await db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE code = ?').run(coupon_code);
   for (const item of items) {
     await db.prepare('UPDATE products SET stock = MAX(0, stock - ?), in_stock = CASE WHEN stock - ? <= 0 THEN 0 ELSE 1 END WHERE id = ?')
       .run(item.quantity, item.quantity, item.id);
+    // Deduct from branch_stock
+    try {
+      await db.prepare('UPDATE branch_stock SET stock=GREATEST(0,stock-?) WHERE branch_id=? AND product_id=?').run(item.quantity, selectedBranch, item.id);
+      await db.prepare('INSERT INTO branch_stock_movements (id,branch_id,product_id,type,qty,note,ref_id) VALUES (?,?,?,?,?,?,?)').run(uuid(), selectedBranch, item.id, 'order_sale', -item.quantity, `Order ${order_number}`, id);
+    } catch {}
     const p = await db.prepare('SELECT name, stock FROM products WHERE id=?').get(item.id);
     if (p && p.stock <= 3) {
       await db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)').run(uuid(), 'stock', '⚠️ Low Stock Alert', `${p.name} — only ${p.stock} left`, '/admin/products');
