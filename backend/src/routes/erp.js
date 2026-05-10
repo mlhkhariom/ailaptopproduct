@@ -40,7 +40,15 @@ router.post('/job-cards', authMiddleware, adminOnly, async (req, res) => {
     parts_used, labour_charge, parts_charge, preferred_date } = req.body;
   if (!customer_name || !customer_phone) return res.status(400).json({ error: 'name and phone required' });
   const id = uuid();
-  const booking_number = 'JC-' + Date.now().toString().slice(-6);
+  // Auto-format: JC-YYYY-NNNN (sequential)
+  const year = new Date().getFullYear();
+  const lastJob = await db.prepare("SELECT booking_number FROM service_bookings WHERE booking_number LIKE ? ORDER BY created_at DESC LIMIT 1").get(`JC-${year}-%`);
+  let seq = 1;
+  if (lastJob?.booking_number) {
+    const parts = lastJob.booking_number.split('-');
+    seq = (parseInt(parts[2] || '0') || 0) + 1;
+  }
+  const booking_number = `JC-${year}-${String(seq).padStart(4, '0')}`;
   const total_charge = (labour_charge || 0) + (parts_charge || 0);
   await db.prepare(`INSERT INTO service_bookings 
     (id,booking_number,customer_name,customer_phone,customer_email,service_id,service_name,
