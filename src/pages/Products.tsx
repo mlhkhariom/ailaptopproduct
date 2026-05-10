@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { LayoutGrid, List, Search, X } from "lucide-react";
 import CustomerLayout from "@/components/CustomerLayout";
 import SEOHead from "@/components/SEOHead";
+import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import ProductCard from "@/components/ProductCard";
 import { useProductStore } from "@/store/productStore";
 import { api } from "@/lib/api";

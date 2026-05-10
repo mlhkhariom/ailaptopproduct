@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import CustomerLayout from "@/components/CustomerLayout";
 import SEOHead from "@/components/SEOHead";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 import ProductCard from "@/components/ProductCard";
 import BusinessDetails from "@/components/BusinessDetails";
 import ReelsSection from "@/components/ReelsSection";
@@ -19,6 +20,7 @@ const iconMap: Record<string, any> = { Laptop, Shield, Wrench, Truck, CheckCircl
 const Index = () => {
   const { products, fetchProducts } = useProductStore();
   const [benefits, setBenefits] = useState<any[]>([]);
+  useScrollReveal();
   const [testimonials, setTestimonials] = useState<any[]>([]);
 
   useEffect(() => {
