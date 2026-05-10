@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { IndianRupee, ShoppingBag, Users, Package, ArrowUpRight, Clock, CheckCircle, Truck, AlertTriangle, RefreshCw, TrendingUp, ClipboardList, Wrench, UserCheck, MessageSquare } from "lucide-react";
+import { IndianRupee, ShoppingBag, Users, Package, ArrowUpRight, Clock, CheckCircle, Truck, AlertTriangle, RefreshCw, TrendingUp, ClipboardList, Wrench, UserCheck, MessageSquare, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,8 +23,12 @@ const AdminDashboard = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const [d, s] = await Promise.all([api.dashboard(), api.salesReport('30d')]);
-      setData(d); setSales(s);
+      const [d, s, erp] = await Promise.all([
+        api.dashboard(),
+        api.salesReport('30d'),
+        fetch('/api/erp/dashboard', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).catch(() => ({}))
+      ]);
+      setData({ ...d, ...erp }); setSales(s);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -44,6 +48,10 @@ const AdminDashboard = () => {
     { title: 'Total Orders', value: data?.totalOrders || 0, sub: `${data?.pendingOrders || 0} pending`, icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-100' },
     { title: 'Customers', value: data?.totalCustomers || 0, icon: Users, color: 'text-purple-600', bg: 'bg-purple-100' },
     { title: 'Products', value: data?.totalProducts || 0, sub: data?.lowStock > 0 ? `⚠ ${data.lowStock} low stock` : 'All stocked', icon: Package, color: data?.lowStock > 0 ? 'text-orange-500' : 'text-green-600', bg: data?.lowStock > 0 ? 'bg-orange-100' : 'bg-green-100' },
+    { title: 'Pending Jobs', value: data?.pendingJobs || 0, sub: `${data?.completedToday || 0} done today`, icon: Wrench, color: 'text-orange-600', bg: 'bg-orange-100', link: '/admin/erp/job-cards' },
+    { title: 'Active Staff', value: data?.totalStaff || 0, icon: UserCheck, color: 'text-cyan-600', bg: 'bg-cyan-100', link: '/admin/erp/staff' },
+    { title: 'Month Profit', value: `₹${(data?.netProfit || 0).toLocaleString('en-IN')}`, icon: TrendingUp, color: (data?.netProfit || 0) >= 0 ? 'text-green-600' : 'text-red-600', bg: 'bg-green-100', link: '/admin/erp/reports' },
+    { title: 'Pending Payments', value: data?.pendingPayments || 0, icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-100', link: '/admin/erp/billing' },
   ];
 
   return (

@@ -33,6 +33,7 @@ const Account = () => {
   const wishlistItems = useWishlistStore((s) => s.items);
   const { products, fetchProducts } = useProductStore();
   const [myOrders, setMyOrders] = useState<any[]>([]);
+  const [myRepairs, setMyRepairs] = useState<any[]>([]);
   const [profileForm, setProfileForm] = useState({ name: user?.name || '', phone: (user as any)?.phone || '', address: '' });
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirm: '' });
   const [saving, setSaving] = useState(false);
@@ -43,6 +44,10 @@ const Account = () => {
     if (!user) return;
     fetchProducts();
     api.myOrders().then(setMyOrders).catch(() => {});
+    // Fetch repairs by phone
+    if (user?.phone) {
+      fetch(`/api/erp/job-cards?customer_phone=${user.phone}`, { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setMyRepairs(Array.isArray(d) ? d : [])).catch(() => {});
+    }
   }, [user]);
 
   const wishlistProducts = products.filter(p => wishlistItems.includes(p.id));
@@ -141,6 +146,7 @@ const Account = () => {
             <Tabs defaultValue="orders">
               <TabsList className="flex-wrap h-auto gap-1">
                 <TabsTrigger value="orders" className="gap-1 text-xs"><ShoppingBag className="h-3 w-3" /> Orders ({myOrders.length})</TabsTrigger>
+                <TabsTrigger value="repairs" className="gap-1 text-xs">🔧 Repairs ({myRepairs.length})</TabsTrigger>
                 <TabsTrigger value="profile" className="gap-1 text-xs"><User className="h-3 w-3" /> Profile</TabsTrigger>
                 <TabsTrigger value="wishlist" className="gap-1 text-xs"><Heart className="h-3 w-3" /> Wishlist ({wishlistProducts.length})</TabsTrigger>
                 <TabsTrigger value="password" className="gap-1 text-xs"><Lock className="h-3 w-3" /> Password</TabsTrigger>
@@ -192,6 +198,30 @@ const Account = () => {
                     </Card>
                   );
                 })}
+              </TabsContent>
+
+              <TabsContent value="repairs" className="space-y-3">
+                {myRepairs.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p className="text-sm">No repair records yet</p>
+                  </div>
+                ) : (
+                  myRepairs.map((r: any) => (
+                    <div key={r.id} className="border rounded-xl p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs text-muted-foreground">{r.booking_number}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.status === 'completed' ? 'bg-green-100 text-green-700' : r.status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>{r.status?.replace('_', ' ')}</span>
+                      </div>
+                      <p className="font-semibold text-sm">{r.device_brand} {r.device_model}</p>
+                      <p className="text-xs text-muted-foreground">{r.service_name}</p>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-muted-foreground">{new Date(r.created_at).toLocaleDateString('en-IN')}</span>
+                        <span className="font-bold text-green-600">₹{(r.total_charge || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                      {r.warranty_days > 0 && r.status === 'completed' && <p className="text-xs text-green-600 font-medium">✓ {r.warranty_days} days warranty</p>}
+                    </div>
+                  ))
+                )}
               </TabsContent>
 
               {/* PROFILE */}
