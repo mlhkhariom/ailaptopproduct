@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, TrendingUp, TrendingDown, RefreshCw, IndianRupee, Package, Wrench, Wallet, Users, Printer, FileText, TrendingUp as Forecast } from "lucide-react";
+import { BarChart3, TrendingUp, TrendingDown, RefreshCw, IndianRupee, Package, Wrench, Wallet, Users, Printer, FileText, TrendingUp as Forecast, Download } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
