@@ -33,7 +33,7 @@ const erpGroups = [
       { title: "Expenses", url: "/admin/erp/expenses", icon: Wallet },
       { title: "ERP Reports", url: "/admin/erp/reports", icon: BarChart3 },
       { title: "Report Builder", url: "/admin/erp/report-builder", icon: Table2 },
-      { title: "GSTR-1 Export", url: "/admin/erp/reports", icon: FileSpreadsheet },
+      { title: "GSTR-1 Export", url: "/admin/erp/reports/gstr-1", icon: FileSpreadsheet },
     ],
   },
   {
@@ -94,6 +94,7 @@ export function AdminSidebar() {
   const collapsed = state === "collapsed";
   const unreadCount = useNotificationStore((s) => s.unreadCount());
   const { user } = useAuth();
+  const { can } = usePermissions();
   const [erpOpen, setErpOpen] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     "Operations": true, "Finance": true, "People": false, "Procurement": false,
@@ -102,10 +103,12 @@ export function AdminSidebar() {
   const toggleGroup = (label: string) =>
     setOpenGroups(g => ({ ...g, [label]: !g[label] }));
 
-  const renderMenu = (items: { title: string; url: string; icon: any; badge?: string; perm?: string }[]) => (
-    items.filter(item => !item.perm || can(item.perm)).length === 0 ? null :
+  const renderMenu = (items: { title: string; url: string; icon: any; badge?: string; perm?: string }[]) => {
+    const filtered = items.filter(item => !item.perm || can(item.perm));
+    if (!filtered.length) return null;
+    return (
     <SidebarMenu>
-      {items.map((item) => (
+      {filtered.map((item) => (
         <SidebarMenuItem key={item.url}>
           <SidebarMenuButton asChild className="h-9">
             <NavLink to={item.url} end={item.url === "/admin"} className="rounded-lg hover:bg-sidebar-accent/50 transition-all px-3" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm">
@@ -125,7 +128,8 @@ export function AdminSidebar() {
         </SidebarMenuItem>
       ))}
     </SidebarMenu>
-  );
+    );
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
