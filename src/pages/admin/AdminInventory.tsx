@@ -73,6 +73,27 @@ export default function AdminInventory() {
   const [poForm, setPoForm] = useState({ supplier_id: '', branch_id: '', items: [{ product_id: '', product_name: '', quantity: 1, unit_price: 0 }], expected_date: '', notes: '' });
   const [movForm, setMovForm] = useState({ product_id: '', type: 'purchase', quantity: 1, notes: '' });
 
+  const printGRN = (po: any) => {
+    const items = typeof po.items === 'string' ? JSON.parse(po.items || '[]') : (po.items || []);
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><title>GRN</title>
+    <style>body{font-family:Arial;padding:20px;font-size:13px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ccc;padding:8px}th{background:#f5f5f5}.header{margin-bottom:16px}.row{display:flex;justify-content:space-between;margin:4px 0}</style>
+    </head><body>
+    <div class="header"><h2 style="margin:0">Goods Receipt Note (GRN)</h2><p style="color:#666;margin:4px 0">AI Laptop Wala — Silver Mall, Indore</p></div>
+    <div class="row"><span><b>GRN Date:</b> ${new Date().toLocaleDateString('en-IN')}</span><span><b>PO#:</b> ${po.po_number}</span></div>
+    <div class="row"><span><b>Supplier:</b> ${po.supplier_name || '—'}</span><span><b>Branch:</b> ${po.branch_name || '—'}</span></div>
+    <br>
+    <table><thead><tr><th>#</th><th>Product</th><th>Ordered Qty</th><th>Received Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
+    <tbody>${items.map((item: any, i: number) => `<tr><td>${i+1}</td><td>${item.product_name||item.product_id}</td><td>${item.quantity}</td><td>${item.quantity}</td><td>₹${item.unit_price||0}</td><td>₹${(item.quantity*(item.unit_price||0)).toLocaleString('en-IN')}</td></tr>`).join('')}</tbody>
+    <tfoot><tr><td colspan="5" style="text-align:right"><b>Total</b></td><td><b>₹${(po.total||0).toLocaleString('en-IN')}</b></td></tr></tfoot>
+    </table>
+    <br><div class="row"><span>Received by: _______________</span><span>Date: _______________</span></div>
+    <div class="row"><span>Signature: _______________</span><span>Store Keeper: _______________</span></div>
+    <script>window.onload=()=>window.print()</script></body></html>`);
+    w.document.close();
+  };
+
   const printBarcode = (p: any) => {
     const w = window.open('', '_blank', 'width=400,height=300');
     if (!w) return;
@@ -487,6 +508,7 @@ export default function AdminInventory() {
                     <div className="flex gap-2 flex-wrap">
                       {po.status === 'draft' && <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => updatePOStatus(po.id, 'ordered')}><Clock className="h-3.5 w-3.5" /> Mark Ordered</Button>}
                       {po.status === 'ordered' && <Button size="sm" className="gap-1.5 h-8 text-xs" onClick={() => updatePOStatus(po.id, 'received')}><CheckCircle className="h-3.5 w-3.5" /> Mark Received</Button>}
+                      {po.status === 'received' && <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => printGRN(po)}><Printer className="h-3.5 w-3.5" /> Print GRN</Button>}
                       {!['received','cancelled'].includes(po.status) && <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs text-red-600 border-red-200" onClick={() => updatePOStatus(po.id, 'cancelled')}><XCircle className="h-3.5 w-3.5" /> Cancel</Button>}
                       <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" onClick={() => printPurchaseOrder(po)}><Printer className="h-3.5 w-3.5" /> Print</Button>
                       <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive ml-auto" onClick={async () => { if (!confirm('Delete PO?')) return; await req('DELETE', `/purchase-orders/${po.id}`); loadAll(); }}><Trash2 className="h-3.5 w-3.5" /></Button>

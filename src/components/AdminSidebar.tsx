@@ -1,4 +1,4 @@
-import { LayoutDashboard, Tv2, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, Box, Calendar, MessageSquare, CalendarCheck, CalendarX, RefreshCw, Table2, Gift, UserCircle, FileSpreadsheet } from "lucide-react";
+import { LayoutDashboard, Tv2, Sun, Moon, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, Box, Calendar, MessageSquare, CalendarCheck, CalendarX, RefreshCw, Table2, Gift, UserCircle, FileSpreadsheet } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import {

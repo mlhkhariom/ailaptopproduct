@@ -271,6 +271,42 @@ export default function AdminCRM() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Weighted Revenue Forecast */}
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Weighted Revenue Forecast</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {[
+                    { stage: 'new', label: 'New', prob: 10 },
+                    { stage: 'contacted', label: 'Contacted', prob: 20 },
+                    { stage: 'interested', label: 'Interested', prob: 40 },
+                    { stage: 'negotiation', label: 'Negotiation', prob: 70 },
+                    { stage: 'won', label: 'Won', prob: 100 },
+                  ].map(({ stage, label, prob }) => {
+                    const stageLeads = leads.filter((l: any) => l.status === stage);
+                    const totalValue = stageLeads.reduce((s: number, l: any) => s + (l.deal_value || l.budget || 0), 0);
+                    const weighted = Math.round(totalValue * prob / 100);
+                    return (
+                      <div key={stage} className="flex items-center gap-3">
+                        <span className="text-xs w-24 text-muted-foreground">{label} ({prob}%)</span>
+                        <div className="flex-1 bg-muted rounded-full h-2">
+                          <div className="bg-primary h-2 rounded-full" style={{ width: `${Math.min(100, totalValue > 0 ? 100 : 0)}%` }} />
+                        </div>
+                        <span className="text-xs font-bold w-24 text-right">₹{weighted.toLocaleString('en-IN')}</span>
+                      </div>
+                    );
+                  })}
+                  <div className="border-t pt-2 flex justify-between text-sm font-black">
+                    <span>Total Weighted Forecast</span>
+                    <span className="text-green-600">₹{leads.filter((l: any) => !['won','lost'].includes(l.status)).reduce((s: number, l: any) => {
+                      const prob = { new: 0.1, contacted: 0.2, interested: 0.4, negotiation: 0.7 }[l.status as string] || 0;
+                      return s + Math.round((l.deal_value || l.budget || 0) * prob);
+                    }, 0).toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* ── KANBAN TAB ── */}
