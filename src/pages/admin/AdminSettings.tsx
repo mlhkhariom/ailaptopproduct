@@ -125,6 +125,112 @@ const AdminSettings = () => {
                 <p className="text-xs text-muted-foreground pt-1 border-t">Feature toggles moved to <b>Features</b> tab →</p>
               </CardContent>
             </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-blue-500" />
+                  <CardTitle className="text-base">System URLs & Webhooks</CardTitle>
+                </div>
+                <CardDescription className="text-xs">Frontend & backend public URLs — used in emails, WhatsApp links, payment callbacks</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Frontend URL (public website)</Label>
+                    <Input className="mt-1 h-9 text-xs" value={s('site_url')} onChange={e => setS('site_url', e.target.value)} placeholder="https://ailaptopwala.com" />
+                    <p className="text-[10px] text-muted-foreground mt-1">Used in email links, invoice URLs, payment callbacks</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Backend URL (API server)</Label>
+                    <Input className="mt-1 h-9 text-xs" value={s('backend_url')} onChange={e => setS('backend_url', e.target.value)} placeholder="https://api.ailaptopwala.com" />
+                    <p className="text-[10px] text-muted-foreground mt-1">Used for webhooks (Paytm, PhonePe, Cashfree, Evolution API)</p>
+                  </div>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Owner WhatsApp Phone</Label>
+                    <Input className="mt-1 h-9 text-xs" value={s('owner_phone')} onChange={e => setS('owner_phone', e.target.value)} placeholder="9893496163" />
+                    <p className="text-[10px] text-muted-foreground mt-1">Receives daily reports, new order alerts, low stock notifications on WhatsApp</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Site Email (From / Admin)</Label>
+                    <Input className="mt-1 h-9 text-xs" value={s('site_email')} onChange={e => setS('site_email', e.target.value)} placeholder="info@ailaptopwala.com" />
+                    <p className="text-[10px] text-muted-foreground mt-1">Default From address, receives admin alerts</p>
+                  </div>
+                </div>
+                <Button className="gap-1.5" disabled={saving} onClick={() => saveAppSettings('System URLs')}><Save className="h-4 w-4" /> Save System URLs</Button>
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-purple-500" />
+                  <CardTitle className="text-base">E-Invoice (GST IRN Generation)</CardTitle>
+                  {s('einvoice_enabled') === 'true' ? <Badge variant="default" className="text-[9px] bg-purple-600">ENABLED</Badge> : <Badge variant="outline" className="text-[9px]">Disabled</Badge>}
+                </div>
+                <CardDescription className="text-xs">NIC IRP integration — required for businesses with ₹5Cr+ turnover. Sandbox by default.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">NIC Base URL</Label>
+                    <Select value={s('einvoice_base') || 'https://einv-apisandbox.nic.in'} onValueChange={v => setS('einvoice_base', v)}>
+                      <SelectTrigger className="mt-1 h-9 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="https://einv-apisandbox.nic.in">Sandbox (Testing)</SelectItem>
+                        <SelectItem value="https://einvoice1.gst.gov.in">Production (Live)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label className="text-xs">Business GSTIN</Label><Input className="mt-1 h-9 text-xs" value={s('einvoice_gstin')} onChange={e => setS('einvoice_gstin', e.target.value)} placeholder="23ATNPA4415H1Z2" /></div>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div><Label className="text-xs">NIC Username</Label><Input className="mt-1 h-9 text-xs" value={s('einvoice_username')} onChange={e => setS('einvoice_username', e.target.value)} placeholder="Your GSP username" /></div>
+                  <div><Label className="text-xs">NIC Password</Label><Input className="mt-1 h-9 text-xs" type="password" value={s('einvoice_password')} onChange={e => setS('einvoice_password', e.target.value)} placeholder="••••••••" /></div>
+                </div>
+                <div>
+                  <Label className="text-xs">AppKey (32-char from NIC portal)</Label>
+                  <Input className="mt-1 h-9 text-xs font-mono" value={s('einvoice_appkey')} onChange={e => setS('einvoice_appkey', e.target.value)} placeholder="abc123..." maxLength={32} />
+                </div>
+                <div className="flex items-center gap-2 pt-2 border-t">
+                  <Switch checked={s('einvoice_enabled') === 'true'} onCheckedChange={v => setS('einvoice_enabled', String(v))} />
+                  <Label className="text-xs">Enable E-Invoice IRN Generation</Label>
+                  <Button size="sm" className="ml-auto" disabled={saving} onClick={() => saveAppSettings('E-Invoice')}><Save className="h-3.5 w-3.5 mr-1" /> Save</Button>
+                </div>
+                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-[10px] text-blue-900 dark:text-blue-300">
+                  <b>How to get credentials:</b><br />
+                  1. Register on <a href="https://einvoice1.gst.gov.in" target="_blank" className="underline">einvoice1.gst.gov.in</a><br />
+                  2. API Registration → Get Username, Password<br />
+                  3. Create AppKey (32-char encryption key)<br />
+                  4. Test in sandbox first, then switch to Production
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <Database className="h-4 w-4 text-green-500" />
+                  <CardTitle className="text-base">Supabase (Optional — File Storage)</CardTitle>
+                  {s('supabase_url') && s('supabase_service_key') ? <Badge variant="default" className="text-[9px] bg-green-600">Connected</Badge> : <Badge variant="outline" className="text-[9px]">Not configured</Badge>}
+                </div>
+                <CardDescription className="text-xs">Used for storing product images, job card photos, documents (optional alternative to local filesystem)</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label className="text-xs">Supabase URL</Label>
+                  <Input className="mt-1 h-9 text-xs" value={s('supabase_url')} onChange={e => setS('supabase_url', e.target.value)} placeholder="https://xyz.supabase.co" />
+                </div>
+                <div>
+                  <Label className="text-xs">Service Role Key (secret)</Label>
+                  <Input className="mt-1 h-9 text-xs" type="password" value={s('supabase_service_key')} onChange={e => setS('supabase_service_key', e.target.value)} placeholder="eyJhbGc..." />
+                  <p className="text-[10px] text-muted-foreground mt-1">Get from Supabase → Project Settings → API → service_role key</p>
+                </div>
+                <Button size="sm" disabled={saving} onClick={() => saveAppSettings('Supabase')}><Save className="h-3.5 w-3.5 mr-1" /> Save</Button>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 

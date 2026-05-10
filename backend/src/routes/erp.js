@@ -1138,12 +1138,18 @@ router.get('/gstr1-export', authMiddleware, adminOnly, async (req, res) => {
 
 // ── E-INVOICE (IRN) ───────────────────────────────────────
 // NIC IRP API integration — sandbox mode by default
-// Set EINVOICE_USERNAME, EINVOICE_PASSWORD, EINVOICE_GSTIN in .env for live
-
-const EINVOICE_BASE = process.env.EINVOICE_BASE || 'https://einv-apisandbox.nic.in';
-const EINVOICE_GSTIN = process.env.EINVOICE_GSTIN || '23AABCU9603R1ZX'; // test GSTIN
-const EINVOICE_USER = process.env.EINVOICE_USERNAME || '';
-const EINVOICE_PASS = process.env.EINVOICE_PASSWORD || '';
+// Credentials read from DB first (admin settings), env fallback
+// ── Get E-Invoice config dynamically per request ──────────
+async function getEinvoiceConfig() {
+  const { Config } = await import('../lib/config.js');
+  return {
+    BASE: await Config.einvoiceBase(),
+    GSTIN: await Config.einvoiceGstin(),
+    USER: await Config.einvoiceUsername(),
+    PASS: await Config.einvoicePassword(),
+    APPKEY: await Config.einvoiceAppKey(),
+  };
+}
 
 // Build invoice payload per NIC schema
 function buildIRNPayload(inv, gstin) {
@@ -1203,26 +1209,27 @@ router.post('/einvoice/generate', authMiddleware, adminOnly, async (req, res) =>
   if (!inv) return res.status(404).json({ error: 'Invoice not found' });
   if (inv.irn) return res.status(400).json({ error: 'IRN already generated', irn: inv.irn });
 
-  const payload = buildIRNPayload({ ...inv, buyer_gstin, customer_address }, EINVOICE_GSTIN);
+  const ein = await getEinvoiceConfig();
+  const payload = buildIRNPayload({ ...inv, buyer_gstin, customer_address }, ein.GSTIN);
 
   // If credentials set → call real NIC API, else mock
   let irnData;
-  if (EINVOICE_USER && EINVOICE_PASS) {
+  if (ein.USER && ein.PASS) {
     try {
       // Step 1: Authenticate
-      const authRes = await fetch(`${EINVOICE_BASE}/eivital/v1.03/Auth`, {
+      const authRes = await fetch(`${ein.BASE}/eivital/v1.03/Auth`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Gstin': EINVOICE_GSTIN, 'user_name': EINVOICE_USER, 'password': EINVOICE_PASS, 'AppKey': process.env.EINVOICE_APPKEY || '', 'AuthToken': '' },
-        body: JSON.stringify({ UserName: EINVOICE_USER, Password: EINVOICE_PASS, AppKey: process.env.EINVOICE_APPKEY || '', ForceRefreshAccessToken: false }),
+        headers: { 'Content-Type': 'application/json', 'Gstin': ein.GSTIN, 'user_name': ein.USER, 'password': ein.PASS, 'AppKey': ein.APPKEY, 'AuthToken': '' },
+        body: JSON.stringify({ UserName: ein.USER, Password: ein.PASS, AppKey: ein.APPKEY, ForceRefreshAccessToken: false }),
       });
       const authData = await authRes.json();
       const token = authData?.Data?.AuthToken;
       if (!token) return res.status(502).json({ error: 'NIC auth failed', detail: authData });
 
       // Step 2: Generate IRN
-      const irnRes = await fetch(`${EINVOICE_BASE}/eicore/v1.03/Invoice`, {
+      const irnRes = await fetch(`${ein.BASE}/eicore/v1.03/Invoice`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Gstin': EINVOICE_GSTIN, 'user_name': EINVOICE_USER, 'AuthToken': token },
+        headers: { 'Content-Type': 'application/json', 'Gstin': ein.GSTIN, 'user_name': ein.USER, 'AuthToken': token },
         body: JSON.stringify(payload),
       });
       irnData = await irnRes.json();

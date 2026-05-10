@@ -22,6 +22,8 @@ router.put('/', authMiddleware, adminOnly, async (req, res) => {
   for (const [key, value] of Object.entries(req.body)) {
     await db.prepare(`INSERT INTO app_settings (key, value, category, updated_at) VALUES (?, ?, 'general', NOW()) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, updated_at=NOW()`).run(key, String(value));
   }
+  // Invalidate config cache so changes take effect immediately
+  try { const { invalidateCache } = await import('../lib/config.js'); invalidateCache(); } catch {}
   res.json({ message: 'Settings saved' });
 });
 
