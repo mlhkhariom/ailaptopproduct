@@ -1804,3 +1804,32 @@ router.post('/leads/from-whatsapp', authMiddleware, adminOnly, async (req, res) 
   await db.prepare("INSERT INTO lead_activities (id,lead_id,type,note,created_by) VALUES (?,?,?,?,?)").run(uuid(), id, 'whatsapp', message || 'Lead created from WhatsApp', 'system');
   res.status(201).json({ lead_id: id, created: true, message: 'New lead created from WhatsApp' });
 });
+
+// ── SALARY HISTORY ────────────────────────────────────────
+router.get('/staff/:id/salary-history', authMiddleware, adminOnly, async (req, res) => {
+  const rows = await db.prepare('SELECT * FROM salary_history WHERE staff_id=? ORDER BY created_at DESC').all(req.params.id) || [];
+  res.json(rows);
+});
+
+// ── PAYMENT HISTORY PER INVOICE ──────────────────────────
+router.get('/payment-history/:type/:id', authMiddleware, adminOnly, async (req, res) => {
+  const rows = await db.prepare('SELECT * FROM payment_logs WHERE ref_type=? AND ref_id=? ORDER BY created_at DESC').all(req.params.type, req.params.id) || [];
+  res.json(rows);
+});
+
+// ── RECURRING EXPENSES ────────────────────────────────────
+router.get('/recurring-expenses', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM recurring_expenses ORDER BY next_date ASC').all() || []);
+});
+router.post('/recurring-expenses', authMiddleware, adminOnly, async (req, res) => {
+  const { category, amount, description, payment_method, branch_id, frequency, next_date } = req.body;
+  if (!category || !amount || !next_date) return res.status(400).json({ error: 'category, amount, next_date required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO recurring_expenses (id,category,amount,description,payment_method,branch_id,frequency,next_date) VALUES (?,?,?,?,?,?,?,?)').run(id, category, amount, description, payment_method || 'cash', branch_id || null, frequency || 'monthly', next_date);
+  res.status(201).json({ id });
+});
+router.put('/recurring-expenses/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { is_active } = req.body;
+  await db.prepare('UPDATE recurring_expenses SET is_active=? WHERE id=?').run(is_active ? 1 : 0, req.params.id);
+  res.json({ message: 'Updated' });
+});

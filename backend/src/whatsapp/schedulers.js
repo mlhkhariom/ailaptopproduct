@@ -33,6 +33,24 @@ export function startRecurringInvoiceProcessor() {
   // Run immediately then every 6 hours
   run();
   setInterval(run, 6 * 60 * 60 * 1000);
+
+  // Also process recurring expenses
+  const runExpenses = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const due = await db.prepare("SELECT * FROM recurring_expenses WHERE is_active=1 AND next_date<=?").all(today) || [];
+      for (const r of due) {
+        await db.prepare('INSERT INTO expenses (id,category,amount,description,payment_method,date,branch_id,created_by) VALUES (?,?,?,?,?,?,?,?)').run(uuid(), r.category, r.amount, r.description || `Recurring: ${r.category}`, r.payment_method, today, r.branch_id, 'system');
+        const next = new Date(r.next_date);
+        if (r.frequency === 'monthly') next.setMonth(next.getMonth() + 1);
+        else if (r.frequency === 'yearly') next.setFullYear(next.getFullYear() + 1);
+        await db.prepare('UPDATE recurring_expenses SET last_generated=?,next_date=? WHERE id=?').run(today, next.toISOString().split('T')[0], r.id);
+        console.log(`✅ Recurring expense added: ${r.category} ₹${r.amount}`);
+      }
+    } catch (e) { console.error('Recurring expense error:', e.message); }
+  };
+  runExpenses();
+  setInterval(runExpenses, 6 * 60 * 60 * 1000);
   console.log('✅ Recurring invoice processor started');
 }
 

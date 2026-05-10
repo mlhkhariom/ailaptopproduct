@@ -3,7 +3,7 @@ import ERPLayout from "@/components/ERPLayout";
 import BranchSelector from "@/components/BranchSelector";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Package, Users, Wrench, BarChart3, IndianRupee, Truck, ClipboardList, Wallet, UserCheck, TrendingUp, TrendingDown, AlertTriangle, ShoppingCart, ArrowRight, Cpu, DollarSign, Box } from "lucide-react";
+import { Building2, Package, Users, Wrench, BarChart3, IndianRupee, Truck, ClipboardList, Wallet, UserCheck, TrendingUp, TrendingDown, AlertTriangle, ShoppingCart, ArrowRight, Cpu, DollarSign, Box, Receipt, UserCircle, Tv2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const req = (path: string) =>
@@ -100,6 +100,15 @@ export default function AdminERP() {
   return (
     <ERPLayout>
       <div className="space-y-6 max-w-6xl mx-auto">
+
+        {/* Quick Actions */}
+        <div className="flex flex-wrap gap-2">
+          <Link to="/admin/erp/job-cards"><button className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90"><ClipboardList className="h-4 w-4" /> New Job Card</button></Link>
+          <Link to="/admin/erp/crm"><button className="flex items-center gap-1.5 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-muted"><Users className="h-4 w-4" /> Add Lead</button></Link>
+          <Link to="/admin/erp/billing"><button className="flex items-center gap-1.5 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-muted"><Receipt className="h-4 w-4" /> New Invoice</button></Link>
+          <Link to="/admin/erp/customer360"><button className="flex items-center gap-1.5 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-muted"><UserCircle className="h-4 w-4" /> Customer 360</button></Link>
+          <Link to="/admin/erp/live"><button className="flex items-center gap-1.5 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-muted"><Tv2 className="h-4 w-4" /> Live View</button></Link>
+        </div>
 
         {/* Top KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

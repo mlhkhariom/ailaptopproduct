@@ -47,7 +47,9 @@ export default function CustomInvoiceForm({ open, onClose, form, setForm, editin
     setForm((f: any) => ({ ...f, items: [...f.items, { name: '', qty: 1, price: 0 }] }));
 
   const subtotal = (form.items || []).reduce((s: number, i: any) => s + ((i.price || 0) * (i.qty || 1)), 0);
-  const afterDiscount = subtotal - (form.discount || 0);
+  const discountAmt = form.discount_type === 'percent' ? Math.round(subtotal * (form.discount || 0) / 100) : (form.discount || 0);
+  const afterDiscount = subtotal - discountAmt;
+  // expose discountAmt for display
   const gst = form.gst_enabled ? Math.round(afterDiscount * 0.18) : 0;
   const total = afterDiscount + gst;
 
@@ -165,12 +167,16 @@ export default function CustomInvoiceForm({ open, onClose, form, setForm, editin
                 <span className="text-sm font-semibold">₹{subtotal.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex items-center justify-between">
-                <Label className="text-sm text-muted-foreground">Discount (₹)</Label>
+<Label className="text-sm text-muted-foreground">Discount</Label>
+                <div className="flex gap-1 mb-1">
+                  {["flat","percent"].map(t => <button key={t} onClick={() => sf("discount_type")(t)} className={`text-xs px-2 py-0.5 rounded border ${(form.discount_type||"flat")===t?"bg-primary text-primary-foreground":"hover:bg-muted"}`}>{t==="flat"?"₹ Flat":"% Percent"}</button>)
+                  }</div>
                 <Input
                   type="number" min={0}
                   className="h-7 w-28 text-sm text-right"
                   value={form.discount || ''}
                   onChange={e => sf('discount')(Number(e.target.value))}
+                  placeholder={form.discount_type === 'percent' ? '0-100' : '0'}
                 />
               </div>
               <div className="flex items-center justify-between">

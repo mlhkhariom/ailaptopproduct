@@ -474,6 +474,10 @@ export const initDB = async () => {
     "ALTER TABLE staff ADD COLUMN IF NOT EXISTS bank_account TEXT",
     "ALTER TABLE staff ADD COLUMN IF NOT EXISTS bank_ifsc TEXT",
     "ALTER TABLE staff ADD COLUMN IF NOT EXISTS bank_name TEXT",
+    `CREATE TABLE IF NOT EXISTS salary_history (
+      id TEXT PRIMARY KEY, staff_id TEXT NOT NULL, old_salary REAL, new_salary REAL,
+      changed_by TEXT, reason TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     "ALTER TABLE expenses ADD COLUMN IF NOT EXISTS branch_id TEXT",
     "ALTER TABLE leads ADD COLUMN IF NOT EXISTS branch_id TEXT",
     "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS branch_id TEXT",
@@ -484,6 +488,13 @@ export const initDB = async () => {
     "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS payment_link TEXT",
     "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS payment_link TEXT",
     "ALTER TABLE expenses ADD COLUMN IF NOT EXISTS receipt_url TEXT",
+    `CREATE TABLE IF NOT EXISTS recurring_expenses (
+      id TEXT PRIMARY KEY, category TEXT NOT NULL, amount REAL NOT NULL,
+      description TEXT, payment_method TEXT DEFAULT 'cash', branch_id TEXT,
+      frequency TEXT DEFAULT 'monthly', next_date DATE NOT NULL,
+      last_generated DATE, is_active INTEGER DEFAULT 1,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     `CREATE TABLE IF NOT EXISTS saved_reports (
       id TEXT PRIMARY KEY, name TEXT NOT NULL, source TEXT NOT NULL,
       fields JSONB DEFAULT '[]', filters JSONB DEFAULT '[]',

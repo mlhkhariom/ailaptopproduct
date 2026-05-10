@@ -1,3 +1,4 @@
+import RecurringExpenses from "@/components/RecurringExpenses";
 import { useState, useEffect } from "react";
 import ERPLayout from "@/components/ERPLayout";
 import BranchSelector from "@/components/BranchSelector";
@@ -266,6 +267,9 @@ export default function AdminExpenses() {
           </DialogContent>
         </Dialog>
       </div>
+
+        {/* Recurring Expenses */}
+        <RecurringExpenses />
     </ERPLayout>
   );
 }

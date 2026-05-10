@@ -36,6 +36,9 @@ const ROLE_COLORS: Record<string, string> = {
 export default function AdminStaff() {
   const [staff, setStaff] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const [salaryHistOpen, setSalaryHistOpen] = useState(false);
+  const [salaryHist, setSalaryHist] = useState<any[]>([]);
+  const [salaryHistStaff, setSalaryHistStaff] = useState<any>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<any>(emptyForm);
   const [loading, setLoading] = useState(false);
@@ -247,6 +250,10 @@ export default function AdminStaff() {
                     {s.email && <p className="text-xs text-muted-foreground flex items-center gap-1"><Mail className="h-3 w-3" />{s.email}</p>}
                     <p className="text-xs font-semibold text-primary">₹{(s.salary || 0).toLocaleString('en-IN')}/month</p>
                     {s.joining_date && <p className="text-[10px] text-muted-foreground">Joined: {s.joining_date}</p>}
+                    <button onClick={async (e) => { e.stopPropagation(); setSalaryHistStaff(s); const d = await req('GET', `/staff/${s.id}/salary-history`); setSalaryHist(Array.isArray(d) ? d : []); setSalaryHistOpen(true); }} className="text-[10px] text-blue-500 underline mt-1">Salary History</button>
+                    <button onClick={async (e) => { e.stopPropagation(); setSalaryHistStaff(s); const d = await req('GET', `/staff/${s.id}/salary-history`); setSalaryHist(Array.isArray(d) ? d : []); setSalaryHistOpen(true); }} className="text-[10px] text-blue-500 underline mt-1">Salary History</button>
+                    <button onClick={async (e) => { e.stopPropagation(); setSalaryHistStaff(s); const d = await req('GET', `/staff/${s.id}/salary-history`); setSalaryHist(Array.isArray(d) ? d : []); setSalaryHistOpen(true); }} className="text-[10px] text-blue-500 underline mt-1">Salary History</button>
+                    <button onClick={async (e) => { e.stopPropagation(); setSalaryHistStaff(s); const d = await req('GET', `/staff/${s.id}/salary-history`); setSalaryHist(Array.isArray(d) ? d : []); setSalaryHistOpen(true); }} className="text-[10px] text-blue-500 underline mt-1 block">Salary History</button>
                     <div className="flex gap-1 mt-1 flex-wrap">
                       {s.aadhaar_url && <a href={s.aadhaar_url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 underline">Aadhaar</a>}
                       {s.pan_url && <a href={s.pan_url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 underline">PAN</a>}
@@ -468,6 +475,65 @@ export default function AdminStaff() {
           </DialogContent>
         </Dialog>
       </div>
+      {/* Salary History Dialog */}
+      <Dialog open={salaryHistOpen} onOpenChange={setSalaryHistOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Salary History — {salaryHistStaff?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm">Current: <span className="font-black text-green-600">₹{(salaryHistStaff?.salary || 0).toLocaleString('en-IN')}/mo</span></p>
+            {salaryHist.length > 0 ? (
+              <table className="w-full text-xs border rounded-lg overflow-hidden">
+                <thead className="bg-muted/50"><tr><th className="p-2 text-left">Date</th><th className="p-2 text-right">Old</th><th className="p-2 text-right">New</th><th className="p-2 text-left">Reason</th></tr></thead>
+                <tbody>{salaryHist.map((h: any) => <tr key={h.id} className="border-t"><td className="p-2">{new Date(h.created_at).toLocaleDateString('en-IN')}</td><td className="p-2 text-right">₹{(h.old_salary||0).toLocaleString('en-IN')}</td><td className="p-2 text-right font-bold">₹{(h.new_salary||0).toLocaleString('en-IN')}</td><td className="p-2 text-muted-foreground">{h.reason||'—'}</td></tr>)}</tbody>
+              </table>
+            ) : <p className="text-sm text-muted-foreground">No salary changes recorded yet.</p>}
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Salary History Dialog */}
+      <Dialog open={salaryHistOpen} onOpenChange={setSalaryHistOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Salary History — {salaryHistStaff?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm">Current: <span className="font-black text-green-600">₹{(salaryHistStaff?.salary || 0).toLocaleString('en-IN')}/mo</span></p>
+            {salaryHist.length > 0 ? (
+              <table className="w-full text-xs border rounded-lg overflow-hidden">
+                <thead className="bg-muted/50"><tr><th className="p-2 text-left">Date</th><th className="p-2 text-right">Old</th><th className="p-2 text-right">New</th><th className="p-2 text-left">Reason</th></tr></thead>
+                <tbody>{salaryHist.map((h: any) => <tr key={h.id} className="border-t"><td className="p-2">{new Date(h.created_at).toLocaleDateString('en-IN')}</td><td className="p-2 text-right">₹{(h.old_salary||0).toLocaleString('en-IN')}</td><td className="p-2 text-right font-bold">₹{(h.new_salary||0).toLocaleString('en-IN')}</td><td className="p-2 text-muted-foreground">{h.reason||'—'}</td></tr>)}</tbody>
+              </table>
+            ) : <p className="text-sm text-muted-foreground">No salary changes recorded yet.</p>}
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Salary History Dialog */}
+      <Dialog open={salaryHistOpen} onOpenChange={setSalaryHistOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Salary History — {salaryHistStaff?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm">Current: <span className="font-black text-green-600">₹{(salaryHistStaff?.salary || 0).toLocaleString('en-IN')}/mo</span></p>
+            {salaryHist.length > 0 ? (
+              <table className="w-full text-xs border rounded-lg overflow-hidden">
+                <thead className="bg-muted/50"><tr><th className="p-2 text-left">Date</th><th className="p-2 text-right">Old</th><th className="p-2 text-right">New</th><th className="p-2 text-left">Reason</th></tr></thead>
+                <tbody>{salaryHist.map((h: any) => <tr key={h.id} className="border-t"><td className="p-2">{new Date(h.created_at).toLocaleDateString('en-IN')}</td><td className="p-2 text-right">₹{(h.old_salary||0).toLocaleString('en-IN')}</td><td className="p-2 text-right font-bold">₹{(h.new_salary||0).toLocaleString('en-IN')}</td><td className="p-2 text-muted-foreground">{h.reason||'—'}</td></tr>)}</tbody>
+              </table>
+            ) : <p className="text-sm text-muted-foreground">No salary changes recorded yet.</p>}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={salaryHistOpen} onOpenChange={setSalaryHistOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Salary History — {salaryHistStaff?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm">Current: <span className="font-black text-green-600">₹{(salaryHistStaff?.salary || 0).toLocaleString('en-IN')}/mo</span></p>
+            {salaryHist.length > 0 ? (
+              <table className="w-full text-xs border rounded-lg overflow-hidden">
+                <thead className="bg-muted/50"><tr><th className="p-2 text-left">Date</th><th className="p-2 text-right">Old</th><th className="p-2 text-right">New</th><th className="p-2 text-left">Reason</th></tr></thead>
+                <tbody>{salaryHist.map((h: any) => <tr key={h.id} className="border-t"><td className="p-2">{new Date(h.created_at).toLocaleDateString('en-IN')}</td><td className="p-2 text-right">₹{(h.old_salary||0).toLocaleString('en-IN')}</td><td className="p-2 text-right font-bold text-green-600">₹{(h.new_salary||0).toLocaleString('en-IN')}</td><td className="p-2 text-muted-foreground">{h.reason||'—'}</td></tr>)}</tbody>
+              </table>
+            ) : <p className="text-sm text-muted-foreground">No salary changes recorded yet.</p>}
+          </div>
+        </DialogContent>
+      </Dialog>
     </ERPLayout>
   );
 }

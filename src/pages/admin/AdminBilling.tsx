@@ -53,6 +53,9 @@ export default function AdminBilling() {
   const [payOpen, setPayOpen] = useState(false);
   const [irnOpen, setIrnOpen] = useState(false);
   const [irnRow, setIrnRow] = useState<BillingRow | null>(null);
+  const [histOpen, setHistOpen] = useState(false);
+  const [histRow, setHistRow] = useState<BillingRow | null>(null);
+  const [histData, setHistData] = useState<any[]>([]);
   const [irnData, setIrnData] = useState<any>(null);
   const [irnLoading, setIrnLoading] = useState(false);
   const [partialHistory, setPartialHistory] = useState<any[]>([]);
@@ -253,6 +256,11 @@ export default function AdminBilling() {
           onIRN={openIRN}
           selected={selected}
           onSelect={(id, checked) => { const s = new Set(selected); checked ? s.add(id) : s.delete(id); setSelected(s); }}
+          onHistory={async (r: any) => {
+            setHistRow(r); setHistOpen(true);
+            const d = await fetch(`/api/erp/payment-history/${r.type}/${r.id}`, { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(x => x.json()).catch(() => []);
+            setHistData(Array.isArray(d) ? d : []);
+          }}
           onPaymentLink={async (r: any) => {
             const res = await fetch('/api/erp/payment-link', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: JSON.stringify({ invoice_id: r.id, invoice_type: r.type === 'service' ? 'service' : 'custom', amount: r.amount, customer_name: r.customer_name, customer_phone: r.customer_phone }) }).then(x => x.json());
             if (res.payment_link) { toast.success(res.mock ? 'Mock link (set Razorpay keys for live): ' + res.payment_link : 'Payment link created!'); load(); }
@@ -374,6 +382,24 @@ export default function AdminBilling() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Payment History Dialog */}
+      <Dialog open={histOpen} onOpenChange={setHistOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Payment History — {histRow?.invoice_number}</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm"><span>Total:</span><span className="font-bold">₹{(histRow?.amount || 0).toLocaleString('en-IN')}</span></div>
+            <div className="flex justify-between text-sm"><span>Status:</span><span className={`font-bold ${histRow?.payment_status === 'paid' ? 'text-green-600' : 'text-orange-500'}`}>{histRow?.payment_status}</span></div>
+            {histData.length > 0 ? (
+              <table className="w-full text-xs border rounded-lg overflow-hidden mt-2">
+                <thead className="bg-muted/50"><tr><th className="p-2 text-left">Date</th><th className="p-2 text-right">Amount</th><th className="p-2 text-left">Method</th><th className="p-2 text-left">By</th></tr></thead>
+                <tbody>{histData.map((h: any) => <tr key={h.id} className="border-t"><td className="p-2">{new Date(h.created_at).toLocaleDateString('en-IN')}</td><td className="p-2 text-right font-bold">₹{(h.amount||0).toLocaleString('en-IN')}</td><td className="p-2">{h.payment_method||'—'}</td><td className="p-2 text-muted-foreground">{h.created_by||'—'}</td></tr>)}</tbody>
+              </table>
+            ) : <p className="text-sm text-muted-foreground py-4 text-center">No payment records found.</p>}
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setHistOpen(false)}>Close</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* E-Invoice IRN Dialog */}
       <Dialog open={irnOpen} onOpenChange={setIrnOpen}>
