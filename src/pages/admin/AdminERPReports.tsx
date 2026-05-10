@@ -438,7 +438,7 @@ export default function AdminERPReports() {
         )}
 
         {/* GSTR-1 Export */}
-        <Card>
+        <Card id="gstr">
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /> GSTR-1 Export</CardTitle>
           </CardHeader>
