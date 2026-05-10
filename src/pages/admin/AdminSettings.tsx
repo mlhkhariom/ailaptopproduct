@@ -112,28 +112,16 @@ const AdminSettings = () => {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Display Settings</CardTitle>
-                <CardDescription className="text-xs">UI preferences & feature toggles</CardDescription>
+                <CardTitle className="text-base">Business Hours & Info</CardTitle>
+                <CardDescription className="text-xs">Additional store details</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {[
-                  { label: "Dark Mode", desc: "Toggle admin panel dark mode", checked: false },
-                  { label: "Maintenance Mode", desc: "Show 'Coming Soon' to visitors", checked: false },
-                  { label: "Show Product Reviews", desc: "Display ratings on product cards", checked: true },
-                  { label: "Show Stock Count", desc: "Show remaining stock to customers", checked: true },
-                  { label: "WhatsApp Chat Button", desc: "Floating chat button on frontend", checked: true },
-                  { label: "Show Hindi Names", desc: "Display Hindi product names", checked: true },
-                  { label: "Enable Reels on Products", desc: "Show social reels on product pages", checked: true },
-                  { label: "Cookie Consent Banner", desc: "Show cookie consent popup", checked: true },
-                ].map((n) => (
-                  <div key={n.label} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/20 transition-colors">
-                    <div>
-                      <p className="text-sm font-medium">{n.label}</p>
-                      <p className="text-[10px] text-muted-foreground">{n.desc}</p>
-                    </div>
-                    <Switch defaultChecked={n.checked} />
-                  </div>
-                ))}
+              <CardContent className="space-y-4">
+                <div><Label className="text-xs">Business Hours</Label><Input className="mt-1 h-9" value={s('business_hours')} onChange={e => setS('business_hours', e.target.value)} placeholder="Mon-Sat 10:00 AM - 9:00 PM" /></div>
+                <div><Label className="text-xs">GSTIN</Label><Input className="mt-1 h-9" value={s('gstin')} onChange={e => setS('gstin', e.target.value)} placeholder="23ATNPA4415H1Z2" /></div>
+                <div><Label className="text-xs">Support Email</Label><Input className="mt-1 h-9" value={s('support_email')} onChange={e => setS('support_email', e.target.value)} placeholder="support@example.com" /></div>
+                <div><Label className="text-xs">Support Phone</Label><Input className="mt-1 h-9" value={s('support_phone')} onChange={e => setS('support_phone', e.target.value)} placeholder="+91 98934 96163" /></div>
+                <div><Label className="text-xs">Google Maps Embed URL</Label><Input className="mt-1 h-9" value={s('google_maps_url')} onChange={e => setS('google_maps_url', e.target.value)} /></div>
+                <p className="text-xs text-muted-foreground pt-1 border-t">Feature toggles moved to <b>Features</b> tab →</p>
               </CardContent>
             </Card>
           </div>
@@ -394,22 +382,19 @@ const AdminSettings = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 {[
-                  { label: "New Order Alert", desc: "Email + WhatsApp on every new order", checked: true, icon: "🛒" },
-                  { label: "Low Stock Alert", desc: "When product stock drops below 5", checked: true, icon: "📦" },
-                  { label: "Payment Failure", desc: "When Razorpay payment fails", checked: true, icon: "❌" },
-                  { label: "Social Post Failure", desc: "When auto-post to Instagram/FB fails", checked: true, icon: "📸" },
-                  { label: "New Customer Signup", desc: "When a new customer registers", checked: false, icon: "👤" },
-                  { label: "Daily Sales Summary", desc: "End-of-day revenue summary", checked: true, icon: "📊" },
+                  { key: "notif_new_order", label: "New Order Alert", desc: "Email + WhatsApp on every new order" },
+                  { key: "notif_low_stock", label: "Low Stock Alert", desc: "When product stock drops below 5" },
+                  { key: "notif_payment_fail", label: "Payment Failure", desc: "When Razorpay payment fails" },
+                  { key: "notif_social_fail", label: "Social Post Failure", desc: "When auto-post to Instagram/FB fails" },
+                  { key: "notif_new_user", label: "New Customer Signup", desc: "When a new customer registers" },
+                  { key: "notif_daily_summary", label: "Daily Sales Summary", desc: "End-of-day revenue summary" },
                 ].map((n) => (
-                  <div key={n.label} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/20 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <span>{n.icon}</span>
-                      <div>
-                        <p className="text-sm font-medium">{n.label}</p>
-                        <p className="text-[10px] text-muted-foreground">{n.desc}</p>
-                      </div>
+                  <div key={n.key} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/20 transition-colors">
+                    <div>
+                      <p className="text-sm font-medium">{n.label}</p>
+                      <p className="text-[10px] text-muted-foreground">{n.desc}</p>
                     </div>
-                    <Switch defaultChecked={n.checked} />
+                    <Switch checked={s(n.key) === 'true'} onCheckedChange={v => setS(n.key, String(v))} />
                   </div>
                 ))}
               </CardContent>
@@ -422,25 +407,22 @@ const AdminSettings = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 {[
-                  { label: "Order Confirmation", desc: "Email + WhatsApp on order placed", checked: true, icon: "✅" },
-                  { label: "Shipping Update", desc: "Tracking ID via WhatsApp + SMS", checked: true, icon: "🚚" },
-                  { label: "Delivery Confirmation", desc: "Ask for review after delivery", checked: true, icon: "📬" },
-                  { label: "Abandoned Cart Reminder", desc: "WhatsApp reminder after 1 hour", checked: false, icon: "🛒" },
-                  { label: "Promotional Messages", desc: "New product & offer announcements", checked: false, icon: "📢" },
-                  { label: "Birthday Wishes", desc: "Special discount on birthday", checked: false, icon: "🎂" },
+                  { key: "cnotif_order_confirm", label: "Order Confirmation", desc: "Email + WhatsApp on order placed" },
+                  { key: "cnotif_shipping", label: "Shipping Update", desc: "Tracking ID via WhatsApp + SMS" },
+                  { key: "cnotif_delivery", label: "Delivery Confirmation", desc: "Ask for review after delivery" },
+                  { key: "cnotif_abandoned", label: "Abandoned Cart Reminder", desc: "WhatsApp reminder after 1 hour" },
+                  { key: "cnotif_promo", label: "Promotional Messages", desc: "New product & offer announcements" },
+                  { key: "cnotif_birthday", label: "Birthday Wishes", desc: "Special discount on birthday" },
                 ].map((n) => (
-                  <div key={n.label} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/20 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <span>{n.icon}</span>
-                      <div>
-                        <p className="text-sm font-medium">{n.label}</p>
-                        <p className="text-[10px] text-muted-foreground">{n.desc}</p>
-                      </div>
+                  <div key={n.key} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/20 transition-colors">
+                    <div>
+                      <p className="text-sm font-medium">{n.label}</p>
+                      <p className="text-[10px] text-muted-foreground">{n.desc}</p>
                     </div>
-                    <Switch defaultChecked={n.checked} />
+                    <Switch checked={s(n.key) === 'true'} onCheckedChange={v => setS(n.key, String(v))} />
                   </div>
                 ))}
-                <Button className="gap-1.5 w-full" onClick={() => toast.success("Notification settings saved!")}><Save className="h-4 w-4" /> Save All</Button>
+                <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Notifications')}><Save className="h-4 w-4" /> Save Notifications</Button>
               </CardContent>
             </Card>
           </div>
@@ -455,21 +437,22 @@ const AdminSettings = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 {[
-                  { label: "Two-Factor Authentication", desc: "Require 2FA for admin login", checked: false },
-                  { label: "Rate Limiting", desc: "Limit API requests per IP", checked: true },
-                  { label: "CSRF Protection", desc: "Cross-site request forgery protection", checked: true },
-                  { label: "SSL Force Redirect", desc: "Force HTTPS on all pages", checked: true },
-                  { label: "Login IP Whitelist", desc: "Restrict admin access to specific IPs", checked: false },
-                  { label: "Session Timeout", desc: "Auto-logout after 30 min of inactivity", checked: true },
+                  { key: "sec_2fa", label: "Two-Factor Authentication", desc: "Require 2FA for admin login" },
+                  { key: "sec_rate_limit", label: "Rate Limiting", desc: "Limit API requests per IP" },
+                  { key: "sec_csrf", label: "CSRF Protection", desc: "Cross-site request forgery protection" },
+                  { key: "sec_ssl_force", label: "SSL Force Redirect", desc: "Force HTTPS on all pages" },
+                  { key: "sec_ip_whitelist", label: "Login IP Whitelist", desc: "Restrict admin access to specific IPs" },
+                  { key: "sec_session_timeout", label: "Session Timeout 30min", desc: "Auto-logout after 30 min of inactivity" },
                 ].map((n) => (
-                  <div key={n.label} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/20 transition-colors">
+                  <div key={n.key} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/20 transition-colors">
                     <div>
                       <p className="text-sm font-medium">{n.label}</p>
                       <p className="text-[10px] text-muted-foreground">{n.desc}</p>
                     </div>
-                    <Switch defaultChecked={n.checked} />
+                    <Switch checked={s(n.key) === 'true'} onCheckedChange={v => setS(n.key, String(v))} />
                   </div>
                 ))}
+                <Button className="gap-1.5 w-full mt-2" disabled={saving} onClick={() => saveAppSettings('Security')}><Save className="h-4 w-4" /> Save Security</Button>
               </CardContent>
             </Card>
 
