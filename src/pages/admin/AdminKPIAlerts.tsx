@@ -55,7 +55,7 @@ export default function AdminKPIAlerts() {
           </div>
         </div>
 
-        <p className="text-sm text-muted-foreground">Alerts send WhatsApp to owner ({process.env.OWNER_PHONE || 'set OWNER_PHONE in .env'}) when KPI threshold is crossed.</p>
+        <p className="text-sm text-muted-foreground">Alerts send WhatsApp to owner when KPI threshold is crossed. Set OWNER_PHONE in backend .env to enable.</p>
 
         <div className="border rounded-xl overflow-hidden">
           <table className="w-full text-sm">
