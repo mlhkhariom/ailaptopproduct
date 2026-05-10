@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useNotificationStore } from "@/store/notificationStore";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const erpGroups = [
   {
@@ -40,11 +41,11 @@ const erpGroups = [
     labelIcon: UserCheck,
     items: [
       { title: "Staff", url: "/admin/erp/staff", icon: UserCheck },
-      { title: "Payroll", url: "/admin/erp/payroll", icon: IndianRupee },
+      { title: "Payroll", url: "/admin/erp/payroll", icon: IndianRupee, perm: 'payroll' },
       { title: "Attendance", url: "/admin/erp/attendance", icon: CalendarCheck },
       { title: "Leaves", url: "/admin/erp/leaves", icon: CalendarX },
       { title: "Loyalty Program", url: "/admin/erp/loyalty", icon: Gift },
-      { title: "KPI Alerts", url: "/admin/erp/kpi-alerts", icon: Bell },
+      { title: "KPI Alerts", url: "/admin/erp/kpi-alerts", icon: Bell, perm: 'kpi_alerts' },
       { title: "Branches", url: "/admin/erp/branches", icon: Building2 },
       { title: "WA Templates", url: "/admin/erp/wa-templates", icon: MessageCircle },
     ],
@@ -101,7 +102,8 @@ export function AdminSidebar() {
   const toggleGroup = (label: string) =>
     setOpenGroups(g => ({ ...g, [label]: !g[label] }));
 
-  const renderMenu = (items: { title: string; url: string; icon: any; badge?: string }[]) => (
+  const renderMenu = (items: { title: string; url: string; icon: any; badge?: string; perm?: string }[]) => (
+    items.filter(item => !item.perm || can(item.perm)).length === 0 ? null :
     <SidebarMenu>
       {items.map((item) => (
         <SidebarMenuItem key={item.url}>

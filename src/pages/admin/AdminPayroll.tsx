@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ERPLayout from "@/components/ERPLayout";
+import { usePermissions } from "@/hooks/usePermissions";
 import BranchSelector from "@/components/BranchSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ const months = Array.from({ length: 12 }, (_, i) => {
 });
 
 export default function AdminPayroll() {
+  const { can } = usePermissions();
   const [list, setList] = useState<any[]>([]);
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [branchFilter, setBranchFilter] = useState('all');
@@ -87,6 +89,7 @@ export default function AdminPayroll() {
 
   const totals = list.reduce((s, r) => ({ gross: s.gross + (r.gross || 0), net: s.net + (r.net || 0), pf: s.pf + (r.pf_employer || 0) + (r.pf_employee || 0) }), { gross: 0, net: 0, pf: 0 });
 
+  if (!can('payroll')) return <ERPLayout><div className="p-10 text-center text-muted-foreground"><p className="text-lg font-bold">Access Denied</p><p className="text-sm">You don't have permission to view Payroll.</p></div></ERPLayout>;
   return (
     <ERPLayout>
       <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-5">

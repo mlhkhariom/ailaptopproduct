@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import db from '../db/database.js';
 import { authMiddleware } from '../middleware/auth.js';
-import { adminOnly } from '../middleware/adminOnly.js';
+import { adminOnly, canAccess } from '../middleware/adminOnly.js';
 
 const router = Router();
 
@@ -194,7 +194,7 @@ router.get('/staff', authMiddleware, adminOnly, async (req, res) => {
   res.json(await db.prepare(q).all(...params) || []);
 });
 
-router.post('/staff', authMiddleware, adminOnly, async (req, res) => {
+router.post('/staff', authMiddleware, canAccess('staff'), async (req, res) => {
   const { name, role, phone, email, salary, joining_date, address, branch_id, aadhaar_url, pan_url, offer_letter_url, other_doc_url, bank_account, bank_ifsc, bank_name } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
   const id = uuid();
@@ -203,14 +203,14 @@ router.post('/staff', authMiddleware, adminOnly, async (req, res) => {
   res.status(201).json({ id });
 });
 
-router.put('/staff/:id', authMiddleware, adminOnly, async (req, res) => {
+router.put('/staff/:id', authMiddleware, canAccess('staff'), async (req, res) => {
   const { name, role, phone, email, salary, joining_date, address, is_active, branch_id } = req.body;
   await db.prepare('UPDATE staff SET name=?,role=?,phone=?,email=?,salary=?,joining_date=?,address=?,is_active=?,branch_id=? WHERE id=?')
     .run(name, role, phone, email, salary, joining_date, address, is_active ? 1 : 0, branch_id || null, req.params.id);
   res.json({ message: 'Updated' });
 });
 
-router.delete('/staff/:id', authMiddleware, adminOnly, async (req, res) => {
+router.delete('/staff/:id', authMiddleware, canAccess('staff'), async (req, res) => {
   await db.prepare('UPDATE staff SET is_active=0 WHERE id=?').run(req.params.id);
   res.json({ message: 'Deleted' });
 });
@@ -1243,7 +1243,7 @@ router.get('/einvoice/:invoice_id', authMiddleware, adminOnly, async (req, res) 
 // ── PAYROLL ───────────────────────────────────────────────
 
 // List payroll — filter by month
-router.get('/payroll', authMiddleware, adminOnly, async (req, res) => {
+router.get('/payroll', authMiddleware, canAccess('payroll'), async (req, res) => {
   const { month, branch_id } = req.query;
   let q = `SELECT p.*, s.name as staff_name, s.role, s.salary as base_salary, s.branch_id as staff_branch FROM payroll p LEFT JOIN staff s ON s.id=p.staff_id WHERE 1=1`;
   const params = [];
@@ -1254,7 +1254,7 @@ router.get('/payroll', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // Auto-generate payroll for all active staff for a month
-router.post('/payroll/generate', authMiddleware, adminOnly, async (req, res) => {
+router.post('/payroll/generate', authMiddleware, canAccess('payroll'), async (req, res) => {
   const { month, branch_id } = req.body;
   if (!month) return res.status(400).json({ error: 'month required (YYYY-MM)' });
   const staffQ = branch_id ? "SELECT * FROM staff WHERE is_active=1 AND branch_id=?" : "SELECT * FROM staff WHERE is_active=1";
@@ -1291,7 +1291,7 @@ router.post('/payroll/generate', authMiddleware, adminOnly, async (req, res) => 
 });
 
 // Update single payroll record
-router.put('/payroll/:id', authMiddleware, adminOnly, async (req, res) => {
+router.put('/payroll/:id', authMiddleware, canAccess('payroll'), async (req, res) => {
   const { basic, hra, allowances, pf_employee, esi_employee, tds, advance_deduction, other_deduction, present_days, notes, status, paid_on } = req.body;
   const gross = (basic || 0) + (hra || 0) + (allowances || 0);
   const net = gross - (pf_employee || 0) - (esi_employee || 0) - (tds || 0) - (advance_deduction || 0) - (other_deduction || 0);
@@ -1301,14 +1301,14 @@ router.put('/payroll/:id', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // Mark as paid
-router.patch('/payroll/:id/pay', authMiddleware, adminOnly, async (req, res) => {
+router.patch('/payroll/:id/pay', authMiddleware, canAccess('payroll'), async (req, res) => {
   const today = new Date().toISOString().split('T')[0];
   await db.prepare("UPDATE payroll SET status='paid', paid_on=? WHERE id=?").run(today, req.params.id);
   res.json({ message: 'Marked as paid' });
 });
 
 // Salary slip data
-router.get('/payroll/:id/slip', authMiddleware, adminOnly, async (req, res) => {
+router.get('/payroll/:id/slip', authMiddleware, canAccess('payroll'), async (req, res) => {
   const row = await db.prepare(`SELECT p.*, s.name as staff_name, s.role, s.phone FROM payroll p LEFT JOIN staff s ON s.id=p.staff_id WHERE p.id=?`).get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Not found' });
   res.json(row);
