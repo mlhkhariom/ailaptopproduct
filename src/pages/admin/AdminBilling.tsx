@@ -34,6 +34,7 @@ export default function AdminBilling() {
   const [loading, setLoading] = useState(false);
   const [typeFilter, setTypeFilter] = useState('all');
   const [branchFilter, setBranchFilter] = useState('all');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [from, setFrom] = useState('');
@@ -109,6 +110,18 @@ export default function AdminBilling() {
   const handleView = (r: BillingRow) => window.open(`/api/invoice/${r.invoice_number}`, '_blank');
 
   // WhatsApp send
+
+  // Bulk mark paid
+  const bulkMarkPaid = async () => {
+    if (!selected.size) return;
+    const ids = [...selected];
+    await Promise.all(ids.map(id => {
+      const r = rows.find((x: any) => x.id === id);
+      if (!r) return Promise.resolve();
+      return fetch(`/api/erp/billing/${r.type}/${id}/payment`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: JSON.stringify({ payment_status: 'paid', payment_method: 'Cash' }) });
+    }));
+    setSelected(new Set()); load();
+  };
 
   // E-Invoice IRN
   const openIRN = async (r: BillingRow) => {
@@ -221,6 +234,14 @@ export default function AdminBilling() {
           counts={counts}
         />
 
+        {/* Bulk actions */}
+        {selected.size > 0 && (
+          <div className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-xl">
+            <span className="text-sm font-medium">{selected.size} selected</span>
+            <button onClick={bulkMarkPaid} className="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">Mark All Paid</button>
+            <button onClick={() => setSelected(new Set())} className="text-xs px-3 py-1.5 border rounded-lg hover:bg-muted">Clear</button>
+          </div>
+        )}
         {/* Table */}
         <BillingTable
           rows={rows.filter((r: any) => branchFilter === 'all' || r.branch_id === branchFilter)}
