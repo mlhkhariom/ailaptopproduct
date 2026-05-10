@@ -320,25 +320,43 @@ const AdminSettings = () => {
                 <CardDescription className="text-xs">Enable/disable payment gateways</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* MAIN GATEWAYS */}
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-1">Main Gateways</p>
                 {[
-                  { key: 'payment_razorpay', label: "Razorpay", desc: "UPI, Card, Net Banking, Wallets — All-in-one" },
-                  { key: 'payment_upi', label: "UPI", desc: "PhonePe, GPay, Paytm UPI (via Razorpay)" },
-                  { key: 'payment_card', label: "Credit / Debit Card", desc: "Visa, Mastercard, Rupay (via Razorpay)" },
-                  { key: 'payment_netbanking', label: "Net Banking", desc: "All major Indian banks" },
-                  { key: 'payment_wallet', label: "Wallets", desc: "Paytm, PhonePe, Amazon Pay, Mobikwik" },
-                  { key: 'payment_emi', label: "EMI", desc: "No-cost EMI on cards (3/6/9/12 months)" },
-                  { key: 'payment_paytm', label: "Paytm (Standalone)", desc: "Direct Paytm gateway (alternative)" },
-                  { key: 'payment_cod', label: "Cash on Delivery", desc: `+₹${s('shipping_cod_charge') || 30} handling fee` },
+                  { key: 'payment_razorpay', label: "Razorpay (Recommended)", desc: "One gateway — accepts UPI, Card, NetBanking, Wallets, EMI automatically. Configure sub-methods in Razorpay dashboard.", highlight: true },
+                  { key: 'payment_paytm', label: "Paytm Gateway", desc: "Alternative — separate merchant account required" },
+                  { key: 'payment_cod', label: "Cash on Delivery", desc: `+₹${s('shipping_cod_charge') || 30} handling fee (no gateway)` },
                 ].map((m) => (
-                  <div key={m.key} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/20 transition-colors">
-                    <div>
+                  <div key={m.key} className={`flex items-center justify-between p-3 rounded-lg border hover:bg-muted/20 transition-colors ${m.highlight ? 'bg-primary/5 border-primary/30' : ''}`}>
+                    <div className="flex-1">
                       <p className="text-sm font-medium">{m.label}</p>
-                      <p className="text-[10px] text-muted-foreground">{m.desc}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{m.desc}</p>
                     </div>
-                    <Switch checked={s(m.key) !== 'false'} onCheckedChange={v => setS(m.key, String(v))} />
+                    <Switch checked={s(m.key) === 'true'} onCheckedChange={v => setS(m.key, String(v))} />
                   </div>
                 ))}
-                <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Payment Methods')}><Save className="h-4 w-4" /> Save Methods</Button>
+
+                {/* Razorpay sub-methods (only visible + relevant when Razorpay is ON) */}
+                {s('payment_razorpay') === 'true' && (
+                  <div className="border rounded-lg p-3 bg-muted/30 space-y-2 mt-3">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Razorpay Sub-methods (show to customer)</p>
+                    <p className="text-[10px] text-muted-foreground">Toggle which options customer sees at checkout. Disable unwanted methods here. All settled via Razorpay.</p>
+                    {[
+                      { key: 'payment_upi', label: "UPI (PhonePe, GPay, Paytm)" },
+                      { key: 'payment_card', label: "Credit / Debit Card" },
+                      { key: 'payment_netbanking', label: "Net Banking" },
+                      { key: 'payment_wallet', label: "Wallets" },
+                      { key: 'payment_emi', label: "EMI (No-cost)" },
+                    ].map(m => (
+                      <div key={m.key} className="flex items-center justify-between py-1">
+                        <span className="text-xs">{m.label}</span>
+                        <Switch checked={s(m.key) !== 'false'} onCheckedChange={v => setS(m.key, String(v))} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <Button className="gap-1.5 w-full mt-2" disabled={saving} onClick={() => saveAppSettings('Payment Methods')}><Save className="h-4 w-4" /> Save Methods</Button>
               </CardContent>
             </Card>
 

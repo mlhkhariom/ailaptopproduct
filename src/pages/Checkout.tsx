@@ -88,6 +88,14 @@ const Checkout = () => {
           } catch { toast.error('Payment verification failed'); }
         },
         modal: { ondismiss: () => setLoading(false) },
+        // Filter methods based on admin settings
+        method: {
+          upi: paymentMethods.upi?.enabled !== false,
+          card: paymentMethods.card?.enabled !== false,
+          netbanking: paymentMethods.netbanking?.enabled !== false,
+          wallet: paymentMethods.wallet?.enabled === true,
+          emi: paymentMethods.emi?.enabled === true,
+        },
       };
       const rzp = new window.Razorpay(options);
       rzp.open();
