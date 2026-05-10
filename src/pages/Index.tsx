@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import CustomerLayout from "@/components/CustomerLayout";
 import SEOHead from "@/components/SEOHead";
-import { useScrollReveal } from "@/hooks/useScrollReveal";
 import ProductCard from "@/components/ProductCard";
 import BusinessDetails from "@/components/BusinessDetails";
 import { lazy, Suspense } from "react";
@@ -21,7 +20,6 @@ const iconMap: Record<string, any> = { Laptop, Shield, Wrench, Truck, CheckCircl
 const Index = () => {
   const { products, fetchProducts } = useProductStore();
   const [benefits, setBenefits] = useState<any[]>([]);
-  useScrollReveal();
   const [testimonials, setTestimonials] = useState<any[]>([]);
 
   useEffect(() => {
@@ -115,7 +113,7 @@ const Index = () => {
 
       {/* ── BENEFITS ─────────────────────────────────────── */}
       {benefits.length > 0 && (
-        <section className="py-8 bg-card border-y reveal-on-scroll">
+        <section className="py-8 bg-card border-y">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {benefits.map((b) => {
@@ -136,7 +134,7 @@ const Index = () => {
       )}
 
       {/* ── FEATURED PRODUCTS ────────────────────────────── */}
-      <section className="py-12 reveal-on-scroll">
+      <section className="py-12">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -154,7 +152,7 @@ const Index = () => {
       </section>
 
       {/* ── HOME REPAIR BANNER ───────────────────────────── */}
-      <section className="py-12 bg-muted/40 reveal-on-scroll">
+      <section className="py-12 bg-muted/40">
         <div className="container mx-auto px-4 max-w-5xl">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="rounded-2xl overflow-hidden shadow-xl order-2 md:order-1">
@@ -186,7 +184,7 @@ const Index = () => {
 
       {/* ── MORE PRODUCTS ────────────────────────────────── */}
       {products.length > 4 && (
-        <section className="py-12 reveal-on-scroll">
+        <section className="py-12">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -203,7 +201,7 @@ const Index = () => {
       )}
 
       {/* ── STATS / WHY CHOOSE US ─────────────────────────── */}
-      <section className="py-12 bg-gradient-to-br from-orange-50 via-white to-orange-50 reveal-on-scroll">
+      <section className="py-12 bg-gradient-to-br from-orange-50 via-white to-orange-50">
         <div className="container mx-auto px-4 max-w-5xl">
           <div className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-black">Why Choose <span className="gradient-text">AI Laptop Wala</span></h2>
@@ -247,7 +245,7 @@ const Index = () => {
 
       {/* ── TESTIMONIALS ─────────────────────────────────── */}
       {testimonials.length > 0 && (
-        <section className="py-12 bg-muted/40 reveal-on-scroll">
+        <section className="py-12 bg-muted/40">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl md:text-3xl font-black text-center mb-2">Happy <span className="gradient-text">Customers</span></h2>
             <p className="text-muted-foreground text-center text-sm mb-3">5000+ satisfied customers trust AI Laptop Wala</p>

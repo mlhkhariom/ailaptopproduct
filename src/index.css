@@ -187,11 +187,16 @@
 
 /* Section reveal on scroll */
 .reveal-on-scroll {
-  opacity: 0;
-  transform: translateY(30px);
+  opacity: 1;
+  transform: translateY(0);
   transition: all 0.7s ease-out;
 }
 .reveal-on-scroll.visible {
   opacity: 1;
   transform: translateY(0);
+}
+/* Only animate when JS adds the class */
+.reveal-on-scroll.js-hidden {
+  opacity: 0;
+  transform: translateY(30px);
 }
