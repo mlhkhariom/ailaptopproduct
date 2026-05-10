@@ -76,6 +76,7 @@ import AdminCoupons from "./pages/admin/AdminCoupons";
 import RepairTrack from "./pages/RepairTrack";
 import CustomerPortal from "./pages/CustomerPortal";
 import NotFound from "./pages/NotFound";
+import CMSPage from "./pages/CMSPage";
 import FAQ from "./pages/FAQ";
 
 const queryClient = new QueryClient();
@@ -162,6 +163,7 @@ const App = () => (
             <Route path="/admin/erp/leaves" element={<AdminRoute><AdminLeaves /></AdminRoute>} />
             <Route path="/admin/erp/attendance" element={<AdminRoute><AdminAttendance /></AdminRoute>} />
             <Route path="/admin/erp/wa-templates" element={<AdminRoute><AdminWATemplates /></AdminRoute>} />
+            <Route path="/page/:slug" element={<CMSPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           {/* Global site-wide features (admin-controlled) */}

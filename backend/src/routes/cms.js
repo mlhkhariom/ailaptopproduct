@@ -28,7 +28,7 @@ router.post('/', authMiddleware, adminOnly, async (req, res) => {
 // PUT /api/cms/:id — admin update
 router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
   const { content, sort_order, is_active } = req.body;
-  await db.prepare("UPDATE cms_content SET content=?, sort_order=?, is_active=?, updated_at=datetime('now') WHERE id=?")
+  await db.prepare("UPDATE cms_content SET content=?, sort_order=?, is_active=?, updated_at=NOW() WHERE id=?")
     .run(JSON.stringify(content), sort_order, is_active ? 1 : 0, req.params.id);
   res.json({ message: 'Updated' });
 });
@@ -36,6 +36,52 @@ router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
 // DELETE /api/cms/:id — admin
 router.delete('/:id', authMiddleware, adminOnly, async (req, res) => {
   await db.prepare('DELETE FROM cms_content WHERE id = ?').run(req.params.id);
+  res.json({ message: 'Deleted' });
+});
+
+// ── STATIC PAGES (About, Privacy, Terms, Refund etc) ──────
+// GET /api/cms/page/:slug — public
+router.get('/page/:slug', async (req, res) => {
+  const row = await db.prepare("SELECT * FROM cms_pages WHERE slug=? AND is_active=1").get(req.params.slug);
+  if (!row) return res.status(404).json({ error: 'Page not found' });
+  res.json(row);
+});
+
+// GET /api/cms-pages — admin list all
+router.get('/admin/pages/list', authMiddleware, adminOnly, async (req, res) => {
+  const rows = await db.prepare('SELECT id, slug, title, is_active, updated_at FROM cms_pages ORDER BY slug').all();
+  res.json(rows);
+});
+
+// GET /api/cms-pages/:id — admin full content
+router.get('/admin/pages/:id', authMiddleware, adminOnly, async (req, res) => {
+  const row = await db.prepare('SELECT * FROM cms_pages WHERE id=?').get(req.params.id);
+  res.json(row);
+});
+
+// POST /api/cms-pages — admin create
+router.post('/admin/pages', authMiddleware, adminOnly, async (req, res) => {
+  const { slug, title, content, meta_title, meta_description } = req.body;
+  if (!slug || !title) return res.status(400).json({ error: 'slug and title required' });
+  const id = uuid();
+  await db.prepare(`INSERT INTO cms_pages (id, slug, title, content, meta_title, meta_description, is_active)
+    VALUES (?,?,?,?,?,?,1) ON CONFLICT (slug) DO UPDATE SET
+    title=EXCLUDED.title, content=EXCLUDED.content, meta_title=EXCLUDED.meta_title, meta_description=EXCLUDED.meta_description, updated_at=NOW()`)
+    .run(id, slug, title, content || '', meta_title || '', meta_description || '');
+  res.status(201).json({ id, slug });
+});
+
+// PUT /api/cms-pages/:id — admin update
+router.put('/admin/pages/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { title, content, meta_title, meta_description, is_active } = req.body;
+  await db.prepare(`UPDATE cms_pages SET title=?, content=?, meta_title=?, meta_description=?, is_active=?, updated_at=NOW() WHERE id=?`)
+    .run(title, content, meta_title, meta_description, is_active ? 1 : 0, req.params.id);
+  res.json({ message: 'Updated' });
+});
+
+// DELETE /api/cms-pages/:id — admin
+router.delete('/admin/pages/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM cms_pages WHERE id=?').run(req.params.id);
   res.json({ message: 'Deleted' });
 });
 

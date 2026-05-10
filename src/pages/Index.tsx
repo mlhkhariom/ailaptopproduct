@@ -21,9 +21,19 @@ const Index = () => {
   const { products, fetchProducts } = useProductStore();
   const [benefits, setBenefits] = useState<any[]>([]);
   const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [banners, setBanners] = useState<any[]>([]);
+  const [currentBanner, setCurrentBanner] = useState(0);
 
   useEffect(() => {
     fetchProducts();
+    api.getCMS('banner').then((d: any) => {
+      const list = Array.isArray(d) ? d : [];
+      const parsed = list.filter((i: any) => i.is_active !== false).map((i: any) => {
+        const c = typeof i.content === 'string' ? JSON.parse(i.content) : i.content;
+        return { ...c, _id: i.id };
+      });
+      setBanners(parsed);
+    }).catch(() => {});
     api.getCMS('benefit').then((d: any) => {
       const list = Array.isArray(d) ? d : [];
       setBenefits(list.map((i: any) => {
@@ -40,9 +50,52 @@ const Index = () => {
     }).catch(() => {});
   }, []);
 
+  // Auto-rotate banners
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const t = setInterval(() => setCurrentBanner(b => (b + 1) % banners.length), 5000);
+    return () => clearInterval(t);
+  }, [banners.length]);
+
   return (
     <CustomerLayout>
       <SEOHead canonical="/" />
+
+      {/* ── CMS BANNERS CAROUSEL (admin-controlled) ──────── */}
+      {banners.length > 0 && (
+        <section className="relative h-[300px] md:h-[400px] overflow-hidden bg-muted">
+          {banners.map((b, i) => (
+            <div
+              key={b._id}
+              className="absolute inset-0 transition-opacity duration-700"
+              style={{ opacity: i === currentBanner ? 1 : 0, zIndex: i === currentBanner ? 2 : 1 }}
+            >
+              {b.image && <img src={b.image} alt={b.title} className="w-full h-full object-cover" />}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+              <div className="relative z-10 container mx-auto h-full flex items-center px-4">
+                <div className="max-w-lg text-white">
+                  {b.title && <h2 className="text-3xl md:text-5xl font-serif font-bold mb-3">{b.title}</h2>}
+                  {b.subtitle && <p className="text-sm md:text-base mb-5 opacity-90">{b.subtitle}</p>}
+                  {b.cta && b.link && <Link to={b.link}><Button size="lg" className="gap-2">{b.cta} <ArrowRight className="h-4 w-4" /></Button></Link>}
+                  {b.cta && !b.link && <Button size="lg" className="gap-2">{b.cta} <ArrowRight className="h-4 w-4" /></Button>}
+                </div>
+              </div>
+            </div>
+          ))}
+          {banners.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+              {banners.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentBanner(i)}
+                  className={`h-2 rounded-full transition-all ${i === currentBanner ? 'w-8 bg-white' : 'w-2 bg-white/50'}`}
+                  aria-label={`Banner ${i + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* ── HERO ─────────────────────────────────────────── */}
       <section className="relative min-h-[85svh] md:min-h-[90svh] flex items-center justify-center overflow-hidden"

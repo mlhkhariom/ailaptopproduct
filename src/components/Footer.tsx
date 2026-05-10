@@ -64,10 +64,10 @@ const Footer = () => (
           <h4 className="font-heading font-bold text-sm mb-4 text-background">Policies</h4>
           <ul className="space-y-2.5 mb-6">
             {[
-              { label: "Privacy Policy", to: "/privacy" },
-              { label: "Terms & Conditions", to: "/terms" },
-              { label: "Refund & Returns", to: "/refund" },
-              { label: "Shipping Policy", to: "/shipping" },
+              { label: "Privacy Policy", to: "/page/privacy" },
+              { label: "Terms & Conditions", to: "/page/terms" },
+              { label: "Refund & Returns", to: "/page/refund" },
+              { label: "Shipping Policy", to: "/page/shipping" },
               { label: "FAQ", to: "/faq" },
             ].map(l => (
               <li key={l.to}><Link to={l.to} className="text-sm text-background/60 hover:text-primary transition-colors">{l.label}</Link></li>

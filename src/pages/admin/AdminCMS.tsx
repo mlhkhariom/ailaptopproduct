@@ -54,11 +54,11 @@ const BannersTab = () => {
   const { items, loading, add, save, remove, toggle } = useCMSSection('banner');
   const [dialog, setDialog] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ title: '', subtitle: '', cta: 'Shop Now', image: '' });
+  const [form, setForm] = useState({ title: '', subtitle: '', cta: 'Shop Now', link: '/products', image: '' });
   const f = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: e.target.value }));
 
-  const openAdd = () => { setEditing(null); setForm({ title: '', subtitle: '', cta: 'Shop Now', image: '' }); setDialog(true); };
-  const openEdit = (item: any) => { setEditing(item); setForm({ title: item.content.title || '', subtitle: item.content.subtitle || '', cta: item.content.cta || 'Shop Now', image: item.content.image || '' }); setDialog(true); };
+  const openAdd = () => { setEditing(null); setForm({ title: '', subtitle: '', cta: 'Shop Now', link: '/products', image: '' }); setDialog(true); };
+  const openEdit = (item: any) => { setEditing(item); setForm({ title: item.content.title || '', subtitle: item.content.subtitle || '', cta: item.content.cta || 'Shop Now', link: item.content.link || '/products', image: item.content.image || '' }); setDialog(true); };
 
   const submit = async () => {
     if (editing) await save(editing.id, form, editing.sort_order, editing.is_active);
@@ -100,6 +100,7 @@ const BannersTab = () => {
             <div><Label className="text-xs">Title *</Label><Input value={form.title} onChange={f('title')} className="mt-1 text-sm" /></div>
             <div><Label className="text-xs">Subtitle</Label><Input value={form.subtitle} onChange={f('subtitle')} className="mt-1 text-sm" /></div>
             <div><Label className="text-xs">CTA Button Text</Label><Input value={form.cta} onChange={f('cta')} className="mt-1 text-sm" /></div>
+            <div><Label className="text-xs">CTA Link (URL path)</Label><Input value={form.link} onChange={f('link')} className="mt-1 text-sm" placeholder="/products or /services/laptop-repair" /></div>
             <div><Label className="text-xs">Image URL</Label><Input value={form.image} onChange={f('image')} className="mt-1 text-sm" placeholder="https://..." /></div>
             {form.image && <img src={form.image} alt="" className="w-full h-28 object-cover rounded-lg" onError={e => (e.currentTarget.style.display='none')} />}
           </div>
@@ -273,36 +274,141 @@ const FAQsTab = () => {
   );
 };
 
-// ── Site Settings ─────────────────────────────────────────
-const SettingsTab = () => {
-  const { items, loading, save, add } = useCMSSection('setting');
-  const [form, setForm] = useState({ siteName: 'AI Laptop Wala', tagline: 'AI Laptop Wala Store', phone: '', email: '', address: '', whatsappNumber: '' });
-  const f = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: e.target.value }));
+// ── Static Pages (About, Privacy, Terms, Refund) ─────────
+const PagesTab = () => {
+  const [pages, setPages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialog, setDialog] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+  const [form, setForm] = useState({ slug: '', title: '', content: '', meta_title: '', meta_description: '', is_active: true });
 
-  useEffect(() => {
-    if (items[0]) setForm({ ...form, ...items[0].content });
-  }, [items]);
+  const load = async () => {
+    setLoading(true);
+    try { setPages(await api.listCMSPages()); } catch {}
+    finally { setLoading(false); }
+  };
 
-  const submit = async () => {
-    if (items[0]) await save(items[0].id, form, 1, true);
-    else await add(form, 1);
+  useEffect(() => { load(); }, []);
+
+  const openAdd = () => {
+    setEditing(null);
+    setForm({ slug: '', title: '', content: '', meta_title: '', meta_description: '', is_active: true });
+    setDialog(true);
+  };
+
+  const openEdit = async (p: any) => {
+    const full = await api.getCMSPageAdmin(p.id);
+    setEditing(full);
+    setForm({
+      slug: full.slug, title: full.title, content: full.content || '',
+      meta_title: full.meta_title || '', meta_description: full.meta_description || '',
+      is_active: !!full.is_active,
+    });
+    setDialog(true);
+  };
+
+  const save = async () => {
+    if (!form.slug || !form.title) { toast.error('Slug + title required'); return; }
+    try {
+      if (editing) await api.updateCMSPage(editing.id, form);
+      else await api.createCMSPage(form);
+      toast.success('Saved!');
+      setDialog(false);
+      load();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm('Delete this page permanently?')) return;
+    try { await api.deleteCMSPage(id); toast.success('Deleted'); load(); }
+    catch (e: any) { toast.error(e.message); }
+  };
+
+  const QUICK_TEMPLATES = [
+    { slug: 'about', title: 'About Us' },
+    { slug: 'privacy', title: 'Privacy Policy' },
+    { slug: 'terms', title: 'Terms & Conditions' },
+    { slug: 'refund', title: 'Return & Refund Policy' },
+    { slug: 'shipping', title: 'Shipping Policy' },
+  ];
+
+  const addTemplate = async (t: any) => {
+    try {
+      await api.createCMSPage({ slug: t.slug, title: t.title, content: `<h1>${t.title}</h1>\n<p>Edit this page content...</p>`, is_active: true });
+      toast.success(`${t.title} created`);
+      load();
+    } catch (e: any) { toast.error(e.message); }
   };
 
   return (
-    <div className="space-y-4 max-w-lg">
-      {loading ? <div className="text-center py-8"><RefreshCw className="h-5 w-5 animate-spin mx-auto" /></div> : (
-        <>
-          <div className="grid grid-cols-2 gap-3">
-            <div><Label className="text-xs">Site Name</Label><Input value={form.siteName} onChange={f('siteName')} className="mt-1 text-sm" /></div>
-            <div><Label className="text-xs">Tagline</Label><Input value={form.tagline} onChange={f('tagline')} className="mt-1 text-sm" /></div>
-            <div><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={f('phone')} className="mt-1 text-sm" /></div>
-            <div><Label className="text-xs">WhatsApp Number</Label><Input value={form.whatsappNumber} onChange={f('whatsappNumber')} className="mt-1 text-sm" placeholder="919876543210" /></div>
-            <div className="col-span-2"><Label className="text-xs">Email</Label><Input value={form.email} onChange={f('email')} className="mt-1 text-sm" /></div>
-            <div className="col-span-2"><Label className="text-xs">Address</Label><Input value={form.address} onChange={f('address')} className="mt-1 text-sm" /></div>
-          </div>
-          <Button onClick={submit} className="gap-2"><Save className="h-4 w-4" /> Save Settings</Button>
-        </>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <p className="text-sm text-muted-foreground">{pages.length} pages — accessible at <code className="bg-muted px-1 rounded">yoursite.com/page/:slug</code></p>
+        </div>
+        <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={openAdd}><Plus className="h-3.5 w-3.5" /> New Page</Button>
+      </div>
+
+      {pages.length === 0 && !loading && (
+        <Card className="border-dashed">
+          <CardContent className="p-6 text-center space-y-3">
+            <p className="text-sm text-muted-foreground">No pages yet. Quick add common pages:</p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {QUICK_TEMPLATES.map(t => (
+                <Button key={t.slug} size="sm" variant="outline" className="text-xs" onClick={() => addTemplate(t)}>
+                  + {t.title}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
+
+      {loading ? <div className="text-center py-8"><RefreshCw className="h-5 w-5 animate-spin mx-auto" /></div> : (
+        <div className="space-y-2">
+          {pages.map(p => (
+            <Card key={p.id}>
+              <CardContent className="p-3 flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium">{p.title}</p>
+                    <Badge variant="outline" className="text-[9px]">/{p.slug}</Badge>
+                    {!p.is_active && <Badge variant="secondary" className="text-[9px]">Draft</Badge>}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Updated: {new Date(p.updated_at).toLocaleString()}</p>
+                </div>
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(p)}><Edit className="h-3.5 w-3.5" /></Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => remove(p.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={dialog} onOpenChange={setDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>{editing ? `Edit: ${editing.title}` : 'New Page'}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Slug * (URL path)</Label><Input value={form.slug} onChange={e => setForm(p => ({ ...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') }))} className="mt-1 text-sm font-mono" placeholder="about" disabled={!!editing} /></div>
+              <div><Label className="text-xs">Title *</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} className="mt-1 text-sm" placeholder="About Us" /></div>
+            </div>
+            <div>
+              <Label className="text-xs">Content (HTML supported)</Label>
+              <Textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} className="mt-1 text-sm font-mono resize-none" rows={10} placeholder="<h1>About</h1>&#10;<p>Your content here. HTML allowed.</p>" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Meta Title (SEO)</Label><Input value={form.meta_title} onChange={e => setForm(p => ({ ...p, meta_title: e.target.value }))} className="mt-1 text-sm" /></div>
+              <div><Label className="text-xs">Meta Description (SEO)</Label><Input value={form.meta_description} onChange={e => setForm(p => ({ ...p, meta_description: e.target.value }))} className="mt-1 text-sm" /></div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={form.is_active} onCheckedChange={v => setForm(p => ({ ...p, is_active: v }))} />
+              <Label className="text-xs">Published (visible on site)</Label>
+            </div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setDialog(false)}>Cancel</Button><Button onClick={save}>{editing ? 'Update' : 'Create'}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -313,7 +419,7 @@ const AdminCMS = () => (
     <div className="p-4 md:p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-serif font-bold">Content Management</h1>
-        <p className="text-sm text-muted-foreground">Manage homepage banners, benefits, testimonials, FAQs & site settings</p>
+        <p className="text-sm text-muted-foreground">Manage homepage banners, benefits, testimonials, FAQs & static pages</p>
       </div>
       <Tabs defaultValue="banners">
         <TabsList className="h-9 mb-6">
@@ -321,13 +427,13 @@ const AdminCMS = () => (
           <TabsTrigger value="benefits" className="text-xs gap-1.5"><Award className="h-3.5 w-3.5" /> Benefits</TabsTrigger>
           <TabsTrigger value="testimonials" className="text-xs gap-1.5"><Star className="h-3.5 w-3.5" /> Testimonials</TabsTrigger>
           <TabsTrigger value="faqs" className="text-xs gap-1.5"><HelpCircle className="h-3.5 w-3.5" /> FAQs</TabsTrigger>
-          <TabsTrigger value="settings" className="text-xs gap-1.5"><Settings className="h-3.5 w-3.5" /> Settings</TabsTrigger>
+          <TabsTrigger value="pages" className="text-xs gap-1.5"><Layout className="h-3.5 w-3.5" /> Pages</TabsTrigger>
         </TabsList>
         <TabsContent value="banners"><BannersTab /></TabsContent>
         <TabsContent value="benefits"><BenefitsTab /></TabsContent>
         <TabsContent value="testimonials"><TestimonialsTab /></TabsContent>
         <TabsContent value="faqs"><FAQsTab /></TabsContent>
-        <TabsContent value="settings"><SettingsTab /></TabsContent>
+        <TabsContent value="pages"><PagesTab /></TabsContent>
       </Tabs>
     </div>
   </AdminLayout>

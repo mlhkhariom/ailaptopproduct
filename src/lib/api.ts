@@ -99,6 +99,14 @@ export const api = {
   updateCMS: (id: string, data: unknown) => req('PUT', `/cms/${id}`, data),
   deleteCMS: (id: string) => req('DELETE', `/cms/${id}`),
 
+  // CMS Pages (static content: about, privacy, terms, refund...)
+  getCMSPage: (slug: string) => req('GET', `/cms/page/${slug}`),
+  listCMSPages: () => req('GET', '/cms/admin/pages/list'),
+  getCMSPageAdmin: (id: string) => req('GET', `/cms/admin/pages/${id}`),
+  createCMSPage: (data: unknown) => req('POST', '/cms/admin/pages', data),
+  updateCMSPage: (id: string, data: unknown) => req('PUT', `/cms/admin/pages/${id}`, data),
+  deleteCMSPage: (id: string) => req('DELETE', `/cms/admin/pages/${id}`),
+
   // Blog
   getPosts: (params?: Record<string, string>) => req('GET', '/blog' + (params ? '?' + new URLSearchParams(params) : '')),
   getPost: (slug: string) => req('GET', `/blog/${slug}`),

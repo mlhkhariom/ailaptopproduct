@@ -284,6 +284,13 @@ export const initDB = async () => {
     "ALTER TABLE media ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'image'",
     "ALTER TABLE media ADD COLUMN IF NOT EXISTS folder TEXT DEFAULT 'general'",
     "ALTER TABLE media ADD COLUMN IF NOT EXISTS alt TEXT",
+    // CMS Pages (static content)
+    `CREATE TABLE IF NOT EXISTS cms_pages (
+      id TEXT PRIMARY KEY, slug TEXT UNIQUE NOT NULL, title TEXT NOT NULL,
+      content TEXT, meta_title TEXT, meta_description TEXT,
+      is_active INTEGER DEFAULT 1,
+      created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     // Social — YouTube + TikTok support
     "ALTER TABLE social_settings ADD COLUMN IF NOT EXISTS youtube_api_key TEXT",
     "ALTER TABLE social_settings ADD COLUMN IF NOT EXISTS youtube_channel_id TEXT",
