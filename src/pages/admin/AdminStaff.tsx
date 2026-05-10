@@ -21,7 +21,7 @@ const req = (method: string, path: string, body?: any) =>
 
 const ROLES = ['Technician', 'Sales', 'Manager', 'Accountant', 'Helper', 'Receptionist', 'Driver'];
 
-const emptyForm = { name: '', role: '', phone: '', email: '', salary: 0, joining_date: '', address: '', is_active: 1, aadhaar_url: '', pan_url: '', offer_letter_url: '', other_doc_url: '', bank_account: '', bank_ifsc: '', bank_name: '' };
+const emptyForm = { name: '', role: '', phone: '', email: '', salary: 0, joining_date: '', address: '', is_active: 1, aadhaar_url: '', pan_url: '', offer_letter_url: '', other_doc_url: '', bank_account: '', bank_ifsc: '', bank_name: '', photo_url: '' };
 
 const ROLE_COLORS: Record<string, string> = {
   Technician: 'bg-blue-100 text-blue-700',
@@ -250,9 +250,13 @@ export default function AdminStaff() {
                     {s.email && <p className="text-xs text-muted-foreground flex items-center gap-1"><Mail className="h-3 w-3" />{s.email}</p>}
                     <p className="text-xs font-semibold text-primary">₹{(s.salary || 0).toLocaleString('en-IN')}/month</p>
                     {s.joining_date && <p className="text-[10px] text-muted-foreground">Joined: {s.joining_date}</p>}
+                    {s.photo_url && <img src={s.photo_url} alt={s.name} className="h-8 w-8 rounded-full object-cover" />}
                     <button onClick={async (e) => { e.stopPropagation(); setSalaryHistStaff(s); const d = await req('GET', `/staff/${s.id}/salary-history`); setSalaryHist(Array.isArray(d) ? d : []); setSalaryHistOpen(true); }} className="text-[10px] text-blue-500 underline mt-1">Salary History</button>
+                    {s.photo_url && <img src={s.photo_url} alt={s.name} className="h-8 w-8 rounded-full object-cover" />}
                     <button onClick={async (e) => { e.stopPropagation(); setSalaryHistStaff(s); const d = await req('GET', `/staff/${s.id}/salary-history`); setSalaryHist(Array.isArray(d) ? d : []); setSalaryHistOpen(true); }} className="text-[10px] text-blue-500 underline mt-1">Salary History</button>
+                    {s.photo_url && <img src={s.photo_url} alt={s.name} className="h-8 w-8 rounded-full object-cover" />}
                     <button onClick={async (e) => { e.stopPropagation(); setSalaryHistStaff(s); const d = await req('GET', `/staff/${s.id}/salary-history`); setSalaryHist(Array.isArray(d) ? d : []); setSalaryHistOpen(true); }} className="text-[10px] text-blue-500 underline mt-1">Salary History</button>
+                    {s.photo_url && <img src={s.photo_url} alt={s.name} className="h-8 w-8 rounded-full object-cover" />}
                     <button onClick={async (e) => { e.stopPropagation(); setSalaryHistStaff(s); const d = await req('GET', `/staff/${s.id}/salary-history`); setSalaryHist(Array.isArray(d) ? d : []); setSalaryHistOpen(true); }} className="text-[10px] text-blue-500 underline mt-1 block">Salary History</button>
                     <div className="flex gap-1 mt-1 flex-wrap">
                       {s.aadhaar_url && <a href={s.aadhaar_url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 underline">Aadhaar</a>}
@@ -404,6 +408,8 @@ export default function AdminStaff() {
                 <Label className="text-xs">Active</Label>
               </div>
             </div>
+              {/* Photo */}
+              <div><Label className="text-xs">Photo URL</Label><Input className="mt-1 h-9" value={form.photo_url || ''} onChange={e => setForm((f: any) => ({ ...f, photo_url: e.target.value }))} placeholder="https://..." /></div>
               {/* Bank Details */}
               <div className="border rounded-lg p-3 space-y-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Bank Details (for Salary Transfer)</p>

@@ -35,6 +35,7 @@ export default function AdminReportBuilder() {
   const [cols, setCols] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [ran, setRan] = useState(false);
+  const [showChart, setShowChart] = useState(false);
   const [savedReports, setSavedReports] = useState<any[]>([]);
   const [saveName, setSaveName] = useState('');
   const [saveOpen, setSaveOpen] = useState(false);
@@ -114,6 +115,7 @@ export default function AdminReportBuilder() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h1 className="text-xl font-black flex items-center gap-2"><BarChart3 className="h-5 w-5 text-primary" /> Custom Report Builder</h1>
           <div className="flex gap-2">
+            {ran && rows.length > 0 && <Button size="sm" variant="outline" onClick={() => setShowChart(c => !c)} className="gap-1.5">{showChart ? 'Table' : 'Chart'}</Button>}
             {ran && rows.length > 0 && <Button size="sm" variant="outline" onClick={exportCSV} className="gap-1.5"><Download className="h-4 w-4" /> Export CSV</Button>}
             {ran && rows.length > 0 && <Button size="sm" variant="outline" onClick={() => setSaveOpen(true)} className="gap-1.5"><Plus className="h-4 w-4" /> Save Report</Button>}
             <Button size="sm" onClick={run} disabled={loading} className="gap-1.5"><Play className="h-4 w-4" />{loading ? 'Running...' : 'Run Report'}</Button>
@@ -223,6 +225,25 @@ export default function AdminReportBuilder() {
               <div className="border rounded-xl h-64 flex flex-col items-center justify-center text-muted-foreground gap-2">
                 <BarChart3 className="h-10 w-10 opacity-30" />
                 <p className="text-sm">Configure your report and click Run</p>
+              </div>
+            )}
+            {ran && showChart && rows.length > 0 && cols.length >= 2 && (
+              <div className="border rounded-xl p-4 mb-4">
+                <p className="text-xs font-semibold text-muted-foreground mb-3">Chart: {cols[0]} vs {cols[cols.length-1]}</p>
+                <div className="flex items-end gap-1 h-40">
+                  {rows.slice(0, 20).map((row, i) => {
+                    const val = Number(row[cols[cols.length-1]]) || 0;
+                    const max = Math.max(...rows.slice(0, 20).map(r => Number(r[cols[cols.length-1]]) || 0), 1);
+                    const pct = Math.max(5, (val / max) * 100);
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${row[cols[0]]}: ${val}`}>
+                        <span className="text-[9px] font-bold">{val > 999 ? Math.round(val/1000) + 'k' : val}</span>
+                        <div className="w-full bg-primary/80 rounded-t" style={{ height: `${pct}%` }} />
+                        <span className="text-[8px] text-muted-foreground truncate w-full text-center">{String(row[cols[0]] || '').slice(0, 6)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
             {ran && (

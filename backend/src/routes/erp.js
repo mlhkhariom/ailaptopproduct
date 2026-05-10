@@ -1291,10 +1291,15 @@ router.post('/payroll/generate', authMiddleware, canAccess('payroll'), async (re
     // Advance deduction
     const adv = await db.prepare("SELECT COALESCE(SUM(amount),0) as total FROM staff_advances WHERE staff_id=? AND month=? AND deducted=0").get(s.id, month);
     const advance_deduction = adv?.total || 0;
-    const net = parseFloat((gross - pf_employee - esi_employee - advance_deduction).toFixed(2));
+    // TDS: 10% if annual gross > 5L, 20% if > 10L, 30% if > 15L
+    const annualGross = gross * 12;
+    const tds = annualGross > 1500000 ? parseFloat((gross * 0.30 / 12).toFixed(2))
+      : annualGross > 1000000 ? parseFloat((gross * 0.20 / 12).toFixed(2))
+      : annualGross > 500000 ? parseFloat((gross * 0.10 / 12).toFixed(2)) : 0;
+    const net = parseFloat((gross - pf_employee - esi_employee - tds - advance_deduction).toFixed(2));
     const id = uuid();
-    await db.prepare(`INSERT INTO payroll (id,staff_id,month,basic,hra,gross,pf_employee,pf_employer,esi_employee,esi_employer,advance_deduction,net,working_days,present_days) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-      .run(id, s.id, month, earnedBasic, hra, gross, pf_employee, pf_employer, esi_employee, esi_employer, advance_deduction, net, 26, present);
+    await db.prepare(`INSERT INTO payroll (id,staff_id,month,basic,hra,gross,pf_employee,pf_employer,esi_employee,esi_employer,tds,advance_deduction,net,working_days,present_days) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(id, s.id, month, earnedBasic, hra, gross, pf_employee, pf_employer, esi_employee, esi_employer, tds, advance_deduction, net, 26, present);
     created.push({ id, staff: s.name, net });
   }
   await auditLog(req, 'payroll', 'generated', month, null, { count: created.length, month });
@@ -1899,4 +1904,62 @@ router.post('/lead-rules', authMiddleware, adminOnly, async (req, res) => {
 router.delete('/lead-rules/:id', authMiddleware, adminOnly, async (req, res) => {
   await db.prepare('DELETE FROM lead_assignment_rules WHERE id=?').run(req.params.id);
   res.json({ message: 'Deleted' });
+});
+
+// ── EMAIL SEND (CRM) ─────────────────────────────────────
+router.post('/leads/:id/email', authMiddleware, adminOnly, async (req, res) => {
+  const { subject, body } = req.body;
+  const lead = await db.prepare('SELECT * FROM leads WHERE id=?').get(req.params.id);
+  if (!lead?.email) return res.status(400).json({ error: 'Lead has no email' });
+  if (!subject || !body) return res.status(400).json({ error: 'subject and body required' });
+
+  // Use nodemailer if configured, else just log
+  const smtpHost = process.env.SMTP_HOST;
+  if (smtpHost) {
+    try {
+      const nodemailer = await import('nodemailer');
+      const transporter = nodemailer.default.createTransport({
+        host: smtpHost, port: parseInt(process.env.SMTP_PORT || '587'),
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      });
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || 'info@ailaptopwala.com',
+        to: lead.email, subject, html: body,
+      });
+    } catch (e) { return res.status(500).json({ error: 'Email send failed: ' + e.message }); }
+  }
+  // Log activity
+  await db.prepare("INSERT INTO lead_activities (id,lead_id,type,note,created_by) VALUES (?,?,?,?,?)").run(uuid(), req.params.id, 'email', `Subject: ${subject}`, req.user?.id || 'admin');
+  await auditLog(req, 'crm', 'email_sent', req.params.id, null, { to: lead.email, subject });
+  res.json({ message: smtpHost ? 'Email sent' : 'Email logged (set SMTP_HOST in .env for actual send)' });
+});
+
+// ── YEAR-OVER-YEAR COMPARISON ─────────────────────────────
+router.get('/yoy-comparison', authMiddleware, adminOnly, async (req, res) => {
+  const thisYear = new Date().getFullYear();
+  const lastYear = thisYear - 1;
+  const [thisRev, lastRev, thisJobs, lastJobs, thisExp, lastExp] = await Promise.all([
+    db.prepare("SELECT COALESCE(SUM(total_charge),0) as v FROM service_bookings WHERE payment_status='paid' AND EXTRACT(YEAR FROM created_at)=?").get(thisYear),
+    db.prepare("SELECT COALESCE(SUM(total_charge),0) as v FROM service_bookings WHERE payment_status='paid' AND EXTRACT(YEAR FROM created_at)=?").get(lastYear),
+    db.prepare("SELECT COUNT(*) as c FROM service_bookings WHERE EXTRACT(YEAR FROM created_at)=?").get(thisYear),
+    db.prepare("SELECT COUNT(*) as c FROM service_bookings WHERE EXTRACT(YEAR FROM created_at)=?").get(lastYear),
+    db.prepare("SELECT COALESCE(SUM(amount),0) as v FROM expenses WHERE EXTRACT(YEAR FROM date::date)=?").get(thisYear),
+    db.prepare("SELECT COALESCE(SUM(amount),0) as v FROM expenses WHERE EXTRACT(YEAR FROM date::date)=?").get(lastYear),
+  ]);
+  res.json({
+    thisYear, lastYear,
+    revenue: { current: thisRev?.v || 0, previous: lastRev?.v || 0, change: (thisRev?.v || 0) - (lastRev?.v || 0) },
+    jobs: { current: thisJobs?.c || 0, previous: lastJobs?.c || 0, change: (thisJobs?.c || 0) - (lastJobs?.c || 0) },
+    expenses: { current: thisExp?.v || 0, previous: lastExp?.v || 0, change: (thisExp?.v || 0) - (lastExp?.v || 0) },
+  });
+});
+
+// ── INVOICE SETTINGS ──────────────────────────────────────
+router.get('/invoice-settings', authMiddleware, adminOnly, async (req, res) => {
+  const row = await db.prepare("SELECT value FROM site_settings WHERE key='invoice_settings'").get();
+  res.json(row?.value ? JSON.parse(row.value) : { logo_url: 'https://ailaptopwala.com/assets/logo.png', company_name: 'AI Laptop Wala', tagline: 'Buy, Sell & Repair Laptops', address: 'Silver Mall, LB-21, RNT Marg, Indore', phone: '+91 98934 96163', email: 'info@ailaptopwala.com', gstin: '23ATNPA4415H1Z2', primary_color: '#FF8000', footer_text: 'Thank you for your business!' });
+});
+router.put('/invoice-settings', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare("INSERT INTO site_settings (key,value) VALUES ('invoice_settings',?) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value").run(JSON.stringify(req.body));
+  res.json({ message: 'Saved' });
 });
