@@ -23,7 +23,7 @@ router.post('/', async (req, res) => {
         VALUES (?,?,?,?,'Website',?,  'new',?)`)
         .run(uuid(), name, phone || '', email, subject || 'Contact Us inquiry', message.slice(0, 200));
     }
-  } catch {}
+  } catch (e) { console.error("Contact → Lead error:", e.message); }
 
   res.status(201).json({ message: 'Query submitted' });
 });

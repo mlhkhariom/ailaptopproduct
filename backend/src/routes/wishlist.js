@@ -34,7 +34,7 @@ router.post('/sync', authMiddleware, async (req, res) => {
   const { product_ids } = req.body;
   if (!Array.isArray(product_ids)) return res.status(400).json({ error: 'product_ids array required' });
   for (const pid of product_ids) {
-    try { await db.prepare('INSERT INTO user_wishlist (id,user_id,product_id) VALUES (?,?,?) ON CONFLICT DO NOTHING').run(uuid(), req.user.id, pid); } catch {}
+    try { await db.prepare('INSERT INTO user_wishlist (id,user_id,product_id) VALUES (?,?,?) ON CONFLICT DO NOTHING').run(uuid(), req.user.id, pid); } catch (e) { console.error("Wishlist sync error:", e.message); }
   }
   res.json({ synced: product_ids.length });
 });

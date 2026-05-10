@@ -22,7 +22,7 @@ export function startRecurringInvoiceProcessor() {
           try {
             const { queueNotification } = await import('./notifications.js');
             await queueNotification(r.customer_phone, `Dear ${r.customer_name}, your invoice ${invoice_number} of ₹${r.total} has been generated. Please contact us to pay.`, 'recurring_invoice');
-          } catch {}
+          } catch (e) { console.error("Scheduler error:", e.message); }
         }
         console.log(`✅ Recurring invoice generated: ${invoice_number} for ${r.customer_name}`);
       }
@@ -82,7 +82,7 @@ export function startKPIAlertScheduler() {
             const { queueNotification } = await import('./notifications.js');
             const msg = alert.message || `⚠️ KPI Alert: ${alert.metric} = ${value} (threshold: ${alert.threshold})`;
             await queueNotification(OWNER_PHONE, msg, 'kpi_alert');
-          } catch {}
+          } catch (e) { console.error("Scheduler error:", e.message); }
         }
       }
     } catch (e) { console.error('KPI alert scheduler error:', e.message); }

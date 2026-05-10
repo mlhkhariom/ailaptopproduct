@@ -29,7 +29,7 @@ router.post('/', authMiddleware, async (req, res) => {
     try {
       await db.prepare('UPDATE branch_stock SET stock=GREATEST(0,stock-?) WHERE branch_id=? AND product_id=?').run(item.quantity, selectedBranch, item.id);
       await db.prepare('INSERT INTO branch_stock_movements (id,branch_id,product_id,type,qty,note,ref_id) VALUES (?,?,?,?,?,?,?)').run(uuid(), selectedBranch, item.id, 'order_sale', -item.quantity, `Order ${order_number}`, id);
-    } catch {}
+    } catch (e) { console.error("Orders: branch stock deduct failed:", e.message); }
     const p = await db.prepare('SELECT name, stock FROM products WHERE id=?').get(item.id);
     if (p && p.stock <= 3) {
       await db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)').run(uuid(), 'stock', '⚠️ Low Stock Alert', `${p.name} — only ${p.stock} left`, '/admin/products');
@@ -130,7 +130,7 @@ router.put('/:id/status', authMiddleware, adminOnly, async (req, res) => {
             }
             await db.prepare('INSERT INTO loyalty_transactions (id,phone,type,points,ref_id,ref_type,note) VALUES (?,?,?,?,?,?,?)').run(uuid(), cleanPhone, 'earn', pts, order.id, 'order', `Earned ${pts} pts on order ₹${order.total}`);
           }
-        } catch {}
+        } catch (e) { console.error("Orders: branch stock deduct failed:", e.message); }
       }
     }
   }
