@@ -89,8 +89,10 @@ router.post('/instances', authMiddleware, superAdminOnly, async (req, res) => {
     await db.prepare('INSERT OR IGNORE INTO evolution_instances (id,instance_name,connection_type,cloud_phone_id,cloud_business_id,cloud_access_token,cloud_webhook_token) VALUES (?,?,?,?,?,?,?)')
       .run(id, instance_name, connection_type, cloud_phone_id || null, cloud_business_id || null, cloud_access_token || null, cloud_webhook_token || null);
 
-    // Set webhook
-    const webhookUrl = `${process.env.FRONTEND_URL?.replace('8080', '5000') || 'http://localhost:5000'}/api/evolution/webhook/${instance_name}`;
+    // Set webhook — use backend URL (not frontend with hack)
+    const { Config } = await import('../lib/config.js');
+    const backendUrl = (await Config.backendUrl()) || process.env.BACKEND_URL || 'http://localhost:5000';
+    const webhookUrl = `${backendUrl}/api/evolution/webhook/${instance_name}`;
     await setWebhook(instance_name, webhookUrl).catch(() => {});
 
     res.status(201).json(await db.prepare('SELECT * FROM evolution_instances WHERE id=?').get(id));

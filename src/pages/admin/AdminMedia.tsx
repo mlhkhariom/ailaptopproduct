@@ -17,6 +17,8 @@ const TYPE_ICON: any = { image: Image, video: Video, document: FileText };
 
 const formatSize = (bytes: number) => bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(0)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
+const API_HOST = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+
 const AdminMedia = () => {
   const [media, setMedia] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
@@ -65,7 +67,7 @@ const AdminMedia = () => {
   };
 
   const copyUrl = (url: string) => {
-    navigator.clipboard.writeText(`http://localhost:5000${url}`);
+    navigator.clipboard.writeText(`${API_HOST}${url}`);
     toast.success('URL copied!');
   };
 
@@ -197,7 +199,7 @@ const AdminMedia = () => {
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
             {filtered.map(m => {
               const isSelected = selected.includes(m.id);
-              const fullUrl = `http://localhost:5000${m.url}`;
+              const fullUrl = `${API_HOST}${m.url}`;
               return (
                 <div key={m.id} className={`group relative rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${isSelected ? 'border-primary' : 'border-transparent hover:border-muted-foreground/30'}`}
                   onClick={() => toggleSelect(m.id)}>
@@ -236,7 +238,7 @@ const AdminMedia = () => {
           {preview && (
             <div className="space-y-3">
               {preview.type === 'image' && (
-                <img src={`http://localhost:5000${preview.url}`} alt={preview.alt} className="w-full rounded-lg max-h-64 object-contain bg-muted" />
+                <img src={`${API_HOST}${preview.url}`} alt={preview.alt} className="w-full rounded-lg max-h-64 object-contain bg-muted" />
               )}
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div><p className="text-muted-foreground">Type</p><p className="font-medium capitalize">{preview.type}</p></div>
@@ -247,7 +249,7 @@ const AdminMedia = () => {
               <div>
                 <Label className="text-xs">URL</Label>
                 <div className="flex gap-2 mt-1">
-                  <Input value={`http://localhost:5000${preview.url}`} readOnly className="text-xs font-mono" />
+                  <Input value={`${API_HOST}${preview.url}`} readOnly className="text-xs font-mono" />
                   <Button size="sm" variant="outline" onClick={() => copyUrl(preview.url)}><Copy className="h-3.5 w-3.5" /></Button>
                 </div>
               </div>
