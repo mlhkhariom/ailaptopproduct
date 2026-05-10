@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import GlobalSearch from "@/components/GlobalSearch";
 import { FreeShippingBanner } from "@/components/SiteFeatures";
+import { DarkModeToggle } from "@/components/SiteWidgets";
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -83,6 +84,9 @@ const Header = () => {
                 </Button>
               </Link>
             )}
+
+            {/* Dark Mode (feature toggle) */}
+            <DarkModeToggle />
 
             {/* Cart */}
             <Link to="/cart">

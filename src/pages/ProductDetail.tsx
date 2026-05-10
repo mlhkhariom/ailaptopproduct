@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { ArrowLeft, MessageCircle, ShieldCheck, Star, Heart, Share2, CheckCheck, ShoppingCart, Clock, Wrench, Phone, CheckCircle, ZoomIn } from "lucide-react";
+import { ArrowLeft, MessageCircle, ShieldCheck, Star, Heart, Share2, CheckCheck, ShoppingCart, Clock, Wrench, Phone, CheckCircle, ZoomIn, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +11,8 @@ import ProductCard from "@/components/ProductCard";
 import { useProductStore } from "@/store/productStore";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
+import { trackProductView } from "@/components/SiteWidgets";
 import { toast } from "sonner";
 
 const ProductDetail = () => {
@@ -19,9 +21,12 @@ const ProductDetail = () => {
   const { products, fetchProducts } = useProductStore();
   const addItem = useCartStore((s) => s.addItem);
   const { toggleItem, hasItem } = useWishlistStore();
+  const { product_zoom, emi_calculator, enable_reels, compare_enabled, recently_viewed } = useSiteSettings();
   const [qty, setQty] = useState(1);
   const [mainImage, setMainImage] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [zoomActive, setZoomActive] = useState(false);
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
 
   const [loading, setLoading] = useState(true);
 
@@ -39,8 +44,9 @@ const ProductDetail = () => {
     if (product) {
       const stored = JSON.parse(localStorage.getItem("recently-viewed") || "[]") as string[];
       if (!stored.includes(product.id)) localStorage.setItem("recently-viewed", JSON.stringify([product.id, ...stored].slice(0, 8)));
+      if (recently_viewed) trackProductView(product);
     }
-  }, [product?.id]);
+  }, [product?.id, recently_viewed]);
 
   if (loading) return (
     <CustomerLayout>
@@ -124,12 +130,46 @@ const ProductDetail = () => {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 mb-12">
           {/* ── IMAGE ─────────────────────────────────────── */}
           <div>
-            <div className="relative rounded-2xl overflow-hidden bg-muted/30 border aspect-square group">
-              <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <div
+              className="relative rounded-2xl overflow-hidden bg-muted/30 border aspect-square group"
+              onMouseEnter={() => product_zoom && setZoomActive(true)}
+              onMouseLeave={() => setZoomActive(false)}
+              onMouseMove={(e) => {
+                if (!product_zoom) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                setZoomPos({
+                  x: ((e.clientX - rect.left) / rect.width) * 100,
+                  y: ((e.clientY - rect.top) / rect.height) * 100,
+                });
+              }}
+              style={product_zoom && zoomActive ? { cursor: 'zoom-in' } : {}}
+            >
+              <img
+                src={product.image}
+                alt={product.name}
+                className="w-full h-full object-cover transition-transform duration-200"
+                style={product_zoom && zoomActive ? {
+                  transform: `scale(2.2)`,
+                  transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                } : {}}
+              />
+              {product_zoom && !zoomActive && (
+                <div className="absolute bottom-3 right-3 bg-black/50 text-white text-[10px] px-2 py-1 rounded flex items-center gap-1">
+                  <ZoomIn className="h-3 w-3" /> Hover to zoom
+                </div>
+              )}
               {discount > 0 && <Badge className="absolute top-4 left-4 bg-primary text-white text-sm px-3 py-1">{discount}% OFF</Badge>}
               {product.badge && <Badge className="absolute top-4 right-4 bg-secondary text-white text-xs">{product.badge}</Badge>}
               {product.stock <= 3 && product.inStock && <Badge className="absolute bottom-4 left-4 bg-destructive text-white text-xs">Only {product.stock} left!</Badge>}
             </div>
+
+            {/* Reels (enable_reels toggle) */}
+            {enable_reels && product.video_url && (
+              <div className="mt-4 rounded-xl overflow-hidden border">
+                <video src={product.video_url} controls className="w-full aspect-video bg-black" />
+                <p className="text-xs text-muted-foreground p-2 bg-muted/30">📹 Product demo video</p>
+              </div>
+            )}
           </div>
 
           {/* ── DETAILS ───────────────────────────────────── */}
@@ -178,6 +218,23 @@ const ProductDetail = () => {
               </div>
             )}
 
+            {/* EMI Calculator (feature toggle) */}
+            {emi_calculator && product.price >= 3000 && (
+              <div className="mb-4 p-3 rounded-xl border-2 border-primary/20 bg-primary/5">
+                <p className="text-xs font-semibold text-primary mb-2">💳 EMI Options (No Cost EMI available)</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[3, 6, 12].map(months => (
+                    <div key={months} className="text-center p-2 rounded-lg bg-card border">
+                      <p className="text-[10px] text-muted-foreground">{months} months</p>
+                      <p className="text-sm font-bold">₹{Math.round(product.price / months).toLocaleString('en-IN')}</p>
+                      <p className="text-[9px] text-muted-foreground">/month</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-2">Available on Visa, MasterCard & RuPay credit cards</p>
+              </div>
+            )}
+
             {/* Qty + Add to Cart */}
             <div className="flex items-center gap-3 mb-4">
               <div className="flex items-center border rounded-xl overflow-hidden">
@@ -204,6 +261,18 @@ const ProductDetail = () => {
                 <Heart className={`h-4 w-4 ${wishlisted ? 'fill-destructive text-destructive' : ''}`} />
                 {wishlisted ? 'Wishlisted' : 'Wishlist'}
               </Button>
+              {compare_enabled && (
+                <Button variant="outline" className="gap-2" onClick={() => {
+                  const comp = JSON.parse(localStorage.getItem('compare') || '[]');
+                  if (comp.length >= 4) { toast.error('Can compare max 4 products'); return; }
+                  if (comp.find((p: any) => p.id === product.id)) { toast('Already in compare'); return; }
+                  comp.push({ id: product.id, name: product.name, price: product.price, image: product.image, slug: product.slug });
+                  localStorage.setItem('compare', JSON.stringify(comp));
+                  toast.success(`Added to compare (${comp.length}/4)`);
+                }}>
+                  <Scale className="h-4 w-4" /> Compare
+                </Button>
+              )}
               <Button variant="outline" className="gap-2" onClick={copyLink}>
                 {copied ? <CheckCheck className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
                 {copied ? 'Copied!' : 'Share'}

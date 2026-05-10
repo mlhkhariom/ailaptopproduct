@@ -1,26 +1,41 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import db from '../db/database.js';
-import { authMiddleware } from '../middleware/auth.js';
+import { authMiddleware, optionalAuth } from '../middleware/auth.js';
 import { adminOnly } from '../middleware/adminOnly.js';
 import { notifyOrderPlaced, notifyOrderShipped, notifyOrderDelivered, notifyInvoiceReady } from '../whatsapp/notifications.js';
 import { sendEmail, EmailTemplates } from '../lib/email.js';
 
 const router = Router();
 
-// POST /api/orders — place order (auth required)
-router.post('/', authMiddleware, async (req, res) => {
+// POST /api/orders — place order (auth OR guest if guest_checkout enabled)
+router.post('/', optionalAuth, async (req, res) => {
   const { items, subtotal, discount, total, coupon_code, payment_method, address, payment_status, branch_id, shipping_charge } = req.body;
   if (!items || !total) return res.status(400).json({ error: 'items and total required' });
 
+  // Check guest checkout setting
+  if (!req.user) {
+    const row = await db.prepare("SELECT value FROM site_settings WHERE key='site_features'").get();
+    const features = row?.value ? JSON.parse(row.value) : {};
+    if (!features.guest_checkout) {
+      return res.status(401).json({ error: 'Login required. Guest checkout is disabled.' });
+    }
+    // Require valid address with phone + email for guest
+    const addr = address || {};
+    if (!addr.phone || !addr.email || !addr.name) {
+      return res.status(400).json({ error: 'Guest checkout requires name, email, and phone in address' });
+    }
+  }
+
   const id = uuid();
   const order_number = 'ALW-' + Date.now().toString().slice(-6);
+  const userId = req.user?.id || null; // null for guest
 
   // Default to Silver Mall if no branch specified
   const selectedBranch = branch_id || 'branch-silver-mall';
   await db.prepare(`INSERT INTO orders (id, order_number, user_id, items, subtotal, discount, shipping_charge, total, coupon_code, payment_method, payment_status, address, branch_id)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .run(id, order_number, req.user.id, JSON.stringify(items), subtotal, discount || 0, shipping_charge || 0, total, coupon_code, payment_method, payment_status || 'pending', JSON.stringify(address), selectedBranch);
+    .run(id, order_number, userId, JSON.stringify(items), subtotal, discount || 0, shipping_charge || 0, total, coupon_code, payment_method, payment_status || 'pending', JSON.stringify(address), selectedBranch);
 
   if (coupon_code) await db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE code = ?').run(coupon_code);
   for (const item of items) {
@@ -42,12 +57,15 @@ router.post('/', authMiddleware, async (req, res) => {
   // Email notification — uses central helper (respects SMTP + toggle)
   try {
     const order = await db.prepare('SELECT * FROM orders WHERE id=?').get(id);
-    const user = await db.prepare('SELECT email, name FROM users WHERE id=?').get(req.user.id);
-    if (user?.email) {
+    const addr = JSON.parse(order.address || '{}');
+    // Use user record if logged in, else address email/name (guest)
+    const recipientEmail = req.user ? (await db.prepare('SELECT email FROM users WHERE id=?').get(req.user.id))?.email : addr.email;
+    const recipientName = req.user ? (await db.prepare('SELECT name FROM users WHERE id=?').get(req.user.id))?.name : addr.name;
+    if (recipientEmail) {
       await sendEmail({
-        to: user.email,
+        to: recipientEmail,
         subject: `Order Confirmed #${order_number} — AI Laptop Wala`,
-        html: EmailTemplates.orderConfirmation(order, user.name),
+        html: EmailTemplates.orderConfirmation(order, recipientName),
         toggleKey: 'email_order_confirmation',
       });
     }
@@ -57,22 +75,23 @@ router.post('/', authMiddleware, async (req, res) => {
       await sendEmail({
         to: adminEmail,
         subject: `🔔 New Order #${order_number} — ₹${total}`,
-        html: EmailTemplates.adminNewOrder(order, user?.name, user?.email, (await db.prepare('SELECT phone FROM users WHERE id=?').get(req.user.id))?.phone),
+        html: EmailTemplates.adminNewOrder(order, recipientName, recipientEmail, addr.phone || addr.mobile),
         toggleKey: 'email_admin_new_order',
       });
     }
   } catch (e) { console.error('Order email error:', e.message); }
 
   // WhatsApp notification — phone from user profile OR checkout address
+  // WhatsApp notification — works for both auth and guest
   const order = await db.prepare('SELECT * FROM orders WHERE id=?').get(id);
-  const user = await db.prepare('SELECT name, phone FROM users WHERE id=?').get(req.user.id);
+  const user = req.user ? await db.prepare('SELECT name, phone FROM users WHERE id=?').get(req.user.id) : null;
   const addr = JSON.parse(order.address || '{}');
   const phone = user?.phone || addr.phone || addr.mobile;
   const name = user?.name || addr.name || 'Customer';
   if (phone) {
     notifyOrderPlaced(order, phone, name);
-    // Save phone to user profile if missing
-    if (!user?.phone && phone) await db.prepare('UPDATE users SET phone=? WHERE id=?').run(phone, req.user.id);
+    // Save phone to user profile if missing (auth only)
+    if (req.user && !user?.phone && phone) await db.prepare('UPDATE users SET phone=? WHERE id=?').run(phone, req.user.id);
   }
 
   res.status(201).json({ order_number, id });

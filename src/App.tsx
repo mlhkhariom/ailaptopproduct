@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { SiteSettingsProvider } from "@/contexts/SiteSettingsContext";
 import { MaintenanceGate } from "@/components/MaintenanceGate";
 import { WhatsAppButton, BackToTopButton, CookieConsent } from "@/components/SiteFeatures";
+import { NewsletterPopup, SaleCountdown } from "@/components/SiteWidgets";
 import { AnalyticsScripts } from "@/components/AnalyticsScripts";
 import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -167,6 +168,7 @@ const App = () => (
           <WhatsAppButton />
           <BackToTopButton />
           <CookieConsent />
+          <NewsletterPopup />
         </BrowserRouter>
         </MaintenanceGate>
         </SiteSettingsProvider>
