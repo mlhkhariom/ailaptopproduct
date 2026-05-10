@@ -26,8 +26,20 @@ const Index = () => {
 
   useEffect(() => {
     fetchProducts();
-    api.getCMS('benefit').then(d => setBenefits(d.map((i: any) => ({ ...i.content, _id: i.id })))).catch(() => {});
-    api.getCMS('testimonial').then(d => setTestimonials(d.map((i: any) => ({ ...i.content, _id: i.id })))).catch(() => {});
+    api.getCMS('benefit').then((d: any) => {
+      const list = Array.isArray(d) ? d : [];
+      setBenefits(list.map((i: any) => {
+        const c = typeof i.content === 'string' ? JSON.parse(i.content) : i.content;
+        return { ...c, _id: i.id };
+      }));
+    }).catch(() => {});
+    api.getCMS('testimonial').then((d: any) => {
+      const list = Array.isArray(d) ? d : [];
+      setTestimonials(list.map((i: any) => {
+        const c = typeof i.content === 'string' ? JSON.parse(i.content) : i.content;
+        return { ...c, _id: i.id };
+      }));
+    }).catch(() => {});
   }, []);
 
   return (
