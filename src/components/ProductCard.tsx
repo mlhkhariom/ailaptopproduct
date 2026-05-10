@@ -9,12 +9,14 @@ import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import { toast } from "sonner";
 
 const ProductCard = ({ product }: { product: any }) => {
-  const { show_reviews, show_stock_count, show_hindi_names } = useSiteSettings();
+  const { show_reviews, show_stock_count, show_hindi_names, wishlist_enabled, new_arrivals_badge } = useSiteSettings();
   const origPrice = product.original_price || product.originalPrice;
   const inStock = product.in_stock ?? product.inStock ?? true;
   const nameHi = product.name_hi || product.nameHi;
   const discount = origPrice ? Math.round(((origPrice - product.price) / origPrice) * 100) : 0;
   const isLowStock = product.stock > 0 && product.stock <= 5;
+  // NEW badge — products created within last 30 days
+  const isNewArrival = new_arrivals_badge && product.created_at && (Date.now() - new Date(product.created_at).getTime()) < 30 * 24 * 3600 * 1000;
 
   const addItem = useCartStore((s) => s.addItem);
   const { toggleItem, hasItem } = useWishlistStore();
@@ -26,6 +28,7 @@ const ProductCard = ({ product }: { product: any }) => {
         <div className="relative overflow-hidden aspect-square bg-muted">
           <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           {discount > 0 && <Badge className="absolute top-3 left-3 bg-accent text-accent-foreground">{discount}% OFF</Badge>}
+          {isNewArrival && <Badge className="absolute top-3 right-3 bg-green-600 text-white text-[9px]">NEW</Badge>}
           {isLowStock && show_stock_count && <Badge variant="destructive" className="absolute top-3 left-3 text-[9px]" style={discount > 0 ? { top: '2.5rem' } : {}}>Only {product.stock} left!</Badge>}
           {!inStock && (
             <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center">
@@ -54,10 +57,12 @@ const ProductCard = ({ product }: { product: any }) => {
             {origPrice && <span className="text-xs text-muted-foreground line-through">₹{origPrice}</span>}
           </div>
           <div className="flex items-center gap-1">
-            <Button size="icon" variant="ghost" className="h-8 w-8"
-              onClick={(e) => { e.preventDefault(); toggleItem(product); toast(wishlisted ? "Removed from wishlist" : "Added to wishlist"); }}>
-              <Heart className={`h-4 w-4 ${wishlisted ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
-            </Button>
+            {wishlist_enabled !== false && (
+              <Button size="icon" variant="ghost" className="h-8 w-8"
+                onClick={(e) => { e.preventDefault(); toggleItem(product); toast(wishlisted ? "Removed from wishlist" : "Added to wishlist"); }}>
+                <Heart className={`h-4 w-4 ${wishlisted ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+              </Button>
+            )}
             <Button size="icon" variant="ghost" className="h-8 w-8 text-primary hover:bg-primary hover:text-primary-foreground"
               disabled={!inStock}
               onClick={(e) => { e.preventDefault(); addItem(product); toast.success("Added to cart!"); }}>

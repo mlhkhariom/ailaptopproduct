@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SiteSettingsProvider } from "@/contexts/SiteSettingsContext";
 import { MaintenanceGate } from "@/components/MaintenanceGate";
+import { WhatsAppButton, BackToTopButton, CookieConsent } from "@/components/SiteFeatures";
 import { AnalyticsScripts } from "@/components/AnalyticsScripts";
 import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -162,6 +163,10 @@ const App = () => (
             <Route path="/admin/erp/wa-templates" element={<AdminRoute><AdminWATemplates /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          {/* Global site-wide features (admin-controlled) */}
+          <WhatsAppButton />
+          <BackToTopButton />
+          <CookieConsent />
         </BrowserRouter>
         </MaintenanceGate>
         </SiteSettingsProvider>

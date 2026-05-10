@@ -10,6 +10,20 @@ interface SiteSettings {
   show_hindi_names: boolean;
   enable_reels: boolean;
   cookie_consent: boolean;
+  // New features
+  dark_mode_toggle: boolean;
+  guest_checkout: boolean;
+  product_zoom: boolean;
+  emi_calculator: boolean;
+  recently_viewed: boolean;
+  wishlist_enabled: boolean;
+  compare_enabled: boolean;
+  free_shipping_banner: boolean;
+  back_to_top: boolean;
+  sticky_header: boolean;
+  sale_countdown: boolean;
+  newsletter_popup: boolean;
+  new_arrivals_badge: boolean;
 }
 
 interface AppSettings {
@@ -37,6 +51,11 @@ const defaults: SettingsCtx = {
   features: {
     maintenance_mode: false, show_reviews: true, show_stock_count: true,
     whatsapp_chat_button: true, show_hindi_names: true, enable_reels: true, cookie_consent: true,
+    // New features — sensible defaults
+    dark_mode_toggle: true, guest_checkout: true, product_zoom: true, emi_calculator: true,
+    recently_viewed: true, wishlist_enabled: true, compare_enabled: false, free_shipping_banner: true,
+    back_to_top: true, sticky_header: true, sale_countdown: false, newsletter_popup: false,
+    new_arrivals_badge: true,
   },
   app: {
     store_name: 'AI Laptop Wala', store_tagline: "Nature's Power, Modern Science",

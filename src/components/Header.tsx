@@ -5,10 +5,12 @@ import logo from "@/assets/logo.jpeg";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import GlobalSearch from "@/components/GlobalSearch";
+import { FreeShippingBanner } from "@/components/SiteFeatures";
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -28,6 +30,7 @@ const Header = () => {
   const cartCount = useCartStore((s) => s.getItemCount());
   const wishlistCount = useWishlistStore((s) => s.items.length);
   const { user, logout, isAdmin } = useAuth();
+  const { sticky_header, wishlist_enabled } = useSiteSettings();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -44,7 +47,8 @@ const Header = () => {
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-[70] transition-all duration-500 ${scrolled ? "bg-card/95 backdrop-blur-xl shadow-lg border-b border-border/50" : "bg-transparent backdrop-blur-md"}`}>
+      <FreeShippingBanner />
+      <header className={`${sticky_header !== false ? 'fixed' : 'relative'} top-0 left-0 right-0 z-[70] transition-all duration-500 ${scrolled ? "bg-card/95 backdrop-blur-xl shadow-lg border-b border-border/50" : "bg-transparent backdrop-blur-md"}`}>
         <nav className="container mx-auto flex items-center justify-between px-4 py-2.5 md:py-3">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
@@ -70,13 +74,15 @@ const Header = () => {
               <GlobalSearch className="w-56" />
             </div>
 
-            {/* Wishlist */}
-            <Link to="/wishlist">
-              <Button variant="ghost" size="icon" className="relative h-9 w-9">
-                <Heart className="h-4 w-4" />
-                {wishlistCount > 0 && <span className="absolute -top-0.5 -right-0.5 bg-destructive text-destructive-foreground text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{wishlistCount}</span>}
-              </Button>
-            </Link>
+            {/* Wishlist (feature toggle) */}
+            {wishlist_enabled !== false && (
+              <Link to="/wishlist">
+                <Button variant="ghost" size="icon" className="relative h-9 w-9">
+                  <Heart className="h-4 w-4" />
+                  {wishlistCount > 0 && <span className="absolute -top-0.5 -right-0.5 bg-destructive text-destructive-foreground text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{wishlistCount}</span>}
+                </Button>
+              </Link>
+            )}
 
             {/* Cart */}
             <Link to="/cart">
