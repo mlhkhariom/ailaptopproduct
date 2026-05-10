@@ -467,6 +467,10 @@ export const initDB = async () => {
     "ALTER TABLE leads ADD COLUMN IF NOT EXISTS deal_value REAL DEFAULT 0",
     // Multi-branch Phase A
     "ALTER TABLE staff ADD COLUMN IF NOT EXISTS branch_id TEXT",
+    "ALTER TABLE staff ADD COLUMN IF NOT EXISTS aadhaar_url TEXT",
+    "ALTER TABLE staff ADD COLUMN IF NOT EXISTS pan_url TEXT",
+    "ALTER TABLE staff ADD COLUMN IF NOT EXISTS offer_letter_url TEXT",
+    "ALTER TABLE staff ADD COLUMN IF NOT EXISTS other_doc_url TEXT",
     "ALTER TABLE expenses ADD COLUMN IF NOT EXISTS branch_id TEXT",
     "ALTER TABLE leads ADD COLUMN IF NOT EXISTS branch_id TEXT",
     "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS branch_id TEXT",

@@ -21,7 +21,7 @@ const req = (method: string, path: string, body?: any) =>
 
 const ROLES = ['Technician', 'Sales', 'Manager', 'Accountant', 'Helper', 'Receptionist', 'Driver'];
 
-const emptyForm = { name: '', role: '', phone: '', email: '', salary: 0, joining_date: '', address: '', is_active: 1 };
+const emptyForm = { name: '', role: '', phone: '', email: '', salary: 0, joining_date: '', address: '', is_active: 1, aadhaar_url: '', pan_url: '', offer_letter_url: '', other_doc_url: '' };
 
 const ROLE_COLORS: Record<string, string> = {
   Technician: 'bg-blue-100 text-blue-700',
@@ -247,6 +247,11 @@ export default function AdminStaff() {
                     {s.email && <p className="text-xs text-muted-foreground flex items-center gap-1"><Mail className="h-3 w-3" />{s.email}</p>}
                     <p className="text-xs font-semibold text-primary">₹{(s.salary || 0).toLocaleString('en-IN')}/month</p>
                     {s.joining_date && <p className="text-[10px] text-muted-foreground">Joined: {s.joining_date}</p>}
+                    <div className="flex gap-1 mt-1 flex-wrap">
+                      {s.aadhaar_url && <a href={s.aadhaar_url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 underline">Aadhaar</a>}
+                      {s.pan_url && <a href={s.pan_url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 underline">PAN</a>}
+                      {s.offer_letter_url && <a href={s.offer_letter_url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 underline">Offer</a>}
+                    </div>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1 items-end">
@@ -392,6 +397,23 @@ export default function AdminStaff() {
                 <Label className="text-xs">Active</Label>
               </div>
             </div>
+              {/* Documents */}
+              <div className="border rounded-lg p-3 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Documents (paste URL or upload link)</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { key: 'aadhaar_url', label: 'Aadhaar Card' },
+                    { key: 'pan_url', label: 'PAN Card' },
+                    { key: 'offer_letter_url', label: 'Offer Letter' },
+                    { key: 'other_doc_url', label: 'Other Document' },
+                  ].map(d => (
+                    <div key={d.key}>
+                      <Label className="text-xs">{d.label}</Label>
+                      <Input className="mt-1 h-8 text-xs" value={form[d.key] || ''} onChange={e => setForm((f: any) => ({ ...f, [d.key]: e.target.value }))} placeholder="https://..." />
+                    </div>
+                  ))}
+                </div>
+              </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
               <Button onClick={save}>💾 Save</Button>

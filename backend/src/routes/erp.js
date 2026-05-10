@@ -167,11 +167,11 @@ router.get('/staff', authMiddleware, adminOnly, async (req, res) => {
 });
 
 router.post('/staff', authMiddleware, adminOnly, async (req, res) => {
-  const { name, role, phone, email, salary, joining_date, address, branch_id } = req.body;
+  const { name, role, phone, email, salary, joining_date, address, branch_id, aadhaar_url, pan_url, offer_letter_url, other_doc_url } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
   const id = uuid();
-  await db.prepare('INSERT INTO staff (id,name,role,phone,email,salary,joining_date,address,branch_id) VALUES (?,?,?,?,?,?,?,?,?)')
-    .run(id, name, role, phone, email, salary || 0, joining_date, address, branch_id || null);
+  await db.prepare('INSERT INTO staff (id,name,role,phone,email,salary,joining_date,address,branch_id,aadhaar_url,pan_url,offer_letter_url,other_doc_url) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(id, name, role, phone, email, salary || 0, joining_date, address, branch_id || null, aadhaar_url||null, pan_url||null, offer_letter_url||null, other_doc_url||null);
   res.status(201).json({ id });
 });
 
