@@ -4,6 +4,7 @@ import db from '../db/database.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { adminOnly } from '../middleware/adminOnly.js';
 import { notifyOrderPlaced, notifyOrderShipped, notifyOrderDelivered, notifyInvoiceReady } from '../whatsapp/notifications.js';
+import { sendEmail, EmailTemplates } from '../lib/email.js';
 
 const router = Router();
 
@@ -38,30 +39,27 @@ router.post('/', authMiddleware, async (req, res) => {
   await db.prepare('INSERT INTO notifications (id, type, title, message, link) VALUES (?, ?, ?, ?, ?)')
     .run(uuid(), 'order', 'New Order', `Order ${order_number} placed for ₹${total}`, `/admin/orders`);
 
-  // Email notification to customer — read SMTP from DB first, env fallback
+  // Email notification — uses central helper (respects SMTP + toggle)
   try {
-    const getS = async (k) => (await db.prepare('SELECT value FROM app_settings WHERE key=?').get(k))?.value;
-    const smtpHost = (await getS('smtp_host')) || process.env.SMTP_HOST;
-    const smtpUser = (await getS('smtp_user')) || process.env.SMTP_USER;
-    const smtpPass = (await getS('smtp_pass')) || process.env.SMTP_PASS;
-    const emailOrderConfirm = (await getS('email_order_confirmation')) !== 'false'; // default ON
-    if (smtpHost && smtpUser && emailOrderConfirm) {
-      const user = await db.prepare('SELECT email, name FROM users WHERE id=?').get(req.user.id);
-      if (user?.email) {
-        const nodemailer = await import('nodemailer');
-        const transporter = nodemailer.default.createTransport({
-          host: smtpHost,
-          port: parseInt((await getS('smtp_port')) || process.env.SMTP_PORT || '587'),
-          secure: (await getS('smtp_secure')) === 'true',
-          auth: { user: smtpUser, pass: smtpPass },
-        });
-        await transporter.sendMail({
-          from: (await getS('smtp_from')) || process.env.SMTP_FROM || 'info@ailaptopwala.com',
-          to: user.email,
-          subject: `Order Confirmed #${order_number} — AI Laptop Wala`,
-          html: `<h2>Hi ${user.name},</h2><p>Your order <b>#${order_number}</b> has been placed successfully.</p><p>Total: <b>₹${total}</b></p><p>Track: <a href="https://ailaptopwala.com/track-order?number=${order_number}">Click here</a></p><p>Thank you for shopping with AI Laptop Wala!</p>`
-        });
-      }
+    const order = await db.prepare('SELECT * FROM orders WHERE id=?').get(id);
+    const user = await db.prepare('SELECT email, name FROM users WHERE id=?').get(req.user.id);
+    if (user?.email) {
+      await sendEmail({
+        to: user.email,
+        subject: `Order Confirmed #${order_number} — AI Laptop Wala`,
+        html: EmailTemplates.orderConfirmation(order, user.name),
+        toggleKey: 'email_order_confirmation',
+      });
+    }
+    // Admin: New Order Alert
+    const adminEmail = (await db.prepare("SELECT value FROM app_settings WHERE key='site_email'").get())?.value;
+    if (adminEmail) {
+      await sendEmail({
+        to: adminEmail,
+        subject: `🔔 New Order #${order_number} — ₹${total}`,
+        html: EmailTemplates.adminNewOrder(order, user?.name, user?.email, (await db.prepare('SELECT phone FROM users WHERE id=?').get(req.user.id))?.phone),
+        toggleKey: 'email_admin_new_order',
+      });
     }
   } catch (e) { console.error('Order email error:', e.message); }
 
@@ -113,7 +111,7 @@ router.put('/:id/status', authMiddleware, adminOnly, async (req, res) => {
   await db.prepare('UPDATE orders SET status = ?, tracking_id = ?, courier = ? WHERE id = ?').run(status, tracking_id, courier, req.params.id);
 
   // WhatsApp notification on status change
-  const order = await db.prepare('SELECT o.*, u.name as uname, u.phone as uphone FROM orders o LEFT JOIN users u ON o.user_id=u.id WHERE o.id=?').get(req.params.id);
+  const order = await db.prepare('SELECT o.*, u.name as uname, u.phone as uphone, u.email as uemail FROM orders o LEFT JOIN users u ON o.user_id=u.id WHERE o.id=?').get(req.params.id);
   if (order) {
     const addr = JSON.parse(order.address || '{}');
     const phone = order.uphone || addr.phone || addr.mobile;
@@ -137,7 +135,18 @@ router.put('/:id/status', authMiddleware, adminOnly, async (req, res) => {
             }
             await db.prepare('INSERT INTO loyalty_transactions (id,phone,type,points,ref_id,ref_type,note) VALUES (?,?,?,?,?,?,?)').run(uuid(), cleanPhone, 'earn', pts, order.id, 'order', `Earned ${pts} pts on order ₹${order.total}`);
           }
-        } catch (e) { console.error("Orders: branch stock deduct failed:", e.message); }
+        } catch (e) { console.error("Orders: loyalty failed:", e.message); }
+      }
+    }
+
+    // ── Email notifications on status change ──
+    const email = (order.uemail) || (await db.prepare('SELECT email FROM users WHERE id=?').get(order.user_id))?.email || addr.email;
+    if (email) {
+      if (status === 'shipped') {
+        await sendEmail({ to: email, subject: `📦 Order #${order.order_number} Shipped`, html: EmailTemplates.orderShipped({ ...order, tracking_id }, name, tracking_id), toggleKey: 'email_order_shipped' });
+      } else if (status === 'delivered') {
+        await sendEmail({ to: email, subject: `✅ Order #${order.order_number} Delivered`, html: EmailTemplates.orderDelivered(order, name), toggleKey: 'email_order_delivered' });
+        await sendEmail({ to: email, subject: `Invoice — ${order.order_number}`, html: EmailTemplates.invoice({ invoice_number: order.order_number, amount: order.total, description: 'Order invoice' }, name), toggleKey: 'email_invoice' });
       }
     }
   }

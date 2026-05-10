@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuid } from 'uuid';
 import db from '../db/database.js';
+import { sendEmail, EmailTemplates } from '../lib/email.js';
 
 const router = Router();
 
@@ -20,7 +21,51 @@ router.post('/register', async (req, res) => {
 
   const user = await db.prepare('SELECT id, name, email, role, phone FROM users WHERE id = ?').get(id);
   const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+  // Welcome email (non-blocking)
+  sendEmail({ to: email, subject: '🎉 Welcome to AI Laptop Wala!', html: EmailTemplates.welcome(name), toggleKey: 'email_welcome' }).catch(e => console.error('Welcome email:', e.message));
+
   res.status(201).json({ token, user });
+});
+
+// POST /api/auth/forgot-password — request reset
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+  const user = await db.prepare('SELECT id, name FROM users WHERE email=?').get(email.toLowerCase().trim());
+  // Always return success (don't leak whether email exists)
+  if (!user) return res.json({ message: 'If account exists, reset email sent' });
+
+  // Generate reset token (valid 1h)
+  const resetToken = jwt.sign({ id: user.id, type: 'reset' }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '1h' });
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+  const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
+
+  await sendEmail({
+    to: email,
+    subject: '🔐 Password Reset — AI Laptop Wala',
+    html: EmailTemplates.passwordReset(user.name, resetLink),
+    toggleKey: 'email_password_reset',
+  });
+
+  res.json({ message: 'If account exists, reset email sent' });
+});
+
+// POST /api/auth/reset-password — complete reset
+router.post('/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) return res.status(400).json({ error: 'token and newPassword required' });
+  if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    if (decoded.type !== 'reset') return res.status(400).json({ error: 'Invalid token' });
+    const hash = bcrypt.hashSync(newPassword, 10);
+    await db.prepare('UPDATE users SET password=? WHERE id=?').run(hash, decoded.id);
+    res.json({ message: 'Password reset successful. Please login.' });
+  } catch (e) {
+    res.status(400).json({ error: 'Invalid or expired token' });
+  }
 });
 
 // POST /api/auth/login

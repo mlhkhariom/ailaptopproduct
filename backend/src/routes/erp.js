@@ -140,6 +140,27 @@ router.put('/job-cards/:id', authMiddleware, adminOnly, async (req, res) => {
         msg = `Repair Complete - AI Laptop Wala\n\nNamaste ${job.customer_name}!\n\nAapka ${job.device_brand} ${job.device_model} repair ho gaya hai!\nJob ID: ${job.booking_number}\nTotal: Rs.${total_charge.toLocaleString('en-IN')}\n\nPickup: +91 98934 96163\nSilver Mall, RNT Marg, Indore`;
       if (msg) await queueNotification(job.customer_phone, msg, 'job_update');
     }
+
+    // Email notification on status change
+    if (job?.customer_email && status && prev?.status !== status) {
+      const { sendEmail, EmailTemplates } = await import('../lib/email.js');
+      const statusLabel = { pending: 'Pending', in_progress: 'In Progress', completed: 'Completed', cancelled: 'Cancelled', waiting_parts: 'Waiting for Parts' }[status] || status;
+      await sendEmail({
+        to: job.customer_email,
+        subject: `🛠️ Service Update — ${job.booking_number} — ${statusLabel}`,
+        html: EmailTemplates.serviceUpdate(job, job.customer_name, statusLabel),
+        toggleKey: 'email_service_update',
+      });
+      // Invoice email when completed + paid
+      if (status === 'completed' && payment_status === 'paid') {
+        await sendEmail({
+          to: job.customer_email,
+          subject: `Invoice — ${job.booking_number}`,
+          html: EmailTemplates.invoice(job, job.customer_name),
+          toggleKey: 'email_invoice',
+        });
+      }
+    }
   } catch (e) { console.error("Operation error:", e.message); }
 
   res.json({ message: 'Updated' });
