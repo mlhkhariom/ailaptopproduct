@@ -65,6 +65,7 @@ import AdminPayroll from "./pages/admin/AdminPayroll";
 import AdminReportBuilder from "./pages/admin/AdminReportBuilder";
 import AdminLiveDashboard from "./pages/admin/AdminLiveDashboard";
 import AdminCustomer360 from "./pages/admin/AdminCustomer360";
+import AdminAuditLog from "./pages/admin/AdminAuditLog";
 import AdminLoyalty from "./pages/admin/AdminLoyalty";
 import AdminKPIAlerts from "./pages/admin/AdminKPIAlerts";
 import AdminWATemplates from "./pages/admin/AdminWATemplates";
@@ -146,6 +147,7 @@ const App = () => (
             <Route path="/admin/contacts" element={<AdminRoute><AdminContacts /></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
             <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
+            <Route path="/admin/erp/audit-log" element={<AdminRoute><AdminAuditLog /></AdminRoute>} />
             <Route path="/admin/erp/customer360" element={<AdminRoute><AdminCustomer360 /></AdminRoute>} />
             <Route path="/admin/erp/loyalty" element={<AdminRoute><AdminLoyalty /></AdminRoute>} />
             <Route path="/admin/erp/kpi-alerts" element={<AdminRoute><AdminKPIAlerts /></AdminRoute>} />

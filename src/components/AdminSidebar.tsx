@@ -1,4 +1,4 @@
-import { LayoutDashboard, Tv2, Sun, Moon, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, Box, Calendar, MessageSquare, CalendarCheck, CalendarX, RefreshCw, Table2, Gift, UserCircle, FileSpreadsheet } from "lucide-react";
+import { LayoutDashboard, Tv2, Sun, Moon, Shield, Search, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, Box, Calendar, MessageSquare, CalendarCheck, CalendarX, RefreshCw, Table2, Gift, UserCircle, FileSpreadsheet } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import {
@@ -46,6 +46,7 @@ const erpGroups = [
       { title: "Leaves", url: "/admin/erp/leaves", icon: CalendarX },
       { title: "Loyalty Program", url: "/admin/erp/loyalty", icon: Gift },
       { title: "KPI Alerts", url: "/admin/erp/kpi-alerts", icon: Bell, perm: 'kpi_alerts' },
+      { title: "Audit Log", url: "/admin/erp/audit-log", icon: Shield, perm: "kpi_alerts" },
       { title: "Branches", url: "/admin/erp/branches", icon: Building2 },
       { title: "WA Templates", url: "/admin/erp/wa-templates", icon: MessageCircle },
     ],
@@ -149,6 +150,16 @@ export function AdminSidebar() {
           )}
         </div>
       </SidebarHeader>
+
+      {/* Search */}
+      {!collapsed && (
+        <div className="px-3 pb-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
+            <input className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border bg-background focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Search menu..." value={sidebarSearch} onChange={e => setSidebarSearch(e.target.value)} />
+          </div>
+        </div>
+      )}
 
       <SidebarContent className="px-2">
         {/* ── ERP Section ── */}

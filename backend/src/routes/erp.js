@@ -76,6 +76,7 @@ router.put('/job-cards/:id', authMiddleware, adminOnly, async (req, res) => {
   const prev = await db.prepare('SELECT status, parts_used FROM service_bookings WHERE id=?').get(req.params.id);
 
   const { sla_hours } = req.body;
+  const prevJob = await db.prepare('SELECT status,payment_status FROM service_bookings WHERE id=?').get(req.params.id);
   await db.prepare(`UPDATE service_bookings SET status=?,technician=?,diagnosis=?,
     parts_used=?,labour_charge=?,parts_charge=?,total_charge=?,
     payment_status=?,payment_method=?,notes=?,priority=?,branch_id=?,gst_enabled=?,
@@ -1832,4 +1833,18 @@ router.put('/recurring-expenses/:id', authMiddleware, adminOnly, async (req, res
   const { is_active } = req.body;
   await db.prepare('UPDATE recurring_expenses SET is_active=? WHERE id=?').run(is_active ? 1 : 0, req.params.id);
   res.json({ message: 'Updated' });
+});
+
+// ── AUDIT LOG ─────────────────────────────────────────────
+router.get('/audit-log', authMiddleware, adminOnly, async (req, res) => {
+  const { module, user_id, from, to, limit = 100 } = req.query;
+  let q = 'SELECT * FROM audit_log WHERE 1=1';
+  const params = [];
+  if (module) { q += ' AND module=?'; params.push(module); }
+  if (user_id) { q += ' AND user_id=?'; params.push(user_id); }
+  if (from) { q += ' AND DATE(created_at)>=?'; params.push(from); }
+  if (to) { q += ' AND DATE(created_at)<=?'; params.push(to); }
+  q += ' ORDER BY created_at DESC LIMIT ?';
+  params.push(parseInt(limit));
+  res.json(await db.prepare(q).all(...params) || []);
 });
