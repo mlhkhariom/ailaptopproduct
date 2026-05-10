@@ -70,6 +70,7 @@ import AdminKPIAlerts from "./pages/admin/AdminKPIAlerts";
 import AdminWATemplates from "./pages/admin/AdminWATemplates";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import RepairTrack from "./pages/RepairTrack";
+import CustomerPortal from "./pages/CustomerPortal";
 import NotFound from "./pages/NotFound";
 import FAQ from "./pages/FAQ";
 
@@ -108,6 +109,7 @@ const App = () => (
             <Route path="/services" element={<Services />} />
             <Route path="/repair" element={<Repair />} />
             <Route path="/track" element={<RepairTrack />} />
+            <Route path="/my-account" element={<CustomerPortal />} />
             <Route path="/wishlist" element={<Wishlist />} />
 
             {/* Protected Customer */}

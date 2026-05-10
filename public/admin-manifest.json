@@ -1,0 +1,23 @@
+{
+  "name": "AI Laptop Wala ERP",
+  "short_name": "ALW ERP",
+  "description": "AI Laptop Wala — ERP & Admin Panel for Indore's trusted laptop store",
+  "start_url": "/admin/erp",
+  "scope": "/admin",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#FF8000",
+  "lang": "en-IN",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "/favicon.png", "sizes": "any", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Job Cards", "url": "/admin/erp/job-cards", "description": "View & manage repair jobs" },
+    { "name": "Live Dashboard", "url": "/admin/erp/live", "description": "Real-time shop stats" },
+    { "name": "CRM", "url": "/admin/erp/crm", "description": "Sales leads & pipeline" },
+    { "name": "Billing", "url": "/admin/erp/billing", "description": "Invoices & payments" },
+    { "name": "Inventory", "url": "/admin/inventory", "description": "Stock management" }
+  ]
+}
