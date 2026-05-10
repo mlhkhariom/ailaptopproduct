@@ -12,19 +12,30 @@ const isEnabled = async (key) => (await getSetting(key)) === 'true';
 // GET /api/payment/shipping?subtotal=500
 router.get('/shipping', async (req, res) => {
   const subtotal = Number(req.query.subtotal) || 0;
+  const pincode = String(req.query.pincode || '');
   const freeAbove = Number(await getSetting('shipping_free_above')) || 499;
   const flatRate = Number(await getSetting('shipping_flat_rate')) || 50;
   const expressRate = Number(await getSetting('shipping_express')) || 150;
   const codCharge = Number(await getSetting('shipping_cod_charge')) || 30;
+  const localRate = Number(await getSetting('shipping_local_rate')) || 0;
+  const localPrefix = await getSetting('shipping_local_pincode') || '452';
   const courier = await getSetting('shipping_courier') || 'dtdc';
+  const daysLocal = await getSetting('shipping_days_local') || '1-2';
+  const daysNational = await getSetting('shipping_days_national') || '3-5';
+
+  const isLocal = pincode && pincode.startsWith(localPrefix);
+  const isFree = subtotal >= freeAbove;
+  const standard = isLocal ? localRate : (isFree ? 0 : flatRate);
 
   res.json({
-    free: subtotal >= freeAbove,
-    standard: subtotal >= freeAbove ? 0 : flatRate,
+    free: isFree && !isLocal,
+    is_local: isLocal,
+    standard,
     express: expressRate,
     cod_charge: codCharge,
     free_above: freeAbove,
     courier,
+    estimated_days: isLocal ? daysLocal : daysNational,
   });
 });
 

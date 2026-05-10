@@ -212,19 +212,40 @@ const AdminSettings = () => {
           <div className="grid lg:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Shipping Configuration</CardTitle>
-                <CardDescription className="text-xs">Delivery charges and courier settings</CardDescription>
+                <CardTitle className="text-base">Basic Shipping Rates</CardTitle>
+                <CardDescription className="text-xs">Default delivery charges</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-xs">Flat Rate Shipping (₹)</Label><Input type="number" className="mt-1 h-9" value={s('shipping_flat_rate')} onChange={e => setS('shipping_flat_rate', e.target.value)} /></div>
-                  <div><Label className="text-xs">Free Shipping Above (₹)</Label><Input type="number" className="mt-1 h-9" value={s('shipping_free_above')} onChange={e => setS('shipping_free_above', e.target.value)} /></div>
+                  <div><Label className="text-xs">Flat Rate (₹)</Label><Input type="number" className="mt-1 h-9" value={s('shipping_flat_rate')} onChange={e => setS('shipping_flat_rate', e.target.value)} placeholder="50" /></div>
+                  <div><Label className="text-xs">Free Shipping Above (₹)</Label><Input type="number" className="mt-1 h-9" value={s('shipping_free_above')} onChange={e => setS('shipping_free_above', e.target.value)} placeholder="499" /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-xs">Express Shipping (₹)</Label><Input type="number" className="mt-1 h-9" value={s('shipping_express')} onChange={e => setS('shipping_express', e.target.value)} /></div>
-                  <div><Label className="text-xs">COD Extra Charge (₹)</Label><Input type="number" className="mt-1 h-9" value={s('shipping_cod_charge')} onChange={e => setS('shipping_cod_charge', e.target.value)} /></div>
+                  <div><Label className="text-xs">Express (₹)</Label><Input type="number" className="mt-1 h-9" value={s('shipping_express')} onChange={e => setS('shipping_express', e.target.value)} placeholder="150" /></div>
+                  <div><Label className="text-xs">COD Extra (₹)</Label><Input type="number" className="mt-1 h-9" value={s('shipping_cod_charge')} onChange={e => setS('shipping_cod_charge', e.target.value)} placeholder="30" /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-xs">Local Delivery (Indore)</Label><Input type="number" className="mt-1 h-9" value={s('shipping_local_rate')} onChange={e => setS('shipping_local_rate', e.target.value)} placeholder="0 (free)" /></div>
+                  <div><Label className="text-xs">Local Pincode Prefix</Label><Input className="mt-1 h-9" value={s('shipping_local_pincode')} onChange={e => setS('shipping_local_pincode', e.target.value)} placeholder="452 (Indore)" /></div>
                 </div>
                 <Separator />
+                <div>
+                  <Label className="text-xs mb-2 block">Estimated Delivery Time</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label className="text-[10px] text-muted-foreground">Local (days)</Label><Input type="number" className="mt-1 h-8" value={s('shipping_days_local')} onChange={e => setS('shipping_days_local', e.target.value)} placeholder="1-2" /></div>
+                    <div><Label className="text-[10px] text-muted-foreground">National (days)</Label><Input type="number" className="mt-1 h-8" value={s('shipping_days_national')} onChange={e => setS('shipping_days_national', e.target.value)} placeholder="3-5" /></div>
+                  </div>
+                </div>
+                <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Shipping')}><Save className="h-4 w-4" /> Save</Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Courier & Tracking</CardTitle>
+                <CardDescription className="text-xs">Courier API integration</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
                   <Label className="text-xs mb-2 block">Primary Courier Partner</Label>
                   <Select value={s('shipping_courier') || 'dtdc'} onValueChange={v => setS('shipping_courier', v)}>
@@ -233,47 +254,61 @@ const AdminSettings = () => {
                       <SelectItem value="dtdc">DTDC</SelectItem>
                       <SelectItem value="bluedart">BlueDart</SelectItem>
                       <SelectItem value="delhivery">Delhivery</SelectItem>
+                      <SelectItem value="shiprocket">Shiprocket</SelectItem>
                       <SelectItem value="indiapost">India Post</SelectItem>
                       <SelectItem value="ecom">Ecom Express</SelectItem>
                       <SelectItem value="xpressbees">XpressBees</SelectItem>
+                      <SelectItem value="nimbuspost">NimbusPost</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Shipping')}><Save className="h-4 w-4" /> Save</Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Tax Configuration</CardTitle>
-                <CardDescription className="text-xs">GST & tax settings for invoicing</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-xs">GST Rate (%)</Label><Input type="number" className="mt-1 h-9" defaultValue="8" /></div>
-                  <div><Label className="text-xs">GSTIN Number</Label><Input className="mt-1 h-9" placeholder="22AAAAA0000A1Z5" /></div>
-                </div>
-                <div><Label className="text-xs">Legal Business Name</Label><Input className="mt-1 h-9" value={s('legal_name')} onChange={e => setS('legal_name', e.target.value)} /></div>
-                <div><Label className="text-xs">PAN Number</Label><Input className="mt-1 h-9" value={s('pan_number')} onChange={e => setS('pan_number', e.target.value)} placeholder="ABCDE1234F" /></div>
+                <div><Label className="text-xs">Shiprocket API Email</Label><Input className="mt-1 h-9 text-xs" value={s('shiprocket_email')} onChange={e => setS('shiprocket_email', e.target.value)} placeholder="account@email.com" /></div>
+                <div><Label className="text-xs">Shiprocket API Password</Label><Input type="password" className="mt-1 h-9 text-xs" value={s('shiprocket_password')} onChange={e => setS('shiprocket_password', e.target.value)} placeholder="••••••••" /></div>
+                <div><Label className="text-xs">Pickup Pincode (Warehouse)</Label><Input className="mt-1 h-9" value={s('pickup_pincode') || '452010'} onChange={e => setS('pickup_pincode', e.target.value)} /></div>
                 <Separator />
                 <div className="flex items-center justify-between p-3 rounded-lg border">
                   <div>
-                    <p className="text-sm font-medium">Include Tax in Price</p>
-                    <p className="text-[10px] text-muted-foreground">Prices shown are inclusive of GST</p>
+                    <p className="text-sm font-medium">Auto Create Shipment</p>
+                    <p className="text-[10px] text-muted-foreground">Auto-push orders to courier on confirmed</p>
                   </div>
-                  <Switch checked={s('tax_inclusive') === 'true'} onCheckedChange={v => setS('tax_inclusive', String(v))} />
+                  <Switch checked={s('auto_shipment') === 'true'} onCheckedChange={v => setS('auto_shipment', String(v))} />
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg border">
                   <div>
-                    <p className="text-sm font-medium">Auto-generate Invoice</p>
-                    <p className="text-[10px] text-muted-foreground">PDF invoice sent to customer email</p>
+                    <p className="text-sm font-medium">Send Tracking SMS</p>
+                    <p className="text-[10px] text-muted-foreground">SMS + WhatsApp with tracking link</p>
                   </div>
-                  <Switch checked={s('auto_invoice') === 'true'} onCheckedChange={v => setS('auto_invoice', String(v))} />
+                  <Switch checked={s('tracking_sms') === 'true'} onCheckedChange={v => setS('tracking_sms', String(v))} />
                 </div>
-                <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Tax')}><Save className="h-4 w-4" /> Save</Button>
+                <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Courier')}><Save className="h-4 w-4" /> Save</Button>
               </CardContent>
             </Card>
+
           </div>
+
+          {/* Shipping Zones (optional advanced) */}
+          <Card className="mt-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Return & Refund Policy</CardTitle>
+              <CardDescription className="text-xs">Return period and conditions</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div><Label className="text-xs">Return Period (days)</Label><Input type="number" className="mt-1 h-9" value={s('return_days') || 7} onChange={e => setS('return_days', e.target.value)} /></div>
+                <div><Label className="text-xs">Refund Period (days)</Label><Input type="number" className="mt-1 h-9" value={s('refund_days') || 5} onChange={e => setS('refund_days', e.target.value)} /></div>
+                <div><Label className="text-xs">Restocking Fee (%)</Label><Input type="number" className="mt-1 h-9" value={s('restocking_fee') || 0} onChange={e => setS('restocking_fee', e.target.value)} /></div>
+              </div>
+              <div><Label className="text-xs">Return Policy Text (shown on product pages)</Label><Textarea className="mt-1 text-xs" rows={3} value={s('return_policy')} onChange={e => setS('return_policy', e.target.value)} placeholder="7-day easy returns. Original packaging required." /></div>
+              <div className="flex items-center justify-between p-3 rounded-lg border">
+                <div>
+                  <p className="text-sm font-medium">Allow Returns</p>
+                  <p className="text-[10px] text-muted-foreground">Customers can request returns</p>
+                </div>
+                <Switch checked={s('allow_returns') !== 'false'} onCheckedChange={v => setS('allow_returns', String(v))} />
+              </div>
+              <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Returns')}><Save className="h-4 w-4" /> Save</Button>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* PAYMENTS */}
@@ -324,6 +359,39 @@ const AdminSettings = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Tax & Invoice */}
+          <Card className="mt-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Tax & Invoice Configuration</CardTitle>
+              <CardDescription className="text-xs">GST & invoice settings</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div><Label className="text-xs">GST Rate (%)</Label><Input type="number" className="mt-1 h-9" value={s('gst_rate') || '18'} onChange={e => setS('gst_rate', e.target.value)} /></div>
+                <div><Label className="text-xs">GSTIN Number</Label><Input className="mt-1 h-9" value={s('gstin')} onChange={e => setS('gstin', e.target.value)} placeholder="22AAAAA0000A1Z5" /></div>
+                <div><Label className="text-xs">PAN Number</Label><Input className="mt-1 h-9" value={s('pan_number')} onChange={e => setS('pan_number', e.target.value)} placeholder="ABCDE1234F" /></div>
+              </div>
+              <div><Label className="text-xs">Legal Business Name</Label><Input className="mt-1 h-9" value={s('legal_name')} onChange={e => setS('legal_name', e.target.value)} placeholder="AI Laptop Wala Pvt Ltd" /></div>
+              <div className="grid md:grid-cols-2 gap-3">
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div>
+                    <p className="text-sm font-medium">Include Tax in Price</p>
+                    <p className="text-[10px] text-muted-foreground">Inclusive pricing</p>
+                  </div>
+                  <Switch checked={s('tax_inclusive') === 'true'} onCheckedChange={v => setS('tax_inclusive', String(v))} />
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div>
+                    <p className="text-sm font-medium">Auto-generate Invoice</p>
+                    <p className="text-[10px] text-muted-foreground">PDF emailed to customer</p>
+                  </div>
+                  <Switch checked={s('auto_invoice') === 'true'} onCheckedChange={v => setS('auto_invoice', String(v))} />
+                </div>
+              </div>
+              <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Tax')}><Save className="h-4 w-4" /> Save</Button>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* SEO */}
