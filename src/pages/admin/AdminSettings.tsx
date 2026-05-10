@@ -274,6 +274,106 @@ const AdminSettings = () => {
                   </div>
                 </div>
 
+                {/* ─── SMTP EMAIL ─── */}
+                <div className="p-4 rounded-xl border bg-muted/20 mt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Mail className="h-5 w-5 text-red-500" />
+                    <div>
+                      <h3 className="font-medium text-sm">SMTP Email Server</h3>
+                      <p className="text-[10px] text-muted-foreground">Sends order confirmations, invoices, CRM emails, password resets</p>
+                    </div>
+                    {s('smtp_host') && s('smtp_user') ? (
+                      <Badge variant="default" className="text-[9px] ml-auto bg-green-600">✓ Configured</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[9px] ml-auto">Not configured</Badge>
+                    )}
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div><Label className="text-xs">SMTP Host</Label><Input className="mt-1 h-9 text-xs" value={s('smtp_host')} onChange={e => setS('smtp_host', e.target.value)} placeholder="smtp.gmail.com" /></div>
+                    <div><Label className="text-xs">SMTP Port</Label><Input className="mt-1 h-9 text-xs" value={s('smtp_port') || '587'} onChange={e => setS('smtp_port', e.target.value)} placeholder="587" /></div>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-3 mt-3">
+                    <div><Label className="text-xs">SMTP User / Email</Label><Input className="mt-1 h-9 text-xs" value={s('smtp_user')} onChange={e => setS('smtp_user', e.target.value)} placeholder="info@ailaptopwala.com" /></div>
+                    <div><Label className="text-xs">SMTP Password / App Password</Label><Input className="mt-1 h-9 text-xs" type="password" value={s('smtp_pass')} onChange={e => setS('smtp_pass', e.target.value)} placeholder="••••••••" /></div>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-3 mt-3">
+                    <div><Label className="text-xs">From Address (display)</Label><Input className="mt-1 h-9 text-xs" value={s('smtp_from')} onChange={e => setS('smtp_from', e.target.value)} placeholder="AI Laptop Wala <info@ailaptopwala.com>" /></div>
+                    <div className="flex items-center gap-2 mt-5">
+                      <Switch checked={s('smtp_secure') === 'true'} onCheckedChange={v => setS('smtp_secure', String(v))} />
+                      <Label className="text-xs">SSL/TLS (Port 465)</Label>
+                    </div>
+                  </div>
+                  <div className="mt-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                    <p className="text-[10px] text-blue-900 dark:text-blue-300 font-medium mb-1">Quick Setup:</p>
+                    <ul className="text-[10px] text-blue-800 dark:text-blue-400 space-y-0.5">
+                      <li>• <b>Gmail:</b> smtp.gmail.com:587 — use App Password (not login password)</li>
+                      <li>• <b>Outlook:</b> smtp-mail.outlook.com:587</li>
+                      <li>• <b>Zoho:</b> smtp.zoho.com:465 (SSL)</li>
+                      <li>• <b>Hostinger:</b> smtp.hostinger.com:587</li>
+                    </ul>
+                  </div>
+                  <div className="flex items-center gap-2 mt-3 border-t pt-3">
+                    <Input
+                      className="h-9 text-xs flex-1"
+                      value={s('smtp_test_email') || s('site_email') || ''}
+                      onChange={e => setS('smtp_test_email', e.target.value)}
+                      placeholder="test@example.com"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-9 text-xs"
+                      onClick={async () => {
+                        const testTo = s('smtp_test_email') || s('site_email');
+                        if (!testTo) { toast.error('Enter test email'); return; }
+                        try {
+                          // Save first to ensure DB has latest values
+                          await api.updateAppSettings(appSettings);
+                          const token = localStorage.getItem('ailaptopwala_token');
+                          const r = await fetch('/api/erp/smtp-test', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ to: testTo }) }).then(x => x.json());
+                          if (r.error) toast.error(r.error); else toast.success(r.message);
+                        } catch (e: any) { toast.error(e.message); }
+                      }}
+                    >
+                      <Mail className="h-3 w-3 mr-1" /> Send Test Email
+                    </Button>
+                  </div>
+                </div>
+
+                {/* ─── EMAIL NOTIFICATIONS ─── */}
+                <div className="p-4 rounded-xl border bg-muted/20 mt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Bell className="h-5 w-5 text-orange-500" />
+                    <div>
+                      <h3 className="font-medium text-sm">Auto Email Notifications</h3>
+                      <p className="text-[10px] text-muted-foreground">Control which emails are sent automatically (requires SMTP configured)</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {[
+                      { key: 'email_order_confirmation', label: 'Order Confirmation', desc: 'When customer places order' },
+                      { key: 'email_order_shipped', label: 'Order Shipped', desc: 'When admin updates to shipped' },
+                      { key: 'email_order_delivered', label: 'Order Delivered', desc: 'When delivery confirmed' },
+                      { key: 'email_invoice', label: 'Invoice Email', desc: 'When invoice generated' },
+                      { key: 'email_password_reset', label: 'Password Reset', desc: 'When user requests reset' },
+                      { key: 'email_welcome', label: 'Welcome Email', desc: 'New user signup' },
+                      { key: 'email_service_update', label: 'Service Update', desc: 'Job card status change' },
+                      { key: 'email_admin_new_order', label: 'Admin: New Order Alert', desc: 'Email admin on every order' },
+                    ].map(row => (
+                      <div key={row.key} className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-accent/50">
+                        <div className="flex-1">
+                          <p className="text-xs font-medium">{row.label}</p>
+                          <p className="text-[10px] text-muted-foreground">{row.desc}</p>
+                        </div>
+                        <Switch
+                          checked={s(row.key) !== 'false'}
+                          onCheckedChange={v => setS(row.key, String(v))}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="p-4 rounded-xl border bg-muted/20">
                   <div className="flex items-center gap-2 mb-3">
                     <BarChart3 className="h-5 w-5 text-orange-500" />

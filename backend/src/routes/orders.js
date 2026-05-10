@@ -38,25 +38,32 @@ router.post('/', authMiddleware, async (req, res) => {
   await db.prepare('INSERT INTO notifications (id, type, title, message, link) VALUES (?, ?, ?, ?, ?)')
     .run(uuid(), 'order', 'New Order', `Order ${order_number} placed for ₹${total}`, `/admin/orders`);
 
-  // Email notification to customer (if email present + SMTP configured)
-  if (process.env.SMTP_HOST) {
-    try {
+  // Email notification to customer — read SMTP from DB first, env fallback
+  try {
+    const getS = async (k) => (await db.prepare('SELECT value FROM app_settings WHERE key=?').get(k))?.value;
+    const smtpHost = (await getS('smtp_host')) || process.env.SMTP_HOST;
+    const smtpUser = (await getS('smtp_user')) || process.env.SMTP_USER;
+    const smtpPass = (await getS('smtp_pass')) || process.env.SMTP_PASS;
+    const emailOrderConfirm = (await getS('email_order_confirmation')) !== 'false'; // default ON
+    if (smtpHost && smtpUser && emailOrderConfirm) {
       const user = await db.prepare('SELECT email, name FROM users WHERE id=?').get(req.user.id);
       if (user?.email) {
         const nodemailer = await import('nodemailer');
         const transporter = nodemailer.default.createTransport({
-          host: process.env.SMTP_HOST, port: parseInt(process.env.SMTP_PORT || '587'),
-          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+          host: smtpHost,
+          port: parseInt((await getS('smtp_port')) || process.env.SMTP_PORT || '587'),
+          secure: (await getS('smtp_secure')) === 'true',
+          auth: { user: smtpUser, pass: smtpPass },
         });
         await transporter.sendMail({
-          from: process.env.SMTP_FROM || 'info@ailaptopwala.com',
+          from: (await getS('smtp_from')) || process.env.SMTP_FROM || 'info@ailaptopwala.com',
           to: user.email,
           subject: `Order Confirmed #${order_number} — AI Laptop Wala`,
           html: `<h2>Hi ${user.name},</h2><p>Your order <b>#${order_number}</b> has been placed successfully.</p><p>Total: <b>₹${total}</b></p><p>Track: <a href="https://ailaptopwala.com/track-order?number=${order_number}">Click here</a></p><p>Thank you for shopping with AI Laptop Wala!</p>`
         });
       }
-    } catch (e) { console.error('Order email error:', e.message); }
-  }
+    }
+  } catch (e) { console.error('Order email error:', e.message); }
 
   // WhatsApp notification — phone from user profile OR checkout address
   const order = await db.prepare('SELECT * FROM orders WHERE id=?').get(id);

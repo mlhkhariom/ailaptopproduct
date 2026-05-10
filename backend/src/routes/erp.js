@@ -1956,25 +1956,61 @@ router.post('/leads/:id/email', authMiddleware, adminOnly, async (req, res) => {
   if (!lead?.email) return res.status(400).json({ error: 'Lead has no email' });
   if (!subject || !body) return res.status(400).json({ error: 'subject and body required' });
 
-  // Use nodemailer if configured, else just log
-  const smtpHost = process.env.SMTP_HOST;
-  if (smtpHost) {
+  // Load SMTP from DB (fallback to env)
+  const getS = async (k) => (await db.prepare('SELECT value FROM app_settings WHERE key=?').get(k))?.value;
+  const smtpHost = (await getS('smtp_host')) || process.env.SMTP_HOST;
+  const smtpPort = (await getS('smtp_port')) || process.env.SMTP_PORT || '587';
+  const smtpUser = (await getS('smtp_user')) || process.env.SMTP_USER;
+  const smtpPass = (await getS('smtp_pass')) || process.env.SMTP_PASS;
+  const smtpFrom = (await getS('smtp_from')) || process.env.SMTP_FROM || 'info@ailaptopwala.com';
+  const smtpSecure = (await getS('smtp_secure')) === 'true';
+
+  if (smtpHost && smtpUser) {
     try {
       const nodemailer = await import('nodemailer');
       const transporter = nodemailer.default.createTransport({
-        host: smtpHost, port: parseInt(process.env.SMTP_PORT || '587'),
-        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+        host: smtpHost, port: parseInt(smtpPort), secure: smtpSecure,
+        auth: { user: smtpUser, pass: smtpPass },
       });
-      await transporter.sendMail({
-        from: process.env.SMTP_FROM || 'info@ailaptopwala.com',
-        to: lead.email, subject, html: body,
-      });
+      await transporter.sendMail({ from: smtpFrom, to: lead.email, subject, html: body });
     } catch (e) { return res.status(500).json({ error: 'Email send failed: ' + e.message }); }
+  } else {
+    return res.status(400).json({ error: 'SMTP not configured. Go to Admin → Settings → API Keys → SMTP Email.' });
   }
-  // Log activity
   await db.prepare("INSERT INTO lead_activities (id,lead_id,type,note,created_by) VALUES (?,?,?,?,?)").run(uuid(), req.params.id, 'email', `Subject: ${subject}`, req.user?.id || 'admin');
   await auditLog(req, 'crm', 'email_sent', req.params.id, null, { to: lead.email, subject });
-  res.json({ message: smtpHost ? 'Email sent' : 'Email logged (set SMTP_HOST in .env for actual send)' });
+  res.json({ message: 'Email sent successfully' });
+});
+
+// ── SMTP TEST ─────────────────────────────────────────────
+router.post('/smtp-test', authMiddleware, adminOnly, async (req, res) => {
+  const { to } = req.body;
+  if (!to) return res.status(400).json({ error: 'to email required' });
+  const getS = async (k) => (await db.prepare('SELECT value FROM app_settings WHERE key=?').get(k))?.value;
+  const smtpHost = await getS('smtp_host');
+  const smtpUser = await getS('smtp_user');
+  const smtpPass = await getS('smtp_pass');
+  if (!smtpHost || !smtpUser) return res.status(400).json({ error: 'Configure SMTP Host and User first' });
+
+  try {
+    const nodemailer = await import('nodemailer');
+    const transporter = nodemailer.default.createTransport({
+      host: smtpHost,
+      port: parseInt((await getS('smtp_port')) || '587'),
+      secure: (await getS('smtp_secure')) === 'true',
+      auth: { user: smtpUser, pass: smtpPass },
+    });
+    await transporter.verify();
+    await transporter.sendMail({
+      from: (await getS('smtp_from')) || smtpUser,
+      to,
+      subject: '✓ SMTP Test — AI Laptop Wala',
+      html: `<h2>SMTP Configuration Working!</h2><p>This test email was sent from your AI Laptop Wala admin panel.</p><p><b>Host:</b> ${smtpHost}<br><b>From:</b> ${(await getS('smtp_from')) || smtpUser}</p><p>Your email system is ready to send customer notifications, invoices, and marketing emails.</p>`,
+    });
+    res.json({ message: 'Test email sent successfully to ' + to });
+  } catch (e) {
+    res.status(500).json({ error: 'SMTP test failed: ' + e.message });
+  }
 });
 
 // ── YEAR-OVER-YEAR COMPARISON ─────────────────────────────
