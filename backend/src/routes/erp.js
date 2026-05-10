@@ -1626,7 +1626,7 @@ router.post('/loyalty/redeem', authMiddleware, adminOnly, async (req, res) => {
 });
 
 router.get('/loyalty', authMiddleware, adminOnly, async (req, res) => {
-  const rows = await db.prepare('SELECT *, CASE WHEN points>=5000 THEN 'Platinum' WHEN points>=2000 THEN 'Gold' WHEN points>=500 THEN 'Silver' ELSE 'Bronze' END as tier FROM loyalty_points ORDER BY points DESC LIMIT 100').all() || [];
+  const rows = await db.prepare("SELECT *, CASE WHEN points>=5000 THEN 'Platinum' WHEN points>=2000 THEN 'Gold' WHEN points>=500 THEN 'Silver' ELSE 'Bronze' END as tier FROM loyalty_points ORDER BY points DESC LIMIT 100").all() || [];
   res.json(rows);
 });
 
