@@ -52,6 +52,15 @@ export default function AdminCustomer360() {
 
         {data && (
           <>
+            {/* Actions */}
+            <div className="flex gap-2 flex-wrap">
+              <a href={`https://wa.me/91${phone.replace(/\D/g,'')}`} target="_blank" rel="noreferrer">
+                <button className="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium flex items-center gap-1.5">
+                  <Phone className="h-3.5 w-3.5" /> WhatsApp
+                </button>
+              </a>
+              <button onClick={() => { const msg = `Hi, this is AI Laptop Wala. Your total with us: ₹${totalSpent.toLocaleString('en-IN')} | Loyalty: ${data.loyalty.points} pts (${data.loyalty.tier})`; navigator.clipboard.writeText(msg); }} className="text-xs px-3 py-1.5 border rounded-lg hover:bg-muted font-medium">Copy Summary</button>
+            </div>
             {/* Summary */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[

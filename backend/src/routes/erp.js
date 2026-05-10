@@ -293,11 +293,17 @@ router.post('/leads', authMiddleware, adminOnly, async (req, res) => {
 
 router.put('/leads/:id', authMiddleware, adminOnly, async (req, res) => {
   const { name, phone, email, source, interest, budget, deal_value, status, priority, assigned_to, notes, next_followup, expected_close, lost_reason, tags, score } = req.body;
+  // Auto-score on update
+  const statusBonus2 = { new: 0, contacted: 10, interested: 20, negotiation: 30, won: 40, lost: 0 };
+  const budgetScore = budget > 50000 ? 20 : budget > 20000 ? 10 : budget > 5000 ? 5 : 0;
+  const followupCount = (await db.prepare('SELECT COUNT(*) as c FROM followups WHERE lead_id=?').get(req.params.id))?.c || 0;
+  const autoScore2 = Math.min(100, Math.min(40, followupCount * 10) + (statusBonus2[status] || 0) + budgetScore);
+  const finalScore = score || autoScore2;
   await db.prepare(`UPDATE leads SET name=?,phone=?,email=?,source=?,interest=?,budget=?,deal_value=?,
     status=?,priority=?,assigned_to=?,notes=?,next_followup=?,expected_close=?,lost_reason=?,tags=?,score=?,updated_at=NOW() WHERE id=?`)
     .run(name, phone, email, source, interest, budget || 0, deal_value || budget || 0,
       status, priority, assigned_to, notes, next_followup, expected_close, lost_reason,
-      JSON.stringify(tags || []), score || 0, req.params.id);
+      JSON.stringify(tags || []), finalScore, req.params.id);
   res.json({ message: 'Updated' });
 });
 
@@ -323,10 +329,21 @@ router.post('/leads/:id/followups', authMiddleware, adminOnly, async (req, res) 
   await db.prepare('INSERT INTO followups (id,lead_id,type,notes,outcome,next_date,created_by) VALUES (?,?,?,?,?,?,?)')
     .run(id, req.params.id, type || 'call', notes, outcome, next_date, req.user.id);
   if (next_date) await db.prepare('UPDATE leads SET next_followup=?,updated_at=NOW() WHERE id=?').run(next_date, req.params.id);
-  // Auto-update lead score based on followup count
+  // Auto-update lead score: followups + budget + status + recency
+  const lead = await db.prepare('SELECT * FROM leads WHERE id=?').get(req.params.id);
   const count = (await db.prepare('SELECT COUNT(*) as c FROM followups WHERE lead_id=?').get(req.params.id))?.c || 0;
-  const score = Math.min(100, count * 15);
-  await db.prepare('UPDATE leads SET score=? WHERE id=?').run(score, req.params.id);
+  let autoScore = 0;
+  autoScore += Math.min(40, count * 10); // followups: max 40pts
+  if (lead?.budget > 50000) autoScore += 20;
+  else if (lead?.budget > 20000) autoScore += 10;
+  else if (lead?.budget > 5000) autoScore += 5;
+  const statusBonus = { new: 0, contacted: 10, interested: 20, negotiation: 30, won: 40, lost: 0 };
+  autoScore += statusBonus[lead?.status] || 0;
+  if (lead?.next_followup) {
+    const daysUntil = Math.ceil((new Date(lead.next_followup) - new Date()) / 86400000);
+    if (daysUntil >= 0 && daysUntil <= 3) autoScore += 10; // upcoming followup
+  }
+  await db.prepare('UPDATE leads SET score=? WHERE id=?').run(Math.min(100, autoScore), req.params.id);
   res.status(201).json({ id });
 });
 // ── UNIFIED BILLING ───────────────────────────────────────

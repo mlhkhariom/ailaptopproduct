@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ERPLayout from "@/components/ERPLayout";
+import BranchSelector from "@/components/BranchSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,7 @@ const LEAVE_TYPES = ['casual', 'sick', 'earned', 'unpaid'];
 
 export default function AdminLeaves() {
   const [leaves, setLeaves] = useState<any[]>([]);
+  const [branchFilter, setBranchFilter] = useState('all');
   const [staff, setStaff] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -64,6 +66,7 @@ export default function AdminLeaves() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h1 className="text-xl font-black flex items-center gap-2"><Calendar className="h-5 w-5 text-primary" /> Leave Management</h1>
           <div className="flex gap-2">
+<BranchSelector value={branchFilter} onChange={setBranchFilter} className="w-44" />
             <Button size="sm" variant="outline" onClick={load} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></Button>
             <Button size="sm" onClick={() => { setForm({ staff_id: '', type: 'casual', from_date: '', to_date: '', reason: '' }); setOpen(true); }} className="gap-1.5">
               <Plus className="h-4 w-4" /> New Request

@@ -334,6 +334,7 @@ export default function AdminCRM() {
                     <th className="p-3.5 w-10"><input type="checkbox" checked={selected.size === filtered.length && filtered.length > 0} onChange={selectAll} className="h-4 w-4" /></th>
                     <th className="text-left p-3.5 text-xs font-semibold">Name</th>
                     <th className="text-left p-3.5 text-xs font-semibold">Interest / Value</th>
+                    <th className="text-center p-3.5 text-xs font-semibold">Score</th>
                     <th className="text-left p-3.5 text-xs font-semibold">Source</th>
                     <th className="text-left p-3.5 text-xs font-semibold">Assigned</th>
                     <th className="text-center p-3.5 text-xs font-semibold">Status</th>
@@ -356,7 +357,8 @@ export default function AdminCRM() {
                           <p className="text-sm">{l.interest || '—'}</p>
                           {(l.deal_value || l.budget) > 0 && <p className="text-xs text-green-600 font-medium">₹{(l.deal_value || l.budget).toLocaleString('en-IN')}</p>}
                         </td>
-                        <td className="p-3.5 text-sm text-muted-foreground">{l.source}</td>
+                        <td className="p-3.5 text-center"><span className={`text-xs font-bold px-2 py-0.5 rounded-full ${(l.score||0)>=70?"bg-green-100 text-green-700":(l.score||0)>=40?"bg-yellow-100 text-yellow-700":"bg-gray-100 text-gray-500"}`}>{l.score||0}</span></td>
+                      <td className="p-3.5 text-sm text-muted-foreground">{l.source}</td>
                         <td className="p-3.5 text-sm">{l.assigned_to || '—'}</td>
                         <td className="p-3.5 text-center">
                           <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_COLORS[l.status]}`}>{l.status}</span>

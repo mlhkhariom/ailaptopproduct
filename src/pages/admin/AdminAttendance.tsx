@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ERPLayout from "@/components/ERPLayout";
+import { exportToCSV } from "@/lib/exportUtils";
 import BranchSelector from "@/components/BranchSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +69,7 @@ export default function AdminAttendance() {
               <button onClick={() => setView('monthly')} className={`px-3 py-1.5 text-xs font-medium ${view === 'monthly' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>Monthly</button>
             </div>
   <BranchSelector value={branchFilter} onChange={setBranchFilter} className="w-44" />
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={exportAttendance}>Export CSV</Button>
           <Button size="sm" variant="outline" className="gap-1 text-green-600 border-green-200 hover:bg-green-50" onClick={() => markAll('present')}>All Present</Button>
           <Button size="sm" variant="outline" className="gap-1 text-red-500 border-red-200 hover:bg-red-50" onClick={() => markAll('absent')}>All Absent</Button>
           <Button size="sm" variant="outline" onClick={load} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></Button>
