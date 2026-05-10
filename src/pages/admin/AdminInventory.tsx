@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Package, TrendingDown, AlertTriangle, Plus, Edit, Trash2, RefreshCw, ArrowUpDown, Truck, Search, IndianRupee, CheckCircle, Clock, XCircle, BarChart3, Printer, Building2 } from "lucide-react";
+import { Package, TrendingDown, AlertTriangle, Plus, Edit, Trash2, RefreshCw, ArrowUpDown, Truck, Search, IndianRupee, CheckCircle, Clock, XCircle, BarChart3, Printer, Building2, Tag } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -72,6 +72,22 @@ export default function AdminInventory() {
   const [supplierForm, setSupplierForm] = useState({ name: '', contact_person: '', phone: '', email: '', address: '', gstin: '', payment_terms: 'net30', notes: '' });
   const [poForm, setPoForm] = useState({ supplier_id: '', branch_id: '', items: [{ product_id: '', product_name: '', quantity: 1, unit_price: 0 }], expected_date: '', notes: '' });
   const [movForm, setMovForm] = useState({ product_id: '', type: 'purchase', quantity: 1, notes: '' });
+
+  const printBarcode = (p: any) => {
+    const w = window.open('', '_blank', 'width=400,height=300');
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><title>Barcode</title>
+    <style>body{font-family:monospace;text-align:center;padding:20px}
+    .barcode{font-size:48px;letter-spacing:2px;font-family:'Libre Barcode 39',monospace}
+    @import url('https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap');
+    </style></head><body>
+    <p style="font-size:12px;margin:0">${p.name}</p>
+    <div class="barcode">*${(p.sku || p.id.slice(0,8)).toUpperCase()}*</div>
+    <p style="font-size:11px;margin:4px 0">₹${p.price || 0} | SKU: ${p.sku || p.id.slice(0,8)}</p>
+    <script>window.onload=()=>window.print()</script>
+    </body></html>`);
+    w.document.close();
+  };
 
   const loadAll = async () => {
     setLoading(true);
@@ -301,6 +317,9 @@ export default function AdminInventory() {
                       </td>
                       <td className="p-3 text-center">
                         <div className="flex gap-1 justify-center">
+                          <Button size="icon" variant="ghost" className="h-7 w-7" title="Print Barcode" onClick={() => printBarcode(p)}>
+                            <Tag className="h-3.5 w-3.5" />
+                          </Button>
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditStockId(p.id); setEditStockVal(p.stock); }}>
                             <Edit className="h-3.5 w-3.5" />
                           </Button>

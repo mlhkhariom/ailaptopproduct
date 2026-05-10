@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ERPLayout from "@/components/ERPLayout";
+import { exportToCSV } from "@/lib/exportUtils";
 import BranchSelector from "@/components/BranchSelector";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -95,6 +96,20 @@ export default function AdminERPReports() {
 
   useEffect(() => { load(); }, [from, to, branchFilter]);
 
+  const exportReport = () => {
+    const rows = [
+      { metric: 'Total Revenue', value: data.totalRevenue || 0 },
+      { metric: 'Order Revenue', value: data.orderRevenue || 0 },
+      { metric: 'Service Revenue', value: data.serviceRevenue || 0 },
+      { metric: 'Total Expenses', value: data.totalExpenses || 0 },
+      { metric: 'Net Profit', value: data.netProfit || 0 },
+      { metric: 'Total Jobs', value: data.totalJobs || 0 },
+      { metric: 'Total Orders', value: data.totalOrders || 0 },
+      { metric: 'Staff Count', value: data.staffCount || 0 },
+    ];
+    exportToCSV(rows, `ERP_Report_${from}_${to}.csv`);
+  };
+
   const printReport = () => {
     const win = window.open('', '_blank');
     if (!win) return;
@@ -170,7 +185,8 @@ export default function AdminERPReports() {
               const { toast } = await import('sonner');
               if (res.message) toast.success('Report sent to owner WhatsApp!');
               else toast.error(res.error || 'Failed');
-            }}>Send to WhatsApp</Button>
+}}>Send to WhatsApp</Button>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={exportReport}><Download className="h-4 w-4" /> Export CSV</Button>
             <Button size="sm" variant="outline" onClick={printReport}>
               <Printer className="h-4 w-4 mr-1" /> Print
             </Button>
