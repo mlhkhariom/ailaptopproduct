@@ -45,6 +45,7 @@ router.get('/methods', async (req, res) => {
   res.json({
     razorpay: { enabled: await isEnabled('payment_razorpay'), key_id: await getSetting('razorpay_key_id') },
     paytm: { enabled: await isEnabled('payment_paytm') },
+    cashfree: { enabled: await isEnabled('payment_cashfree'), app_id: await getSetting('cashfree_app_id') },
     upi: { enabled: (await getSetting('payment_upi')) !== 'false' },
     card: { enabled: (await getSetting('payment_card')) !== 'false' },
     netbanking: { enabled: (await getSetting('payment_netbanking')) !== 'false' },
@@ -270,6 +271,102 @@ router.post('/razorpay/webhook', async (req, res) => {
     }
     res.json({ status: 'ok' });
   } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
+
+// ── CASHFREE ──────────────────────────────────────────────
+router.post('/cashfree/create-order', authMiddleware, async (req, res) => {
+  const appId = await getSetting('cashfree_app_id');
+  const secretKey = await getSetting('cashfree_secret_key');
+  const isProduction = (await getSetting('cashfree_production')) === 'true';
+
+  if (!appId || !secretKey) {
+    return res.status(400).json({ error: 'Cashfree not configured. Add App ID + Secret Key in Admin → Settings → API Keys.' });
+  }
+
+  const { amount, orderId, customerName, customerEmail, customerPhone } = req.body;
+  if (!amount || !orderId) return res.status(400).json({ error: 'amount and orderId required' });
+
+  const host = isProduction ? 'https://api.cashfree.com' : 'https://sandbox.cashfree.com';
+  const payload = {
+    order_id: orderId,
+    order_amount: Number(amount),
+    order_currency: 'INR',
+    customer_details: {
+      customer_id: req.user?.id || 'CUST_' + Date.now(),
+      customer_name: customerName || 'Guest',
+      customer_email: customerEmail || 'guest@example.com',
+      customer_phone: customerPhone || '9999999999',
+    },
+    order_meta: {
+      return_url: `${process.env.FRONTEND_URL || 'http://localhost:8080'}/order-success?order=${orderId}&gateway=cashfree`,
+      notify_url: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payment/cashfree/webhook`,
+    },
+  };
+
+  try {
+    const response = await fetch(`${host}/pg/orders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-version': '2023-08-01',
+        'x-client-id': appId,
+        'x-client-secret': secretKey,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (data.cf_order_id) {
+      res.json({ payment_session_id: data.payment_session_id, cf_order_id: data.cf_order_id, order_id: data.order_id, environment: isProduction ? 'production' : 'sandbox' });
+    } else {
+      res.status(502).json({ error: data.message || 'Cashfree order create failed', detail: data });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/cashfree/verify', authMiddleware, async (req, res) => {
+  const appId = await getSetting('cashfree_app_id');
+  const secretKey = await getSetting('cashfree_secret_key');
+  const isProduction = (await getSetting('cashfree_production')) === 'true';
+  const { orderId } = req.body;
+
+  if (!appId || !secretKey || !orderId) return res.status(400).json({ error: 'Missing config or orderId' });
+
+  const host = isProduction ? 'https://api.cashfree.com' : 'https://sandbox.cashfree.com';
+  try {
+    const response = await fetch(`${host}/pg/orders/${orderId}`, {
+      method: 'GET',
+      headers: {
+        'x-api-version': '2023-08-01',
+        'x-client-id': appId,
+        'x-client-secret': secretKey,
+      },
+    });
+    const data = await response.json();
+    if (data.order_status === 'PAID') {
+      await db.prepare("UPDATE orders SET payment_status='paid', razorpay_id=? WHERE order_number=?").run(data.cf_order_id, orderId);
+    }
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/cashfree/webhook', async (req, res) => {
+  try {
+    const { data } = req.body;
+    if (data?.order?.order_status === 'PAID') {
+      await db.prepare("UPDATE orders SET payment_status='paid', razorpay_id=? WHERE order_number=?").run(data.payment?.cf_payment_id || '', data.order.order_id);
+      console.log('Cashfree webhook: Order paid', data.order.order_id);
+    }
+    res.json({ received: true });
+  } catch (e) {
+    console.error('Cashfree webhook error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });

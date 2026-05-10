@@ -211,6 +211,37 @@ const AdminSettings = () => {
 
                 <div className="p-4 rounded-xl border bg-muted/20">
                   <div className="flex items-center gap-2 mb-3">
+                    <CreditCard className="h-5 w-5 text-green-500" />
+                    <div>
+                      <h3 className="font-medium text-sm">Cashfree Payment Gateway</h3>
+                      <p className="text-[10px] text-muted-foreground">Instant settlements, UPI, Cards, NetBanking, Wallets</p>
+                    </div>
+                    <Badge variant="outline" className="text-[9px] ml-auto">Optional</Badge>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div><Label className="text-xs">App ID</Label><Input className="mt-1 h-9 text-xs" value={s('cashfree_app_id')} onChange={e => setS('cashfree_app_id', e.target.value)} placeholder="TEST123abc..." /></div>
+                    <div><Label className="text-xs">Secret Key</Label><Input className="mt-1 h-9 text-xs" type="password" value={s('cashfree_secret_key')} onChange={e => setS('cashfree_secret_key', e.target.value)} placeholder="••••••••" /></div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-3 border-t pt-3">
+                    <Switch checked={s('cashfree_production') === 'true'} onCheckedChange={v => setS('cashfree_production', String(v))} />
+                    <Label className="text-xs">Production Mode</Label>
+                    <div className="ml-auto flex items-center gap-2">
+                      <Switch checked={s('payment_cashfree') === 'true'} onCheckedChange={v => setS('payment_cashfree', String(v))} />
+                      <Label className="text-xs font-medium">Enable Cashfree</Label>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    {s('cashfree_app_id') && s('cashfree_secret_key') ? (
+                      <Badge variant="default" className="text-[9px] bg-green-600">✓ Ready</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[9px]">Add App ID + Secret</Badge>
+                    )}
+                    {s('cashfree_production') === 'true' ? <Badge className="text-[9px] ml-2 bg-red-600">LIVE</Badge> : <Badge variant="outline" className="text-[9px] ml-2">SANDBOX</Badge>}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border bg-muted/20">
+                  <div className="flex items-center gap-2 mb-3">
                     <BarChart3 className="h-5 w-5 text-orange-500" />
                     <div>
                       <h3 className="font-medium text-sm">Google Analytics & Search Console</h3>
@@ -348,6 +379,7 @@ const AdminSettings = () => {
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-1">Main Gateways</p>
                 {[
                   { key: 'payment_razorpay', label: "Razorpay (Recommended)", desc: "One gateway — accepts UPI, Card, NetBanking, Wallets, EMI automatically. Configure sub-methods in Razorpay dashboard.", highlight: true },
+                  { key: 'payment_cashfree', label: "Cashfree", desc: "Instant settlements, low fees, UPI-first" },
                   { key: 'payment_paytm', label: "Paytm Gateway", desc: "Alternative — separate merchant account required" },
                   { key: 'payment_cod', label: "Cash on Delivery", desc: `+₹${s('shipping_cod_charge') || 30} handling fee (no gateway)` },
                 ].map((m) => (
