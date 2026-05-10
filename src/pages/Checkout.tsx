@@ -120,7 +120,6 @@ const Checkout = () => {
     setLoading(true);
     try {
       if (paymentMethod === 'razorpay') {
-        // Load Razorpay script if not loaded
         if (!window.Razorpay) {
           await new Promise((resolve, reject) => {
             const s = document.createElement('script');
@@ -130,8 +129,15 @@ const Checkout = () => {
           });
         }
         await handleRazorpay();
+      } else if (paymentMethod === 'paytm') {
+        // Paytm not fully implemented — show message
+        toast.error('Paytm integration in progress. Please use Razorpay or COD.');
+        setPaymentMethod('cod');
+        setLoading(false);
+        return;
       } else {
-        await placeOrder(undefined, paymentMethod === 'cod' ? 'pending' : 'pending');
+        // COD or default
+        await placeOrder(undefined, 'pending');
         setLoading(false);
       }
     } catch (e: any) {

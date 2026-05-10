@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Save, Eye, EyeOff, Globe, Phone, Mail, Shield, Key, Bell, Truck, CreditCard, Lock, Palette, Search, FileText, Users, Database, Webhook, AlertTriangle, CheckCircle, ExternalLink, Copy, RotateCcw, Download, Wrench, Star, Package, MessageCircle, Play, Cookie, RefreshCw } from "lucide-react";
+import { Save, Eye, EyeOff, Globe, Phone, Mail, Shield, Key, Bell, Truck, CreditCard, Lock, Palette, Search, FileText, Users, Database, Webhook, AlertTriangle, CheckCircle, ExternalLink, Copy, RotateCcw, Download, Wrench, Star, Package, MessageCircle, Play, Cookie, RefreshCw, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -136,17 +136,21 @@ const AdminSettings = () => {
             <Card className="border-primary/30">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2"><Key className="h-4 w-4" /> API Keys & Secrets</CardTitle>
-                <CardDescription className="text-xs">⚠️ Keep these keys secure — never share with anyone</CardDescription>
+                <CardDescription className="text-xs flex items-center gap-1"><Lock className="h-3 w-3" /> Keep these keys secure — never share with anyone</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="p-4 rounded-xl border bg-muted/20">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">💳</span>
+                    <CreditCard className="h-5 w-5 text-primary" />
                     <div>
                       <h3 className="font-medium text-sm">Razorpay Payment Gateway</h3>
                       <p className="text-[10px] text-muted-foreground">UPI, Card, Net Banking, Wallet payments</p>
                     </div>
-                    <Badge variant="default" className="text-[9px] ml-auto gap-1">✓ Connected</Badge>
+                    {s('razorpay_key_id') && s('razorpay_key_id').startsWith('rzp_') ? (
+                      <Badge variant="default" className="text-[9px] ml-auto gap-1 bg-green-600">✓ Configured</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[9px] ml-auto">Not configured</Badge>
+                    )}
                   </div>
                   <div className="grid sm:grid-cols-2 gap-3">
                     <div><Label className="text-xs">Razorpay Key ID</Label><Input className="mt-1 h-9 text-xs" value={s('razorpay_key_id')} onChange={e => setS('razorpay_key_id', e.target.value)} placeholder="rzp_live_xxxxxxxxxx" /></div>
@@ -168,7 +172,7 @@ const AdminSettings = () => {
 
                 <div className="p-4 rounded-xl border bg-muted/20">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">💙</span>
+                    <CreditCard className="h-5 w-5 text-blue-500" />
                     <div>
                       <h3 className="font-medium text-sm">Paytm Payment Gateway</h3>
                       <p className="text-[10px] text-muted-foreground">UPI, Wallet, Cards via Paytm</p>
@@ -187,7 +191,7 @@ const AdminSettings = () => {
 
                 <div className="p-4 rounded-xl border bg-muted/20">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">📊</span>
+                    <BarChart3 className="h-5 w-5 text-orange-500" />
                     <div>
                       <h3 className="font-medium text-sm">Google Analytics & Search Console</h3>
                       <p className="text-[10px] text-muted-foreground">Traffic tracking & SEO monitoring</p>
