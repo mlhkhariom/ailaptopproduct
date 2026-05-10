@@ -68,8 +68,8 @@ export default function AdminPayroll() {
   const exportNEFT = () => {
     const paid = list.filter(r => r.status === 'paid' || r.net > 0);
     const rows = [
-      ['Staff Name', 'Account No', 'IFSC', 'Amount', 'Remarks'],
-      ...paid.map(r => [r.staff_name || '', '', '', r.net || 0, `Salary ${month}`])
+      ['Staff Name', 'Account No', 'IFSC Code', 'Bank Name', 'Amount', 'Remarks'],
+      ...paid.map(r => [r.staff_name || '', r.bank_account || 'NOT SET', r.bank_ifsc || 'NOT SET', r.bank_name || '', r.net || 0, `Salary ${month}`])
     ];
     const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });

@@ -77,6 +77,26 @@ router.put('/job-cards/:id', authMiddleware, adminOnly, async (req, res) => {
       payment_status, payment_method, notes, priority || 'normal', branch_id,
       gst_enabled ? 1 : 0, sla_hours || null, completed_at, req.params.id);
 
+
+  // Auto-earn loyalty points on job completion
+  if (status === 'completed' && payment_status === 'paid' && req.body.total_charge > 0) {
+    try {
+      const job = await db.prepare('SELECT * FROM service_bookings WHERE id=?').get(req.params.id);
+      if (job?.customer_phone) {
+        const pts = Math.floor((req.body.total_charge || 0) / 100);
+        if (pts > 0) {
+          const existing = await db.prepare('SELECT * FROM loyalty_points WHERE phone=?').get(job.customer_phone);
+          if (existing) {
+            await db.prepare('UPDATE loyalty_points SET points=points+?,total_earned=total_earned+? WHERE phone=?').run(pts, pts, job.customer_phone);
+          } else {
+            await db.prepare('INSERT INTO loyalty_points (id,phone,customer_name,points,total_earned) VALUES (?,?,?,?,?)').run(uuid(), job.customer_phone, job.customer_name || '', pts, pts);
+          }
+          await db.prepare('INSERT INTO loyalty_transactions (id,phone,type,points,ref_id,ref_type,note) VALUES (?,?,?,?,?,?,?)').run(uuid(), job.customer_phone, 'earn', pts, req.params.id, 'job_card', `Earned ${pts} pts on repair ₹${req.body.total_charge}`);
+        }
+      }
+    } catch (e) { console.error('Loyalty earn error:', e.message); }
+  }
+
   // Auto-deduct parts from inventory when job completed (only on first completion)
   if (status === 'completed' && prev?.status !== 'completed' && parts_used?.length) {
     for (const part of parts_used) {
@@ -94,7 +114,7 @@ router.put('/job-cards/:id', authMiddleware, adminOnly, async (req, res) => {
               await db.prepare('INSERT INTO branch_stock_movements (id,branch_id,product_id,type,qty,note,ref_id) VALUES (?,?,?,?,?,?,?)').run(uuid(), branch_id, part.product_id, 'job_card_use', -part.qty, `Job card ${req.params.id}`, req.params.id);
             }
           }
-        } catch {}
+        } catch (e) { console.error("Stock deduct error:", e.message); }
       }
     }
   }
@@ -111,7 +131,7 @@ router.put('/job-cards/:id', authMiddleware, adminOnly, async (req, res) => {
         msg = `Repair Complete - AI Laptop Wala\n\nNamaste ${job.customer_name}!\n\nAapka ${job.device_brand} ${job.device_model} repair ho gaya hai!\nJob ID: ${job.booking_number}\nTotal: Rs.${total_charge.toLocaleString('en-IN')}\n\nPickup: +91 98934 96163\nSilver Mall, RNT Marg, Indore`;
       if (msg) await queueNotification(job.customer_phone, msg, 'job_update');
     }
-  } catch {}
+  } catch (e) { console.error("Operation error:", e.message); }
 
   res.json({ message: 'Updated' });
 });
@@ -167,11 +187,11 @@ router.get('/staff', authMiddleware, adminOnly, async (req, res) => {
 });
 
 router.post('/staff', authMiddleware, adminOnly, async (req, res) => {
-  const { name, role, phone, email, salary, joining_date, address, branch_id, aadhaar_url, pan_url, offer_letter_url, other_doc_url } = req.body;
+  const { name, role, phone, email, salary, joining_date, address, branch_id, aadhaar_url, pan_url, offer_letter_url, other_doc_url, bank_account, bank_ifsc, bank_name } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
   const id = uuid();
-  await db.prepare('INSERT INTO staff (id,name,role,phone,email,salary,joining_date,address,branch_id,aadhaar_url,pan_url,offer_letter_url,other_doc_url) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
-    .run(id, name, role, phone, email, salary || 0, joining_date, address, branch_id || null, aadhaar_url||null, pan_url||null, offer_letter_url||null, other_doc_url||null);
+  await db.prepare('INSERT INTO staff (id,name,role,phone,email,salary,joining_date,address,branch_id,aadhaar_url,pan_url,offer_letter_url,other_doc_url,bank_account,bank_ifsc,bank_name) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(id, name, role, phone, email, salary || 0, joining_date, address, branch_id||null, aadhaar_url||null, pan_url||null, offer_letter_url||null, other_doc_url||null, bank_account||null, bank_ifsc||null, bank_name||null);
   res.status(201).json({ id });
 });
 
@@ -411,7 +431,7 @@ router.post('/billing/custom', authMiddleware, adminOnly, async (req, res) => {
           .run(item.qty, item.qty, item.product_id);
         await db.prepare('INSERT INTO stock_movements (id,product_id,type,quantity,reference_id,reference_type,notes,created_by) VALUES (?,?,?,?,?,?,?,?)')
           .run(uuid(), item.product_id, 'sale', item.qty, id, 'custom_invoice', `Custom invoice ${invoice_number}`, req.user.id);
-      } catch {}
+      } catch (e) { console.error("Operation error:", e.message); }
     }
   }
 
@@ -422,7 +442,7 @@ router.post('/billing/custom', authMiddleware, adminOnly, async (req, res) => {
       const invoiceUrl = `${process.env.FRONTEND_URL || 'https://ailaptopwala.com'}/api/invoice/${invoice_number}`;
       const msg = `🧾 *Invoice from AI Laptop Wala*\n\nNamaste ${customer_name}! 🙏\n\n*Invoice #:* ${invoice_number}\n*Amount:* ₹${total.toLocaleString('en-IN')}\n*Status:* ${payment_status === 'paid' ? 'Paid' : 'Pending'}\n\nView Invoice:\n${invoiceUrl}\n\n+91 98934 96163 | ailaptopwala.com`;
       await queueNotification(customer_phone, msg, 'invoice');
-    } catch {}
+    } catch (e) { console.error("Operation error:", e.message); }
   }
   res.status(201).json({ id, invoice_number, total });
 });
@@ -446,7 +466,7 @@ router.put('/billing/custom/:id', authMiddleware, adminOnly, async (req, res) =>
       const invoiceUrl = `${process.env.FRONTEND_URL || 'https://ailaptopwala.com'}/api/invoice/${inv.invoice_number}`;
       const msg = `🧾 *Invoice from AI Laptop Wala*\n\nNamaste ${customer_name}! 🙏\n\n*Invoice #:* ${inv.invoice_number}\n*Amount:* ₹${total.toLocaleString('en-IN')}\n*Status:* ${payment_status === 'paid' ? '✅ Paid' : '⏳ Pending'}\n\n📄 View Invoice:\n${invoiceUrl}\n\n📞 +91 98934 96163`;
       await queueNotification(customer_phone, msg, 'invoice');
-    } catch {}
+    } catch (e) { console.error("Operation error:", e.message); }
   }
   res.json({ message: 'Updated', total });
 });
@@ -484,7 +504,7 @@ router.patch('/billing/:type/:id/payment', authMiddleware, adminOnly, async (req
         const msg = `🧾 *Invoice — AI Laptop Wala*\n\nNamaste ${customer_name || 'Customer'}! 🙏\n\n*Invoice #:* ${invoice_number}\n*Amount:* ₹${Number(amount || 0).toLocaleString('en-IN')}\n*Status:* ${payment_status === 'paid' ? '✅ Paid' : '⏳ Pending'}\n\n📄 View Invoice:\n${invoiceUrl}\n\n📞 +91 98934 96163 | ailaptopwala.com`;
         await queueNotification(phone, msg, 'invoice');
       }
-    } catch {}
+    } catch (e) { console.error("Operation error:", e.message); }
   }
 
   res.json({ message: 'Updated' });
@@ -1585,7 +1605,7 @@ router.post('/kpi-alerts/check', authMiddleware, adminOnly, async (req, res) => 
         await queueNotification(OWNER_PHONE, msg, 'kpi_alert');
         fired.push({ metric: alert.metric, value, threshold: alert.threshold });
       }
-    } catch {}
+    } catch (e) { console.error("Operation error:", e.message); }
   }
   res.json({ checked: alerts.length, fired: fired.length, alerts: fired });
 });

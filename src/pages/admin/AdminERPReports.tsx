@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import ERPLayout from "@/components/ERPLayout";
 import { exportToCSV } from "@/lib/exportUtils";
@@ -90,7 +91,7 @@ export default function AdminERPReports() {
       setForecastData(forecast);
       const bc = await authFetch(`/api/erp/branch-comparison?from=${from}&to=${to}`);
       setBranchComp(bc);
-    } catch { }
+    } catch (e) { console.error('ERP Reports error:', e); toast.error('Failed to load report data'); }
     setLoading(false);
   };
 

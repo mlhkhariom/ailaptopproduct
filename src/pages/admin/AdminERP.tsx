@@ -53,6 +53,7 @@ const MODULE_GROUPS = [
 
 export default function AdminERP() {
   const [stats, setStats] = useState<any>({});
+  const [loading, setLoading] = useState(true);
   const [branchFilter, setBranchFilter] = useState('all');
   const [invStats, setInvStats] = useState<any>({});
   const [branchCount, setBranchCount] = useState(0);

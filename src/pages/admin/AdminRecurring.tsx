@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ERPLayout from "@/components/ERPLayout";
+import BranchSelector from "@/components/BranchSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,7 @@ export default function AdminRecurring() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<any>(emptyForm);
   const [loading, setLoading] = useState(false);
+  const [branchFilter, setBranchFilter] = useState('all');
 
   const load = async () => { setLoading(true); const d = await req('GET', '/recurring'); setList(Array.isArray(d) ? d : []); setLoading(false); };
   useEffect(() => { load(); }, []);
@@ -63,6 +65,7 @@ export default function AdminRecurring() {
           </div>
         </div>
 
+        <BranchSelector value={branchFilter} onChange={setBranchFilter} className="w-44" />
         <div className="border rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-muted/50"><tr>
@@ -74,7 +77,7 @@ export default function AdminRecurring() {
               <th className="text-center p-3 text-xs font-semibold">Active</th>
             </tr></thead>
             <tbody>
-              {list.map(r => {
+              {list.filter((r: any) => branchFilter === 'all' || r.branch_id === branchFilter).map(r => {
                 const overdue = new Date(r.next_date) <= new Date();
                 return (
                   <tr key={r.id} className={`border-t hover:bg-muted/30 ${overdue && r.is_active ? 'bg-orange-50/50' : ''}`}>

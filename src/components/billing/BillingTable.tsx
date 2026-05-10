@@ -33,9 +33,11 @@ interface Props {
   onIRN?: (r: BillingRow) => void;
   onConvertProforma?: (r: BillingRow) => void;
   onPaymentLink?: (r: BillingRow) => void;
+  selected?: Set<string>;
+  onSelect?: (id: string, checked: boolean) => void;
 }
 
-export default function BillingTable({ rows, onView, onSendWA, onEdit, onPayClick, onPartialClick, onIRN, onConvertProforma, onPaymentLink }: Props) {
+export default function BillingTable({ rows, onView, onSendWA, onEdit, onPayClick, onPartialClick, onIRN, onConvertProforma, onPaymentLink, selected, onSelect }: Props) {
   if (!rows.length) return (
     <div className="border rounded-xl p-16 text-center text-muted-foreground">
       <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />

@@ -21,7 +21,7 @@ const req = (method: string, path: string, body?: any) =>
 
 const ROLES = ['Technician', 'Sales', 'Manager', 'Accountant', 'Helper', 'Receptionist', 'Driver'];
 
-const emptyForm = { name: '', role: '', phone: '', email: '', salary: 0, joining_date: '', address: '', is_active: 1, aadhaar_url: '', pan_url: '', offer_letter_url: '', other_doc_url: '' };
+const emptyForm = { name: '', role: '', phone: '', email: '', salary: 0, joining_date: '', address: '', is_active: 1, aadhaar_url: '', pan_url: '', offer_letter_url: '', other_doc_url: '', bank_account: '', bank_ifsc: '', bank_name: '' };
 
 const ROLE_COLORS: Record<string, string> = {
   Technician: 'bg-blue-100 text-blue-700',
@@ -397,6 +397,15 @@ export default function AdminStaff() {
                 <Label className="text-xs">Active</Label>
               </div>
             </div>
+              {/* Bank Details */}
+              <div className="border rounded-lg p-3 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Bank Details (for Salary Transfer)</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div><Label className="text-xs">Account No.</Label><Input className="mt-1 h-8 text-xs" value={form.bank_account || ''} onChange={e => setForm((f: any) => ({ ...f, bank_account: e.target.value }))} placeholder="1234567890" /></div>
+                  <div><Label className="text-xs">IFSC Code</Label><Input className="mt-1 h-8 text-xs" value={form.bank_ifsc || ''} onChange={e => setForm((f: any) => ({ ...f, bank_ifsc: e.target.value.toUpperCase() }))} placeholder="SBIN0001234" /></div>
+                  <div><Label className="text-xs">Bank Name</Label><Input className="mt-1 h-8 text-xs" value={form.bank_name || ''} onChange={e => setForm((f: any) => ({ ...f, bank_name: e.target.value }))} placeholder="SBI" /></div>
+                </div>
+              </div>
               {/* Documents */}
               <div className="border rounded-lg p-3 space-y-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Documents (paste URL or upload link)</p>
