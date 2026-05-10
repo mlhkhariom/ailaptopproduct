@@ -36,7 +36,7 @@ const Cart = () => {
 
   return (
     <CustomerLayout>
-      <SEOHead title="Cart — AI Laptop Wala" canonical="/cart" noindex={true} />
+      <SEOHead title="Cart — AI Laptop Wala" canonical="/cart" breadcrumbs={[{ name: "Home", url: "/" }, { name: "Cart" }]} noindex={true} />
 
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-serif font-bold mb-6">Your Cart</h1>

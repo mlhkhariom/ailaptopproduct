@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import GlobalSearch from "@/components/GlobalSearch";
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -64,10 +65,9 @@ const Header = () => {
 
           {/* Right Actions */}
           <div className="flex items-center gap-1.5">
-            {/* Search */}
-            <div className="hidden md:flex relative">
-              <Input placeholder="Search laptops..." className="pl-3 w-36 h-8 text-xs rounded-lg"
-                onKeyDown={(e) => { if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) navigate(`/products?q=${encodeURIComponent((e.target as HTMLInputElement).value.trim())}`); }} />
+            {/* Search with autocomplete */}
+            <div className="hidden md:block">
+              <GlobalSearch className="w-56" />
             </div>
 
             {/* Wishlist */}
@@ -128,6 +128,7 @@ const Header = () => {
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-[75] flex flex-col items-center justify-center gap-1 px-8 bg-background">
           <img src={logo} alt="AI Laptop Wala" className="h-16 w-auto mb-6 rounded-xl" />
+          <div className="w-full max-w-xs mb-4"><GlobalSearch /></div>
           {navLinks.map((l) => (
             <Link key={l.to} to={l.to}
               className={`text-2xl font-heading font-bold transition-colors py-2.5 block ${location.pathname === l.to ? "text-primary" : "text-foreground hover:text-primary"}`}
