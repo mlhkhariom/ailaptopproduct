@@ -1492,3 +1492,140 @@ router.post('/proforma/:id/convert', authMiddleware, adminOnly, async (req, res)
   await db.prepare("UPDATE custom_invoices SET payment_status='pending', invoice_number=? WHERE id=?").run(invoice_number, req.params.id);
   res.json({ message: 'Converted to invoice', invoice_number });
 });
+
+// ── CUSTOMER WHATSAPP APPROVAL ────────────────────────────
+
+// Send diagnosis + quote to customer for approval
+router.post('/job-cards/:id/send-approval', authMiddleware, adminOnly, async (req, res) => {
+  const job = await db.prepare('SELECT * FROM service_bookings WHERE id=?').get(req.params.id);
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  if (!job.customer_phone) return res.status(400).json({ error: 'No customer phone' });
+
+  const parts = typeof job.parts_used === 'string' ? JSON.parse(job.parts_used || '[]') : (job.parts_used || []);
+  const partsText = parts.length ? parts.map(p => `  • ${p.name} x${p.qty} = ₹${p.price * p.qty}`).join('\n') : '  • No parts';
+  const msg = `*AI Laptop Wala — Repair Quote*\n\n` +
+    `Job: ${job.booking_number}\n` +
+    `Device: ${job.device_brand || ''} ${job.device_model || ''}\n` +
+    `Issue: ${job.issue_description || ''}\n\n` +
+    `*Diagnosis:* ${job.diagnosis || 'Pending'}\n\n` +
+    `*Parts:*\n${partsText}\n\n` +
+    `Labour: ₹${job.labour_charge || 0}\n` +
+    `*Total: ₹${job.total_charge || 0}*\n\n` +
+    `Reply *YES* to approve or *NO* to cancel.`;
+
+  try {
+    const { queueNotification } = await import('../whatsapp/notifications.js');
+    await queueNotification(job.customer_phone, msg, 'approval_request');
+    await db.prepare("UPDATE service_bookings SET approval_status='pending' WHERE id=?").run(req.params.id);
+    res.json({ message: 'Approval request sent' });
+  } catch (e) {
+    res.status(500).json({ error: 'WhatsApp send failed: ' + e.message });
+  }
+});
+
+// Update approval status (called when customer replies YES/NO)
+router.patch('/job-cards/:id/approval', authMiddleware, adminOnly, async (req, res) => {
+  const { approval_status } = req.body; // 'approved' | 'rejected'
+  await db.prepare("UPDATE service_bookings SET approval_status=? WHERE id=?").run(approval_status, req.params.id);
+  res.json({ message: 'Approval updated' });
+});
+
+// ── KPI ALERTS ────────────────────────────────────────────
+
+router.get('/kpi-alerts/config', authMiddleware, adminOnly, async (req, res) => {
+  const rows = await db.prepare('SELECT * FROM kpi_alerts ORDER BY created_at DESC').all() || [];
+  res.json(rows);
+});
+
+router.post('/kpi-alerts/config', authMiddleware, adminOnly, async (req, res) => {
+  const { metric, operator, threshold, message, is_active } = req.body;
+  if (!metric || !threshold) return res.status(400).json({ error: 'metric and threshold required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO kpi_alerts (id,metric,operator,threshold,message,is_active) VALUES (?,?,?,?,?,?)').run(id, metric, operator || 'lt', threshold, message || '', is_active ? 1 : 1);
+  res.status(201).json({ id });
+});
+
+router.delete('/kpi-alerts/config/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM kpi_alerts WHERE id=?').run(req.params.id);
+  res.json({ message: 'Deleted' });
+});
+
+// Check and fire KPI alerts — call this on a schedule or on dashboard load
+router.post('/kpi-alerts/check', authMiddleware, adminOnly, async (req, res) => {
+  const alerts = await db.prepare("SELECT * FROM kpi_alerts WHERE is_active=1").all() || [];
+  const today = new Date().toISOString().split('T')[0];
+  const monthStart = today.slice(0, 7) + '-01';
+  const OWNER_PHONE = process.env.OWNER_PHONE || '';
+  const fired = [];
+
+  for (const alert of alerts) {
+    let value = 0;
+    try {
+      if (alert.metric === 'daily_revenue') {
+        const r = await db.prepare("SELECT COALESCE(SUM(total_charge),0) as v FROM service_bookings WHERE payment_status='paid' AND DATE(created_at)=?").get(today);
+        value = r?.v || 0;
+      } else if (alert.metric === 'pending_jobs') {
+        const r = await db.prepare("SELECT COUNT(*) as c FROM service_bookings WHERE status IN ('pending','in_progress')").get();
+        value = r?.c || 0;
+      } else if (alert.metric === 'monthly_revenue') {
+        const r = await db.prepare("SELECT COALESCE(SUM(total_charge),0) as v FROM service_bookings WHERE payment_status='paid' AND DATE(created_at)>=?").get(monthStart);
+        value = r?.v || 0;
+      } else if (alert.metric === 'sla_breached') {
+        const r = await db.prepare("SELECT COUNT(*) as c FROM service_bookings WHERE sla_breached=1 AND status NOT IN ('completed','cancelled')").get();
+        value = r?.c || 0;
+      }
+
+      const triggered = alert.operator === 'lt' ? value < alert.threshold
+        : alert.operator === 'gt' ? value > alert.threshold
+        : value === alert.threshold;
+
+      if (triggered && OWNER_PHONE) {
+        const msg = alert.message || `⚠️ KPI Alert: ${alert.metric} = ${value} (threshold: ${alert.threshold})`;
+        const { queueNotification } = await import('../whatsapp/notifications.js');
+        await queueNotification(OWNER_PHONE, msg, 'kpi_alert');
+        fired.push({ metric: alert.metric, value, threshold: alert.threshold });
+      }
+    } catch {}
+  }
+  res.json({ checked: alerts.length, fired: fired.length, alerts: fired });
+});
+
+// ── LOYALTY PROGRAM ───────────────────────────────────────
+
+router.get('/loyalty/:phone', authMiddleware, adminOnly, async (req, res) => {
+  const row = await db.prepare('SELECT * FROM loyalty_points WHERE phone=?').get(req.params.phone);
+  if (!row) return res.json({ phone: req.params.phone, points: 0, tier: 'Bronze', transactions: [] });
+  const txns = await db.prepare('SELECT * FROM loyalty_transactions WHERE phone=? ORDER BY created_at DESC LIMIT 20').all(req.params.phone) || [];
+  const tier = row.points >= 5000 ? 'Platinum' : row.points >= 2000 ? 'Gold' : row.points >= 500 ? 'Silver' : 'Bronze';
+  res.json({ ...row, tier, transactions: txns });
+});
+
+router.post('/loyalty/earn', authMiddleware, adminOnly, async (req, res) => {
+  const { phone, customer_name, amount, ref_id, ref_type } = req.body;
+  if (!phone || !amount) return res.status(400).json({ error: 'phone and amount required' });
+  const points = Math.floor(amount / 100); // 1 point per ₹100
+  const existing = await db.prepare('SELECT * FROM loyalty_points WHERE phone=?').get(phone);
+  if (existing) {
+    await db.prepare('UPDATE loyalty_points SET points=points+?, total_earned=total_earned+?, customer_name=COALESCE(?,customer_name) WHERE phone=?').run(points, points, customer_name, phone);
+  } else {
+    await db.prepare('INSERT INTO loyalty_points (id,phone,customer_name,points,total_earned) VALUES (?,?,?,?,?)').run(uuid(), phone, customer_name || '', points, points);
+  }
+  await db.prepare('INSERT INTO loyalty_transactions (id,phone,type,points,ref_id,ref_type,note) VALUES (?,?,?,?,?,?,?)').run(uuid(), phone, 'earn', points, ref_id || null, ref_type || 'manual', `Earned ${points} pts on ₹${amount}`);
+  res.json({ points_earned: points, message: `${points} points added` });
+});
+
+router.post('/loyalty/redeem', authMiddleware, adminOnly, async (req, res) => {
+  const { phone, points, ref_id } = req.body;
+  if (!phone || !points) return res.status(400).json({ error: 'phone and points required' });
+  const existing = await db.prepare('SELECT * FROM loyalty_points WHERE phone=?').get(phone);
+  if (!existing || existing.points < points) return res.status(400).json({ error: `Insufficient points. Available: ${existing?.points || 0}` });
+  const discount = Math.floor(points / 10); // 10 points = ₹1 discount
+  await db.prepare('UPDATE loyalty_points SET points=points-?, total_redeemed=total_redeemed+? WHERE phone=?').run(points, points, phone);
+  await db.prepare('INSERT INTO loyalty_transactions (id,phone,type,points,ref_id,note) VALUES (?,?,?,?,?,?)').run(uuid(), phone, 'redeem', -points, ref_id || null, `Redeemed ${points} pts = ₹${discount} discount`);
+  res.json({ points_redeemed: points, discount_amount: discount });
+});
+
+router.get('/loyalty', authMiddleware, adminOnly, async (req, res) => {
+  const rows = await db.prepare('SELECT *, CASE WHEN points>=5000 THEN 'Platinum' WHEN points>=2000 THEN 'Gold' WHEN points>=500 THEN 'Silver' ELSE 'Bronze' END as tier FROM loyalty_points ORDER BY points DESC LIMIT 100').all() || [];
+  res.json(rows);
+});

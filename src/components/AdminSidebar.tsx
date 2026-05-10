@@ -17,6 +17,8 @@ const erpGroups = [
     items: [
       { title: "ERP Overview", url: "/admin/erp", icon: Building2 },
       { title: "Live Dashboard", url: "/admin/erp/live", icon: Tv2 },
+      { title: "Loyalty Program", url: "/admin/erp/loyalty", icon: Star },
+      { title: "KPI Alerts", url: "/admin/erp/kpi-alerts", icon: Bell },
       { title: "Job Cards", url: "/admin/erp/job-cards", icon: ClipboardList, badge: "core" },
       { title: "Sales CRM", url: "/admin/erp/crm", icon: Users },
       { title: "Services", url: "/admin/services", icon: Wrench },

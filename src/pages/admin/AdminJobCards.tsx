@@ -135,6 +135,13 @@ export default function AdminJobCards() {
     toast.success('Deleted'); load();
   };
 
+  const sendApproval = async (j: any) => {
+    const res = await req('POST', `/job-cards/${j.id}/send-approval`, {});
+    if (res.message) toast.success('Approval request sent to ' + j.customer_phone);
+    else toast.error(res.error || 'Failed');
+    load();
+  };
+
   const sendWhatsApp = async (j: any) => {
     if (!j.customer_phone) return toast.error('No phone number');
     try {
@@ -228,6 +235,9 @@ export default function AdminJobCards() {
                     <p className="text-xs font-medium">{j.customer_name}</p>
                     <p className="text-[10px] text-muted-foreground">{j.customer_phone}</p>
                     {j.sla_breached ? <span className="text-[10px] text-red-600 font-bold">SLA Breached</span> : null}
+                    {j.approval_status === 'approved' && <span className="text-[10px] text-green-600 font-bold">✓ Approved</span>}
+                    {j.approval_status === 'rejected' && <span className="text-[10px] text-red-600 font-bold">✗ Rejected</span>}
+                    {j.approval_status === 'pending' && <span className="text-[10px] text-orange-500 font-bold">⏳ Awaiting</span>}
                   </td>
                   <td className="p-3 text-xs">
                     <p>{j.device_brand} {j.device_model}</p>
@@ -308,7 +318,13 @@ export default function AdminJobCards() {
                 </div>
                 <div className="flex gap-1">
                   <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => window.open(`/api/invoice/${j.booking_number}`, '_blank')}><ExternalLink className="h-3.5 w-3.5" /></Button>
-                  <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={() => sendWhatsApp(j)}><Send className="h-3.5 w-3.5" /></Button>
+                  <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={() => sendWhatsApp(j)} title="Send WhatsApp"><Send className="h-3.5 w-3.5" /></Button>
+                  {j.status === 'pending' && (
+                    <Button size="icon" variant="ghost" className={`h-8 w-8 ${j.approval_status === 'approved' ? 'text-green-600' : j.approval_status === 'rejected' ? 'text-red-600' : 'text-orange-500'}`}
+                      onClick={() => sendApproval(j)} title={`Approval: ${j.approval_status || 'not sent'}`}>
+                      <ClipboardList className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                   <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(j)}><Edit className="h-3.5 w-3.5" /></Button>
                   <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteJob(j.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>

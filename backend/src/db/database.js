@@ -472,6 +472,23 @@ export const initDB = async () => {
     "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS branch_id TEXT",
     "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS branch_id TEXT",
     "ALTER TABLE payroll ADD COLUMN IF NOT EXISTS branch_id TEXT",
+    // Customer approval + KPI alerts + Loyalty
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'not_sent'",
+    `CREATE TABLE IF NOT EXISTS kpi_alerts (
+      id TEXT PRIMARY KEY, metric TEXT NOT NULL, operator TEXT DEFAULT 'lt',
+      threshold REAL NOT NULL, message TEXT, is_active INTEGER DEFAULT 1,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS loyalty_points (
+      id TEXT PRIMARY KEY, phone TEXT UNIQUE NOT NULL, customer_name TEXT,
+      points INTEGER DEFAULT 0, total_earned INTEGER DEFAULT 0, total_redeemed INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS loyalty_transactions (
+      id TEXT PRIMARY KEY, phone TEXT NOT NULL, type TEXT NOT NULL,
+      points INTEGER NOT NULL, ref_id TEXT, ref_type TEXT, note TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
   ];
   for (const m of migrations) {
     try { await pool.query(m); } catch {}

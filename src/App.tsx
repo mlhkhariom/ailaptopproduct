@@ -64,6 +64,8 @@ import AdminRecurring from "./pages/admin/AdminRecurring";
 import AdminPayroll from "./pages/admin/AdminPayroll";
 import AdminReportBuilder from "./pages/admin/AdminReportBuilder";
 import AdminLiveDashboard from "./pages/admin/AdminLiveDashboard";
+import AdminLoyalty from "./pages/admin/AdminLoyalty";
+import AdminKPIAlerts from "./pages/admin/AdminKPIAlerts";
 import AdminWATemplates from "./pages/admin/AdminWATemplates";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import RepairTrack from "./pages/RepairTrack";
@@ -141,6 +143,8 @@ const App = () => (
             <Route path="/admin/contacts" element={<AdminRoute><AdminContacts /></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
             <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
+            <Route path="/admin/erp/loyalty" element={<AdminRoute><AdminLoyalty /></AdminRoute>} />
+            <Route path="/admin/erp/kpi-alerts" element={<AdminRoute><AdminKPIAlerts /></AdminRoute>} />
             <Route path="/admin/erp/live" element={<AdminRoute><AdminLiveDashboard /></AdminRoute>} />
             <Route path="/admin/erp/report-builder" element={<AdminRoute><AdminReportBuilder /></AdminRoute>} />
             <Route path="/admin/erp/payroll" element={<AdminRoute><AdminPayroll /></AdminRoute>} />
