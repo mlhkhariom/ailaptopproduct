@@ -108,38 +108,90 @@ router.post('/razorpay/verify', authMiddleware, async (req, res) => {
 router.post('/paytm/initiate', authMiddleware, async (req, res) => {
   const merchantId = await getSetting('paytm_merchant_id');
   const merchantKey = await getSetting('paytm_merchant_key');
+  const website = await getSetting('paytm_website') || 'WEBSTAGING';
+  const isProduction = (await getSetting('paytm_production')) === 'true';
 
   if (!merchantId || !merchantKey) {
-    return res.status(400).json({ error: 'Paytm not configured. Using COD fallback.' });
+    return res.status(400).json({ error: 'Paytm not configured. Add Merchant ID + Key in Admin → Settings → API Keys.' });
   }
 
   const { amount, orderId, customerId, email, phone } = req.body;
+  if (!amount || !orderId) return res.status(400).json({ error: 'amount and orderId required' });
+
   const paytmParams = {
     MID: merchantId,
-    WEBSITE: 'WEBSTAGING',
+    WEBSITE: website,
     INDUSTRY_TYPE_ID: 'Retail',
     CHANNEL_ID: 'WEB',
-    ORDER_ID: orderId || `PAYTM_${Date.now()}`,
-    CUST_ID: customerId,
-    MOBILE_NO: phone,
-    EMAIL: email,
+    ORDER_ID: orderId,
+    CUST_ID: customerId || req.user?.id || 'CUST_' + Date.now(),
+    MOBILE_NO: phone || '',
+    EMAIL: email || '',
     TXN_AMOUNT: String(amount),
     CALLBACK_URL: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payment/paytm/callback`,
   };
 
-  // Generate checksum (simplified — use paytmchecksum package in production)
-  res.json({ params: paytmParams, note: 'Integrate paytmchecksum package for production' });
+  // Generate checksum using crypto AES-128-CBC (Paytm standard)
+  const crypto = await import('crypto');
+  const iv = '@@@@&&&&####$$$$';
+  const salt = crypto.default.randomBytes(4).toString('hex');
+  const paramString = Object.keys(paytmParams).sort().map(k => paytmParams[k]).join('|') + '|' + salt;
+  const hash = crypto.default.createHash('sha256').update(paramString).digest('hex') + salt;
+  const cipher = crypto.default.createCipheriv('aes-128-cbc', merchantKey.slice(0, 16), iv);
+  let encrypted = cipher.update(hash, 'utf8', 'base64');
+  encrypted += cipher.final('base64');
+
+  const paytmHost = isProduction ? 'https://securegw.paytm.in' : 'https://securegw-stage.paytm.in';
+  const transactionUrl = `${paytmHost}/theia/processTransaction`;
+
+  res.json({
+    params: paytmParams,
+    checksumHash: encrypted,
+    transactionUrl,
+    environment: isProduction ? 'production' : 'staging',
+  });
 });
 
-// POST /api/payment/paytm/callback
+// POST /api/payment/paytm/callback — Paytm redirects here after payment
 router.post('/paytm/callback', async (req, res) => {
-  const { STATUS, ORDERID, TXNAMOUNT, TXNID } = req.body;
-  if (STATUS === 'TXN_SUCCESS') {
-    // Update order payment status
-    await db.prepare("UPDATE orders SET payment_status='paid', razorpay_id=? WHERE order_number=?").run(TXNID, ORDERID);
-    res.redirect(`http://localhost:8080/track-order?order=${ORDERID}&payment=success`);
-  } else {
-    res.redirect(`http://localhost:8080/checkout?payment=failed`);
+  const { STATUS, ORDERID, TXNAMOUNT, TXNID, RESPCODE, RESPMSG } = req.body;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+
+  try {
+    if (STATUS === 'TXN_SUCCESS') {
+      await db.prepare("UPDATE orders SET payment_status='paid', razorpay_id=? WHERE order_number=?").run(TXNID, ORDERID);
+      res.redirect(`${frontendUrl}/order-success?order=${ORDERID}&payment=success&gateway=paytm`);
+    } else {
+      console.error('Paytm payment failed:', RESPCODE, RESPMSG);
+      res.redirect(`${frontendUrl}/checkout?payment=failed&reason=${encodeURIComponent(RESPMSG || 'Unknown')}`);
+    }
+  } catch (e) {
+    console.error('Paytm callback error:', e.message);
+    res.redirect(`${frontendUrl}/checkout?payment=error`);
+  }
+});
+
+// POST /api/payment/paytm/verify — Verify Paytm transaction status
+router.post('/paytm/verify', authMiddleware, async (req, res) => {
+  const merchantId = await getSetting('paytm_merchant_id');
+  const merchantKey = await getSetting('paytm_merchant_key');
+  const isProduction = (await getSetting('paytm_production')) === 'true';
+  const { orderId } = req.body;
+
+  if (!merchantId || !merchantKey || !orderId) return res.status(400).json({ error: 'Missing config or orderId' });
+
+  const host = isProduction ? 'https://securegw.paytm.in' : 'https://securegw-stage.paytm.in';
+  try {
+    const body = { MID: merchantId, ORDERID: orderId };
+    const response = await fetch(`${host}/v3/order/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body, head: { signature: '' } }),
+    });
+    const data = await response.json();
+    res.json(data);
+  } catch (e) {
+    res.status(502).json({ error: 'Paytm verify failed: ' + e.message });
   }
 });
 

@@ -70,6 +70,50 @@ const Checkout = () => {
     navigate(`/order-success?order=${order_number}${paymentId ? `&payment_id=${paymentId}` : ''}`);
   };
 
+  const handlePaytm = async () => {
+    try {
+      // First place order (pending) to get order_number
+      const orderData = {
+        items: items.map(({ product, qty }) => ({ id: product.id, name: product.name, quantity: qty, price: product.price })),
+        subtotal, discount, shipping_charge: shippingCharge, total: finalTotal,
+        coupon_code: appliedCoupon || null,
+        payment_method: 'paytm',
+        payment_status: 'pending',
+        address: { name: `${addr.firstName} ${addr.lastName}`, email: addr.email, phone: addr.phone, line: addr.address, city: addr.city, state: addr.state, pin: addr.pin },
+      };
+      const { order_number } = await api.placeOrder(orderData);
+
+      // Initiate Paytm
+      const token = localStorage.getItem('ailaptopwala_token');
+      const res = await fetch('/api/payment/paytm/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ amount: finalTotal, orderId: order_number, customerId: user?.id, email: addr.email, phone: addr.phone }),
+      }).then(r => r.json());
+
+      if (res.error) { toast.error(res.error); setLoading(false); return; }
+
+      // Auto-submit form to Paytm
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = res.transactionUrl;
+      Object.entries(res.params).forEach(([k, v]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden'; input.name = k; input.value = String(v);
+        form.appendChild(input);
+      });
+      const csInput = document.createElement('input');
+      csInput.type = 'hidden'; csInput.name = 'CHECKSUMHASH'; csInput.value = res.checksumHash;
+      form.appendChild(csInput);
+      clearCart();
+      document.body.appendChild(form);
+      form.submit();
+    } catch (e: any) {
+      toast.error(e.message || 'Paytm init failed');
+      setLoading(false);
+    }
+  };
+
   const handleRazorpay = async () => {
     try {
       const { order_id, key_id, amount } = await api.createRazorpayOrder(finalTotal);
@@ -130,11 +174,7 @@ const Checkout = () => {
         }
         await handleRazorpay();
       } else if (paymentMethod === 'paytm') {
-        // Paytm not fully implemented — show message
-        toast.error('Paytm integration in progress. Please use Razorpay or COD.');
-        setPaymentMethod('cod');
-        setLoading(false);
-        return;
+        await handlePaytm();
       } else {
         // COD or default
         await placeOrder(undefined, 'pending');

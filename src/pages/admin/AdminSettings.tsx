@@ -180,12 +180,32 @@ const AdminSettings = () => {
                     <Badge variant="outline" className="text-[9px] ml-auto">Optional</Badge>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-3">
-                    <div><Label className="text-xs">Merchant ID</Label><Input className="mt-1 h-9 text-xs" value={s('paytm_merchant_id')} onChange={e => setS('paytm_merchant_id', e.target.value)} placeholder="YourMerchantID" /></div>
+                    <div><Label className="text-xs">Merchant ID (MID)</Label><Input className="mt-1 h-9 text-xs" value={s('paytm_merchant_id')} onChange={e => setS('paytm_merchant_id', e.target.value)} placeholder="YourMerchantID" /></div>
                     <div><Label className="text-xs">Merchant Key</Label><Input className="mt-1 h-9 text-xs" type="password" value={s('paytm_merchant_key')} onChange={e => setS('paytm_merchant_key', e.target.value)} placeholder="••••••••" /></div>
                   </div>
-                  <div className="flex items-center gap-2 mt-3">
+                  <div className="grid sm:grid-cols-2 gap-3 mt-3">
+                    <div><Label className="text-xs">Website</Label>
+                      <Select value={s('paytm_website') || 'WEBSTAGING'} onValueChange={v => setS('paytm_website', v)}>
+                        <SelectTrigger className="mt-1 h-9 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="WEBSTAGING">WEBSTAGING (Test)</SelectItem>
+                          <SelectItem value="DEFAULT">DEFAULT (Production)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2 mt-5">
+                      <Switch checked={s('paytm_production') === 'true'} onCheckedChange={v => setS('paytm_production', String(v))} />
+                      <Label className="text-xs">Production Mode</Label>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-3 border-t pt-3">
                     <Switch checked={s('payment_paytm') === 'true'} onCheckedChange={v => setS('payment_paytm', String(v))} />
-                    <Label className="text-xs">Enable Paytm</Label>
+                    <Label className="text-xs font-medium">Enable Paytm Gateway</Label>
+                    {s('paytm_merchant_id') && s('paytm_merchant_key') ? (
+                      <Badge variant="default" className="text-[9px] ml-auto bg-green-600">✓ Ready</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[9px] ml-auto">Add keys first</Badge>
+                    )}
                   </div>
                 </div>
 
