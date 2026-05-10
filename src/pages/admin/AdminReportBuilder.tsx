@@ -35,9 +35,13 @@ export default function AdminReportBuilder() {
   const [cols, setCols] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [ran, setRan] = useState(false);
+  const [savedReports, setSavedReports] = useState<any[]>([]);
+  const [saveName, setSaveName] = useState('');
+  const [saveOpen, setSaveOpen] = useState(false);
 
   useEffect(() => {
     req('GET', '/report-builder/sources').then(d => { setSources(d); });
+    req('GET', '/saved-reports').then(d => setSavedReports(Array.isArray(d) ? d : []));
   }, []);
 
   useEffect(() => {
@@ -70,6 +74,26 @@ export default function AdminReportBuilder() {
     toast.success(`${res.total} rows loaded`);
   };
 
+  const saveReport = async () => {
+    if (!saveName) return;
+    await req('POST', '/saved-reports', { name: saveName, source, fields: selectedFields, filters, sort_by: sortBy, sort_dir: sortDir });
+    setSaveOpen(false); setSaveName('');
+    req('GET', '/saved-reports').then(d => setSavedReports(Array.isArray(d) ? d : []));
+  };
+
+  const loadSaved = (r: any) => {
+    setSource(r.source);
+    const f = typeof r.fields === 'string' ? JSON.parse(r.fields) : r.fields;
+    const fi = typeof r.filters === 'string' ? JSON.parse(r.filters) : r.filters;
+    setSelectedFields(f || []); setFilters(fi || []);
+    setSortBy(r.sort_by || 'created_at'); setSortDir(r.sort_dir || 'DESC');
+  };
+
+  const deleteSaved = async (id: string) => {
+    await req('DELETE', `/saved-reports/${id}`, {});
+    req('GET', '/saved-reports').then(d => setSavedReports(Array.isArray(d) ? d : []));
+  };
+
   const exportCSV = async () => {
     const res = await fetch('/api/erp/report-builder/export', {
       method: 'POST',
@@ -91,6 +115,7 @@ export default function AdminReportBuilder() {
           <h1 className="text-xl font-black flex items-center gap-2"><BarChart3 className="h-5 w-5 text-primary" /> Custom Report Builder</h1>
           <div className="flex gap-2">
             {ran && rows.length > 0 && <Button size="sm" variant="outline" onClick={exportCSV} className="gap-1.5"><Download className="h-4 w-4" /> Export CSV</Button>}
+            {ran && rows.length > 0 && <Button size="sm" variant="outline" onClick={() => setSaveOpen(true)} className="gap-1.5"><Plus className="h-4 w-4" /> Save Report</Button>}
             <Button size="sm" onClick={run} disabled={loading} className="gap-1.5"><Play className="h-4 w-4" />{loading ? 'Running...' : 'Run Report'}</Button>
           </div>
         </div>
@@ -160,6 +185,19 @@ export default function AdminReportBuilder() {
               {!filters.length && <p className="text-xs text-muted-foreground">No filters — showing all records</p>}
             </div>
 
+            {/* Saved Reports */}
+            {savedReports.length > 0 && (
+              <div className="border rounded-xl p-4 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Saved Reports</p>
+                {savedReports.map((r: any) => (
+                  <div key={r.id} className="flex items-center gap-1">
+                    <button onClick={() => loadSaved(r)} className="flex-1 text-left text-xs px-2 py-1.5 rounded hover:bg-muted/50 font-medium truncate">{r.name}</button>
+                    <button onClick={() => deleteSaved(r.id)} className="text-red-400 hover:text-red-600 text-xs px-1">✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Sort */}
             <div className="border rounded-xl p-4 space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Sort</p>
@@ -220,6 +258,19 @@ export default function AdminReportBuilder() {
           </div>
         </div>
       </div>
+      {/* Save Report Dialog */}
+      {saveOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background border rounded-xl p-6 w-80 space-y-3">
+            <p className="font-bold">Save Report</p>
+            <input className="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Report name..." value={saveName} onChange={e => setSaveName(e.target.value)} autoFocus />
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setSaveOpen(false)} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button>
+              <button onClick={saveReport} className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-lg">Save</button>
+            </div>
+          </div>
+        </div>
+      )}
     </ERPLayout>
   );
 }

@@ -20,7 +20,7 @@ const CATEGORIES = ['Rent', 'Salary', 'Electricity', 'Internet', 'Supplies', 'Ma
 const METHODS = ['Cash', 'UPI', 'Bank Transfer', 'Cheque', 'Card'];
 
 const emptyForm = {
-  category: '', amount: 0, description: '',
+  category: '', amount: 0, description: '', receipt_url: '',
   payment_method: 'Cash', date: new Date().toISOString().split('T')[0],
 };
 
@@ -182,7 +182,7 @@ export default function AdminExpenses() {
                   <td className="p-3">
                     <span className="text-xs font-medium px-2 py-0.5 bg-red-50 text-red-700 rounded-full">{e.category}</span>
                   </td>
-                  <td className="p-3 text-xs text-muted-foreground">{e.description || '—'}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{e.description || '—'}{e.receipt_url && <a href={e.receipt_url} target="_blank" rel="noreferrer" className="ml-2 text-blue-500 underline text-xs">Receipt</a>}</td>
                   <td className="p-3 text-xs">{e.payment_method}</td>
                   <td className="p-3 text-right text-xs font-bold text-red-600">₹{(e.amount || 0).toLocaleString('en-IN')}</td>
                   <td className="p-3">
@@ -256,6 +256,9 @@ export default function AdminExpenses() {
                 </div>
               </div>
             </div>
+              <div><Label className="text-xs">Receipt Photo URL (optional)</Label>
+                <Input className="mt-1 h-9" value={form.receipt_url || ''} onChange={e => setForm((f: any) => ({ ...f, receipt_url: e.target.value }))} placeholder="Paste image URL or upload link" />
+              </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
               <Button onClick={save}>💾 Save</Button>

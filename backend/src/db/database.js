@@ -474,7 +474,15 @@ export const initDB = async () => {
     "ALTER TABLE payroll ADD COLUMN IF NOT EXISTS branch_id TEXT",
     // Customer approval + KPI alerts + Loyalty
     "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'not_sent'",
-    `CREATE TABLE IF NOT EXISTS kpi_alerts (
+    "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS payment_link TEXT",
+    "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS payment_link TEXT",
+    "ALTER TABLE expenses ADD COLUMN IF NOT EXISTS receipt_url TEXT",
+    `CREATE TABLE IF NOT EXISTS saved_reports (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, source TEXT NOT NULL,
+      fields JSONB DEFAULT '[]', filters JSONB DEFAULT '[]',
+      sort_by TEXT, sort_dir TEXT DEFAULT 'DESC',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,    `CREATE TABLE IF NOT EXISTS kpi_alerts (
       id TEXT PRIMARY KEY, metric TEXT NOT NULL, operator TEXT DEFAULT 'lt',
       threshold REAL NOT NULL, message TEXT, is_active INTEGER DEFAULT 1,
       created_at TIMESTAMPTZ DEFAULT NOW()

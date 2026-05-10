@@ -230,6 +230,11 @@ export default function AdminBilling() {
           onPayClick={openPay}
           onPartialClick={openPartial}
           onIRN={openIRN}
+          onPaymentLink={async (r: any) => {
+            const res = await fetch('/api/erp/payment-link', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: JSON.stringify({ invoice_id: r.id, invoice_type: r.type === 'service' ? 'service' : 'custom', amount: r.amount, customer_name: r.customer_name, customer_phone: r.customer_phone }) }).then(x => x.json());
+            if (res.payment_link) { toast.success(res.mock ? 'Mock link (set Razorpay keys for live): ' + res.payment_link : 'Payment link created!'); load(); }
+            else toast.error(res.error || 'Failed');
+          }}
           onConvertProforma={async (r: any) => {
             const res = await fetch(`/api/erp/proforma/${r.id}/convert`, { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(x => x.json());
             if (res.invoice_number) { toast.success('Converted: ' + res.invoice_number); load(); }

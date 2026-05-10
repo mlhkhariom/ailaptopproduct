@@ -32,9 +32,10 @@ interface Props {
   onPartialClick?: (r: BillingRow) => void;
   onIRN?: (r: BillingRow) => void;
   onConvertProforma?: (r: BillingRow) => void;
+  onPaymentLink?: (r: BillingRow) => void;
 }
 
-export default function BillingTable({ rows, onView, onSendWA, onEdit, onPayClick, onPartialClick, onIRN, onConvertProforma }: Props) {
+export default function BillingTable({ rows, onView, onSendWA, onEdit, onPayClick, onPartialClick, onIRN, onConvertProforma, onPaymentLink }: Props) {
   if (!rows.length) return (
     <div className="border rounded-xl p-16 text-center text-muted-foreground">
       <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
@@ -96,6 +97,12 @@ export default function BillingTable({ rows, onView, onSendWA, onEdit, onPayClic
                       <Button size="icon" variant="ghost" className="h-8 w-8" title="View Invoice" onClick={() => onView(r)}>
                         <ExternalLink className="h-3.5 w-3.5" />
                       </Button>
+                      {onPaymentLink && r.payment_status !== 'paid' && r.payment_status !== 'proforma' && (
+                        <button onClick={() => onPaymentLink(r)} className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 font-medium" title="Generate payment link">₹Link</button>
+                      )}
+                      {r.payment_link && (
+                        <a href={r.payment_link} target="_blank" rel="noreferrer" className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 font-medium">Pay</a>
+                      )}
                       {r.payment_status === 'proforma' && onConvertProforma && (
                         <button onClick={() => onConvertProforma(r)} className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 font-medium">Convert</button>
                       )}

@@ -1629,3 +1629,133 @@ router.get('/loyalty', authMiddleware, adminOnly, async (req, res) => {
   const rows = await db.prepare('SELECT *, CASE WHEN points>=5000 THEN 'Platinum' WHEN points>=2000 THEN 'Gold' WHEN points>=500 THEN 'Silver' ELSE 'Bronze' END as tier FROM loyalty_points ORDER BY points DESC LIMIT 100').all() || [];
   res.json(rows);
 });
+
+// ── RAZORPAY PAYMENT LINK ─────────────────────────────────
+
+router.post('/payment-link', authMiddleware, adminOnly, async (req, res) => {
+  const { invoice_id, invoice_type = 'custom', amount, customer_name, customer_phone, customer_email, description } = req.body;
+  if (!amount || !customer_phone) return res.status(400).json({ error: 'amount and customer_phone required' });
+
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+  if (!keyId || !keySecret) {
+    // Mock link for testing
+    const mockLink = `https://rzp.io/l/mock-${Date.now()}`;
+    if (invoice_id) {
+      const table = invoice_type === 'service' ? 'service_bookings' : 'custom_invoices';
+      await db.prepare(`UPDATE ${table} SET payment_link=? WHERE id=?`).run(mockLink, invoice_id);
+    }
+    return res.json({ payment_link: mockLink, mock: true, message: 'Set RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET in .env for live links' });
+  }
+
+  try {
+    const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+    const payload = {
+      amount: Math.round(amount * 100), // paise
+      currency: 'INR',
+      description: description || 'AI Laptop Wala Invoice',
+      customer: { name: customer_name || '', contact: customer_phone, email: customer_email || '' },
+      notify: { sms: true, email: !!customer_email },
+      reminder_enable: true,
+      callback_url: `${process.env.FRONTEND_URL || 'http://localhost:8080'}/payment-success`,
+      callback_method: 'get',
+    };
+    const resp = await fetch('https://api.razorpay.com/v1/payment_links', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Basic ${auth}` },
+      body: JSON.stringify(payload),
+    });
+    const data = await resp.json();
+    if (!data.short_url) return res.status(502).json({ error: data.error?.description || 'Razorpay error', detail: data });
+
+    if (invoice_id) {
+      const table = invoice_type === 'service' ? 'service_bookings' : 'custom_invoices';
+      await db.prepare(`UPDATE ${table} SET payment_link=? WHERE id=?`).run(data.short_url, invoice_id);
+    }
+    res.json({ payment_link: data.short_url, payment_link_id: data.id });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── SCHEDULED REPORTS ─────────────────────────────────────
+
+router.post('/scheduled-reports/send', authMiddleware, adminOnly, async (req, res) => {
+  const { period = 'daily', branch_id } = req.body;
+  const OWNER_PHONE = process.env.OWNER_PHONE || '';
+  if (!OWNER_PHONE) return res.status(400).json({ error: 'OWNER_PHONE not set in .env' });
+
+  const today = new Date().toISOString().split('T')[0];
+  const monthStart = today.slice(0, 7) + '-01';
+  const bFilter = branch_id ? ' AND branch_id=?' : '';
+  const bParam = branch_id ? [branch_id] : [];
+
+  const [revenue, jobs, expenses, leads] = await Promise.all([
+    db.prepare(`SELECT COALESCE(SUM(total_charge),0) as v FROM service_bookings WHERE payment_status='paid' AND DATE(created_at)=?${bFilter}`).get(today, ...bParam),
+    db.prepare(`SELECT COUNT(*) as total, COUNT(CASE WHEN status='completed' THEN 1 END) as done, COUNT(CASE WHEN status IN ('pending','in_progress') THEN 1 END) as pending FROM service_bookings WHERE DATE(created_at)=?${bFilter}`).get(today, ...bParam),
+    db.prepare(`SELECT COALESCE(SUM(amount),0) as v FROM expenses WHERE date=?${bFilter}`).get(today, ...bParam),
+    db.prepare(`SELECT COUNT(*) as c FROM leads WHERE DATE(created_at)=?`).get(today),
+  ]);
+
+  const msg = `📊 *AI Laptop Wala — ${period === 'daily' ? 'Daily' : 'Monthly'} Report*
+` +
+    `📅 ${today}
+
+` +
+    `💰 Revenue: ₹${(revenue?.v || 0).toLocaleString('en-IN')}
+` +
+    `🔧 Jobs: ${jobs?.total || 0} total | ${jobs?.done || 0} done | ${jobs?.pending || 0} pending
+` +
+    `💸 Expenses: ₹${(expenses?.v || 0).toLocaleString('en-IN')}
+` +
+    `🎯 New Leads: ${leads?.c || 0}
+` +
+    `📈 Net: ₹${((revenue?.v || 0) - (expenses?.v || 0)).toLocaleString('en-IN')}`;
+
+  try {
+    const { queueNotification } = await import('../whatsapp/notifications.js');
+    await queueNotification(OWNER_PHONE, msg, 'scheduled_report');
+    res.json({ message: 'Report sent', phone: OWNER_PHONE });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── SAVED REPORTS ─────────────────────────────────────────
+
+router.get('/saved-reports', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM saved_reports ORDER BY created_at DESC').all() || []);
+});
+
+router.post('/saved-reports', authMiddleware, adminOnly, async (req, res) => {
+  const { name, source, fields, filters, sort_by, sort_dir } = req.body;
+  if (!name || !source) return res.status(400).json({ error: 'name and source required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO saved_reports (id,name,source,fields,filters,sort_by,sort_dir) VALUES (?,?,?,?,?,?,?)').run(id, name, source, JSON.stringify(fields || []), JSON.stringify(filters || []), sort_by || '', sort_dir || 'DESC');
+  res.status(201).json({ id });
+});
+
+router.delete('/saved-reports/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM saved_reports WHERE id=?').run(req.params.id);
+  res.json({ message: 'Deleted' });
+});
+
+// ── WHATSAPP → LEAD AUTO-LINK ─────────────────────────────
+
+router.post('/leads/from-whatsapp', authMiddleware, adminOnly, async (req, res) => {
+  const { phone, name, message, branch_id } = req.body;
+  if (!phone) return res.status(400).json({ error: 'phone required' });
+  // Check if lead already exists
+  const existing = await db.prepare('SELECT id FROM leads WHERE phone=?').get(phone);
+  if (existing) {
+    // Add activity to existing lead
+    await db.prepare("INSERT INTO lead_activities (id,lead_id,type,note,created_by) VALUES (?,?,?,?,?)").run(uuid(), existing.id, 'whatsapp', message || 'WhatsApp message received', 'system');
+    return res.json({ lead_id: existing.id, created: false, message: 'Activity added to existing lead' });
+  }
+  // Create new lead
+  const id = uuid();
+  await db.prepare('INSERT INTO leads (id,name,phone,source,status,notes,branch_id) VALUES (?,?,?,?,?,?,?)').run(id, name || phone, phone, 'WhatsApp', 'new', message || '', branch_id || null);
+  await db.prepare("INSERT INTO lead_activities (id,lead_id,type,note,created_by) VALUES (?,?,?,?,?)").run(uuid(), id, 'whatsapp', message || 'Lead created from WhatsApp', 'system');
+  res.status(201).json({ lead_id: id, created: true, message: 'New lead created from WhatsApp' });
+});

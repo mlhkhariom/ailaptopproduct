@@ -156,14 +156,19 @@ export const initWhatsApp = async () => {
     await db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
       .run(msg.id._serialized, msg.from, 'me', msg.hasMedia ? `[${msg.type}]` : (msg.body || `[${msg.type}]`), 'incoming');
 
-    // Auto-create CRM lead for new WhatsApp contacts (first message only)
+    // Auto-create/update CRM lead for WhatsApp contacts
     if (!msg.isGroup && msg.type === 'chat') {
       try {
         const phone = msg.from.replace('@c.us', '');
         const existing = await db.prepare('SELECT id FROM leads WHERE phone=?').get(phone);
         if (!existing) {
+          const leadId = uuid();
           await db.prepare(`INSERT INTO leads (id,name,phone,source,interest,status,notes) VALUES (?,?,?,'WhatsApp','WhatsApp Inquiry','new',?)`)
-            .run(uuid(), contact.pushname || contact.name || phone, phone, msg.body?.slice(0, 200) || '');
+            .run(leadId, contact.pushname || contact.name || phone, phone, msg.body?.slice(0, 200) || '');
+          await db.prepare("INSERT INTO lead_activities (id,lead_id,type,note,created_by) VALUES (?,?,?,?,?)").run(uuid(), leadId, 'whatsapp', msg.body?.slice(0, 200) || 'WhatsApp message', 'system');
+        } else {
+          // Add activity to existing lead
+          await db.prepare("INSERT INTO lead_activities (id,lead_id,type,note,created_by) VALUES (?,?,?,?,?)").run(uuid(), existing.id, 'whatsapp', msg.body?.slice(0, 200) || 'WhatsApp message', 'system');
         }
       } catch {}
     }

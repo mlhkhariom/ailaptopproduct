@@ -164,6 +164,13 @@ export default function AdminERPReports() {
           <Button size="sm" variant="outline" onClick={load} disabled={loading}>
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
+            <Button size="sm" variant="outline" onClick={async () => { const res = await fetch(`/api/erp/scheduled-reports/send`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("ailaptopwala_token")}` }, body: JSON.stringify({ period: "daily", branch_id: branchFilter !== "all" ? branchFilter : undefined }) }).then(r => r.json()); if (res.message) { const { toast } = await import("sonner"); toast.success("Report sent to owner WhatsApp"); } }} className="gap-1.5">Send Report</Button>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={async () => {
+              const res = await fetch('/api/erp/scheduled-reports/send', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: JSON.stringify({ period: 'daily', branch_id: branchFilter !== 'all' ? branchFilter : undefined }) }).then(r => r.json());
+              const { toast } = await import('sonner');
+              if (res.message) toast.success('Report sent to owner WhatsApp!');
+              else toast.error(res.error || 'Failed');
+            }}>Send to WhatsApp</Button>
             <Button size="sm" variant="outline" onClick={printReport}>
               <Printer className="h-4 w-4 mr-1" /> Print
             </Button>

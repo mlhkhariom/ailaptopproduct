@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { IndianRupee, RefreshCw, Play, Printer, CheckCircle, Clock, Users } from "lucide-react";
+import { IndianRupee, RefreshCw, Play, Printer, CheckCircle, Clock, Users, Download } from "lucide-react";
 import { toast } from "sonner";
 
 const req = (method: string, path: string, body?: any) =>
@@ -65,6 +65,19 @@ export default function AdminPayroll() {
     setSlipData(d); setSlipOpen(true);
   };
 
+  const exportNEFT = () => {
+    const paid = list.filter(r => r.status === 'paid' || r.net > 0);
+    const rows = [
+      ['Staff Name', 'Account No', 'IFSC', 'Amount', 'Remarks'],
+      ...paid.map(r => [r.staff_name || '', '', '', r.net || 0, `Salary ${month}`])
+    ];
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `NEFT_Salary_${month}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const printSlip = () => {
     const w = window.open('', '_blank');
     if (!w || !printRef.current) return;
@@ -87,6 +100,7 @@ export default function AdminPayroll() {
             </Select>
 <BranchSelector value={branchFilter} onChange={setBranchFilter} className="w-44" />
             <Button size="sm" variant="outline" onClick={load} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></Button>
+            <Button size="sm" variant="outline" onClick={exportNEFT} className="gap-1.5"><Download className="h-4 w-4" /> NEFT File</Button>
             <Button size="sm" onClick={generate} className="gap-1.5"><Play className="h-4 w-4" /> Generate Payroll</Button>
           </div>
         </div>
