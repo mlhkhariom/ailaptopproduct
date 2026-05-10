@@ -28,6 +28,18 @@ const STATUS_LABELS: Record<string, string> = {
   pending: '⏳ Pending', in_progress: '🔧 In Progress', completed: '✅ Completed', cancelled: '❌ Cancelled',
 };
 
+
+const JOB_TEMPLATES = [
+  { label: 'Screen Repair', service_name: 'Screen Replacement', parts_used: [{ name: 'Laptop Screen', qty: 1, price: 0 }], labour_charge: 500, sla_hours: 24 },
+  { label: 'Battery Replace', service_name: 'Battery Replacement', parts_used: [{ name: 'Laptop Battery', qty: 1, price: 0 }], labour_charge: 300, sla_hours: 12 },
+  { label: 'Keyboard Fix', service_name: 'Keyboard Repair/Replace', parts_used: [{ name: 'Keyboard', qty: 1, price: 0 }], labour_charge: 400, sla_hours: 24 },
+  { label: 'Charging Port', service_name: 'Charging Port Repair', parts_used: [], labour_charge: 600, sla_hours: 48 },
+  { label: 'Motherboard', service_name: 'Motherboard Repair', parts_used: [], labour_charge: 1500, sla_hours: 72 },
+  { label: 'Virus Removal', service_name: 'Virus/Malware Removal', parts_used: [], labour_charge: 500, sla_hours: 12 },
+  { label: 'OS Install', service_name: 'OS Installation', parts_used: [], labour_charge: 700, sla_hours: 6 },
+  { label: 'Data Recovery', service_name: 'Data Recovery', parts_used: [], labour_charge: 1000, sla_hours: 48 },
+];
+
 const emptyForm = {
   customer_name: '', customer_phone: '', customer_email: '',
   service_name: 'General Repair', device_brand: '', device_model: '', device_serial: '',

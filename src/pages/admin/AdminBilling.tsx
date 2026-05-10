@@ -41,6 +41,7 @@ export default function AdminBilling() {
 
   // Custom invoice
   const [customOpen, setCustomOpen] = useState(false);
+  const [proformaMode, setProformaMode] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<any>(emptyForm);
 
@@ -74,12 +75,13 @@ export default function AdminBilling() {
 
   useEffect(() => { load(); }, [typeFilter, statusFilter, from, to]);
 
-  // Counts for tabs
+  // Counts for tabs — use branch-filtered rows
+  const branchRows = rows.filter((r: any) => branchFilter === 'all' || r.branch_id === branchFilter);
   const counts = {
-    all: rows.length,
-    order: rows.filter(r => r.type === 'order').length,
-    service: rows.filter(r => r.type === 'service').length,
-    custom: rows.filter(r => r.type === 'custom').length,
+    all: branchRows.length,
+    order: branchRows.filter((r: any) => r.type === 'order').length,
+    service: branchRows.filter((r: any) => r.type === 'service').length,
+    custom: branchRows.filter((r: any) => r.type === 'custom').length,
   };
 
   // Custom invoice save
@@ -195,7 +197,10 @@ export default function AdminBilling() {
             <Button size="sm" variant="outline" className="h-9" onClick={load} disabled={loading}>
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
-            <Button size="sm" className="gap-1.5 h-9" onClick={() => { setForm(emptyForm); setEditingId(null); setCustomOpen(true); }}>
+            <Button size="sm" variant="outline" className="gap-1.5 h-9" onClick={() => { setForm(emptyForm); setEditingId(null); setProformaMode(true); setCustomOpen(true); }}>
+              <FileText className="h-4 w-4" /> Proforma
+            </Button>
+            <Button size="sm" className="gap-1.5 h-9" onClick={() => { setForm(emptyForm); setEditingId(null); setProformaMode(false); setCustomOpen(true); }}>
               <Plus className="h-4 w-4" /> Custom Invoice
             </Button>
           </div>
@@ -218,17 +223,22 @@ export default function AdminBilling() {
 
         {/* Table */}
         <BillingTable
-          rows={rows}
+          rows={rows.filter((r: any) => branchFilter === 'all' || r.branch_id === branchFilter)}
           onView={handleView}
           onSendWA={handleSendWA}
           onEdit={openEdit}
           onPayClick={openPay}
           onPartialClick={openPartial}
           onIRN={openIRN}
+          onConvertProforma={async (r: any) => {
+            const res = await fetch(`/api/erp/proforma/${r.id}/convert`, { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(x => x.json());
+            if (res.invoice_number) { toast.success('Converted: ' + res.invoice_number); load(); }
+            else toast.error(res.error || 'Failed');
+          }}
         />
 
         {/* Custom Invoice Form */}
-        <CustomInvoiceForm
+        <CustomInvoiceForm proformaMode={proformaMode}
           open={customOpen}
           onClose={() => setCustomOpen(false)}
           form={form}

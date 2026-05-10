@@ -67,14 +67,15 @@ router.put('/job-cards/:id', authMiddleware, adminOnly, async (req, res) => {
   // Get previous status to detect transition
   const prev = await db.prepare('SELECT status, parts_used FROM service_bookings WHERE id=?').get(req.params.id);
 
+  const { sla_hours } = req.body;
   await db.prepare(`UPDATE service_bookings SET status=?,technician=?,diagnosis=?,
     parts_used=?,labour_charge=?,parts_charge=?,total_charge=?,
     payment_status=?,payment_method=?,notes=?,priority=?,branch_id=?,gst_enabled=?,
-    completed_at=COALESCE(?,completed_at) WHERE id=?`)
+    sla_hours=COALESCE(?,sla_hours),completed_at=COALESCE(?,completed_at) WHERE id=?`)
     .run(status, technician, diagnosis, JSON.stringify(parts_used || []),
       labour_charge || 0, parts_charge || 0, total_charge,
       payment_status, payment_method, notes, priority || 'normal', branch_id,
-      gst_enabled ? 1 : 0, completed_at, req.params.id);
+      gst_enabled ? 1 : 0, sla_hours || null, completed_at, req.params.id);
 
   // Auto-deduct parts from inventory when job completed (only on first completion)
   if (status === 'completed' && prev?.status !== 'completed' && parts_used?.length) {
@@ -175,9 +176,9 @@ router.post('/staff', authMiddleware, adminOnly, async (req, res) => {
 });
 
 router.put('/staff/:id', authMiddleware, adminOnly, async (req, res) => {
-  const { name, role, phone, email, salary, joining_date, address, is_active } = req.body;
-  await db.prepare('UPDATE staff SET name=?,role=?,phone=?,email=?,salary=?,joining_date=?,address=?,is_active=? WHERE id=?')
-    .run(name, role, phone, email, salary, joining_date, address, is_active ? 1 : 0, req.params.id);
+  const { name, role, phone, email, salary, joining_date, address, is_active, branch_id } = req.body;
+  await db.prepare('UPDATE staff SET name=?,role=?,phone=?,email=?,salary=?,joining_date=?,address=?,is_active=?,branch_id=? WHERE id=?')
+    .run(name, role, phone, email, salary, joining_date, address, is_active ? 1 : 0, branch_id || null, req.params.id);
   res.json({ message: 'Updated' });
 });
 
@@ -192,15 +193,16 @@ router.get('/dashboard', authMiddleware, adminOnly, async (req, res) => {
   const today = new Date().toISOString().split('T')[0];
   const monthStart = today.slice(0, 7) + '-01';
   const { branch_id } = req.query;
-  const bCond = branch_id ? ` AND branch_id='${branch_id}'` : '';
+  const bFilter = branch_id ? ' AND branch_id=?' : '';
+  const bParam = branch_id ? [branch_id] : [];
 
   const [pendingJobs, completedToday, monthRevenue, monthExpenses, totalStaff, pendingPayments] = await Promise.all([
-    db.prepare(`SELECT COUNT(*) as c FROM service_bookings WHERE status IN ('pending','in_progress')${bCond}`).get(),
-    db.prepare(`SELECT COUNT(*) as c FROM service_bookings WHERE DATE(completed_at)=?${bCond}`).get(today),
-    db.prepare(`SELECT COALESCE(SUM(total_charge),0) as v FROM service_bookings WHERE payment_status='paid' AND DATE(created_at)>=?${bCond}`).get(monthStart),
-    db.prepare(`SELECT COALESCE(SUM(amount),0) as v FROM expenses WHERE date>=?${branch_id ? " AND branch_id='" + branch_id + "'" : ''}`).get(monthStart),
-    db.prepare(`SELECT COUNT(*) as c FROM staff WHERE is_active=1${bCond}`).get(),
-    db.prepare(`SELECT COUNT(*) as c FROM service_bookings WHERE payment_status='pending' AND status='completed'${bCond}`).get(),
+    db.prepare(`SELECT COUNT(*) as c FROM service_bookings WHERE status IN ('pending','in_progress')${bFilter}`).get(...bParam),
+    db.prepare(`SELECT COUNT(*) as c FROM service_bookings WHERE DATE(completed_at)=?${bFilter}`).get(today, ...bParam),
+    db.prepare(`SELECT COALESCE(SUM(total_charge),0) as v FROM service_bookings WHERE payment_status='paid' AND DATE(created_at)>=?${bFilter}`).get(monthStart, ...bParam),
+    db.prepare(`SELECT COALESCE(SUM(amount),0) as v FROM expenses WHERE date>=?${bFilter}`).get(monthStart, ...bParam),
+    db.prepare(`SELECT COUNT(*) as c FROM staff WHERE is_active=1${bFilter}`).get(...bParam),
+    db.prepare(`SELECT COUNT(*) as c FROM service_bookings WHERE payment_status='pending' AND status='completed'${bFilter}`).get(...bParam),
   ]);
 
   res.json({
@@ -1028,7 +1030,8 @@ router.get('/gstr1-export', authMiddleware, adminOnly, async (req, res) => {
   const f = from || new Date().toISOString().slice(0, 7) + '-01';
   const t = to || new Date().toISOString().split('T')[0];
 
-  const bCond = branch_id ? ` AND branch_id='${branch_id}'` : '';
+  const bFilter = branch_id ? ' AND branch_id=?' : '';
+  const bParam = branch_id ? [branch_id] : [];
   const services = await db.prepare(`SELECT booking_number as invoice_no, customer_name, customer_phone, total_charge as taxable_value, gst_enabled, created_at FROM service_bookings WHERE payment_status='paid' AND gst_enabled=1 AND DATE(created_at) BETWEEN ? AND ?${bCond}`).all(f, t) || [];
   const customs = await db.prepare(`SELECT invoice_number as invoice_no, customer_name, customer_phone, (subtotal-discount) as taxable_value, gst_enabled, created_at FROM custom_invoices WHERE payment_status='paid' AND gst_enabled=1 AND DATE(created_at) BETWEEN ? AND ?${bCond}`).all(f, t) || [];
 
@@ -1207,9 +1210,8 @@ router.get('/payroll', authMiddleware, adminOnly, async (req, res) => {
 
 // Auto-generate payroll for all active staff for a month
 router.post('/payroll/generate', authMiddleware, adminOnly, async (req, res) => {
-  const { month } = req.body; // format: 2026-05
-  if (!month) return res.status(400).json({ error: 'month required (YYYY-MM)' });
   const { month, branch_id } = req.body;
+  if (!month) return res.status(400).json({ error: 'month required (YYYY-MM)' });
   const staffQ = branch_id ? "SELECT * FROM staff WHERE is_active=1 AND branch_id=?" : "SELECT * FROM staff WHERE is_active=1";
   const staff = branch_id ? await db.prepare(staffQ).all(branch_id) || [] : await db.prepare(staffQ).all() || [];
   const created = [];
@@ -1391,6 +1393,10 @@ router.post('/branch-stock/adjust', authMiddleware, adminOnly, async (req, res) 
   } else {
     await db.prepare('INSERT INTO branch_stock (id,branch_id,product_id,stock) VALUES (?,?,?,?)').run(uuid(), branch_id, product_id, Math.max(0, qty));
   }
+  // Sync global stock = sum of all branch stocks
+  const totalStock = await db.prepare('SELECT COALESCE(SUM(stock),0) as t FROM branch_stock WHERE product_id=?').get(product_id);
+  await db.prepare('UPDATE products SET stock=? WHERE id=?').run(totalStock?.t || 0, product_id);
+  // Sync global stock = sum of all branch stocks
   // Log movement
   await db.prepare('INSERT INTO branch_stock_movements (id,branch_id,product_id,type,qty,note) VALUES (?,?,?,?,?,?)').run(uuid(), branch_id, product_id, type, qty, note);
   res.json({ message: 'Stock updated' });
@@ -1436,4 +1442,53 @@ router.get('/branch-stock/summary', authMiddleware, adminOnly, async (req, res) 
     return { branch: b, ...stats };
   }));
   res.json(result);
+});
+
+// ── PROFORMA INVOICE ─────────────────────────────────────
+
+router.post('/proforma', authMiddleware, adminOnly, async (req, res) => {
+  const { customer_name, customer_phone, customer_email, items, discount = 0, notes, branch_id, gst_enabled } = req.body;
+  if (!customer_name) return res.status(400).json({ error: 'customer_name required' });
+  const subtotal = (items || []).reduce((s, i) => s + (i.price || 0) * (i.qty || 1), 0);
+  const total = subtotal - discount;
+  const id = uuid();
+  const prefix = await getBranchPrefix(branch_id);
+  const proforma_number = 'PRO-' + prefix + '-' + Date.now().toString().slice(-6);
+  await db.prepare(`INSERT INTO custom_invoices (id,invoice_number,customer_name,customer_phone,customer_email,items,subtotal,discount,total,notes,payment_status,payment_method,gst_enabled,branch_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    .run(id, proforma_number, customer_name, customer_phone, customer_email, JSON.stringify(items || []), subtotal, discount, total, notes, 'proforma', 'pending', gst_enabled ? 1 : 0, branch_id || null);
+  res.status(201).json({ id, proforma_number });
+});
+
+// Convert proforma to invoice
+router.post('/proforma/:id/convert', authMiddleware, adminOnly, async (req, res) => {
+  const inv = await db.prepare('SELECT * FROM custom_invoices WHERE id=? AND payment_status=?').get(req.params.id, 'proforma');
+  if (!inv) return res.status(404).json({ error: 'Proforma not found' });
+  const prefix = await getBranchPrefix(inv.branch_id);
+  const invoice_number = prefix + '-' + Date.now().toString().slice(-6);
+  await db.prepare("UPDATE custom_invoices SET payment_status='pending', invoice_number=? WHERE id=?").run(invoice_number, req.params.id);
+  res.json({ message: 'Converted to invoice', invoice_number });
+});
+
+// ── PROFORMA INVOICE ─────────────────────────────────────
+
+router.post('/proforma', authMiddleware, adminOnly, async (req, res) => {
+  const { customer_name, customer_phone, customer_email, items, discount = 0, notes, branch_id, gst_enabled } = req.body;
+  if (!customer_name) return res.status(400).json({ error: 'customer_name required' });
+  const subtotal = (items || []).reduce((s, i) => s + (i.price || 0) * (i.qty || 1), 0);
+  const total = subtotal - discount;
+  const id = uuid();
+  const prefix = await getBranchPrefix(branch_id);
+  const proforma_number = 'PRO-' + prefix + '-' + Date.now().toString().slice(-6);
+  await db.prepare('INSERT INTO custom_invoices (id,invoice_number,customer_name,customer_phone,customer_email,items,subtotal,discount,total,notes,payment_status,payment_method,gst_enabled,branch_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(id, proforma_number, customer_name, customer_phone, customer_email, JSON.stringify(items || []), subtotal, discount, total, notes, 'proforma', 'pending', gst_enabled ? 1 : 0, branch_id || null);
+  res.status(201).json({ id, proforma_number });
+});
+
+router.post('/proforma/:id/convert', authMiddleware, adminOnly, async (req, res) => {
+  const inv = await db.prepare("SELECT * FROM custom_invoices WHERE id=? AND payment_status='proforma'").get(req.params.id);
+  if (!inv) return res.status(404).json({ error: 'Proforma not found' });
+  const prefix = await getBranchPrefix(inv.branch_id);
+  const invoice_number = prefix + '-' + Date.now().toString().slice(-6);
+  await db.prepare("UPDATE custom_invoices SET payment_status='pending', invoice_number=? WHERE id=?").run(invoice_number, req.params.id);
+  res.json({ message: 'Converted to invoice', invoice_number });
 });

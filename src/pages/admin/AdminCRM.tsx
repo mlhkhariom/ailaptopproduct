@@ -33,7 +33,7 @@ const SOURCES = ['WhatsApp', 'Walk-in', 'Phone', 'Instagram', 'Facebook', 'Refer
 const emptyForm = {
   name: '', phone: '', email: '', source: 'WhatsApp',
   interest: '', budget: 0, deal_value: 0, status: 'new', priority: 'normal',
-  assigned_to: '', notes: '', next_followup: '', expected_close: '',
+  assigned_to: '', notes: '', next_followup: '', expected_close: '', branch_id: '',
 };
 
 export default function AdminCRM() {
@@ -470,7 +470,10 @@ export default function AdminCRM() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Next Follow-up</Label><Input type="date" className="mt-1 h-9" value={form.next_followup} onChange={e => sf('next_followup')(e.target.value)} /></div>
+                <div><Label className="text-xs">Branch</Label>
+                <BranchSelector value={form.branch_id || 'all'} onChange={v => setForm((f: any) => ({ ...f, branch_id: v === 'all' ? '' : v }))} allLabel="No Branch" className="mt-1 w-full" />
+              </div>
+              <div><Label className="text-xs">Next Follow-up</Label><Input type="date" className="mt-1 h-9" value={form.next_followup} onChange={e => sf('next_followup')(e.target.value)} /></div>
                 <div><Label className="text-xs">Expected Close</Label><Input type="date" className="mt-1 h-9" value={form.expected_close} onChange={e => sf('expected_close')(e.target.value)} /></div>
               </div>
               <div><Label className="text-xs">Notes</Label><Textarea className="mt-1" rows={2} value={form.notes} onChange={e => sf('notes')(e.target.value)} /></div>

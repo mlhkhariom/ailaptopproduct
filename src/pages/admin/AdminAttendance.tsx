@@ -91,7 +91,7 @@ export default function AdminAttendance() {
             </div>
 
             <div className="grid md:grid-cols-2 gap-3">
-              {staff.map(s => {
+              {filteredStaff.map(s => {
                 const status = getStatus(s.id);
                 const cfg = STATUS_CFG[status as keyof typeof STATUS_CFG] || STATUS_CFG.absent;
                 const Icon = cfg.icon;
