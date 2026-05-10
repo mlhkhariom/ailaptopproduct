@@ -89,6 +89,21 @@ router.put('/:id/status', authMiddleware, adminOnly, async (req, res) => {
       if (status === 'delivered') {
         notifyOrderDelivered(order, phone, name);
         notifyInvoiceReady(order, phone, name);
+        // Auto-earn loyalty points
+        try {
+          const { v4: uuid } = await import('uuid');
+          const pts = Math.floor((order.total || 0) / 100);
+          if (pts > 0 && phone) {
+            const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+            const existing = await db.prepare('SELECT * FROM loyalty_points WHERE phone=?').get(cleanPhone);
+            if (existing) {
+              await db.prepare('UPDATE loyalty_points SET points=points+?,total_earned=total_earned+? WHERE phone=?').run(pts, pts, cleanPhone);
+            } else {
+              await db.prepare('INSERT INTO loyalty_points (id,phone,customer_name,points,total_earned) VALUES (?,?,?,?,?)').run(uuid(), cleanPhone, name, pts, pts);
+            }
+            await db.prepare('INSERT INTO loyalty_transactions (id,phone,type,points,ref_id,ref_type,note) VALUES (?,?,?,?,?,?,?)').run(uuid(), cleanPhone, 'earn', pts, order.id, 'order', `Earned ${pts} pts on order ₹${order.total}`);
+          }
+        } catch {}
       }
     }
   }

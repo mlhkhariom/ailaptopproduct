@@ -1,4 +1,4 @@
-import { LayoutDashboard, Tv2, Sun, Moon, Shield, Search, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, Box, Calendar, MessageSquare, CalendarCheck, CalendarX, RefreshCw, Table2, Gift, UserCircle, FileSpreadsheet } from "lucide-react";
+import { LayoutDashboard, Clock, Tv2, Sun, Moon, Shield, Search, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, Box, Calendar, MessageSquare, CalendarCheck, CalendarX, RefreshCw, Table2, Gift, UserCircle, FileSpreadsheet } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import {
@@ -43,6 +43,7 @@ const erpGroups = [
       { title: "Staff", url: "/admin/erp/staff", icon: UserCheck },
       { title: "Payroll", url: "/admin/erp/payroll", icon: IndianRupee, perm: 'payroll' },
       { title: "Attendance", url: "/admin/erp/attendance", icon: CalendarCheck },
+      { title: "Shifts", url: "/admin/erp/shifts", icon: Clock },
       { title: "Leaves", url: "/admin/erp/leaves", icon: CalendarX },
       { title: "Loyalty Program", url: "/admin/erp/loyalty", icon: Gift },
       { title: "KPI Alerts", url: "/admin/erp/kpi-alerts", icon: Bell, perm: 'kpi_alerts' },

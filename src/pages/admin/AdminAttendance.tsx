@@ -19,6 +19,7 @@ const STATUS_CFG = {
   present:  { label: 'Present',  icon: CheckCircle, color: 'text-green-600',  bg: 'bg-green-100' },
   absent:   { label: 'Absent',   icon: XCircle,     color: 'text-red-600',    bg: 'bg-red-100' },
   half_day: { label: 'Half Day', icon: Clock,       color: 'text-yellow-600', bg: 'bg-yellow-100' },
+  late:     { label: 'Late',     icon: Clock,       color: 'text-orange-600', bg: 'bg-orange-100' },
   leave:    { label: 'Leave',    icon: Calendar,    color: 'text-blue-600',   bg: 'bg-blue-100' },
 };
 
@@ -113,6 +114,9 @@ export default function AdminAttendance() {
                       <SelectContent>
                         <SelectItem value="present">Present</SelectItem>
                         <SelectItem value="absent">Absent</SelectItem>
+                        <SelectItem value="half_day">Half Day</SelectItem>
+                        <SelectItem value="late">Late</SelectItem>
+                        <SelectItem value="leave">Leave</SelectItem>
                         <SelectItem value="half_day">Half Day</SelectItem>
                         <SelectItem value="leave">Leave</SelectItem>
                       </SelectContent>

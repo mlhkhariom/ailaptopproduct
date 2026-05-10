@@ -201,6 +201,7 @@ router.post('/staff', authMiddleware, canAccess('staff'), async (req, res) => {
   const id = uuid();
   await db.prepare('INSERT INTO staff (id,name,role,phone,email,salary,joining_date,address,branch_id,aadhaar_url,pan_url,offer_letter_url,other_doc_url,bank_account,bank_ifsc,bank_name) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
     .run(id, name, role, phone, email, salary || 0, joining_date, address, branch_id||null, aadhaar_url||null, pan_url||null, offer_letter_url||null, other_doc_url||null, bank_account||null, bank_ifsc||null, bank_name||null);
+  await auditLog(req, 'staff', 'created', id, null, { name });
   res.status(201).json({ id });
 });
 
@@ -304,6 +305,7 @@ router.post('/leads', authMiddleware, adminOnly, async (req, res) => {
       await db.prepare('UPDATE leads SET assigned_to=?,branch_id=COALESCE(?,branch_id) WHERE id=?').run(rule.assigned_to, rule.branch_id, id);
     }
   } catch {}
+  await auditLog(req, 'crm', 'lead_created', id, null, { name, source });
   res.status(201).json({ id });
 });
 
@@ -1295,6 +1297,7 @@ router.post('/payroll/generate', authMiddleware, canAccess('payroll'), async (re
       .run(id, s.id, month, earnedBasic, hra, gross, pf_employee, pf_employer, esi_employee, esi_employer, advance_deduction, net, 26, present);
     created.push({ id, staff: s.name, net });
   }
+  await auditLog(req, 'payroll', 'generated', month, null, { count: created.length, month });
   res.json({ generated: created.length, records: created });
 });
 
