@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowRight, Star, Laptop, Shield, Wrench, Truck, CheckCircle, Phone, MessageCircle, Zap, ChevronRight } from "lucide-react";
+import { ArrowRight, Star, Laptop, Shield, Wrench, Truck, CheckCircle, Phone, MessageCircle, Zap, ChevronRight, Users2, Trophy, Clock, MapPin, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import CustomerLayout from "@/components/CustomerLayout";
