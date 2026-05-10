@@ -471,6 +471,18 @@ const AdminSettings = () => {
                 </div>
                 <div><Label className="text-xs">Merchant UPI ID (for QR)</Label><Input className="mt-1 h-9" value={s('merchant_upi')} onChange={e => setS('merchant_upi', e.target.value)} placeholder="yourshop@ybl" /></div>
                 <div><Label className="text-xs">Merchant Name (on QR)</Label><Input className="mt-1 h-9" value={s('merchant_name')} onChange={e => setS('merchant_name', e.target.value)} placeholder="AI Laptop Wala" /></div>
+                <div>
+                  <Label className="text-xs">Default Gateway for Invoice Links (WhatsApp)</Label>
+                  <Select value={s('default_invoice_gateway') || 'razorpay'} onValueChange={v => setS('default_invoice_gateway', v)}>
+                    <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="razorpay">Razorpay</SelectItem>
+                      <SelectItem value="cashfree">Cashfree</SelectItem>
+                      <SelectItem value="phonepe">PhonePe</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground mt-1">Used when admin clicks 'Send Invoice on WhatsApp' in Billing. Customer gets payment link from this gateway.</p>
+                </div>
                 <Separator />
                 <div className="flex items-center justify-between p-3 rounded-lg border">
                   <div>

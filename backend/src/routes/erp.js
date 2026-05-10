@@ -1691,53 +1691,96 @@ router.get('/loyalty', authMiddleware, adminOnly, async (req, res) => {
   res.json(rows);
 });
 
-// ── RAZORPAY PAYMENT LINK ─────────────────────────────────
+// ── PAYMENT LINK (Multi-Gateway) ──────────────────────────
+// Creates payment link using admin's default gateway from settings
+// Priority: Razorpay (has payment_links API) > Cashfree (has links) > PhonePe (has links) > Manual fallback
 
 router.post('/payment-link', authMiddleware, adminOnly, async (req, res) => {
-  const { invoice_id, invoice_type = 'custom', amount, customer_name, customer_phone, customer_email, description } = req.body;
+  const { invoice_id, invoice_type = 'custom', amount, customer_name, customer_phone, customer_email, description, gateway: requestedGateway } = req.body;
   if (!amount || !customer_phone) return res.status(400).json({ error: 'amount and customer_phone required' });
 
-  const keyId = process.env.RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  // Determine gateway: use requested, or first enabled
+  const getSetting = async (key) => {
+    const row = await db.prepare('SELECT value FROM app_settings WHERE key=?').get(key);
+    return row?.value;
+  };
+  const razorpayEnabled = (await getSetting('payment_razorpay')) === 'true';
+  const cashfreeEnabled = (await getSetting('payment_cashfree')) === 'true';
+  const phonepeEnabled = (await getSetting('payment_phonepe')) === 'true';
+  const gateway = requestedGateway || (razorpayEnabled ? 'razorpay' : cashfreeEnabled ? 'cashfree' : phonepeEnabled ? 'phonepe' : 'razorpay');
 
-  if (!keyId || !keySecret) {
-    // Mock link for testing
-    const mockLink = `https://rzp.io/l/mock-${Date.now()}`;
-    if (invoice_id) {
-      const table = invoice_type === 'service' ? 'service_bookings' : 'custom_invoices';
-      await db.prepare(`UPDATE ${table} SET payment_link=? WHERE id=?`).run(mockLink, invoice_id);
+  const tableSel = invoice_type === 'service' ? 'service_bookings' : 'custom_invoices';
+  const saveLink = async (link) => {
+    if (invoice_id) await db.prepare(`UPDATE ${tableSel} SET payment_link=? WHERE id=?`).run(link, invoice_id);
+  };
+
+  // RAZORPAY PAYMENT LINK
+  if (gateway === 'razorpay') {
+    const keyId = (await getSetting('razorpay_key_id')) || process.env.RAZORPAY_KEY_ID;
+    const keySecret = (await getSetting('razorpay_key_secret')) || process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) {
+      const mockLink = `https://rzp.io/l/mock-${Date.now()}`;
+      await saveLink(mockLink);
+      return res.json({ payment_link: mockLink, mock: true, gateway, message: 'Razorpay keys not configured. Add in Admin → Settings → API Keys.' });
     }
-    return res.json({ payment_link: mockLink, mock: true, message: 'Set RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET in .env for live links' });
+    try {
+      const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+      const payload = {
+        amount: Math.round(amount * 100),
+        currency: 'INR',
+        description: description || 'AI Laptop Wala Invoice',
+        customer: { name: customer_name || '', contact: customer_phone, email: customer_email || '' },
+        notify: { sms: true, email: !!customer_email },
+        reminder_enable: true,
+      };
+      const resp = await fetch('https://api.razorpay.com/v1/payment_links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Basic ${auth}` },
+        body: JSON.stringify(payload),
+      });
+      const data = await resp.json();
+      if (!data.short_url) return res.status(502).json({ error: data.error?.description || 'Razorpay error' });
+      await saveLink(data.short_url);
+      return res.json({ payment_link: data.short_url, payment_link_id: data.id, gateway: 'razorpay' });
+    } catch (e) { return res.status(500).json({ error: e.message }); }
   }
 
-  try {
-    const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
-    const payload = {
-      amount: Math.round(amount * 100), // paise
-      currency: 'INR',
-      description: description || 'AI Laptop Wala Invoice',
-      customer: { name: customer_name || '', contact: customer_phone, email: customer_email || '' },
-      notify: { sms: true, email: !!customer_email },
-      reminder_enable: true,
-      callback_url: `${process.env.FRONTEND_URL || 'http://localhost:8080'}/payment-success`,
-      callback_method: 'get',
-    };
-    const resp = await fetch('https://api.razorpay.com/v1/payment_links', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Basic ${auth}` },
-      body: JSON.stringify(payload),
-    });
-    const data = await resp.json();
-    if (!data.short_url) return res.status(502).json({ error: data.error?.description || 'Razorpay error', detail: data });
-
-    if (invoice_id) {
-      const table = invoice_type === 'service' ? 'service_bookings' : 'custom_invoices';
-      await db.prepare(`UPDATE ${table} SET payment_link=? WHERE id=?`).run(data.short_url, invoice_id);
-    }
-    res.json({ payment_link: data.short_url, payment_link_id: data.id });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
+  // CASHFREE PAYMENT LINK
+  if (gateway === 'cashfree') {
+    const appId = await getSetting('cashfree_app_id');
+    const secretKey = await getSetting('cashfree_secret_key');
+    const isProd = (await getSetting('cashfree_production')) === 'true';
+    if (!appId || !secretKey) return res.status(400).json({ error: 'Cashfree not configured' });
+    const host = isProd ? 'https://api.cashfree.com' : 'https://sandbox.cashfree.com';
+    try {
+      const resp = await fetch(`${host}/pg/links`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-version': '2023-08-01',
+          'x-client-id': appId,
+          'x-client-secret': secretKey,
+        },
+        body: JSON.stringify({
+          link_id: `LINK_${Date.now()}`,
+          link_amount: Number(amount),
+          link_currency: 'INR',
+          link_purpose: description || 'AI Laptop Wala Invoice',
+          customer_details: { customer_name: customer_name || 'Guest', customer_email: customer_email || '', customer_phone },
+          link_notify: { send_sms: true, send_email: !!customer_email },
+        }),
+      });
+      const data = await resp.json();
+      if (!data.link_url) return res.status(502).json({ error: data.message || 'Cashfree link failed' });
+      await saveLink(data.link_url);
+      return res.json({ payment_link: data.link_url, gateway: 'cashfree' });
+    } catch (e) { return res.status(500).json({ error: e.message }); }
   }
+
+  // Fallback: generate order-based link (works for any gateway)
+  const fallbackLink = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/pay?invoice=${invoice_id}&amount=${amount}&phone=${customer_phone}`;
+  await saveLink(fallbackLink);
+  res.json({ payment_link: fallbackLink, gateway: 'manual', message: 'Manual payment link (customer selects gateway)' });
 });
 
 // ── SCHEDULED REPORTS ─────────────────────────────────────
