@@ -45,12 +45,19 @@ router.get('/methods', async (req, res) => {
   res.json({
     razorpay: { enabled: await isEnabled('payment_razorpay'), key_id: await getSetting('razorpay_key_id') },
     paytm: { enabled: await isEnabled('payment_paytm') },
-    upi: { enabled: await isEnabled('payment_upi') !== false },
-    card: { enabled: await isEnabled('payment_card') !== false },
-    netbanking: { enabled: await isEnabled('payment_netbanking') !== false },
+    upi: { enabled: (await getSetting('payment_upi')) !== 'false' },
+    card: { enabled: (await getSetting('payment_card')) !== 'false' },
+    netbanking: { enabled: (await getSetting('payment_netbanking')) !== 'false' },
     wallet: { enabled: await isEnabled('payment_wallet') },
-    cod: { enabled: await isEnabled('payment_cod') !== false },
+    cod: { enabled: (await getSetting('payment_cod')) !== 'false' },
     emi: { enabled: await isEnabled('payment_emi') },
+    // Payment settings
+    min_order: Number(await getSetting('min_order')) || 0,
+    max_cod: Number(await getSetting('max_cod')) || 0,
+    merchant_upi: await getSetting('merchant_upi') || '',
+    merchant_name: await getSetting('merchant_name') || 'AI Laptop Wala',
+    prepaid_discount_enabled: (await getSetting('prepaid_discount_enabled')) === 'true',
+    prepaid_discount_percent: Number(await getSetting('prepaid_discount_percent')) || 0,
   });
 });
 

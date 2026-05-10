@@ -48,7 +48,11 @@ const Checkout = () => {
   }, [subtotal]);
 
   const shippingCharge = paymentMethod === 'cod' ? (shipping.standard + shipping.cod_charge) : shipping.standard;
-  const finalTotal = total + shippingCharge;
+  // Prepaid discount (if enabled and not COD)
+  const prepaidDiscount = paymentMethod !== 'cod' && paymentMethods.prepaid_discount_enabled
+    ? Math.round((total * (paymentMethods.prepaid_discount_percent || 0)) / 100)
+    : 0;
+  const finalTotal = total + shippingCharge - prepaidDiscount;
 
   const placeOrder = async (paymentId?: string, paymentStatus = 'pending') => {
     const orderData = {
@@ -96,6 +100,14 @@ const Checkout = () => {
 
   const handlePlaceOrder = async () => {
     if (!addr.address || !addr.city || !addr.pin) return toast.error('Please fill shipping address');
+    // Min order check
+    const minOrder = Number(paymentMethods.min_order) || 0;
+    if (subtotal < minOrder) return toast.error(`Minimum order amount is ₹${minOrder}`);
+    // Max COD check
+    if (paymentMethod === 'cod') {
+      const maxCod = Number(paymentMethods.max_cod) || 0;
+      if (maxCod && finalTotal > maxCod) return toast.error(`COD not available for orders above ₹${maxCod}. Please use online payment.`);
+    }
     if (!addr.phone) return toast.error('Phone number required');
     setLoading(true);
     try {

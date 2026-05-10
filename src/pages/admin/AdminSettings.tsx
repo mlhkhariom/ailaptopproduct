@@ -321,21 +321,24 @@ const AdminSettings = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 {[
-                  { key: 'payment_razorpay', label: "Razorpay", desc: "UPI, Card, Net Banking, Wallets", icon: "💳" },
-                  { key: 'payment_paytm', label: "Paytm", desc: "UPI, Paytm Wallet, Cards", icon: "💙" },
-                  { key: 'payment_cod', label: "Cash on Delivery (COD)", desc: `+₹${s('shipping_cod_charge') || 30} handling fee`, icon: "💵" },
+                  { key: 'payment_razorpay', label: "Razorpay", desc: "UPI, Card, Net Banking, Wallets — All-in-one" },
+                  { key: 'payment_upi', label: "UPI", desc: "PhonePe, GPay, Paytm UPI (via Razorpay)" },
+                  { key: 'payment_card', label: "Credit / Debit Card", desc: "Visa, Mastercard, Rupay (via Razorpay)" },
+                  { key: 'payment_netbanking', label: "Net Banking", desc: "All major Indian banks" },
+                  { key: 'payment_wallet', label: "Wallets", desc: "Paytm, PhonePe, Amazon Pay, Mobikwik" },
+                  { key: 'payment_emi', label: "EMI", desc: "No-cost EMI on cards (3/6/9/12 months)" },
+                  { key: 'payment_paytm', label: "Paytm (Standalone)", desc: "Direct Paytm gateway (alternative)" },
+                  { key: 'payment_cod', label: "Cash on Delivery", desc: `+₹${s('shipping_cod_charge') || 30} handling fee` },
                 ].map((m) => (
                   <div key={m.key} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/20 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">{m.icon}</span>
-                      <div>
-                        <p className="text-sm font-medium">{m.label}</p>
-                        <p className="text-[10px] text-muted-foreground">{m.desc}</p>
-                      </div>
+                    <div>
+                      <p className="text-sm font-medium">{m.label}</p>
+                      <p className="text-[10px] text-muted-foreground">{m.desc}</p>
                     </div>
-                    <Switch checked={s(m.key) === 'true'} onCheckedChange={v => setS(m.key, String(v))} />
+                    <Switch checked={s(m.key) !== 'false'} onCheckedChange={v => setS(m.key, String(v))} />
                   </div>
                 ))}
+                <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Payment Methods')}><Save className="h-4 w-4" /> Save Methods</Button>
               </CardContent>
             </Card>
 
@@ -353,9 +356,24 @@ const AdminSettings = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div><Label className="text-xs">Min Order Amount (₹)</Label><Input type="number" className="mt-1 h-9" value={s('min_order') || '199'} onChange={e => setS('min_order', e.target.value)} /></div>
-                <div><Label className="text-xs">Max COD Amount (₹)</Label><Input type="number" className="mt-1 h-9" value={s('max_cod') || '5000'} onChange={e => setS('max_cod', e.target.value)} /></div>
-                <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Payments')}><Save className="h-4 w-4" /> Save</Button>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-xs">Min Order (₹)</Label><Input type="number" className="mt-1 h-9" value={s('min_order') || '199'} onChange={e => setS('min_order', e.target.value)} /></div>
+                  <div><Label className="text-xs">Max COD (₹)</Label><Input type="number" className="mt-1 h-9" value={s('max_cod') || '5000'} onChange={e => setS('max_cod', e.target.value)} /></div>
+                </div>
+                <div><Label className="text-xs">Merchant UPI ID (for QR)</Label><Input className="mt-1 h-9" value={s('merchant_upi')} onChange={e => setS('merchant_upi', e.target.value)} placeholder="yourshop@ybl" /></div>
+                <div><Label className="text-xs">Merchant Name (on QR)</Label><Input className="mt-1 h-9" value={s('merchant_name')} onChange={e => setS('merchant_name', e.target.value)} placeholder="AI Laptop Wala" /></div>
+                <Separator />
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div>
+                    <p className="text-sm font-medium">Prepaid Discount</p>
+                    <p className="text-[10px] text-muted-foreground">Extra discount on online payment</p>
+                  </div>
+                  <Switch checked={s('prepaid_discount_enabled') === 'true'} onCheckedChange={v => setS('prepaid_discount_enabled', String(v))} />
+                </div>
+                {s('prepaid_discount_enabled') === 'true' && (
+                  <div><Label className="text-xs">Prepaid Discount (%)</Label><Input type="number" className="mt-1 h-9" value={s('prepaid_discount_percent') || '2'} onChange={e => setS('prepaid_discount_percent', e.target.value)} /></div>
+                )}
+                <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Payments')}><Save className="h-4 w-4" /> Save Settings</Button>
               </CardContent>
             </Card>
           </div>
