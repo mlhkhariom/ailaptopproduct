@@ -55,6 +55,22 @@ export default function AdminAttendance() {
 
   const getStatus = (staffId: string) => attendance.find(a => a.staff_id === staffId)?.status || 'absent';
 
+  const exportAttendance = () => {
+    const rows = filteredStaff.map((s: any) => ({
+      Name: s.name,
+      Role: s.role || '',
+      Branch: s.branch_id || '',
+      Date: date,
+      Status: getStatus(s.id),
+    }));
+    if (rows.length === 0) {
+      toast.error('No attendance data to export');
+      return;
+    }
+    exportToCSV(rows, `attendance-${date}.csv`);
+    toast.success(`Exported ${rows.length} records`);
+  };
+
   const presentCount = staff.filter(s => getStatus(s.id) === 'present').length;
 
   const filteredStaff = staff.filter((s: any) => branchFilter === 'all' || s.branch_id === branchFilter);
