@@ -24,9 +24,15 @@ export default function CustomInvoiceForm({ open, onClose, form, setForm, editin
   const sf = (k: string) => (v: any) => setForm((f: any) => ({ ...f, [k]: v }));
   const [products, setProducts] = useState<any[]>([]);
   const [productSearch, setProductSearch] = useState('');
+  const [invoiceType, setInvoiceType] = useState<'product' | 'service'>('service');
 
   useEffect(() => {
     if (open) api.getProducts().then((p: any) => setProducts(Array.isArray(p) ? p : p?.products || []));
+  }, [open]);
+
+  useEffect(() => {
+    // Auto-detect type from existing items
+    if (form.items?.some((i: any) => i.product_id)) setInvoiceType('product');
   }, [open]);
 
   const filteredProducts = products.filter(p =>
@@ -85,50 +91,76 @@ export default function CustomInvoiceForm({ open, onClose, form, setForm, editin
             </div>
           </div>
 
+          {/* ── Category Select ── */}
+          <div className="border rounded-xl p-4">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Invoice Type</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => { setInvoiceType('product'); setForm((f: any) => ({ ...f, items: [] })); }}
+                className={`p-3 rounded-xl border-2 text-center transition-all ${invoiceType === 'product' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}>
+                <Package className={`h-5 w-5 mx-auto mb-1 ${invoiceType === 'product' ? 'text-primary' : 'text-muted-foreground'}`} />
+                <p className="text-sm font-semibold">Product</p>
+                <p className="text-[10px] text-muted-foreground">Select from inventory</p>
+              </button>
+              <button type="button" onClick={() => { setInvoiceType('service'); setForm((f: any) => ({ ...f, items: [{ name: '', qty: 1, price: 0 }] })); }}
+                className={`p-3 rounded-xl border-2 text-center transition-all ${invoiceType === 'service' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}>
+                <CreditCard className={`h-5 w-5 mx-auto mb-1 ${invoiceType === 'service' ? 'text-primary' : 'text-muted-foreground'}`} />
+                <p className="text-sm font-semibold">Service</p>
+                <p className="text-[10px] text-muted-foreground">Custom amount / repair</p>
+              </button>
+            </div>
+          </div>
+
           {/* ── Items ── */}
           <div className="border rounded-xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 bg-muted/30 border-b">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                <Package className="h-3.5 w-3.5" /> Items *
+                <Package className="h-3.5 w-3.5" /> {invoiceType === 'product' ? 'Products' : 'Services / Items'}
               </p>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => {
-                  setForm((f: any) => ({ ...f, items: [{ name: 'Service Charge', qty: 1, price: 0 }] }));
-                }}>
-                  Quick Amount
-                </Button>
+                {invoiceType === 'service' && (
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => {
+                    setForm((f: any) => ({ ...f, items: [{ name: 'Service Charge', qty: 1, price: 0 }] }));
+                  }}>
+                    Quick Amount
+                  </Button>
+                )}
                 <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={addItem}>
                   <Plus className="h-3 w-3" /> Add Row
                 </Button>
               </div>
             </div>
 
-            {/* Product quick-add search */}
-            <div className="px-4 py-2 border-b bg-muted/10">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  className="pl-8 h-8 text-xs"
-                  placeholder="Search & add product from inventory..."
-                  value={productSearch}
-                  onChange={e => setProductSearch(e.target.value)}
-                />
-              </div>
-              {productSearch && filteredProducts.length > 0 && (
-                <div className="mt-1 border rounded-lg bg-white shadow-sm max-h-40 overflow-y-auto">
-                  {filteredProducts.map(p => (
-                    <button key={p.id} className="flex items-center justify-between w-full px-3 py-2 text-xs hover:bg-muted/50 transition-colors text-left border-b last:border-b-0"
-                      onClick={() => {
-                        setForm((f: any) => ({ ...f, items: [...f.items, { name: p.name, qty: 1, price: p.price, product_id: p.id }] }));
-                        setProductSearch('');
-                      }}>
-                      <span className="font-medium">{p.name}</span>
-                      <span className="text-muted-foreground ml-2">₹{p.price?.toLocaleString('en-IN')} · Stock: {p.stock}</span>
-                    </button>
-                  ))}
+            {/* Product search — only for Product type */}
+            {invoiceType === 'product' && (
+              <div className="px-4 py-2 border-b bg-muted/10">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    className="pl-8 h-8 text-xs"
+                    placeholder="Search product from inventory..."
+                    value={productSearch}
+                    onChange={e => setProductSearch(e.target.value)}
+                  />
                 </div>
-              )}
-            </div>
+                {productSearch && filteredProducts.length > 0 && (
+                  <div className="mt-1 border rounded-lg bg-white shadow-sm max-h-40 overflow-y-auto">
+                    {filteredProducts.map(p => (
+                      <button key={p.id} className="flex items-center justify-between w-full px-3 py-2 text-xs hover:bg-muted/50 transition-colors text-left border-b last:border-b-0"
+                        onClick={() => {
+                          setForm((f: any) => ({ ...f, items: [...f.items, { name: p.name, qty: 1, price: p.price, product_id: p.id }] }));
+                          setProductSearch('');
+                        }}>
+                        <span className="font-medium">{p.name}</span>
+                        <span className="text-muted-foreground ml-2">₹{p.price?.toLocaleString('en-IN')} · Stock: {p.stock}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {!productSearch && form.items?.length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-2 text-center py-3">Search and select products from your inventory above</p>
+                )}
+              </div>
+            )}
 
             <table className="w-full text-sm">
               <thead className="bg-muted/20">
