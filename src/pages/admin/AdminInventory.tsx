@@ -33,6 +33,7 @@ export default function AdminInventory() {
   const [movements, setMovements] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [reorderSuggestions, setReorderSuggestions] = useState<any[]>([]);
   const [stockSearch, setStockSearch] = useState('');
   const [movSearch, setMovSearch] = useState('');
   const [supplierSearch, setSupplierSearch] = useState('');
@@ -287,6 +288,54 @@ export default function AdminInventory() {
               <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-xl text-sm">
                 <AlertTriangle className="h-4 w-4 text-orange-600 shrink-0" />
                 <span><strong>{stats.lowStock}</strong> products have low stock (≤5 units)</span>
+                <Button size="sm" variant="outline" className="ml-auto h-7 text-xs gap-1" onClick={async () => {
+                  const data = await req('GET', '/reorder-suggestions');
+                  if (Array.isArray(data) && data.length > 0) setReorderSuggestions(data);
+                  else toast('All products above reorder level');
+                }}>
+                  <Package className="h-3 w-3" /> View Reorder Suggestions
+                </Button>
+              </div>
+            )}
+
+            {/* Reorder Suggestions */}
+            {reorderSuggestions.length > 0 && (
+              <div className="border border-orange-200 rounded-xl overflow-hidden">
+                <div className="bg-orange-50 px-4 py-2 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-orange-800">Reorder Suggestions ({reorderSuggestions.length} products)</p>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setReorderSuggestions([])}>Dismiss</Button>
+                </div>
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/30"><tr>
+                    <th className="text-left p-2.5 text-xs">Product</th>
+                    <th className="text-center p-2.5 text-xs">Current</th>
+                    <th className="text-center p-2.5 text-xs">Reorder At</th>
+                    <th className="text-center p-2.5 text-xs">Suggested Qty</th>
+                    <th className="text-center p-2.5 text-xs">Urgency</th>
+                    <th className="text-center p-2.5 text-xs">Action</th>
+                  </tr></thead>
+                  <tbody>
+                    {reorderSuggestions.map((p: any) => (
+                      <tr key={p.id} className="border-t hover:bg-muted/20">
+                        <td className="p-2.5 font-medium">{p.name}</td>
+                        <td className="p-2.5 text-center font-bold text-red-600">{p.stock}</td>
+                        <td className="p-2.5 text-center">{p.reorder_level || 5}</td>
+                        <td className="p-2.5 text-center font-bold text-blue-600">{p.suggested_qty}</td>
+                        <td className="p-2.5 text-center">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.urgency === 'critical' ? 'bg-red-100 text-red-700' : p.urgency === 'high' ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                            {p.urgency}
+                          </span>
+                        </td>
+                        <td className="p-2.5 text-center">
+                          <Button size="sm" variant="outline" className="h-6 text-[10px] px-2" onClick={() => {
+                            setPoForm({ supplier_id: '', branch_id: '', items: [{ product_id: p.id, product_name: p.name, quantity: p.suggested_qty, unit_price: p.price || 0 }], expected_date: '', notes: `Reorder: ${p.name} (stock: ${p.stock})` });
+                            setPoDialog(true);
+                          }}>Create PO</Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
 
