@@ -19,8 +19,8 @@ const erpGroups = [
       { title: "ERP Overview", url: "/admin/erp", icon: Building2 },
       { title: "Live Dashboard", url: "/admin/erp/live", icon: Tv2 },
       { title: "Job Cards", url: "/admin/erp/job-cards", icon: ClipboardList, badge: "core" },
-      { title: "Customer 360", url: "/admin/erp/customer360", icon: UserCircle },
       { title: "Services", url: "/admin/services", icon: Wrench },
+      { title: "Branches", url: "/admin/erp/branches", icon: Building2 },
     ],
   },
   {
@@ -30,6 +30,7 @@ const erpGroups = [
       { title: "Leads & Pipeline", url: "/admin/erp/crm", icon: Users, badge: "core" },
       { title: "Follow-ups", url: "/admin/erp/crm?tab=list&status=all", icon: Phone },
       { title: "Kanban Board", url: "/admin/erp/crm?tab=kanban", icon: LayoutDashboard },
+      { title: "Customer 360", url: "/admin/erp/customer360", icon: UserCircle },
     ],
   },
   {
@@ -39,13 +40,11 @@ const erpGroups = [
       { title: "Billing", url: "/admin/erp/billing", icon: Receipt, badge: "core" },
       { title: "Recurring", url: "/admin/erp/recurring", icon: RefreshCw },
       { title: "Expenses", url: "/admin/erp/expenses", icon: Wallet },
-      { title: "ERP Reports", url: "/admin/erp/reports", icon: BarChart3 },
-      { title: "Report Builder", url: "/admin/erp/report-builder", icon: Table2 },
-      { title: "GSTR-1 Export", url: "/admin/erp/reports#gstr", icon: FileSpreadsheet, Phone },
+      { title: "GSTR-1 Export", url: "/admin/erp/reports#gstr", icon: FileSpreadsheet },
     ],
   },
   {
-    label: "People",
+    label: "HR & Staff",
     labelIcon: UserCheck,
     items: [
       { title: "Staff", url: "/admin/erp/staff", icon: UserCheck },
@@ -53,11 +52,16 @@ const erpGroups = [
       { title: "Attendance", url: "/admin/erp/attendance", icon: CalendarCheck },
       { title: "Shifts", url: "/admin/erp/shifts", icon: Clock },
       { title: "Leaves", url: "/admin/erp/leaves", icon: CalendarX },
-      { title: "Loyalty Program", url: "/admin/erp/loyalty", icon: Gift },
+    ],
+  },
+  {
+    label: "Reports & Analytics",
+    labelIcon: BarChart3,
+    items: [
+      { title: "ERP Reports", url: "/admin/erp/reports", icon: BarChart3 },
+      { title: "Report Builder", url: "/admin/erp/report-builder", icon: Table2 },
       { title: "KPI Alerts", url: "/admin/erp/kpi-alerts", icon: Bell, perm: 'kpi_alerts' },
       { title: "Audit Log", url: "/admin/erp/audit-log", icon: Shield, perm: "kpi_alerts" },
-      { title: "Branches", url: "/admin/erp/branches", icon: Building2 },
-      { title: "WA Templates", url: "/admin/erp/wa-templates", icon: MessageCircle },
     ],
   },
   {
@@ -68,6 +72,14 @@ const erpGroups = [
       { title: "Suppliers", url: "/admin/inventory?tab=suppliers", icon: Truck },
       { title: "Purchase Orders", url: "/admin/inventory?tab=po", icon: ShoppingCart },
       { title: "Stock Movements", url: "/admin/inventory?tab=movements", icon: ArrowUpDown },
+    ],
+  },
+  {
+    label: "Engagement",
+    labelIcon: Gift,
+    items: [
+      { title: "Loyalty Program", url: "/admin/erp/loyalty", icon: Gift },
+      { title: "WA Templates", url: "/admin/erp/wa-templates", icon: MessageCircle },
     ],
   },
 ];
