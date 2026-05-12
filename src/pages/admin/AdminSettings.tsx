@@ -650,6 +650,7 @@ const AdminSettings = () => {
                   { key: 'payment_cashfree', label: "Cashfree", desc: "Instant settlements, low fees, UPI-first" },
                   { key: 'payment_phonepe', label: "PhonePe PG", desc: "India's #1 UPI — direct integration" },
                   { key: 'payment_paytm', label: "Paytm Gateway", desc: "Alternative — separate merchant account required" },
+                  { key: 'payment_upi', label: "UPI Direct (QR/VPA)", desc: `Customer pays to your UPI ID: ${s('merchant_upi') || '(set below)'}. Requires Merchant UPI ID.` },
                   { key: 'payment_cod', label: "Cash on Delivery", desc: `+₹${s('shipping_cod_charge') || 30} handling fee (no gateway)` },
                 ].map((m) => (
                   <div key={m.key} className={`flex items-center justify-between p-3 rounded-lg border hover:bg-muted/20 transition-colors ${m.highlight ? 'bg-primary/5 border-primary/30' : ''}`}>

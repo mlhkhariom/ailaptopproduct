@@ -47,7 +47,7 @@ router.get('/methods', async (req, res) => {
     paytm: { enabled: await isEnabled('payment_paytm') },
     cashfree: { enabled: await isEnabled('payment_cashfree'), app_id: await getSetting('cashfree_app_id') },
     phonepe: { enabled: await isEnabled('payment_phonepe'), merchant_id: await getSetting('phonepe_merchant_id') },
-    upi: { enabled: (await getSetting('payment_upi')) !== 'false' },
+    upi: { enabled: (await getSetting('payment_upi')) === 'true' && !!(await getSetting('merchant_upi')) },
     card: { enabled: (await getSetting('payment_card')) !== 'false' },
     netbanking: { enabled: (await getSetting('payment_netbanking')) !== 'false' },
     wallet: { enabled: await isEnabled('payment_wallet') },

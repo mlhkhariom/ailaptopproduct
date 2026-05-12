@@ -256,6 +256,11 @@ const Checkout = () => {
         await handlePhonePe();
       } else if (paymentMethod === 'paytm') {
         await handlePaytm();
+      } else if (paymentMethod === 'upi') {
+        // UPI Direct — place order as pending, show UPI ID to customer
+        await placeOrder(undefined, 'pending');
+        setLoading(false);
+        toast.success(`Pay ₹${finalTotal} to UPI: ${paymentMethods.merchant_upi}\nShare screenshot on WhatsApp for confirmation.`, { duration: 10000 });
       } else {
         // COD or default
         await placeOrder(undefined, 'pending');
@@ -337,12 +342,12 @@ const Checkout = () => {
                       </Label>
                     </div>
                   )}
-                  {paymentMethods.upi?.enabled && !paymentMethods.razorpay?.enabled && (
+                  {paymentMethods.upi?.enabled && paymentMethods.merchant_upi && (
                     <div className="flex items-center space-x-3 p-3 rounded-lg border hover:border-primary/50 cursor-pointer">
                       <RadioGroupItem value="upi" id="upi" />
                       <Label htmlFor="upi" className="cursor-pointer flex-1">
-                        <span className="font-medium">UPI Direct</span>
-                        <span className="block text-xs text-muted-foreground">GPay, PhonePe, Paytm</span>
+                        <span className="font-medium">UPI Direct (QR)</span>
+                        <span className="block text-xs text-muted-foreground">Pay to {paymentMethods.merchant_upi} via any UPI app</span>
                       </Label>
                     </div>
                   )}
@@ -390,7 +395,7 @@ const Checkout = () => {
               {shipping.free && paymentMethod !== 'cod' && <p className="text-xs text-primary text-center">🎉 Free shipping applied!</p>}
               <Button className="w-full gap-2" size="lg" onClick={handlePlaceOrder} disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-                {loading ? 'Processing...' : paymentMethod === 'razorpay' ? 'Pay with Razorpay' : paymentMethod === 'phonepe' ? 'Pay with PhonePe' : paymentMethod === 'cashfree' ? 'Pay with Cashfree' : paymentMethod === 'paytm' ? 'Pay with Paytm' : 'Place Order'}
+                {loading ? 'Processing...' : paymentMethod === 'razorpay' ? 'Pay with Razorpay' : paymentMethod === 'phonepe' ? 'Pay with PhonePe' : paymentMethod === 'cashfree' ? 'Pay with Cashfree' : paymentMethod === 'paytm' ? 'Pay with Paytm' : paymentMethod === 'upi' ? 'Pay via UPI' : 'Place Order'}
               </Button>
               <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
                 <Shield className="h-3 w-3" /> Secure & Encrypted Payment
