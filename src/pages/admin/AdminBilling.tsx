@@ -337,47 +337,82 @@ export default function AdminBilling() {
         <Dialog open={partialOpen} onOpenChange={setPartialOpen}>
           <DialogContent className="max-w-sm">
             <DialogHeader>
-              <DialogTitle>Add Payment — {partialRow?.invoice_number}</DialogTitle>
-              {partialRow && <p className="text-sm text-muted-foreground">Total: ₹{(partialRow.amount || 0).toLocaleString('en-IN')}</p>}
+              <DialogTitle>Collect Payment — {partialRow?.invoice_number}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-3">
-              {/* Payment history */}
-              {partialHistory.length > 0 && (
-                <div className="border rounded-lg overflow-hidden">
-                  <p className="text-xs font-semibold px-3 py-2 bg-muted/50">Payment History</p>
-                  {partialHistory.map((p: any) => (
-                    <div key={p.id} className="flex justify-between items-center px-3 py-2 border-t text-xs">
-                      <span className="text-muted-foreground">{new Date(p.created_at).toLocaleDateString('en-IN')}</span>
-                      <span>{p.payment_method}</span>
-                      <span className="font-bold text-green-600">₹{(p.amount || 0).toLocaleString('en-IN')}</span>
+            {partialRow && (() => {
+              const totalAmt = partialRow.amount || 0;
+              const collected = partialHistory.reduce((s, p) => s + (p.amount || 0), 0);
+              const due = Math.max(0, totalAmt - collected);
+              return (
+                <div className="space-y-3">
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="border rounded-lg p-2.5 text-center">
+                      <p className="text-[10px] text-muted-foreground">Total</p>
+                      <p className="text-sm font-black">₹{totalAmt.toLocaleString('en-IN')}</p>
                     </div>
-                  ))}
-                  <div className="flex justify-between px-3 py-2 border-t bg-muted/30 text-xs font-bold">
-                    <span>Total Paid</span>
-                    <span className="text-green-600">₹{partialHistory.reduce((s, p) => s + (p.amount || 0), 0).toLocaleString('en-IN')}</span>
+                    <div className="border rounded-lg p-2.5 text-center bg-green-50 border-green-200">
+                      <p className="text-[10px] text-green-700">Collected</p>
+                      <p className="text-sm font-black text-green-700">₹{collected.toLocaleString('en-IN')}</p>
+                    </div>
+                    <div className={`border rounded-lg p-2.5 text-center ${due > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+                      <p className={`text-[10px] ${due > 0 ? 'text-red-700' : 'text-green-700'}`}>Due</p>
+                      <p className={`text-sm font-black ${due > 0 ? 'text-red-700' : 'text-green-700'}`}>₹{due.toLocaleString('en-IN')}</p>
+                    </div>
                   </div>
+
+                  {/* Payment history */}
+                  {partialHistory.length > 0 && (
+                    <div className="border rounded-lg overflow-hidden">
+                      <p className="text-xs font-semibold px-3 py-2 bg-muted/50">Payment History</p>
+                      {partialHistory.map((p: any) => (
+                        <div key={p.id} className="flex justify-between items-center px-3 py-2 border-t text-xs">
+                          <span className="text-muted-foreground">{new Date(p.created_at).toLocaleDateString('en-IN')}</span>
+                          <span className="font-medium">{p.payment_method}</span>
+                          <span className="font-bold text-green-600">+₹{(p.amount || 0).toLocaleString('en-IN')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {due > 0 ? (
+                    <>
+                      <div><Label className="text-xs">Amount Collecting (₹) *</Label>
+                        <Input type="number" min={1} max={due} className="mt-1 h-9" placeholder={`Max ₹${due.toLocaleString('en-IN')}`} value={partialForm.amount || ''} onChange={e => setPartialForm(f => ({ ...f, amount: Math.min(Number(e.target.value), due) }))} />
+                        <div className="flex gap-2 mt-1.5">
+                          <Button size="sm" variant="outline" className="h-6 text-[10px] px-2" onClick={() => setPartialForm(f => ({ ...f, amount: due }))}>Full Due ₹{due.toLocaleString('en-IN')}</Button>
+                          {due > 1000 && <Button size="sm" variant="outline" className="h-6 text-[10px] px-2" onClick={() => setPartialForm(f => ({ ...f, amount: Math.round(due / 2) }))}>Half ₹{Math.round(due / 2).toLocaleString('en-IN')}</Button>}
+                        </div>
+                      </div>
+                      <div><Label className="text-xs">Payment Method</Label>
+                        <div className="grid grid-cols-3 gap-2 mt-1">
+                          {[{ v: 'Cash', icon: Banknote }, { v: 'UPI', icon: Smartphone }, { v: 'Card', icon: CreditCard }].map(m => (
+                            <button key={m.v} type="button" onClick={() => setPartialForm(f => ({ ...f, payment_method: m.v }))}
+                              className={`flex items-center justify-center gap-1.5 border rounded-lg py-2 text-xs font-medium transition-all ${partialForm.payment_method === m.v ? 'border-primary bg-primary/5 text-primary' : 'border-border hover:border-primary/40'}`}>
+                              <m.icon className="h-3.5 w-3.5" />{m.v}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div><Label className="text-xs">Notes</Label>
+                        <Input className="mt-1 h-9" value={partialForm.notes} onChange={e => setPartialForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-4 bg-green-50 rounded-xl border border-green-200">
+                      <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                      <p className="text-sm font-bold text-green-700">Fully Paid!</p>
+                      <p className="text-xs text-green-600">All payments collected</p>
+                    </div>
+                  )}
                 </div>
-              )}
-              <div><Label className="text-xs">Amount (₹) *</Label>
-                <Input type="number" min={1} className="mt-1 h-9" value={partialForm.amount || ''} onChange={e => setPartialForm(f => ({ ...f, amount: Number(e.target.value) }))} />
-              </div>
-              <div><Label className="text-xs">Payment Method</Label>
-                <div className="grid grid-cols-3 gap-2 mt-1">
-                  {[{ v: 'Cash', icon: Banknote }, { v: 'UPI', icon: Smartphone }, { v: 'Card', icon: CreditCard }].map(m => (
-                    <button key={m.v} type="button" onClick={() => setPartialForm(f => ({ ...f, payment_method: m.v }))}
-                      className={`flex items-center justify-center gap-1.5 border rounded-lg py-2 text-xs font-medium transition-all ${partialForm.payment_method === m.v ? 'border-primary bg-primary/5 text-primary' : 'border-border hover:border-primary/40'}`}>
-                      <m.icon className="h-3.5 w-3.5" />{m.v}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div><Label className="text-xs">Notes</Label>
-                <Input className="mt-1 h-9" value={partialForm.notes} onChange={e => setPartialForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional" />
-              </div>
-            </div>
+              );
+            })()}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setPartialOpen(false)}>Cancel</Button>
-              <Button onClick={savePartial} className="gap-1.5"><History className="h-4 w-4" /> Record Payment</Button>
+              <Button variant="outline" onClick={() => setPartialOpen(false)}>Close</Button>
+              {(() => { const due = (partialRow?.amount || 0) - partialHistory.reduce((s, p) => s + (p.amount || 0), 0); return due > 0; })() && (
+                <Button onClick={savePartial} className="gap-1.5"><Banknote className="h-4 w-4" /> Collect ₹{partialForm.amount || 0}</Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
