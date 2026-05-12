@@ -45,6 +45,10 @@ export const sendPendingNotifications = async () => {
   for (const n of pending) {
     try {
       const chatId = await normalizePhone(n.phone);
+      if (!chatId) {
+        await db.prepare("UPDATE whatsapp_notifications SET status='invalid_number' WHERE id=?").run(n.id);
+        continue;
+      }
       // Check number exists on WhatsApp
       const isRegistered = await client.isRegisteredUser(chatId).catch(() => true);
       if (!isRegistered) {
@@ -53,12 +57,12 @@ export const sendPendingNotifications = async () => {
         continue;
       }
       await client.sendMessage(chatId, n.message);
-      await db.prepare("UPDATE whatsapp_notifications SET status='sent', sent_at=datetime('now') WHERE id=?").run(n.id);
+      await db.prepare("UPDATE whatsapp_notifications SET status='sent', sent_at=NOW() WHERE id=?").run(n.id);
       console.log(`✅ WhatsApp sent to ${n.phone}`);
       await new Promise(r => setTimeout(r, 1500));
     } catch (e) {
       console.error(`❌ WhatsApp send failed to ${n.phone}:`, e.message);
-      await db.prepare("UPDATE whatsapp_notifications SET status='failed', sent_at=datetime('now') WHERE id=?").run(n.id);
+      await db.prepare("UPDATE whatsapp_notifications SET status='failed', sent_at=NOW() WHERE id=?").run(n.id);
     }
   }
 };
