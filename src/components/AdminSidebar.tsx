@@ -1,4 +1,4 @@
-import { LayoutDashboard, Clock, Tv2, Sun, Moon, Shield, Search, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, Box, Calendar, MessageSquare, CalendarCheck, CalendarX, RefreshCw, Table2, Gift, UserCircle, FileSpreadsheet } from "lucide-react";
+import { LayoutDashboard, Clock, Tv2, Sun, Moon, Shield, Search, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, Box, Calendar, MessageSquare, CalendarCheck, CalendarX, RefreshCw, Table2, Gift, UserCircle, FileSpreadsheet, Phone } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import {
@@ -19,9 +19,17 @@ const erpGroups = [
       { title: "ERP Overview", url: "/admin/erp", icon: Building2 },
       { title: "Live Dashboard", url: "/admin/erp/live", icon: Tv2 },
       { title: "Job Cards", url: "/admin/erp/job-cards", icon: ClipboardList, badge: "core" },
-      { title: "Sales CRM", url: "/admin/erp/crm", icon: Users },
       { title: "Customer 360", url: "/admin/erp/customer360", icon: UserCircle },
       { title: "Services", url: "/admin/services", icon: Wrench },
+    ],
+  },
+  {
+    label: "CRM",
+    labelIcon: Users,
+    items: [
+      { title: "Leads & Pipeline", url: "/admin/erp/crm", icon: Users, badge: "core" },
+      { title: "Follow-ups", url: "/admin/erp/crm?tab=list&status=all", icon: Phone },
+      { title: "Kanban Board", url: "/admin/erp/crm?tab=kanban", icon: LayoutDashboard },
     ],
   },
   {
@@ -33,7 +41,7 @@ const erpGroups = [
       { title: "Expenses", url: "/admin/erp/expenses", icon: Wallet },
       { title: "ERP Reports", url: "/admin/erp/reports", icon: BarChart3 },
       { title: "Report Builder", url: "/admin/erp/report-builder", icon: Table2 },
-      { title: "GSTR-1 Export", url: "/admin/erp/reports#gstr", icon: FileSpreadsheet },
+      { title: "GSTR-1 Export", url: "/admin/erp/reports#gstr", icon: FileSpreadsheet, Phone },
     ],
   },
   {

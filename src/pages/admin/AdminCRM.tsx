@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import ERPLayout from "@/components/ERPLayout";
 import BranchSelector from "@/components/BranchSelector";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,8 @@ export default function AdminCRM() {
   const [form, setForm] = useState<any>(emptyForm);
   const [convertForm, setConvertForm] = useState({ device_brand: '', device_model: '', issue_description: '', priority: 'normal' });
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get('tab') || 'dashboard';
 
   const load = async () => {
     setLoading(true);
@@ -164,7 +167,7 @@ export default function AdminCRM() {
     <ERPLayout onAction={() => { setForm(emptyForm); setEditingId(null); setDialogOpen(true); }}>
       <div className="space-y-5 max-w-7xl mx-auto">
 
-        <Tabs defaultValue="dashboard">
+        <Tabs defaultValue={defaultTab} key={defaultTab}>
           <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
             <TabsList className="h-9">
               <TabsTrigger value="dashboard" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Dashboard</TabsTrigger>
