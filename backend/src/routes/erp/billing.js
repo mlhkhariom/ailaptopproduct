@@ -73,6 +73,7 @@ router.get('/billing', authMiddleware, adminOnly, async (req, res) => {
       if (search && !c.customer_name?.toLowerCase().includes(search.toLowerCase()) && !c.invoice_number?.includes(search)) return;
       results.push({
         ...c, type: 'custom',
+        amount: c.total || 0,
         items: typeof c.items === 'string' ? JSON.parse(c.items || '[]') : (c.items || []),
       });
     });
@@ -89,7 +90,8 @@ router.post('/billing/custom', authMiddleware, adminOnly, async (req, res) => {
   if (!customer_name || !items?.length || !items.some(i => i.price > 0)) return res.status(400).json({ error: 'customer_name and at least one item with price required' });
   const id = uuid();
   const invoice_number = 'ALW-' + Date.now().toString().slice(-6);
-  const subtotal = items.reduce((s, i) => s + (i.price * i.qty), 0);
+  const subtotal = items.reduce((s, i) => s + (i.price * (i.qty || 1)), 0);
+  if (subtotal <= 0) return res.status(400).json({ error: 'Invoice total must be greater than ₹0' });
   const afterDiscount = subtotal - (discount || 0);
   const gst = gst_enabled ? Math.round(afterDiscount * 0.18) : 0;
   const total = afterDiscount + gst;
