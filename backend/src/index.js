@@ -30,7 +30,7 @@ import notificationRoutes from './routes/notifications.js';
 import reportRoutes from './routes/reports.js';
 import inventoryRoutes from './routes/inventory.js';
 import mediaRoutes from './routes/media.js';
-import erpRoutes from './routes/erp.js';
+import erpRoutes from './routes/erp/index.js';
 import aiRoutes from './routes/ai.js';
 import paymentRoutes from './routes/payment.js';
 import siteSettingsRoutes from './routes/siteSettings.js';
