@@ -116,7 +116,9 @@ router.post('/billing/custom', authMiddleware, adminOnly, async (req, res) => {
   if (send_whatsapp && customer_phone) {
     try {
       const { queueNotification } = await import('../whatsapp/notifications.js');
-      const invoiceUrl = `${process.env.FRONTEND_URL || 'https://ailaptopwala.com'}/api/invoice/${invoice_number}`;
+      const { Config } = await import('../../lib/config.js');
+        const frontendUrl = await Config.frontendUrl();
+        const invoiceUrl = `${frontendUrl}/api/invoice/${invoice_number}`;
       const msg = `🧾 *Invoice from AI Laptop Wala*\n\nNamaste ${customer_name}! 🙏\n\n*Invoice #:* ${invoice_number}\n*Amount:* ₹${total.toLocaleString('en-IN')}\n*Status:* ${payment_status === 'paid' ? 'Paid' : 'Pending'}\n\nView Invoice:\n${invoiceUrl}\n\n+91 98934 96163 | ailaptopwala.com`;
       await queueNotification(customer_phone, msg, 'invoice');
     } catch (e) { console.error("Operation error:", e.message); }
@@ -140,7 +142,9 @@ router.put('/billing/custom/:id', authMiddleware, adminOnly, async (req, res) =>
     try {
       const inv = await db.prepare('SELECT invoice_number FROM custom_invoices WHERE id=?').get(req.params.id);
       const { queueNotification } = await import('../whatsapp/notifications.js');
-      const invoiceUrl = `${process.env.FRONTEND_URL || 'https://ailaptopwala.com'}/api/invoice/${inv.invoice_number}`;
+      const { Config: Cfg } = await import('../../lib/config.js');
+      const fUrl = await Cfg.frontendUrl();
+      const invoiceUrl = `${fUrl}/api/invoice/${inv.invoice_number}`;
       const msg = `🧾 *Invoice from AI Laptop Wala*\n\nNamaste ${customer_name}! 🙏\n\n*Invoice #:* ${inv.invoice_number}\n*Amount:* ₹${total.toLocaleString('en-IN')}\n*Status:* ${payment_status === 'paid' ? '✅ Paid' : '⏳ Pending'}\n\n📄 View Invoice:\n${invoiceUrl}\n\n📞 +91 98934 96163`;
       await queueNotification(customer_phone, msg, 'invoice');
     } catch (e) { console.error("Operation error:", e.message); }
@@ -177,7 +181,9 @@ router.patch('/billing/:type/:id/payment', authMiddleware, adminOnly, async (req
       }
       if (phone) {
         const { queueNotification } = await import('../whatsapp/notifications.js');
-        const invoiceUrl = `${process.env.FRONTEND_URL || 'https://ailaptopwala.com'}/api/invoice/${invoice_number}`;
+        const { Config } = await import('../../lib/config.js');
+        const frontendUrl = await Config.frontendUrl();
+        const invoiceUrl = `${frontendUrl}/api/invoice/${invoice_number}`;
         const msg = `🧾 *Invoice — AI Laptop Wala*\n\nNamaste ${customer_name || 'Customer'}! 🙏\n\n*Invoice #:* ${invoice_number}\n*Amount:* ₹${Number(amount || 0).toLocaleString('en-IN')}\n*Status:* ${payment_status === 'paid' ? '✅ Paid' : '⏳ Pending'}\n\n📄 View Invoice:\n${invoiceUrl}\n\n📞 +91 98934 96163 | ailaptopwala.com`;
         await queueNotification(phone, msg, 'invoice');
       }

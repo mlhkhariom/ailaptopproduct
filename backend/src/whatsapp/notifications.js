@@ -8,15 +8,20 @@ const normalizePhone = async (phone) => {
   if (p.startsWith('0')) p = p.slice(1);           // remove leading 0
   if (p.length === 10) p = '91' + p;               // add India code
   if (p.length === 12 && !p.startsWith('91')) p = '91' + p.slice(-10); // fix wrong prefix
+  // Validate: must be 12 digits (91 + 10 digit Indian number)
+  if (p.length !== 12 || !p.startsWith('91')) return null;
   return p + '@c.us';
 };
 
 // Queue a WhatsApp notification
 export const queueNotification = async (phone, message, type = 'general') => {
-  if (!phone) return;
+  if (!phone || !message) return;
+  // Skip invalid numbers (@lid, too short, etc)
+  const normalized = await normalizePhone(phone);
+  if (!normalized) { console.log(`[WA] Skipping invalid phone: ${phone}`); return; }
   try {
     await db.prepare('INSERT INTO whatsapp_notifications (id, type, phone, message) VALUES (?,?,?,?)')
-      .run(uuid(), type, String(phone).trim(), message);
+      .run(uuid(), type, String(phone).replace(/[^0-9]/g, '').slice(-10), message);
   } catch (e) {
     console.error('Queue notification error:', e.message);
   }

@@ -157,7 +157,8 @@ export const initWhatsApp = async () => {
       .run(msg.id._serialized, msg.from, 'me', msg.hasMedia ? `[${msg.type}]` : (msg.body || `[${msg.type}]`), 'incoming');
 
     // Auto-create/update CRM lead for WhatsApp contacts
-    if (!msg.isGroup && msg.type === 'chat') {
+    // Skip @lid (newsletter/link IDs), @g.us (groups), @broadcast
+    if (!msg.isGroup && msg.type === 'chat' && msg.from.endsWith('@c.us')) {
       try {
         const phone = msg.from.replace('@c.us', '');
         const existing = await db.prepare('SELECT id FROM leads WHERE phone=?').get(phone);
