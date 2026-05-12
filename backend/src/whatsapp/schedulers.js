@@ -90,5 +90,29 @@ export function startKPIAlertScheduler() {
 
   // Run every hour
   setInterval(run, 60 * 60 * 1000);
-  console.log('✅ KPI alert scheduler started (hourly)');
+
+  // ── CRM Follow-up Reminders (runs every 2 hours) ──────
+  const followupReminder = async () => {
+    try {
+      const { Config } = await import('../lib/config.js');
+      const ownerPhone = await Config.ownerPhone();
+      if (!ownerPhone) return;
+
+      const today = new Date().toISOString().split('T')[0];
+      const overdue = await db.prepare(`SELECT l.name, l.phone, l.interest, l.next_followup, l.assigned_to
+        FROM leads l WHERE l.next_followup <= ? AND l.status NOT IN ('won','lost')
+        ORDER BY l.next_followup ASC LIMIT 10`).all(today) || [];
+
+      if (overdue.length > 0) {
+        const { queueNotification } = await import('./notifications.js');
+        const list = overdue.slice(0, 5).map(l => `• ${l.name} (${l.interest || 'General'}) — due ${l.next_followup}`).join('\n');
+        const msg = `📋 CRM Follow-up Reminder\n\n${overdue.length} leads need follow-up today:\n\n${list}${overdue.length > 5 ? `\n... +${overdue.length - 5} more` : ''}\n\nOpen CRM: ailaptopwala.com/admin/crm`;
+        await queueNotification(ownerPhone, msg, 'crm_reminder');
+      }
+    } catch (e) { console.error('Follow-up reminder error:', e.message); }
+  };
+  followupReminder();
+  setInterval(followupReminder, 2 * 60 * 60 * 1000);
+
+  console.log('✅ KPI alert + CRM follow-up scheduler started');
 }

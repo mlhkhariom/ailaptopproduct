@@ -40,6 +40,9 @@ export default function CRMLeadDetail({ lead, open, onClose, onUpdate, staff, on
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<any>({});
   const [followups, setFollowups] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [waMsg, setWaMsg] = useState('');
+  const [sendingWa, setSendingWa] = useState(false);
   const [fuForm, setFuForm] = useState({ type: 'call', notes: '', outcome: '', next_date: '' });
   const [addingFu, setAddingFu] = useState(false);
 
@@ -47,6 +50,7 @@ export default function CRMLeadDetail({ lead, open, onClose, onUpdate, staff, on
     if (lead) {
       setForm({ ...lead });
       req('GET', `/leads/${lead.id}/followups`).then(d => setFollowups(Array.isArray(d) ? d : []));
+      req('GET', `/leads/${lead.id}/activities`).then(d => setActivities(Array.isArray(d) ? d : [])).catch(() => {});
     }
   }, [lead]);
 
@@ -202,17 +206,37 @@ export default function CRMLeadDetail({ lead, open, onClose, onUpdate, staff, on
             <a href={`tel:${lead.phone}`} className="flex-1">
               <Button variant="outline" size="sm" className="w-full gap-1.5"><Phone className="h-3.5 w-3.5" /> Call</Button>
             </a>
-            <a href={`https://wa.me/91${lead.phone?.replace(/\D/g,'')}?text=Namaste ${lead.name}!`} target="_blank" rel="noreferrer" className="flex-1">
-              <Button variant="outline" size="sm" className="w-full gap-1.5 text-green-600 border-green-200">
-                <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
-              </Button>
-            </a>
+            <Button variant="outline" size="sm" className="flex-1 gap-1.5 text-green-600 border-green-200" onClick={() => setWaMsg(waMsg ? '' : `Namaste ${lead.name}!`)}>
+              <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+            </Button>
             {!['won','lost'].includes(lead.status) && (
               <Button variant="outline" size="sm" className="flex-1 gap-1.5 text-blue-600 border-blue-200" onClick={() => onConvert(lead)}>
                 <ClipboardList className="h-3.5 w-3.5" /> Job Card
               </Button>
             )}
           </div>
+
+          {/* WhatsApp Send (in-app) */}
+          {waMsg !== '' && lead.phone && (
+            <div className="border rounded-xl p-3 space-y-2 bg-green-50 dark:bg-green-950/20 border-green-200">
+              <p className="text-xs font-medium text-green-700">Send WhatsApp to {lead.phone}</p>
+              <Textarea rows={2} className="text-xs" placeholder="Type message..." value={waMsg} onChange={e => setWaMsg(e.target.value)} />
+              <div className="flex gap-2">
+                <Button size="sm" className="flex-1 h-7 text-xs bg-green-600 hover:bg-green-700" disabled={sendingWa || !waMsg.trim()} onClick={async () => {
+                  setSendingWa(true);
+                  try {
+                    await req('POST', `/leads/${lead.id}/whatsapp`, { message: waMsg });
+                    toast.success('WhatsApp message sent!');
+                    setWaMsg('');
+                    req('GET', `/leads/${lead.id}/followups`).then(d => setFollowups(Array.isArray(d) ? d : []));
+                    req('GET', `/leads/${lead.id}/activities`).then(d => setActivities(Array.isArray(d) ? d : [])).catch(() => {});
+                  } catch (e: any) { toast.error(e.message || 'Failed'); }
+                  finally { setSendingWa(false); }
+                }}>Send</Button>
+                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setWaMsg('')}>Cancel</Button>
+              </div>
+            </div>
+          )}
 
           {/* Activity Timeline */}
           <div>
@@ -261,19 +285,21 @@ export default function CRMLeadDetail({ lead, open, onClose, onUpdate, staff, on
                 </div>
               </div>
 
-              {followups.map((fu, i) => {
+              {[...followups.map(f => ({ ...f, _src: 'followup' })), ...activities.map(a => ({ ...a, _src: 'activity', type: a.type, notes: a.note }))]
+                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                .map((fu, i, arr) => {
                 const Icon = FU_ICONS[fu.type] || Clock;
                 return (
                   <div key={fu.id} className="flex gap-3">
                     <div className="flex flex-col items-center">
-                      <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0">
-                        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                      <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${fu._src === 'activity' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-muted'}`}>
+                        <Icon className={`h-3.5 w-3.5 ${fu._src === 'activity' ? 'text-blue-600' : 'text-muted-foreground'}`} />
                       </div>
-                      {i < followups.length - 1 && <div className="w-px flex-1 bg-border mt-1" />}
+                      {i < arr.length - 1 && <div className="w-px flex-1 bg-border mt-1" />}
                     </div>
                     <div className="pb-3 flex-1">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium capitalize">{fu.type}</p>
+                        <p className="text-sm font-medium capitalize">{fu.type}{fu._src === 'activity' ? ' (auto)' : ''}</p>
                         <span className="text-xs text-muted-foreground">{new Date(fu.created_at).toLocaleDateString('en-IN')}</span>
                       </div>
                       {fu.notes && <p className="text-xs text-muted-foreground mt-0.5">{fu.notes}</p>}

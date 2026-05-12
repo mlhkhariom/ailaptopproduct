@@ -68,10 +68,6 @@ export default function AdminCRM() {
   };
   useEffect(() => { load(); }, [statusFilter]);
 
-  const filtered = leads.filter(l => (branchFilter === 'all' || l.branch_id === branchFilter) &&
-    (!search || l.name?.toLowerCase().includes(search.toLowerCase()) || l.phone?.includes(search) || l.interest?.toLowerCase().includes(search.toLowerCase())) &&
-    (sourceFilter === 'all' || l.source === sourceFilter)
-  );
 
   const counts: Record<string, number> = { all: leads.length };
   leads.forEach(l => { counts[l.status] = (counts[l.status] || 0) + 1; });
@@ -106,6 +102,22 @@ export default function AdminCRM() {
     await Promise.all([...selected].map(id => req('PUT', `/leads/${id}`, { ...leads.find(l => l.id === id), assigned_to: name })));
     toast.success(`${selected.size} leads assigned`); setSelected(new Set()); load();
   };
+
+  const bulkDelete = async () => {
+    if (!confirm(`Delete ${selected.size} leads permanently?`)) return;
+    await Promise.all([...selected].map(id => req('DELETE', `/leads/${id}`)));
+    toast.success(`${selected.size} leads deleted`); setSelected(new Set()); load();
+  };
+
+  // All unique tags across leads
+  const allTags = [...new Set(leads.flatMap(l => { try { return JSON.parse(l.tags || '[]'); } catch { return []; } }))].filter(Boolean);
+  const [tagFilter, setTagFilter] = useState('');
+
+  const filtered = leads.filter(l => (branchFilter === 'all' || l.branch_id === branchFilter) &&
+    (!search || l.name?.toLowerCase().includes(search.toLowerCase()) || l.phone?.includes(search) || l.interest?.toLowerCase().includes(search.toLowerCase())) &&
+    (sourceFilter === 'all' || l.source === sourceFilter) &&
+    (!tagFilter || (() => { try { return JSON.parse(l.tags || '[]').includes(tagFilter); } catch { return false; } })())
+  );
 
   const handleStatusChange = async (id: string, status: string) => {
     await req('PATCH', `/leads/${id}/status`, { status });
@@ -330,6 +342,15 @@ export default function AdminCRM() {
                   {SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {allTags.length > 0 && (
+                <Select value={tagFilter} onValueChange={v => setTagFilter(v === 'all' ? '' : v)}>
+                  <SelectTrigger className="h-9 w-32 text-sm"><SelectValue placeholder="Tags" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Tags</SelectItem>
+                    {allTags.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {/* Status pills */}
@@ -358,6 +379,7 @@ export default function AdminCRM() {
                     {staff.map(s => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                <Button size="sm" variant="destructive" className="h-8 text-xs gap-1" onClick={bulkDelete}><Trash2 className="h-3 w-3" /> Delete</Button>
                 <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setSelected(new Set())}>Clear</Button>
               </div>
             )}

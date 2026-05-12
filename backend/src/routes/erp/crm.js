@@ -107,6 +107,10 @@ router.get('/leads/:id/followups', authMiddleware, adminOnly, async (req, res) =
   res.json(await db.prepare('SELECT * FROM followups WHERE lead_id=? ORDER BY created_at DESC').all(req.params.id) || []);
 });
 
+router.get('/leads/:id/activities', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM lead_activities WHERE lead_id=? ORDER BY created_at DESC').all(req.params.id) || []);
+});
+
 router.post('/leads/:id/followups', authMiddleware, adminOnly, async (req, res) => {
   const { type, notes, outcome, next_date } = req.body;
   const id = uuid();
