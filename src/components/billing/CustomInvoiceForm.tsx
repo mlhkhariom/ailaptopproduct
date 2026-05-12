@@ -91,9 +91,16 @@ export default function CustomInvoiceForm({ open, onClose, form, setForm, editin
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                 <Package className="h-3.5 w-3.5" /> Items *
               </p>
-              <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={addItem}>
-                <Plus className="h-3 w-3" /> Add Row
-              </Button>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => {
+                  setForm((f: any) => ({ ...f, items: [{ name: 'Service Charge', qty: 1, price: 0 }] }));
+                }}>
+                  Quick Amount
+                </Button>
+                <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={addItem}>
+                  <Plus className="h-3 w-3" /> Add Row
+                </Button>
+              </div>
             </div>
 
             {/* Product quick-add search */}

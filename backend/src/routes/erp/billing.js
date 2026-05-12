@@ -86,7 +86,7 @@ router.get('/billing', authMiddleware, adminOnly, async (req, res) => {
 // POST /api/erp/billing/custom — create custom invoice
 router.post('/billing/custom', authMiddleware, adminOnly, async (req, res) => {
   const { customer_name, customer_phone, customer_email, items, notes, payment_status, payment_method, discount, gst_enabled, send_whatsapp } = req.body;
-  if (!customer_name || !items?.length) return res.status(400).json({ error: 'customer_name and items required' });
+  if (!customer_name || !items?.length || !items.some(i => i.price > 0)) return res.status(400).json({ error: 'customer_name and at least one item with price required' });
   const id = uuid();
   const invoice_number = 'ALW-' + Date.now().toString().slice(-6);
   const subtotal = items.reduce((s, i) => s + (i.price * i.qty), 0);

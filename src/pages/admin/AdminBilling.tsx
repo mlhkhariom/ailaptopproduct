@@ -90,7 +90,7 @@ export default function AdminBilling() {
 
   // Custom invoice save
   const saveCustom = async () => {
-    if (!form.customer_name || !form.items?.some((i: any) => i.name && i.price > 0))
+    if (!form.customer_name || !form.items?.some((i: any) => i.price > 0))
       return toast.error('Customer name and at least one item required');
     const payment_method = form.payment_mode === 'cash' ? 'Cash' : form.online_method;
     const payload = { ...form, payment_method, gst_enabled: form.gst_enabled ? 1 : 0 };
