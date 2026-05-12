@@ -3,11 +3,13 @@ import { v4 as uuid } from 'uuid';
 import { getClient, getStatus } from '../whatsapp/client.js';
 
 // Normalize phone → 91XXXXXXXXXX format
+// Handles: +919165100124, 09165100124, 9165100124, 919165100124
 const normalizePhone = async (phone) => {
-  let p = String(phone).replace(/[^0-9]/g, '');
-  if (p.startsWith('0')) p = p.slice(1);           // remove leading 0
-  if (p.length === 10) p = '91' + p;               // add India code
-  if (p.length === 12 && !p.startsWith('91')) p = '91' + p.slice(-10); // fix wrong prefix
+  let p = String(phone).replace(/[^0-9]/g, ''); // strip +, spaces, dashes
+  if (p.startsWith('0')) p = p.slice(1);           // 09165100124 → 9165100124
+  if (p.length === 10) p = '91' + p;               // 9165100124 → 919165100124
+  if (p.length === 11 && p.startsWith('0')) p = '91' + p.slice(1); // edge case
+  if (p.length === 13 && p.startsWith('91')) p = p.slice(0, 12); // 9191... trim
   // Validate: must be 12 digits (91 + 10 digit Indian number)
   if (p.length !== 12 || !p.startsWith('91')) return null;
   return p + '@c.us';
