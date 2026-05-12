@@ -6,6 +6,14 @@ import { adminOnly, canAccess, superAdminOnly } from '../middleware/adminOnly.js
 
 const router = Router();
 
+// ── Audit Log Helper ─────────────────────────────────────
+async function auditLog(req, module, action, ref_id, old_value, new_value) {
+  try {
+    await db.prepare('INSERT INTO audit_log (id, module, action, ref_id, old_value, new_value, user_id, user_name, ip, created_at) VALUES (?,?,?,?,?,?,?,?,?,NOW())')
+      .run(uuid(), module, action, ref_id || null, old_value ? JSON.stringify(old_value) : null, new_value ? JSON.stringify(new_value) : null, req.user?.id || 'system', req.user?.name || req.user?.email || 'system', req.ip || '');
+  } catch (e) { console.error('Audit log error:', e.message); }
+}
+
 // ── JOB CARDS (service_bookings extended) ────────────────
 
 // Public repair tracking — no auth required
@@ -163,6 +171,11 @@ router.put('/job-cards/:id', authMiddleware, adminOnly, async (req, res) => {
     }
   } catch (e) { console.error("Operation error:", e.message); }
 
+  // Audit log for job card update
+  if (status && prev?.status !== status) {
+    await auditLog(req, 'job_card', 'status_changed', req.params.id, { status: prev?.status }, { status });
+  }
+
   res.json({ message: 'Updated' });
 });
 
@@ -190,10 +203,12 @@ router.post('/expenses', authMiddleware, adminOnly, async (req, res) => {
   const id = uuid();
   await db.prepare('INSERT INTO expenses (id,category,amount,description,payment_method,date,branch_id,created_by) VALUES (?,?,?,?,?,?,?,?)')
     .run(id, category, amount, description, payment_method || 'cash', date || new Date().toISOString().split('T')[0], branch_id || null, req.user.id);
+  await auditLog(req, 'expense', 'created', id, null, { category, amount });
   res.status(201).json({ id });
 });
 
 router.delete('/expenses/:id', authMiddleware, adminOnly, async (req, res) => {
+  await auditLog(req, 'expense', 'deleted', req.params.id, null, null);
   await db.prepare('DELETE FROM expenses WHERE id=?').run(req.params.id);
   res.json({ message: 'Deleted' });
 });
@@ -908,6 +923,21 @@ router.patch('/leaves/:id', authMiddleware, adminOnly, async (req, res) => {
   res.json({ message: 'Updated' });
 });
 
+// GET /api/erp/leaves/balance/:staff_id — leave balance for current year
+router.get('/leaves/balance/:staff_id', authMiddleware, adminOnly, async (req, res) => {
+  const year = new Date().getFullYear();
+  const yearStart = `${year}-01-01`;
+  const yearEnd = `${year}-12-31`;
+  // Default annual quota (can be made configurable per staff later)
+  const quota = { casual: 12, sick: 6, earned: 15 };
+  const used = await db.prepare(`SELECT type, COALESCE(SUM(days),0) as used FROM leave_requests WHERE staff_id=? AND status='approved' AND from_date>=? AND to_date<=? GROUP BY type`).all(req.params.staff_id, yearStart, yearEnd) || [];
+  const balance = Object.entries(quota).map(([type, total]) => {
+    const usedDays = used.find(u => u.type === type)?.used || 0;
+    return { type, total, used: usedDays, remaining: total - usedDays };
+  });
+  res.json({ year, staff_id: req.params.staff_id, balance, total_quota: 33, total_used: balance.reduce((s, b) => s + b.used, 0) });
+});
+
 // ── SERIAL NUMBERS ────────────────────────────────────────
 
 router.get('/serials', authMiddleware, adminOnly, async (req, res) => {
@@ -1108,8 +1138,8 @@ router.get('/gstr1-export', authMiddleware, adminOnly, async (req, res) => {
 
   const bFilter = branch_id ? ' AND branch_id=?' : '';
   const bParam = branch_id ? [branch_id] : [];
-  const services = await db.prepare(`SELECT booking_number as invoice_no, customer_name, customer_phone, total_charge as taxable_value, gst_enabled, created_at FROM service_bookings WHERE payment_status='paid' AND gst_enabled=1 AND DATE(created_at) BETWEEN ? AND ?${bCond}`).all(f, t) || [];
-  const customs = await db.prepare(`SELECT invoice_number as invoice_no, customer_name, customer_phone, (subtotal-discount) as taxable_value, gst_enabled, created_at FROM custom_invoices WHERE payment_status='paid' AND gst_enabled=1 AND DATE(created_at) BETWEEN ? AND ?${bCond}`).all(f, t) || [];
+  const services = await db.prepare(`SELECT booking_number as invoice_no, customer_name, customer_phone, total_charge as taxable_value, gst_enabled, created_at FROM service_bookings WHERE payment_status='paid' AND gst_enabled=1 AND DATE(created_at) BETWEEN ? AND ?${bFilter}`).all(f, t, ...bParam) || [];
+  const customs = await db.prepare(`SELECT invoice_number as invoice_no, customer_name, customer_phone, (subtotal-discount) as taxable_value, gst_enabled, created_at FROM custom_invoices WHERE payment_status='paid' AND gst_enabled=1 AND DATE(created_at) BETWEEN ? AND ?${bFilter}`).all(f, t, ...bParam) || [];
 
   const allInvoices = [...services, ...customs].map(inv => ({
     invoice_no: inv.invoice_no,
@@ -1240,7 +1270,7 @@ router.post('/einvoice/generate', authMiddleware, adminOnly, async (req, res) =>
     }
   } else {
     // Sandbox mock — generate fake IRN for testing
-    const hash = Buffer.from(`${EINVOICE_GSTIN}${payload.DocDtls.No}${payload.DocDtls.Dt}`).toString('hex').slice(0, 64);
+    const hash = Buffer.from(`${ein.GSTIN}${payload.DocDtls.No}${payload.DocDtls.Dt}`).toString('hex').slice(0, 64);
     irnData = {
       Irn: hash,
       AckNo: Math.floor(Math.random() * 9000000000) + 1000000000,
@@ -1896,6 +1926,25 @@ router.post('/leads/from-whatsapp', authMiddleware, adminOnly, async (req, res) 
 router.get('/staff/:id/salary-history', authMiddleware, adminOnly, async (req, res) => {
   const rows = await db.prepare('SELECT * FROM salary_history WHERE staff_id=? ORDER BY created_at DESC').all(req.params.id) || [];
   res.json(rows);
+});
+
+// ── WHATSAPP SEND TO LEAD ─────────────────────────────────
+router.post('/leads/:id/whatsapp', authMiddleware, adminOnly, async (req, res) => {
+  const { message } = req.body;
+  const lead = await db.prepare('SELECT * FROM leads WHERE id=?').get(req.params.id);
+  if (!lead?.phone) return res.status(400).json({ error: 'Lead has no phone number' });
+  if (!message) return res.status(400).json({ error: 'message required' });
+
+  try {
+    const { queueNotification } = await import('../whatsapp/notifications.js');
+    await queueNotification(lead.phone, message, 'crm_lead');
+    // Log activity
+    await db.prepare("INSERT INTO lead_activities (id,lead_id,type,note,created_by) VALUES (?,?,?,?,?)")
+      .run(uuid(), req.params.id, 'whatsapp', `Sent: ${message.slice(0, 100)}`, req.user?.id || 'admin');
+    res.json({ message: 'WhatsApp message queued' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── PAYMENT HISTORY PER INVOICE ──────────────────────────
