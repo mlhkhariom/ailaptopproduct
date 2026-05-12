@@ -57,11 +57,11 @@ router.get('/purchase-orders', authMiddleware, adminOnly, async (req, res) => {
 });
 
 router.post('/purchase-orders', authMiddleware, adminOnly, async (req, res) => {
-  const { supplier_id, items, subtotal, tax, total, expected_date, notes } = req.body;
+  const { supplier_id, items, subtotal, tax, total, expected_date, notes, branch_id } = req.body;
   const id = uuid();
   const po_number = 'PO-' + Date.now().toString().slice(-6);
   await db.prepare('INSERT INTO purchase_orders (id,po_number,supplier_id,branch_id,items,subtotal,tax,total,expected_date,notes,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
-    .run(id, po_number, supplier_id, JSON.stringify(items || []), subtotal || 0, tax || 0, total || 0, expected_date, notes, req.user.id);
+    .run(id, po_number, supplier_id, branch_id || null, JSON.stringify(items || []), subtotal || 0, tax || 0, total || 0, expected_date, notes, req.user.id);
   res.status(201).json({ id, po_number });
 });
 
@@ -137,6 +137,25 @@ router.put('/products/:id/reorder-level', authMiddleware, adminOnly, async (req,
   const { reorder_level } = req.body;
   await db.prepare('UPDATE products SET reorder_level=? WHERE id=?').run(reorder_level || 5, req.params.id);
   res.json({ message: 'Updated' });
+});
+
+// GET /api/inventory/reorder-suggestions — products below reorder level with supplier info
+router.get('/reorder-suggestions', authMiddleware, adminOnly, async (req, res) => {
+  const products = await db.prepare(`
+    SELECT p.id, p.name, p.stock, p.reorder_level, p.category, p.price,
+      (SELECT s.name FROM suppliers s WHERE s.id = (SELECT supplier_id FROM purchase_orders WHERE items::text LIKE '%' || p.id || '%' ORDER BY created_at DESC LIMIT 1)) as last_supplier
+    FROM products p
+    WHERE p.status='active' AND p.stock <= COALESCE(p.reorder_level, 5)
+    ORDER BY p.stock ASC
+  `).all() || [];
+  
+  const suggestions = products.map(p => ({
+    ...p,
+    suggested_qty: Math.max(10, (p.reorder_level || 5) * 2 - p.stock),
+    urgency: p.stock === 0 ? 'critical' : p.stock <= 2 ? 'high' : 'medium',
+  }));
+  
+  res.json(suggestions);
 });
 
 export default router;

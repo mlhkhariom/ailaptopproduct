@@ -142,7 +142,6 @@ export default function AdminInventory() {
   useEffect(() => { loadAll(); }, [showInactiveSuppliers, poStatusFilter]);
 
   useEffect(() => {
-    loadAll();
     api.getProducts().then((p: any) => setProducts(Array.isArray(p) ? p : p?.products || []));
   }, []);
 
