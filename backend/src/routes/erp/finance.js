@@ -168,7 +168,7 @@ router.get('/gstr1-export', authMiddleware, adminOnly, async (req, res) => {
 
 // ── Get E-Invoice config dynamically per request ──────────
 async function getEinvoiceConfig() {
-  const { Config } = await import('../lib/config.js');
+  const { Config } = await import('../../lib/config.js');
   return {
     BASE: await Config.einvoiceBase(),
     GSTIN: await Config.einvoiceGstin(),

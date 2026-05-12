@@ -115,7 +115,7 @@ router.post('/billing/custom', authMiddleware, adminOnly, async (req, res) => {
   // WhatsApp send
   if (send_whatsapp && customer_phone) {
     try {
-      const { queueNotification } = await import('../whatsapp/notifications.js');
+      const { queueNotification } = await import('../../whatsapp/notifications.js');
       const { Config } = await import('../../lib/config.js');
         const frontendUrl = await Config.frontendUrl();
         const invoiceUrl = `${frontendUrl}/api/invoice/${invoice_number}`;
@@ -141,7 +141,7 @@ router.put('/billing/custom/:id', authMiddleware, adminOnly, async (req, res) =>
   if (send_whatsapp && customer_phone) {
     try {
       const inv = await db.prepare('SELECT invoice_number FROM custom_invoices WHERE id=?').get(req.params.id);
-      const { queueNotification } = await import('../whatsapp/notifications.js');
+      const { queueNotification } = await import('../../whatsapp/notifications.js');
       const { Config: Cfg } = await import('../../lib/config.js');
       const fUrl = await Cfg.frontendUrl();
       const invoiceUrl = `${fUrl}/api/invoice/${inv.invoice_number}`;
@@ -180,7 +180,7 @@ router.patch('/billing/:type/:id/payment', authMiddleware, adminOnly, async (req
         phone = c?.customer_phone;
       }
       if (phone) {
-        const { queueNotification } = await import('../whatsapp/notifications.js');
+        const { queueNotification } = await import('../../whatsapp/notifications.js');
         const { Config } = await import('../../lib/config.js');
         const frontendUrl = await Config.frontendUrl();
         const invoiceUrl = `${frontendUrl}/api/invoice/${invoice_number}`;

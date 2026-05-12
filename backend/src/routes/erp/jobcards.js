@@ -139,7 +139,7 @@ router.put('/job-cards/:id', authMiddleware, adminOnly, async (req, res) => {
   try {
     const job = await db.prepare('SELECT * FROM service_bookings WHERE id=?').get(req.params.id);
     if (job?.customer_phone) {
-      const { queueNotification } = await import('../whatsapp/notifications.js');
+      const { queueNotification } = await import('../../whatsapp/notifications.js');
       let msg = null;
       if (status === 'in_progress' && prev?.status !== 'in_progress')
         msg = `Job Update - AI Laptop Wala\n\nNamaste ${job.customer_name}!\n\nAapka ${job.device_brand} ${job.device_model} repair shuru ho gaya hai.\nJob ID: ${job.booking_number}\nTechnician: ${technician || 'Our Expert'}\n\n+91 98934 96163`;
@@ -150,7 +150,7 @@ router.put('/job-cards/:id', authMiddleware, adminOnly, async (req, res) => {
 
     // Email notification on status change
     if (job?.customer_email && status && prev?.status !== status) {
-      const { sendEmail, EmailTemplates } = await import('../lib/email.js');
+      const { sendEmail, EmailTemplates } = await import('../../lib/email.js');
       const statusLabel = { pending: 'Pending', in_progress: 'In Progress', completed: 'Completed', cancelled: 'Cancelled', waiting_parts: 'Waiting for Parts' }[status] || status;
       await sendEmail({
         to: job.customer_email,
@@ -283,7 +283,7 @@ router.post('/job-cards/:id/send-approval', authMiddleware, adminOnly, async (re
     `Reply *YES* to approve or *NO* to cancel.`;
 
   try {
-    const { queueNotification } = await import('../whatsapp/notifications.js');
+    const { queueNotification } = await import('../../whatsapp/notifications.js');
     await queueNotification(job.customer_phone, msg, 'approval_request');
     await db.prepare("UPDATE service_bookings SET approval_status='pending' WHERE id=?").run(req.params.id);
     res.json({ message: 'Approval request sent' });

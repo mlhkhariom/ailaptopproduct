@@ -79,7 +79,7 @@ router.post('/wa-templates/:id/send', authMiddleware, adminOnly, async (req, res
   let msg = tmpl.message;
   if (variables) Object.entries(variables).forEach(([k, v]) => { msg = msg.replace(new RegExp(`{{${k}}}`, 'g'), v); });
   try {
-    const { queueNotification } = await import('../whatsapp/notifications.js');
+    const { queueNotification } = await import('../../whatsapp/notifications.js');
     await queueNotification(phone, msg, 'template');
     res.json({ message: 'Queued' });
   } catch { res.status(500).json({ error: 'Failed to queue' }); }

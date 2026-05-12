@@ -163,7 +163,7 @@ router.post('/leads/:id/whatsapp', authMiddleware, adminOnly, async (req, res) =
   if (!message) return res.status(400).json({ error: 'message required' });
 
   try {
-    const { queueNotification } = await import('../whatsapp/notifications.js');
+    const { queueNotification } = await import('../../whatsapp/notifications.js');
     await queueNotification(lead.phone, message, 'crm_lead');
     // Log activity
     await db.prepare("INSERT INTO lead_activities (id,lead_id,type,note,created_by) VALUES (?,?,?,?,?)")

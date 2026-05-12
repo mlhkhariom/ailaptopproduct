@@ -168,7 +168,7 @@ router.post('/kpi-alerts/check', authMiddleware, adminOnly, async (req, res) => 
 
       if (triggered && OWNER_PHONE) {
         const msg = alert.message || `⚠️ KPI Alert: ${alert.metric} = ${value} (threshold: ${alert.threshold})`;
-        const { queueNotification } = await import('../whatsapp/notifications.js');
+        const { queueNotification } = await import('../../whatsapp/notifications.js');
         await queueNotification(OWNER_PHONE, msg, 'kpi_alert');
         fired.push({ metric: alert.metric, value, threshold: alert.threshold });
       }
@@ -213,7 +213,7 @@ router.post('/scheduled-reports/send', authMiddleware, adminOnly, async (req, re
     `📈 Net: ₹${((revenue?.v || 0) - (expenses?.v || 0)).toLocaleString('en-IN')}`;
 
   try {
-    const { queueNotification } = await import('../whatsapp/notifications.js');
+    const { queueNotification } = await import('../../whatsapp/notifications.js');
     await queueNotification(OWNER_PHONE, msg, 'scheduled_report');
     res.json({ message: 'Report sent', phone: OWNER_PHONE });
   } catch (e) {
