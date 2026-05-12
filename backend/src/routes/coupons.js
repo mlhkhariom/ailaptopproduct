@@ -9,14 +9,16 @@ const router = Router();
 // POST /api/coupons/validate — validate coupon
 router.post('/validate', async (req, res) => {
   const { code, subtotal } = req.body;
-  const coupon = await db.prepare('SELECT * FROM coupons WHERE code = ? AND is_active = 1').get(code?.toUpperCase());
+  if (!code) return res.status(400).json({ error: 'Coupon code required' });
+  const coupon = await db.prepare('SELECT * FROM coupons WHERE code = ? AND is_active = 1').get(code.toUpperCase());
   if (!coupon) return res.status(404).json({ error: 'Invalid coupon' });
   if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) return res.status(400).json({ error: 'Coupon expired' });
   if (coupon.max_uses && coupon.used_count >= coupon.max_uses) return res.status(400).json({ error: 'Coupon usage limit reached' });
   if (subtotal < coupon.min_order) return res.status(400).json({ error: `Minimum order ₹${coupon.min_order} required` });
 
-  const discount = coupon.type === 'percentage' ? (subtotal * coupon.value) / 100 : coupon.value;
-  res.json({ valid: true, discount: Math.min(discount, subtotal), coupon });
+  let discount = coupon.type === 'percentage' ? (subtotal * Math.min(coupon.value, 100)) / 100 : coupon.value;
+  discount = Math.min(discount, subtotal); // never exceed subtotal
+  res.json({ valid: true, discount, coupon });
 });
 
 // GET /api/coupons — admin

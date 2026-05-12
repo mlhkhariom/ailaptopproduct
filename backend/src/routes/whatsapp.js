@@ -50,7 +50,7 @@ router.delete('/messages/:phone/clear', authMiddleware, adminOnly, async (req, r
 // GET /api/whatsapp/messages/:phone
 router.get('/messages/:phone', authMiddleware, adminOnly, async (req, res) => {
   const msgs = await db.prepare('SELECT * FROM whatsapp_messages WHERE from_phone = ? OR to_phone = ? ORDER BY created_at ASC')
-    .all(req.params.phone, req.params.phone);
+    .all(decodeURIComponent(req.params.phone), decodeURIComponent(req.params.phone));
   res.json(msgs);
 });
 
@@ -76,7 +76,7 @@ router.get('/chats/:chatId/messages', authMiddleware, adminOnly, async (req, res
 
 // PUT /api/whatsapp/messages/:phone/read
 router.put('/messages/:phone/read', authMiddleware, adminOnly, async (req, res) => {
-  await db.prepare("UPDATE whatsapp_messages SET is_read = 1 WHERE from_phone = ? AND direction = 'incoming'").run(req.params.phone);
+  await db.prepare("UPDATE whatsapp_messages SET is_read = 1 WHERE from_phone = ? AND direction = 'incoming'").run(decodeURIComponent(req.params.phone));
   res.json({ message: 'Marked read' });
 });
 

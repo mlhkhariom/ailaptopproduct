@@ -170,7 +170,7 @@ const AdminProducts = () => {
           <CardContent className="p-3 flex items-center justify-between">
             <span className="text-sm font-medium">{selected.length} product(s) selected</span>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => { selected.forEach(id => updateStock(id, 10)); setSelected([]); setSelected([]); toast.success("Stock updated!"); }}>Mark In Stock</Button>
+              <Button size="sm" variant="outline" className="text-xs h-7" onClick={async () => { for (const id of selected) { await updateStock(id, 1); } setSelected([]); fetchProducts(); toast.success("Marked in stock!"); }}>Mark In Stock</Button>
               <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => { selected.forEach(id => updateStock(id, 0)); setSelected([]); setSelected([]); toast.success("Marked out of stock!"); }}>Mark Out of Stock</Button>
               <Button size="sm" variant="destructive" className="text-xs h-7" onClick={handleBulkDelete}>Delete All</Button>
               <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => setSelected([])}>Cancel</Button>

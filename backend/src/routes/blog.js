@@ -6,18 +6,21 @@ import { adminOnly } from '../middleware/adminOnly.js';
 
 const router = Router();
 
+// Helper — parse tags from DB (JSON string or comma-separated)
+const parseTags = (tags) => {
+  if (!tags) return [];
+  try { return JSON.parse(tags); } catch { return tags.split(',').map(t => t.trim()).filter(Boolean); }
+};
+
 // GET /api/blog — public
 router.get('/', async (req, res) => {
   const { category, status } = req.query;
   let query = 'SELECT * FROM blog_posts WHERE 1=1';
   const params = [];
-const parseTags = (tags) => {
-  if (!tags) return [];
-  try { return JSON.parse(tags); } catch { return tags.split(',').map(t => t.trim()).filter(Boolean); }
-};
-  query += ` AND status = ?`;
-  params.push(status || 'published');
-  query += ' ORDER BY published_at DESC';
+  if (status && status !== 'all') { query += ' AND status = ?'; params.push(status); }
+  else { query += " AND status = 'published'"; }
+  if (category) { query += ' AND category = ?'; params.push(category); }
+  query += ' ORDER BY published_at DESC NULLS LAST, created_at DESC';
   res.json((await db.prepare(query).all(...params)).map(p => ({ ...p, tags: parseTags(p.tags) })));
 });
 
@@ -41,7 +44,7 @@ router.post('/', authMiddleware, adminOnly, async (req, res) => {
 // PUT /api/blog/:id — admin
 router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
   const { title, slug, content, excerpt, image, category, author, status, tags, seo_title, seo_description } = req.body;
-  await db.prepare(`UPDATE blog_posts SET title=?, slug=?, content=?, excerpt=?, image=?, category=?, author=?, status=?, tags=?, seo_title=?, seo_description=?, published_at=COALESCE(published_at, CASE WHEN ? = 'published' THEN datetime('now') ELSE NULL END) WHERE id=?`)
+  await db.prepare(`UPDATE blog_posts SET title=?, slug=?, content=?, excerpt=?, image=?, category=?, author=?, status=?, tags=?, seo_title=?, seo_description=?, published_at=COALESCE(published_at, CASE WHEN ? = 'published' THEN NOW() ELSE NULL END) WHERE id=?`)
     .run(title, slug, content, excerpt, image, category, author, status, JSON.stringify(tags || []), seo_title, seo_description, status, req.params.id);
   res.json({ message: 'Updated' });
 });
