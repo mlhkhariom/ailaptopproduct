@@ -201,7 +201,7 @@ router.post('/publish/:id', authMiddleware, adminOnly, async (req, res) => {
       }
     }
 
-    await db.prepare(`UPDATE social_posts SET status='published', meta_post_id=?, published_at=datetime('now'), error_msg=NULL WHERE id=?`)
+    await db.prepare(`UPDATE social_posts SET status='published', meta_post_id=?, published_at=NOW(), error_msg=NULL WHERE id=?`)
       .run(metaPostId, post.id);
 
     res.json({ success: true, meta_post_id: metaPostId });

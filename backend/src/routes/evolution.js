@@ -50,7 +50,7 @@ router.post('/settings/test', authMiddleware, superAdminOnly, async (req, res) =
 
 // PUT /api/evolution/settings/visibility
 router.put('/settings/visibility', authMiddleware, superAdminOnly, async (req, res) => {
-  await db.prepare("UPDATE evolution_settings SET is_visible_to_admin=?, updated_at=datetime('now') WHERE id='main'").run(req.body.visible ? 1 : 0);
+  await db.prepare("UPDATE evolution_settings SET is_visible_to_admin=?, updated_at=NOW() WHERE id='main'").run(req.body.visible ? 1 : 0);
   res.json({ message: 'Updated' });
 });
 
@@ -103,7 +103,7 @@ router.post('/instances', authMiddleware, superAdminOnly, async (req, res) => {
 router.get('/instances/:name/status', authMiddleware, async (req, res) => {
   try {
     const status = await getInstanceStatus(req.params.name);
-    await db.prepare("UPDATE evolution_instances SET status=?, updated_at=datetime('now') WHERE instance_name=?").run(status.instance?.state || 'unknown', req.params.name);
+    await db.prepare("UPDATE evolution_instances SET status=?, updated_at=NOW() WHERE instance_name=?").run(status.instance?.state || 'unknown', req.params.name);
     res.json(status);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
