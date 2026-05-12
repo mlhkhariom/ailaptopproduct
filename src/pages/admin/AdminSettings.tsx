@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import InvoiceSettingsTab from "@/components/settings/InvoiceSettingsTab";
 import AdminLayout from "@/components/AdminLayout";
 import { api } from "@/lib/api";
 import { SocialSettings } from "@/components/SocialSettings";
@@ -101,6 +102,7 @@ const AdminSettings = () => {
           <TabsTrigger value="api" className="text-xs gap-1"><Key className="h-3 w-3" /> API Keys</TabsTrigger>
           <TabsTrigger value="shipping" className="text-xs gap-1"><Truck className="h-3 w-3" /> Shipping</TabsTrigger>
           <TabsTrigger value="payments" className="text-xs gap-1"><CreditCard className="h-3 w-3" /> Payments</TabsTrigger>
+          <TabsTrigger value="invoice" className="text-xs gap-1"><FileText className="h-3 w-3" /> Invoice</TabsTrigger>
           <TabsTrigger value="seo" className="text-xs gap-1"><Search className="h-3 w-3" /> SEO</TabsTrigger>
           <TabsTrigger value="notifications" className="text-xs gap-1"><Bell className="h-3 w-3" /> Alerts</TabsTrigger>
           <TabsTrigger value="security" className="text-xs gap-1"><Lock className="h-3 w-3" /> Security</TabsTrigger>
@@ -766,6 +768,11 @@ const AdminSettings = () => {
               <Button className="gap-1.5 w-full" disabled={saving} onClick={() => saveAppSettings('Tax')}><Save className="h-4 w-4" /> Save</Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* INVOICE */}
+        <TabsContent value="invoice">
+          <InvoiceSettingsTab s={s} setS={setS} saving={saving} saveAppSettings={saveAppSettings} />
         </TabsContent>
 
         {/* SEO */}
