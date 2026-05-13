@@ -33,6 +33,7 @@ const AdminProducts = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"all" | "active" | "out">("all");
+  const [catFilter, setCatFilter] = useState("all");
   const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
@@ -49,7 +50,8 @@ const AdminProducts = () => {
 
   const filtered = products
     .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()) || (p.name_hi && p.name_hi.includes(search)))
-    .filter((p) => view === "all" || (view === "active" ? p.in_stock : !p.in_stock));
+    .filter((p) => view === "all" || (view === "active" ? p.in_stock : !p.in_stock))
+    .filter((p) => catFilter === "all" || p.category === catFilter);
 
   const toggleSelect = (id: string) => setSelected((prev) => prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]);
 
@@ -192,8 +194,8 @@ const AdminProducts = () => {
           <CardContent className="p-3 flex items-center justify-between">
             <span className="text-sm font-medium">{selected.length} product(s) selected</span>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="text-xs h-7" onClick={async () => { for (const id of selected) { await updateStock(id, 1); } setSelected([]); fetchProducts({ all: '1' }); toast.success("Marked in stock!"); }}>Mark In Stock</Button>
-              <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => { selected.forEach(id => updateStock(id, 0)); setSelected([]); setSelected([]); toast.success("Marked out of stock!"); }}>Mark Out of Stock</Button>
+              <Button size="sm" variant="outline" className="text-xs h-7" onClick={async () => { for (const id of selected) { await api.updateProduct(id, { in_stock: true }); } setSelected([]); fetchProducts({ all: '1' }); toast.success("Marked in stock!"); }}>Mark In Stock</Button>
+              <Button size="sm" variant="outline" className="text-xs h-7" onClick={async () => { for (const id of selected) { await updateStock(id, 0); } setSelected([]); fetchProducts({ all: '1' }); toast.success("Marked out of stock!"); }}>Mark Out of Stock</Button>
               <Button size="sm" variant="destructive" className="text-xs h-7" onClick={handleBulkDelete}>Delete All</Button>
               <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => setSelected([])}>Cancel</Button>
             </div>
@@ -211,9 +213,18 @@ const AdminProducts = () => {
                 <TabsTrigger value="out" className="text-xs h-7 px-3" onClick={() => setView("out")}>Out of Stock ({products.filter(p => !p.in_stock).length})</TabsTrigger>
               </TabsList>
             </Tabs>
-            <div className="relative flex-1 sm:flex-initial">
-              <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search..." className="pl-8 h-8 text-xs w-full sm:w-48" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <div className="flex gap-2 items-center flex-1 sm:flex-initial">
+              <div className="relative flex-1 sm:w-48">
+                <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search..." className="pl-8 h-8 text-xs w-full" value={search} onChange={(e) => setSearch(e.target.value)} />
+              </div>
+              <Select value={catFilter} onValueChange={setCatFilter}>
+                <SelectTrigger className="h-8 w-36 text-xs"><SelectValue placeholder="Category" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.filter(c => c !== "All").map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardHeader>
