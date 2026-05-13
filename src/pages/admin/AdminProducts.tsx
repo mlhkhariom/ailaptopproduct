@@ -15,7 +15,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminLayout from "@/components/AdminLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProductStore } from "@/store/productStore";
-import * as XLSX from "xlsx";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -75,17 +74,20 @@ const AdminProducts = () => {
 
     let text = '';
     if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-      const data = await file.arrayBuffer();
-      const wb = XLSX.read(data);
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      text = XLSX.utils.sheet_to_csv(ws);
+      try {
+        const XLSX = await import('xlsx');
+        const data = await file.arrayBuffer();
+        const wb = XLSX.read(data);
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        text = XLSX.utils.sheet_to_csv(ws);
+      } catch { toast.error('Failed to parse Excel file'); e.target.value = ''; return; }
     } else {
       text = await file.text();
     }
 
     try {
       const result = await api.importProducts(text);
-      toast.success(`Import done! Added: ${result.added}, Updated: ${result.updated}, Stock synced`);
+      toast.success(`Import done! Added: ${result.added}, Updated: ${result.updated}`);
       if (result.errors?.length) toast.error(`${result.errors.length} rows had errors`);
       fetchProducts();
     } catch (err: any) { toast.error(err.message); }
