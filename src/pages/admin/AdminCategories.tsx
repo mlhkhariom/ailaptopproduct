@@ -11,7 +11,7 @@ import AdminLayout from "@/components/AdminLayout";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
-const emptyForm = { name: '', name_hi: '', slug: '', description: '', image: '', is_active: true };
+const emptyForm = { name: '', name_hi: '', slug: '', description: '', image: '', is_active: true, category_type: 'ecommerce' };
 
 const AdminCategories = () => {
   const [categories, setCategories] = useState<any[]>([]);
@@ -33,7 +33,7 @@ const AdminCategories = () => {
   const f = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: e.target.value }));
 
   const openAdd = () => { setEditing(null); setForm({ ...emptyForm }); setDialog(true); };
-  const openEdit = (c: any) => { setEditing(c); setForm({ name: c.name, name_hi: c.name_hi || '', slug: c.slug || '', description: c.description || '', image: c.image || '', is_active: !!c.is_active }); setDialog(true); };
+  const openEdit = (c: any) => { setEditing(c); setForm({ name: c.name, name_hi: c.name_hi || '', slug: c.slug || '', description: c.description || '', image: c.image || '', is_active: !!c.is_active, category_type: c.category_type || 'ecommerce' }); setDialog(true); };
 
   const save = async () => {
     if (!form.name) return toast.error('Name required');
@@ -113,7 +113,14 @@ const AdminCategories = () => {
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>{editing ? 'Edit Category' : 'Add Category'}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label className="text-xs">Name (Hindi) *</Label><Input value={form.name} onChange={f('name')} className="mt-1 text-sm" placeholder="Laptops, MacBooks, Gaming" /></div>
+            <div><Label className="text-xs">Category Name *</Label><Input value={form.name} onChange={f('name')} className="mt-1 text-sm" placeholder="Laptops, MacBooks, Gaming" /></div>
+            <div><Label className="text-xs">Type</Label>
+              <select className="mt-1 w-full h-9 rounded-md border px-3 text-sm" value={(form as any).category_type || 'ecommerce'} onChange={e => setForm(p => ({ ...p, category_type: e.target.value }))}>
+                <option value="ecommerce">Ecommerce (Customer-facing)</option>
+                <option value="inventory">Inventory (Internal parts)</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
             <div><Label className="text-xs">Name (English)</Label><Input value={form.name_hi} onChange={f('name_hi')} className="mt-1 text-sm" placeholder="Herbs" /></div>
             <div><Label className="text-xs">Slug</Label><Input value={form.slug} onChange={f('slug')} className="mt-1 text-sm font-mono" placeholder="herbs" /></div>
             <div><Label className="text-xs">Image URL</Label><Input value={form.image} onChange={f('image')} className="mt-1 text-sm" placeholder="https://..." /></div>

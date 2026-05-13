@@ -8,23 +8,26 @@ const router = Router();
 
 // GET /api/categories — public
 router.get('/', async (req, res) => {
-  const cats = await db.prepare(`
+  const { type } = req.query; // 'ecommerce' | 'inventory' | 'all'
+  let q = `
     SELECT c.*, COUNT(p.id) as product_count
     FROM categories c
     LEFT JOIN products p ON p.category = c.name AND p.status = 'active'
-    WHERE c.is_active = 1
-    GROUP BY c.id ORDER BY c.name ASC
-  `).all();
+    WHERE c.is_active = 1`;
+  const params = [];
+  if (type && type !== 'all') { q += ' AND c.category_type = ?'; params.push(type); }
+  q += ' GROUP BY c.id ORDER BY c.name ASC';
+  const cats = await db.prepare(q).all(...params);
   res.json(cats);
 });
 
 // POST /api/categories — admin
 router.post('/', authMiddleware, adminOnly, async (req, res) => {
-  const { name, name_hi, slug, description, image } = req.body;
+  const { name, name_hi, slug, description, image, category_type } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
   const id = uuid();
-  await db.prepare('INSERT INTO categories (id, name, name_hi, slug, description, image) VALUES (?,?,?,?,?,?)')
-    .run(id, name, name_hi, slug || name.toLowerCase().replace(/\s+/g, '-'), description, image);
+  await db.prepare('INSERT INTO categories (id, name, name_hi, slug, description, image, category_type) VALUES (?,?,?,?,?,?,?)')
+    .run(id, name, name_hi, slug || name.toLowerCase().replace(/\s+/g, '-'), description, image, category_type || 'ecommerce');
   res.status(201).json(await db.prepare('SELECT * FROM categories WHERE id = ?').get(id));
 });
 

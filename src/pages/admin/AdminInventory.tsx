@@ -33,6 +33,7 @@ export default function AdminInventory() {
   const [movements, setMovements] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [inventoryCategories, setInventoryCategories] = useState<string[]>(['Laptop Parts','Mobile Parts','Accessories','Tools','Cables','Batteries','Screens','Keyboards','Chargers','Other']);
   const [reorderSuggestions, setReorderSuggestions] = useState<any[]>([]);
   const [stockSearch, setStockSearch] = useState('');
   const [movSearch, setMovSearch] = useState('');
@@ -137,6 +138,8 @@ export default function AdminInventory() {
     // Load serials
     const sn = await fetch('/api/erp/serials', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json());
     setSerials(Array.isArray(sn) ? sn : []);
+    // Load inventory categories
+    fetch('/api/categories?type=inventory', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(cats => { if (Array.isArray(cats) && cats.length > 0) setInventoryCategories(cats.map((c: any) => c.name)); }).catch(() => {});
     setLoading(false);
   };
 
@@ -927,7 +930,7 @@ export default function AdminInventory() {
                 <Select value={productForm.category} onValueChange={v => setProductForm(f => ({ ...f, category: v }))}>
                   <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
-                    {['Laptop Parts','Mobile Parts','Accessories','Tools','Cables','Batteries','Screens','Keyboards','Chargers','Other'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {inventoryCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
