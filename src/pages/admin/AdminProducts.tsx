@@ -77,7 +77,20 @@ const AdminProducts = () => {
     if (!file) return;
 
     if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-      toast.error('Please save as .csv first (File → Save As → CSV). Excel files not supported directly.');
+      // Upload Excel to backend for server-side parsing
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const token = localStorage.getItem('ailaptopwala_token');
+        const res = await fetch('/api/products/import-xlsx', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        }).then(r => r.json());
+        if (res.error) { toast.error(res.error); }
+        else { toast.success(`Import done! Added: ${res.added}, Updated: ${res.updated} (Sheet: ${res.sheet})`); if (res.errors?.length) toast.error(`${res.errors.length} rows had errors`); }
+        fetchProducts({ all: '1' });
+      } catch (err: any) { toast.error(err.message); }
       e.target.value = '';
       return;
     }
@@ -181,7 +194,7 @@ const AdminProducts = () => {
             <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" asChild>
               <span><Upload className="h-3.5 w-3.5" /> Import CSV</span>
             </Button>
-            <input type="file" accept=".csv" className="hidden" onChange={handleImport} />
+            <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleImport} />
           </label>
           <Button size="sm" className="gap-1.5 text-xs h-8" onClick={openAdd}>
             <Plus className="h-3.5 w-3.5" /> Add Product

@@ -47,6 +47,73 @@ router.get('/export', authMiddleware, adminOnly, async (req, res) => {
   res.send(csv);
 });
 
+// POST /api/products/import-xlsx — import from Excel file (multipart upload)
+import multer from 'multer';
+const xlsUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+router.post('/import-xlsx', authMiddleware, adminOnly, xlsUpload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Excel file required' });
+  try {
+    const XLSX = await import('xlsx');
+    const wb = XLSX.read(req.file.buffer);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws);
+
+    let added = 0, updated = 0, errors = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      try {
+        // Map Excel columns to DB fields (supports your format + standard)
+        const name = row['PRODUCT NAME'] || row['name'] || row['Name'] || '';
+        const brand = row['BRAND'] || row['brand'] || '';
+        const model = row['MODEL / SERIES'] || row['model'] || '';
+        const fullName = name || `${brand} ${model}`.trim();
+        if (!fullName) { errors.push(`Row ${i+2}: no name`); continue; }
+
+        const price = Number(row['SELLING PRICE'] || row['price'] || row['Price'] || 0);
+        const purchasePrice = Number(row['PURCHASE PRICE'] || row['original_price'] || row['Compare Price'] || 0);
+        const stock = Number(row['QUANTITY'] || row['stock'] || row['Stock'] || 0);
+        const category = row['CATEGORY OPTION'] || row['category'] || row['Category'] || 'Laptops';
+        const sku = row['sku'] || row['SKU'] || '';
+        const condition = row['CONDITION'] || row['condition'] || row['QUALITY'] || '';
+
+        // Build description from specs
+        const specs = [
+          row['PROCESSOR COMPANY'] && row['GEN'] ? `${row['PROCESSOR COMPANY']} ${row['GEN']}` : '',
+          row['RAM'] || '', row['STORAGE'] || '', row['SCREEN'] || '',
+          row['TOUCH'] === 'Yes' ? 'Touchscreen' : '',
+          row['GRAPHICS'] || '', row['OTHER FEATURES'] || '',
+          row['KEYBOARD'] || '', row['COLOR'] || '',
+        ].filter(Boolean);
+        const description = row['description'] || row['Description'] || specs.join(' | ') || '';
+
+        const slug = (row['slug'] || fullName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')).slice(0, 80) + '-' + Date.now().toString().slice(-4);
+
+        // Check existing by SKU or name
+        const existing = sku
+          ? await db.prepare('SELECT id FROM products WHERE sku=?').get(sku)
+          : await db.prepare('SELECT id FROM products WHERE name=?').get(fullName);
+
+        if (existing) {
+          await db.prepare('UPDATE products SET price=?,original_price=?,stock=?,in_stock=?,category=?,description=? WHERE id=?')
+            .run(price || undefined, purchasePrice || undefined, stock, stock > 0 ? 1 : 0, category, description, existing.id);
+          updated++;
+        } else {
+          const id = uuid();
+          await db.prepare(`INSERT INTO products (id,name,price,original_price,category,stock,in_stock,sku,slug,status,description,badge,show_public) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+            .run(id, fullName, price, purchasePrice || null, category, stock, stock > 0 ? 1 : 0, sku || `ALW-${Date.now().toString().slice(-6)}`, slug, 'active', description, condition || null, 1);
+          added++;
+        }
+      } catch (e) { errors.push(`Row ${i+2}: ${e.message}`); }
+    }
+
+    res.json({ added, updated, errors: errors.slice(0, 20), total: rows.length, sheet: wb.SheetNames[0] });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to parse Excel: ' + e.message });
+  }
+});
+
 // POST /api/products/import — import products from CSV
 router.post('/import', authMiddleware, adminOnly, async (req, res) => {
   const { csv } = req.body;
