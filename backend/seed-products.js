@@ -73,7 +73,7 @@ for (let i = 0; i < PRODUCTS.length; i++) {
   const badge = r.condition === 'New' ? 'New' : r.condition === 'Open Box' ? 'Open Box' : r.category === 'APPLE' ? 'Premium' : null;
 
   await db.prepare(`INSERT INTO products (id,name,price,original_price,category,stock,in_stock,sku,slug,status,description,ingredients,benefits,usage,badge,show_public,meta_title,meta_description,focus_keywords,rating,reviews,reorder_level) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-    .run(uuid(), fullName, r.sellingPrice || Math.round((r.purchasePrice || 0) * 1.3), r.purchasePrice || null, CAT_MAP[r.category] || r.category, r.stock, r.stock > 0 ? 1 : 0, r.sku, slug, 'active', description, JSON.stringify(ingredients), JSON.stringify(benefits), r.condition || null, badge, 1, metaTitle, metaDesc, JSON.stringify(focusKeywords), 4.5, 0, 5);
+    .run(uuid(), fullName, r.sellingPrice || r.purchasePrice || 0, Math.round((r.sellingPrice || r.purchasePrice || 0) * 1.25) || null, CAT_MAP[r.category] || r.category, r.stock, r.stock > 0 ? 1 : 0, r.sku, slug, 'active', description, JSON.stringify(ingredients), JSON.stringify(benefits), r.condition || null, badge, 1, metaTitle, metaDesc, JSON.stringify(focusKeywords), 4.5, 0, 5);
   added++;
 }
 
