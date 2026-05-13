@@ -40,7 +40,7 @@ const BenefitChip = ({ icon: Icon, label }: { icon: LucideIcon; label: string })
 );
 
 function EnquiryForm() {
-  const [form, setForm] = useState({ name: '', phone: '', interest: '', budget: '', message: '' });
+  const [form, setForm] = useState({ name: '', phone: '', interest: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -98,10 +98,6 @@ function EnquiryForm() {
           <option value="CCTV">CCTV</option>
           <option value="Other">Other</option>
         </select>
-      </div>
-      <div>
-        <label className="text-xs font-medium">Budget (₹)</label>
-        <input className="mt-1 w-full h-10 rounded-xl border px-3 text-sm bg-background" placeholder="e.g. 25000" type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} />
       </div>
       <div>
         <label className="text-xs font-medium">Message (optional)</label>
