@@ -160,15 +160,16 @@ export const initWhatsApp = async () => {
     // Skip @lid (newsletter/link IDs), @g.us (groups), @broadcast
     if (!msg.isGroup && msg.type === 'chat' && msg.from.endsWith('@c.us')) {
       try {
-        const phone = msg.from.replace('@c.us', '');
-        const existing = await db.prepare('SELECT id FROM leads WHERE phone=?').get(phone);
+        const rawPhone = msg.from.replace('@c.us', '');
+        // Normalize: 919165100124 → 9165100124 (10 digit Indian)
+        const phone = rawPhone.startsWith('91') && rawPhone.length === 12 ? rawPhone.slice(2) : rawPhone;
+        const existing = await db.prepare('SELECT id FROM leads WHERE phone=? OR phone=?').get(phone, rawPhone);
         if (!existing) {
           const leadId = uuid();
           await db.prepare(`INSERT INTO leads (id,name,phone,source,interest,status,notes) VALUES (?,?,?,'WhatsApp','WhatsApp Inquiry','new',?)`)
             .run(leadId, contact.pushname || contact.name || phone, phone, msg.body?.slice(0, 200) || '');
           await db.prepare("INSERT INTO lead_activities (id,lead_id,type,note,created_by) VALUES (?,?,?,?,?)").run(uuid(), leadId, 'whatsapp', msg.body?.slice(0, 200) || 'WhatsApp message', 'system');
         } else {
-          // Add activity to existing lead
           await db.prepare("INSERT INTO lead_activities (id,lead_id,type,note,created_by) VALUES (?,?,?,?,?)").run(uuid(), existing.id, 'whatsapp', msg.body?.slice(0, 200) || 'WhatsApp message', 'system');
         }
       } catch {}
