@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminLayout from "@/components/AdminLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProductStore } from "@/store/productStore";
+import * as XLSX from "xlsx";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -74,13 +75,10 @@ const AdminProducts = () => {
 
     let text = '';
     if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-      // Parse Excel file
-      const XLSX = await import('xlsx');
       const data = await file.arrayBuffer();
       const wb = XLSX.read(data);
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_csv(ws);
-      text = rows;
+      text = XLSX.utils.sheet_to_csv(ws);
     } else {
       text = await file.text();
     }
