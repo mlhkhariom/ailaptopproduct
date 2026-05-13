@@ -80,6 +80,7 @@ const erpGroups = [
     items: [
       { title: "Loyalty Program", url: "/admin/erp/loyalty", icon: Gift },
       { title: "WA Templates", url: "/admin/erp/wa-templates", icon: MessageCircle },
+      { title: "Coupons", url: "/admin/coupons", icon: Ticket },
     ],
   },
 ];
@@ -88,21 +89,20 @@ const mainMenu = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, badge: "" },
   { title: "Products", url: "/admin/products", icon: Package, badge: "" },
   { title: "Orders", url: "/admin/orders", icon: ShoppingBag, badge: "" },
-  { title: "Payments", url: "/admin/payments", icon: IndianRupee, badge: "" },
   { title: "Customers", url: "/admin/customers", icon: Users, badge: "" },
   { title: "Categories", url: "/admin/categories", icon: Tag, badge: "" },
 ];
 
 const toolsMenu = [
-  { title: "Social Automation", url: "/admin/social", icon: Share2, badge: "NEW" },
-  { title: "Blog / Content", url: "/admin/blog", icon: FileText, badge: "" },
-  { title: "Media Library", url: "/admin/media", icon: Image, badge: "" },
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageCircle, badge: "" },
-  { title: "Reviews", url: "/admin/reviews", icon: Star, badge: "" },
-  { title: "Reels", url: "/admin/reels", icon: Play, badge: "" },
+  { title: "Evolution API", url: "/admin/evolution", icon: Zap, badge: "" },
+  { title: "Social Media", url: "/admin/social", icon: Share2, badge: "NEW" },
+  { title: "Reels & Videos", url: "/admin/reels", icon: Play, badge: "" },
+  { title: "Blog / Content", url: "/admin/blog", icon: FileText, badge: "" },
   { title: "CMS / Pages", url: "/admin/cms", icon: Palette, badge: "" },
+  { title: "Media Library", url: "/admin/media", icon: Image, badge: "" },
+  { title: "Reviews", url: "/admin/reviews", icon: Star, badge: "" },
   { title: "Contact Queries", url: "/admin/contacts", icon: Mail, badge: "" },
-  { title: "Coupons", url: "/admin/coupons", icon: Ticket, badge: "" },
 ];
 
 const systemMenu = [
@@ -253,7 +253,7 @@ export function AdminSidebar() {
             {!collapsed && <Separator className="mx-3 bg-sidebar-border/50" />}
             <SidebarGroup>
               <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "Super Admin"}</SidebarGroupLabel>
-              <SidebarGroupContent>{renderMenu([{ title: "Evolution API", url: "/admin/evolution", icon: Zap, badge: "" }])}</SidebarGroupContent>
+              <SidebarGroupContent>{renderMenu(systemMenu)}</SidebarGroupContent>
             </SidebarGroup>
           </>
         )}
