@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Seed products from Excel file
+// Seed products from Excel — with SEO + proper slugs
 // Usage: node seed-products.js [path-to-xlsx]
 
 import XLSX from 'xlsx';
@@ -12,12 +12,17 @@ console.log(`📦 Seeding products from: ${filePath}`);
 console.log('─'.repeat(60));
 
 const wb = XLSX.readFile(filePath);
-const ws = wb.Sheets[wb.SheetNames[0]]; // ALL_ITEMS sheet
+const ws = wb.Sheets[wb.SheetNames[0]];
 const rows = XLSX.utils.sheet_to_json(ws);
 
 console.log(`Found ${rows.length} rows in sheet: ${wb.SheetNames[0]}`);
 
-let added = 0, updated = 0, skipped = 0, errors = [];
+// Delete old seeded products first
+await db.prepare("DELETE FROM products WHERE sku LIKE 'ALW-%'").run();
+console.log('🗑️  Cleared old ALW- products');
+
+let added = 0, errors = [];
+const usedSlugs = new Set();
 
 for (let i = 0; i < rows.length; i++) {
   const row = rows[i];
@@ -26,53 +31,62 @@ for (let i = 0; i < rows.length; i++) {
     const brand = row['BRAND'] || '';
     const model = row['MODEL / SERIES'] || '';
     const fullName = name || `${brand} ${model}`.trim();
-    if (!fullName) { skipped++; continue; }
+    if (!fullName) continue;
 
-    const sku = row['SKU'] || '';
+    const sku = row['SKU'] || `ALW-${Date.now().toString().slice(-6)}-${i}`;
     const category = row['CATEGORY OPTION'] || 'Laptops';
-    const price = Number(row['SELLING PRICE']) || 0;
+    const sellingPrice = Number(row['SELLING PRICE']) || 0;
     const purchasePrice = Number(row['PURCHASE PRICE']) || 0;
     const stock = Number(row['STOCK']) || Number(row['QUANTITY']) || 0;
     const condition = row['CONDITION'] || row['QUALITY'] || '';
     const color = row['COLOR'] || '';
     const keyboard = row['KEYBOARD'] || '';
+    const processor = row['PROCESSOR COMPANY'] || '';
+    const gen = row['GEN'] || '';
+    const ram = row['RAM'] || '';
+    const storage = row['STORAGE'] || '';
+    const screen = row['SCREEN'] || '';
+    const touch = row['TOUCH'] || '';
+    const graphics = row['GRAPHICS'] || '';
+    const otherFeatures = row['OTHER FEATURES'] || '';
 
-    // Build specs
-    const specs = [
-      row['PROCESSOR COMPANY'] && row['GEN'] ? `${row['PROCESSOR COMPANY']} ${row['GEN']}` : '',
-      row['RAM'] || '',
-      row['STORAGE'] || '',
-      row['SCREEN'] || '',
-      row['TOUCH'] === 'Yes' ? 'Touchscreen' : '',
-      row['GRAPHICS'] || '',
-      row['OTHER FEATURES'] || '',
-      keyboard ? `Keyboard: ${keyboard}` : '',
-      color ? `Color: ${color}` : '',
-    ].filter(Boolean);
+    // ── SLUG: product name + model only ──
+    let slug = `${fullName}${model && !fullName.includes(model) ? '-' + model : ''}`
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+    // Ensure unique
+    while (usedSlugs.has(slug)) { slug += '-' + Math.random().toString(36).slice(2, 5); }
+    usedSlugs.add(slug);
 
-    const description = specs.join(' | ');
-    const slugBase = `${fullName} ${model}`.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
-    const slug = slugBase;
+    // ── DESCRIPTION: rich specs ──
+    const specs = [processor && gen ? `${processor} ${gen}` : '', ram, storage, screen, touch === 'Yes' ? 'Touchscreen' : '', graphics, otherFeatures, keyboard ? `Keyboard: ${keyboard}` : '', color ? `Color: ${color}` : ''].filter(Boolean);
+    const description = specs.join(' | ') || `${brand} ${model}`.trim();
 
-    // Badge from condition
-    const badge = condition === 'New' ? 'New' : condition === 'Refurbished' ? 'Refurbished' : condition === 'Open Box' ? 'Open Box' : null;
+    // ── INGREDIENTS = Specifications array ──
+    const ingredients = [processor && gen ? `Processor: ${processor} ${gen}` : '', ram ? `RAM: ${ram}` : '', storage ? `Storage: ${storage}` : '', screen ? `Screen: ${screen}` : '', touch === 'Yes' ? 'Touch: Yes' : '', graphics ? `Graphics: ${graphics}` : '', keyboard ? `Keyboard: ${keyboard}` : '', color ? `Color: ${color}` : ''].filter(Boolean);
 
-    // Check existing by SKU
-    const existing = sku ? await db.prepare('SELECT id FROM products WHERE sku=?').get(sku) : null;
+    // ── BENEFITS = Key selling points ──
+    const benefits = [];
+    if (condition) benefits.push(`Condition: ${condition}`);
+    if (stock > 0) benefits.push('Ready to Ship');
+    benefits.push('90-Day Warranty');
+    benefits.push('COD Available');
+    if (category === 'LAPTOP' || category === 'APPLE') benefits.push('Free Laptop Bag');
 
-    if (existing) {
-      await db.prepare(`UPDATE products SET name=?, price=CASE WHEN ?> 0 THEN ? ELSE price END, original_price=CASE WHEN ?>0 THEN ? ELSE original_price END, stock=?, in_stock=?, category=?, description=?, badge=COALESCE(?,badge), show_public=1 WHERE id=?`)
-        .run(fullName, price, price, purchasePrice, purchasePrice, stock, stock > 0 ? 1 : 0, category, description, badge, existing.id);
-      updated++;
-    } else {
-      const id = uuid();
-      const finalSlug = (slug || fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 60)) + '-' + (i + 1);
-      await db.prepare(`INSERT INTO products (id, name, price, original_price, category, stock, in_stock, sku, slug, status, description, badge, show_public, rating, reviews) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-        .run(id, fullName, price, purchasePrice || null, category, stock, stock > 0 ? 1 : 0, sku || `ALW-${Date.now().toString().slice(-6)}`, finalSlug, 'active', description, badge, 1, 4.5, 0);
-      added++;
-    }
+    // ── SEO ──
+    const metaTitle = `${fullName} | Buy ${category} in Indore – AI Laptop Wala`;
+    const metaDesc = `Buy ${fullName}${ram ? ' ' + ram : ''}${storage ? ' ' + storage : ''} at best price in Indore. ${condition || 'Certified'} with warranty. COD available. AI Laptop Wala.`;
+    const focusKeywords = [fullName.toLowerCase(), brand.toLowerCase() + ' laptop indore', category.toLowerCase() + ' indore', 'buy ' + brand.toLowerCase() + ' indore', 'refurbished laptop indore'].filter(k => k.length > 3);
 
-    if ((i + 1) % 50 === 0) console.log(`  Processed ${i + 1}/${rows.length}...`);
+    // ── BADGE ──
+    const badge = condition === 'New' ? 'New' : condition === 'Open Box' ? 'Open Box' : category === 'APPLE' ? 'Premium' : null;
+
+    // ── INSERT ──
+    const id = uuid();
+    await db.prepare(`INSERT INTO products (id, name, name_hi, price, original_price, image, category, rating, reviews, description, ingredients, benefits, usage, in_stock, stock, sku, slug, badge, status, meta_title, meta_description, focus_keywords, show_public, reorder_level) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(id, fullName, null, sellingPrice, purchasePrice || null, null, category, 4.5, 0, description, JSON.stringify(ingredients), JSON.stringify(benefits), condition || null, stock > 0 ? 1 : 0, stock, sku, slug, badge, 'active', metaTitle.slice(0, 120), metaDesc.slice(0, 200), JSON.stringify(focusKeywords), 1, 5);
+
+    added++;
+    if ((i + 1) % 20 === 0) console.log(`  ✓ ${i + 1}/${rows.length}...`);
   } catch (e) {
     errors.push(`Row ${i + 2}: ${e.message}`);
   }
@@ -81,11 +95,15 @@ for (let i = 0; i < rows.length; i++) {
 console.log('─'.repeat(60));
 console.log(`✅ Done!`);
 console.log(`   Added:   ${added}`);
-console.log(`   Updated: ${updated}`);
-console.log(`   Skipped: ${skipped}`);
 if (errors.length) {
   console.log(`   Errors:  ${errors.length}`);
   errors.slice(0, 5).forEach(e => console.log(`     - ${e}`));
 }
 console.log('─'.repeat(60));
+
+// Show sample
+const sample = await db.prepare("SELECT name, slug, meta_title, stock FROM products WHERE sku LIKE 'ALW-%' LIMIT 3").all();
+console.log('\n📋 Sample products:');
+sample.forEach(p => console.log(`  ${p.name} → /${p.slug} (stock: ${p.stock})`));
+
 process.exit(0);
