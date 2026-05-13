@@ -40,7 +40,7 @@ const BenefitChip = ({ icon: Icon, label }: { icon: LucideIcon; label: string })
 );
 
 function EnquiryForm() {
-  const [form, setForm] = useState({ name: '', phone: '', email: '', interest: '', budget: '', message: '' });
+  const [form, setForm] = useState({ name: '', phone: '', interest: '', budget: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -80,10 +80,6 @@ function EnquiryForm() {
       <div>
         <label className="text-xs font-medium">Phone (WhatsApp) *</label>
         <input className="mt-1 w-full h-10 rounded-xl border px-3 text-sm bg-background" placeholder="9876543210" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} maxLength={10} />
-      </div>
-      <div>
-        <label className="text-xs font-medium">Email</label>
-        <input className="mt-1 w-full h-10 rounded-xl border px-3 text-sm bg-background" placeholder="your@email.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
       </div>
       <div>
         <label className="text-xs font-medium">Looking for</label>
