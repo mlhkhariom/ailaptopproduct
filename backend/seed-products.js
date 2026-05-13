@@ -51,7 +51,8 @@ for (let i = 0; i < rows.length; i++) {
     ].filter(Boolean);
 
     const description = specs.join(' | ');
-    const slug = fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+    const slugBase = `${fullName} ${model}`.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+    const slug = slugBase;
 
     // Badge from condition
     const badge = condition === 'New' ? 'New' : condition === 'Refurbished' ? 'Refurbished' : condition === 'Open Box' ? 'Open Box' : null;
@@ -65,7 +66,7 @@ for (let i = 0; i < rows.length; i++) {
       updated++;
     } else {
       const id = uuid();
-      const finalSlug = slug + '-' + (sku ? sku.toLowerCase().replace(/[^a-z0-9]/g, '') : Date.now().toString().slice(-4));
+      const finalSlug = (slug || fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 60)) + '-' + (i + 1);
       await db.prepare(`INSERT INTO products (id, name, price, original_price, category, stock, in_stock, sku, slug, status, description, badge, show_public, rating, reviews) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
         .run(id, fullName, price, purchasePrice || null, category, stock, stock > 0 ? 1 : 0, sku || `ALW-${Date.now().toString().slice(-6)}`, finalSlug, 'active', description, badge, 1, 4.5, 0);
       added++;
