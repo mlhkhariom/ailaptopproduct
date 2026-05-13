@@ -8,6 +8,7 @@ type BillingRow = {
   customer_name: string; customer_phone: string; amount: number;
   payment_status: string; payment_method: string; created_at: string;
   device?: string; service_name?: string; items?: any;
+  collected?: number; // from partial payments
 };
 
 const TYPE_CONFIG = {
@@ -84,7 +85,15 @@ export default function BillingTable({ rows, onView, onSendWA, onEdit, onPayClic
                   </td>
                   <td className="p-3.5 text-right">
                     <p className="font-black text-base">₹{(r.amount || 0).toLocaleString('en-IN')}</p>
-                    {r.payment_method && <p className="text-xs text-muted-foreground">{r.payment_method}</p>}
+                    {r.payment_status === 'paid' ? (
+                      <p className="text-[10px] text-green-600 font-medium">Collected</p>
+                    ) : (
+                      <div className="text-[10px] space-y-0.5">
+                        <p className="text-green-600">Paid: ₹{(r.collected || 0).toLocaleString('en-IN')}</p>
+                        <p className="text-red-600 font-bold">Due: ₹{Math.max(0, (r.amount || 0) - (r.collected || 0)).toLocaleString('en-IN')}</p>
+                      </div>
+                    )}
+                    {r.payment_method && <p className="text-[10px] text-muted-foreground">{r.payment_method}</p>}
                   </td>
                   <td className="p-3.5 text-center">
                     <button onClick={() => onPayClick(r)}
@@ -102,6 +111,9 @@ export default function BillingTable({ rows, onView, onSendWA, onEdit, onPayClic
                       </Button>
                       {onHistory && (
                         <button onClick={() => onHistory(r)} className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium" title="Payment history">Hist</button>
+                      )}
+                      {onPartialClick && r.payment_status !== 'paid' && r.type !== 'order' && (
+                        <button onClick={() => onPartialClick(r)} className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 font-bold" title="Collect payment">₹Collect</button>
                       )}
                       {onPaymentLink && r.payment_status !== 'paid' && r.payment_status !== 'proforma' && (
                         <button onClick={() => onPaymentLink(r)} className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 font-medium" title="Generate payment link">₹Link</button>

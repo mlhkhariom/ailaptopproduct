@@ -81,6 +81,17 @@ router.get('/billing', authMiddleware, adminOnly, async (req, res) => {
 
   // Sort all by date desc
   results.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  // Attach collected amounts from partial payments
+  for (const r of results) {
+    if (r.type !== 'order') {
+      const paid = await db.prepare('SELECT COALESCE(SUM(amount),0) as total FROM invoice_payments WHERE invoice_type=? AND invoice_id=?').get(r.type, r.id);
+      r.collected = paid?.total || 0;
+    } else {
+      r.collected = r.payment_status === 'paid' ? (r.amount || 0) : 0;
+    }
+  }
+
   res.json(results);
 });
 
