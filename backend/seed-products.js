@@ -18,6 +18,29 @@ console.log('🗑️  Cleared old products');
 let added = 0;
 const usedSlugs = new Set();
 
+// Category mapping: Excel → DB
+const CAT_MAP = {
+  'LAPTOP': 'Laptops',
+  'APPLE': 'MacBooks',
+  'DESKTOP': 'Desktops',
+  'ACCESORIES': 'Accessories',
+  'SCREEN': 'Accessories',
+  'PRINTERS': 'Accessories',
+  'BIOMETRIC DEVICE': 'Accessories',
+  'CCTV': 'Accessories',
+};
+
+// Auto-create missing categories
+const existingCats = (await db.prepare('SELECT name FROM categories').all()).map(c => c.name);
+const neededCats = [...new Set(Object.values(CAT_MAP))];
+for (const cat of neededCats) {
+  if (!existingCats.includes(cat)) {
+    const { v4: uid } = await import('uuid');
+    await db.prepare('INSERT INTO categories (id,name,slug,is_active) VALUES (?,?,?,1)').run(uid(), cat, cat.toLowerCase().replace(/\s+/g, '-'));
+    console.log('  + Created category:', cat);
+  }
+}
+
 for (let i = 0; i < PRODUCTS.length; i++) {
   const r = PRODUCTS[i];
   const fullName = r.name || `${r.brand} ${r.model}`.trim();
@@ -50,7 +73,7 @@ for (let i = 0; i < PRODUCTS.length; i++) {
   const badge = r.condition === 'New' ? 'New' : r.condition === 'Open Box' ? 'Open Box' : r.category === 'APPLE' ? 'Premium' : null;
 
   await db.prepare(`INSERT INTO products (id,name,price,original_price,category,stock,in_stock,sku,slug,status,description,ingredients,benefits,usage,badge,show_public,meta_title,meta_description,focus_keywords,rating,reviews,reorder_level) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-    .run(uuid(), fullName, r.sellingPrice, r.purchasePrice || null, r.category, r.stock, r.stock > 0 ? 1 : 0, r.sku, slug, 'active', description, JSON.stringify(ingredients), JSON.stringify(benefits), r.condition || null, badge, 1, metaTitle, metaDesc, JSON.stringify(focusKeywords), 4.5, 0, 5);
+    .run(uuid(), fullName, r.sellingPrice || Math.round((r.purchasePrice || 0) * 1.3), r.purchasePrice || null, CAT_MAP[r.category] || r.category, r.stock, r.stock > 0 ? 1 : 0, r.sku, slug, 'active', description, JSON.stringify(ingredients), JSON.stringify(benefits), r.condition || null, badge, 1, metaTitle, metaDesc, JSON.stringify(focusKeywords), 4.5, 0, 5);
   added++;
 }
 
