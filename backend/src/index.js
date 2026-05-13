@@ -46,7 +46,7 @@ import { setIO as setEvolutionIO } from './evolution/webhook.js';
 import { startNotificationProcessor } from './whatsapp/notifications.js';
 import { startPaymentReminderProcessor } from './whatsapp/paymentReminders.js';
 import { startDailyReportScheduler } from './whatsapp/dailyReport.js';
-import { startRecurringInvoiceProcessor, startKPIAlertScheduler } from './whatsapp/schedulers.js';
+import { startRecurringInvoiceProcessor, startKPIAlertScheduler, startOverdueReminder } from './whatsapp/schedulers.js';
 import { setIO } from './whatsapp/client.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -326,6 +326,7 @@ httpServer.listen(PORT, async () => {
   startDailyReportScheduler();
   startRecurringInvoiceProcessor();
   startKPIAlertScheduler();
+  startOverdueReminder();
 
   // Register Evolution API webhook for AI processing
   setTimeout(async () => {

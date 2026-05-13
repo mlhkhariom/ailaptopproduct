@@ -296,6 +296,28 @@ export default function CustomInvoiceForm({ open, onClose, form, setForm, editin
             <Input className="mt-1 h-9" placeholder="Any additional notes..." value={form.notes || ''} onChange={e => sf('notes')(e.target.value)} />
           </div>
 
+          {/* ── Due Date + Advance ── */}
+          <div className="border rounded-xl p-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Due Date (payment deadline)</Label>
+                <Input type="date" className="mt-1 h-9" value={form.due_date || ''} onChange={e => sf('due_date')(e.target.value)} />
+                <p className="text-[10px] text-muted-foreground mt-1">Auto WhatsApp reminder if overdue</p>
+              </div>
+              <div>
+                <Label className="text-xs">Advance Collected (₹)</Label>
+                <Input type="number" min={0} className="mt-1 h-9" placeholder="0" value={form.advance_paid || ''} onChange={e => sf('advance_paid')(Number(e.target.value))} />
+                <p className="text-[10px] text-muted-foreground mt-1">Recorded as first payment on save</p>
+              </div>
+            </div>
+            {form.advance_paid > 0 && total > 0 && (
+              <div className="flex items-center justify-between text-xs bg-blue-50 rounded-lg p-2 border border-blue-200">
+                <span>After advance: Due = <b className="text-red-600">₹{Math.max(0, total - (form.advance_paid || 0)).toLocaleString('en-IN')}</b></span>
+                {form.advance_paid >= total && <span className="text-green-600 font-bold">Fully Paid!</span>}
+              </div>
+            )}
+          </div>
+
           {/* ── WhatsApp ── */}
           <div className="flex items-center justify-between border rounded-xl p-4 bg-green-50/50 border-green-200">
             <div className="flex items-center gap-3">

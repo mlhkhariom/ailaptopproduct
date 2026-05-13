@@ -24,9 +24,10 @@ type BillingRow = {
 const emptyForm = {
   customer_name: '', customer_phone: '', customer_email: '',
   items: [{ name: '', qty: 1, price: 0 }],
-  discount: 0, notes: '', payment_status: 'pending',
+  discount: 0, discount_type: 'flat', notes: '', payment_status: 'pending',
   payment_mode: 'cash', online_method: 'UPI',
   gst_enabled: false, send_whatsapp: false,
+  due_date: '', advance_paid: 0,
 };
 
 export default function AdminBilling() {

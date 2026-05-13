@@ -8,7 +8,7 @@ type BillingRow = {
   customer_name: string; customer_phone: string; amount: number;
   payment_status: string; payment_method: string; created_at: string;
   device?: string; service_name?: string; items?: any;
-  collected?: number; // from partial payments
+  collected?: number; due_date?: string;
 };
 
 const TYPE_CONFIG = {
@@ -101,8 +101,13 @@ export default function BillingTable({ rows, onView, onSendWA, onEdit, onPayClic
                       {r.payment_status}
                     </button>
                   </td>
-                  <td className="p-3.5 text-center text-sm text-muted-foreground">
-                    {new Date(r.created_at).toLocaleDateString('en-IN')}
+                  <td className="p-3.5 text-center">
+                    <p className="text-sm text-muted-foreground">{new Date(r.created_at).toLocaleDateString('en-IN')}</p>
+                    {r.due_date && r.payment_status !== 'paid' && (
+                      <p className={`text-[10px] font-medium ${new Date(r.due_date) < new Date() ? 'text-red-600' : 'text-blue-600'}`}>
+                        {new Date(r.due_date) < new Date() ? '⚠ Overdue' : `Due: ${new Date(r.due_date).toLocaleDateString('en-IN')}`}
+                      </p>
+                    )}
                   </td>
                   <td className="p-3.5">
                     <div className="flex gap-1 justify-center">

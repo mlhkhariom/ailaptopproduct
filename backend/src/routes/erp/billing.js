@@ -74,6 +74,7 @@ router.get('/billing', authMiddleware, adminOnly, async (req, res) => {
       results.push({
         ...c, type: 'custom',
         amount: c.total || 0,
+        due_date: c.due_date || null,
         items: typeof c.items === 'string' ? JSON.parse(c.items || '[]') : (c.items || []),
       });
     });
@@ -97,21 +98,32 @@ router.get('/billing', authMiddleware, adminOnly, async (req, res) => {
 
 // POST /api/erp/billing/custom — create custom invoice
 router.post('/billing/custom', authMiddleware, adminOnly, async (req, res) => {
-  const { customer_name, customer_phone, customer_email, items, notes, payment_status, payment_method, discount, gst_enabled, send_whatsapp } = req.body;
+  const { customer_name, customer_phone, customer_email, items, notes, payment_status, payment_method, discount, discount_type, gst_enabled, send_whatsapp, due_date, advance_paid } = req.body;
   if (!customer_name || !items?.length || !items.some(i => i.price > 0)) return res.status(400).json({ error: 'customer_name and at least one item with price required' });
   const id = uuid();
   const invoice_number = 'ALW-' + Date.now().toString().slice(-6);
   const subtotal = items.reduce((s, i) => s + (i.price * (i.qty || 1)), 0);
   if (subtotal <= 0) return res.status(400).json({ error: 'Invoice total must be greater than ₹0' });
-  const afterDiscount = subtotal - (discount || 0);
+  const discountAmt = discount_type === 'percent' ? Math.round(subtotal * (discount || 0) / 100) : (discount || 0);
+  const afterDiscount = subtotal - discountAmt;
   const gst = gst_enabled ? Math.round(afterDiscount * 0.18) : 0;
   const total = afterDiscount + gst;
   await db.prepare(`INSERT INTO custom_invoices
-    (id,invoice_number,customer_name,customer_phone,customer_email,items,subtotal,discount,total,notes,payment_status,payment_method,gst_enabled)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+    (id,invoice_number,customer_name,customer_phone,customer_email,items,subtotal,discount,discount_type,total,notes,payment_status,payment_method,gst_enabled,due_date,advance_paid)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
     .run(id, invoice_number, customer_name, customer_phone, customer_email,
-      JSON.stringify(items), subtotal, discount || 0, total, notes,
-      payment_status || 'pending', payment_method || 'cash', gst_enabled ? 1 : 0);
+      JSON.stringify(items), subtotal, discountAmt, discount_type || 'flat', total, notes,
+      payment_status || 'pending', payment_method || 'cash', gst_enabled ? 1 : 0, due_date || null, advance_paid || 0);
+  // Record advance as first partial payment
+  if (advance_paid > 0) {
+    await db.prepare('INSERT INTO invoice_payments (id,invoice_type,invoice_id,amount,payment_method,notes,created_by) VALUES (?,?,?,?,?,?,?)')
+      .run(uuid(), 'custom', id, advance_paid, payment_method || 'cash', 'Advance payment', req.user.id);
+    if (advance_paid >= total) {
+      await db.prepare("UPDATE custom_invoices SET payment_status='paid' WHERE id=?").run(id);
+    } else {
+      await db.prepare("UPDATE custom_invoices SET payment_status='partial' WHERE id=?").run(id);
+    }
+  }
 
   // Real-time stock deduction for product items
   for (const item of items) {

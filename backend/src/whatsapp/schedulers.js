@@ -54,6 +54,36 @@ export function startRecurringInvoiceProcessor() {
   console.log('✅ Recurring invoice processor started');
 }
 
+// ── Overdue Invoice WhatsApp Reminder (runs every 6 hours) ──
+export function startOverdueReminder() {
+  const run = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const overdue = await db.prepare(`
+        SELECT * FROM custom_invoices
+        WHERE payment_status != 'paid' AND due_date IS NOT NULL AND due_date < ?
+        ORDER BY due_date ASC LIMIT 10
+      `).all(today) || [];
+
+      if (overdue.length === 0) return;
+
+      const { queueNotification } = await import('./notifications.js');
+      for (const inv of overdue) {
+        if (!inv.customer_phone) continue;
+        const daysOverdue = Math.ceil((Date.now() - new Date(inv.due_date).getTime()) / 86400000);
+        const msg = `⏰ *Payment Reminder — AI Laptop Wala*\n\nNamaste ${inv.customer_name}! 🙏\n\nYour invoice *${inv.invoice_number}* of *₹${(inv.total || 0).toLocaleString('en-IN')}* is overdue by ${daysOverdue} day(s).\n\nDue date: ${inv.due_date}\n\nPlease clear the payment at your earliest convenience.\n\n📞 +91 98934 96163`;
+        await queueNotification(inv.customer_phone, msg, 'overdue_reminder');
+      }
+      console.log(`✅ Sent ${overdue.length} overdue reminders`);
+    } catch (e) { console.error('Overdue reminder error:', e.message); }
+  };
+
+  // Run every 6 hours
+  run();
+  setInterval(run, 6 * 60 * 60 * 1000);
+  console.log('✅ Overdue invoice reminder started (6h)');
+}
+
 // KPI Alert scheduler — runs every hour
 export function startKPIAlertScheduler() {
   const run = async () => {
