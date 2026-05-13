@@ -13,6 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminLayout from "@/components/AdminLayout";
+import ProductFormDialog from "@/components/products/ProductFormDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProductStore } from "@/store/productStore";
 import { api } from "@/lib/api";
@@ -307,202 +308,15 @@ const AdminProducts = () => {
       </Card>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-serif">{editingId ? "Edit Product" : "Add New Product"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-xs">Product Name *</Label><Input className="mt-1 h-9" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Dell Latitude E7470" /></div>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div><Label className="text-xs">Price (₹) *</Label><Input type="number" className="mt-1 h-9" value={form.price || ""} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} /></div>
-              <div><Label className="text-xs">Compare Price (₹)</Label><Input type="number" className="mt-1 h-9" value={form.original_price || ""} onChange={(e) => setForm({ ...form, original_price: Number(e.target.value) })} /></div>
-              <div>
-                <Label className="text-xs">Category *</Label>
-                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                  <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>{categories.filter(c => c !== "All").map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-xs">SKU</Label>
-                <div className="flex mt-1">
-                  <span className="inline-flex items-center px-2 border border-r-0 rounded-l-md bg-muted text-xs text-muted-foreground">ALW-</span>
-                  <Input className="h-9 rounded-l-none" value={form.sku.replace(/^ALW-/i, '')} onChange={(e) => setForm({ ...form, sku: `ALW-${e.target.value.toUpperCase()}` })} placeholder="DELL-001" />
-                </div>
-              </div>
-              <div><Label className="text-xs">Slug</Label>
-                <div className="flex gap-1 mt-1">
-                  <Input className="h-9 flex-1" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="auto-generated" />
-                  <Button type="button" size="sm" variant="outline" className="h-9 px-2 text-xs shrink-0" onClick={() => setForm(f => ({ ...f, slug: f.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + (f.sku.replace(/^ALW-/i,'').toLowerCase() || Date.now().toString().slice(-4)) }))}>Auto</Button>
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs">Status</Label>
-                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                  <SelectTrigger className="mt-1 h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-3 col-span-2 p-3 rounded-lg border bg-muted/30">
-                <Switch checked={!!form.show_public} onCheckedChange={(v) => setForm({ ...form, show_public: v })} />
-                <div>
-                  <Label className="text-sm font-medium">Show to Public</Label>
-                  <p className="text-[10px] text-muted-foreground">{form.show_public ? 'Visible on website to customers' : 'Hidden from website (internal/ERP only)'}</p>
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs">Badge</Label>
-                <Select value={form.badge || 'none'} onValueChange={(v) => setForm({ ...form, badge: v === 'none' ? null : v })}>
-                  <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="None" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="Best Seller">Best Seller</SelectItem>
-                    <SelectItem value="New">New</SelectItem>
-                    <SelectItem value="Premium">Premium</SelectItem>
-                    <SelectItem value="Open Box">Open Box</SelectItem>
-                    <SelectItem value="Refurbished">Refurbished</SelectItem>
-                    <SelectItem value="Gaming">Gaming</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div><Label className="text-xs">Description</Label><Textarea className="mt-1" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-xs">Specifications (one per line)</Label><Textarea className="mt-1" rows={3} value={form.ingredients} onChange={(e) => setForm({ ...form, ingredients: e.target.value })} placeholder="Intel Core i5 6th Gen&#10;8GB RAM&#10;256GB SSD" /></div>
-              <div><Label className="text-xs">Key Features (one per line)</Label><Textarea className="mt-1" rows={3} value={form.benefits} onChange={(e) => setForm({ ...form, benefits: e.target.value })} placeholder="6 Month Warranty&#10;Windows 11 Pro&#10;Certified Refurbished" /></div>
-            </div>
-            <div><Label className="text-xs">Condition / Grade</Label><Input className="mt-1 h-9" value={form.usage} onChange={(e) => setForm({ ...form, usage: e.target.value })} placeholder="Excellent / Good / Used" /></div>
-            <div>
-              <Label className="text-xs">Product Image</Label>
-              <div className="mt-1 space-y-2">
-                {/* Image URL input */}
-                <Input className="h-9" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://... ya neeche se upload karein" />
-                {/* Upload buttons — mobile friendly */}
-                <div className="flex gap-2">
-                  <label className="flex-1 cursor-pointer">
-                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      setForm(f => ({ ...f, _uploading: true, _progress: 0 }));
-                      const compressedFile = await new Promise<File>((resolve) => {
-                        const img = new Image();
-                        const url = URL.createObjectURL(file);
-                        img.onload = () => {
-                          const canvas = document.createElement('canvas');
-                          const max = 1200;
-                          let w = img.width, h = img.height;
-                          if (w > max) { h = h * max / w; w = max; }
-                          canvas.width = w; canvas.height = h;
-                          canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
-                          canvas.toBlob(blob => resolve(new File([blob!], file.name, { type: 'image/jpeg' })), 'image/jpeg', 0.85);
-                          URL.revokeObjectURL(url);
-                        };
-                        img.src = url;
-                      });
-                      const fd = new FormData();
-                      fd.append('files', compressedFile);
-                      fd.append('folder', 'products');
-                      const xhr = new XMLHttpRequest();
-                      xhr.upload.onprogress = (ev) => {
-                        if (ev.lengthComputable) setForm(f => ({ ...f, _progress: Math.round(ev.loaded / ev.total * 100) }));
-                      };
-                      xhr.onload = () => {
-                        try {
-                          const data = JSON.parse(xhr.responseText);
-                          if (data[0]?.url) setForm(f => ({ ...f, image: `https://ailaptopwala.com${data[0].url}`, _uploading: false, _progress: 100 }));
-                          else { toast.error('Upload failed'); setForm(f => ({ ...f, _uploading: false, _progress: 0 })); }
-                        } catch { toast.error('Upload error'); setForm(f => ({ ...f, _uploading: false, _progress: 0 })); }
-                      };
-                      xhr.onerror = () => { toast.error('Network error'); setForm(f => ({ ...f, _uploading: false, _progress: 0 })); };
-                      xhr.open('POST', '/api/media/upload');
-                      xhr.setRequestHeader('Authorization', `Bearer ${localStorage.getItem('ailaptopwala_token')}`);
-                      xhr.send(fd);
-                    }} />
-                    <span className={`flex items-center justify-center gap-2 h-10 rounded-md border text-xs font-medium w-full ${form._uploading ? 'bg-primary/10 text-primary' : 'bg-muted hover:bg-accent'}`}>
-                      {form._uploading ? `⏳ ${form._progress || 0}%` : '📁 Gallery / File'}
-                    </span>
-                  </label>
-                  <label className="flex-1 cursor-pointer">
-                    <input type="file" accept="image/*" capture="environment" className="hidden" onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      setForm(f => ({ ...f, _uploading: true }));
-                      const fd = new FormData();
-                      fd.append('files', file);
-                      fd.append('folder', 'products');
-                      try {
-                        const res = await fetch('/api/media/upload', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: fd });
-                        const data = await res.json();
-                        if (data[0]?.url) setForm(f => ({ ...f, image: `https://ailaptopwala.com${data[0].url}`, _uploading: false }));
-                        else { toast.error('Upload failed'); setForm(f => ({ ...f, _uploading: false })); }
-                      } catch(err: any) { toast.error('Upload error: ' + err.message); setForm(f => ({ ...f, _uploading: false })); }
-                    }} />
-                    <span className={`flex items-center justify-center gap-2 h-10 rounded-md border text-xs font-medium w-full ${form._uploading ? 'bg-primary/10 text-primary' : 'bg-muted hover:bg-accent'}`}>
-                      {form._uploading ? '⏳ Uploading...' : '📷 Camera'}
-                    </span>
-                  </label>
-                </div>
-                {/* Progress bar */}
-                {form._uploading && (
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: `${form._progress || 0}%` }} />
-                  </div>
-                )}
-                {/* Preview */}
-                {form.image && !form._uploading && (
-                  <div className="flex items-center gap-3 p-2 bg-green-50 border border-green-200 rounded-lg">
-                    <img src={form.image} alt="Preview" className="h-14 w-14 rounded-lg object-cover border shrink-0" onError={(e) => (e.currentTarget.style.display = "none")} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-green-700">✅ Image ready</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{form.image.split('/').pop()}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Switch checked={form.in_stock} onCheckedChange={(v) => setForm({ ...form, in_stock: v })} /><Label className="text-xs">In Stock</Label>
-              </div>
-              <div>
-                <Label className="text-xs">Stock Quantity</Label>
-                <Input type="number" className="mt-1 h-9" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} min={0} />
-              </div>
-            </div>
-
-            {/* SEO Section */}
-            <div className="border-t pt-4 space-y-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">🔍 SEO Settings (optional)</p>
-              <div>
-                <Label className="text-xs">Meta Title <span className="text-muted-foreground">(auto-generated if empty)</span></Label>
-                <Input className="mt-1 h-9 text-sm" value={form.meta_title} onChange={(e) => setForm({ ...form, meta_title: e.target.value })} placeholder={`${form.name || 'Product'} | Buy Online – AI Laptop Wala Indore`} />
-              </div>
-              <div>
-                <Label className="text-xs">Meta Description</Label>
-                <textarea className="mt-1 w-full text-sm border rounded-md p-2 resize-none h-16 bg-background" value={form.meta_description} onChange={(e) => setForm({ ...form, meta_description: e.target.value })} placeholder="Short description for Google search results (150-160 chars)" />
-              </div>
-              <div>
-                <Label className="text-xs">Focus Keywords <span className="text-muted-foreground">(comma separated)</span></Label>
-                <Input className="mt-1 h-9 text-sm" value={form.focus_keywords} onChange={(e) => setForm({ ...form, focus_keywords: e.target.value })} placeholder="dell laptop indore, refurbished laptop, buy laptop indore" />
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} className="gap-1.5"><Save className="h-3.5 w-3.5" /> {editingId ? "Update" : "Save"} Product</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ProductFormDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        form={form}
+        setForm={setForm}
+        editingId={editingId}
+        onSave={handleSave}
+        categories={categories}
+      />
 
       {/* Delete Confirm */}
       <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
