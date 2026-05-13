@@ -90,8 +90,18 @@ router.post('/', optionalAuth, async (req, res) => {
   const name = user?.name || addr.name || 'Customer';
   if (phone) {
     notifyOrderPlaced(order, phone, name);
-    // Save phone to user profile if missing (auth only)
     if (req.user && !user?.phone && phone) await db.prepare('UPDATE users SET phone=? WHERE id=?').run(phone, req.user.id);
+
+    // Auto-create CRM lead from order (if not exists)
+    try {
+      const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
+      const existingLead = await db.prepare('SELECT id FROM leads WHERE phone=? OR phone=?').get(cleanPhone, '91' + cleanPhone);
+      if (!existingLead) {
+        const leadId = uuid();
+        await db.prepare(`INSERT INTO leads (id,name,phone,email,source,interest,status,budget,deal_value,notes) VALUES (?,?,?,?,?,?,?,?,?,?)`)
+          .run(leadId, name, cleanPhone, addr.email || '', 'Ecommerce', `Order #${order_number}`, 'won', total, total, `Auto-created from order ${order_number}`);
+      }
+    } catch {}
   }
 
   res.status(201).json({ order_number, id });
