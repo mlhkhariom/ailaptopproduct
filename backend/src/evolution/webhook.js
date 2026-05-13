@@ -58,7 +58,10 @@ export const handleWebhook = async (instanceName, event, data) => {
           const parsed = { id: msg.key.id, remoteJid, fromMe, body, pushName, type: msgType, timestamp: msg.messageTimestamp, remoteJidAlt: msg.key.remoteJidAlt || null };
 
           saveMessage(instanceName, parsed);
-          if (!fromMe) upsertChat(instanceName, remoteJid, pushName, body, new Date().toISOString());
+          // Skip @lid (newsletter links), @g.us (groups) for chat list
+          if (!fromMe && remoteJid.endsWith('@s.whatsapp.net')) {
+            upsertChat(instanceName, remoteJid, pushName, body, new Date().toISOString());
+          }
 
           // Emit to frontend
           emit('evolution:message', { instanceName, ...parsed, time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) });

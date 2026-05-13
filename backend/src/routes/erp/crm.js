@@ -52,6 +52,14 @@ router.post('/leads', authMiddleware, adminOnly, async (req, res) => {
   const { name, phone, email, source, interest, budget, deal_value, status, priority, assigned_to, notes, next_followup, expected_close, tags, score } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
 
+  // Reject invalid phone formats (@lid, too long, non-numeric)
+  if (phone) {
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    if (cleanPhone.length > 12 || phone.includes('@lid') || phone.includes('@g.us')) {
+      return res.status(400).json({ error: 'Invalid phone number. @lid and group IDs are not valid contacts.' });
+    }
+  }
+
   // Duplicate detection (skip if _force flag)
   if (!req.body._force && (phone || email)) {
     const existing = await db.prepare('SELECT id, name, status FROM leads WHERE (phone=? AND phone!=\'\') OR (email=? AND email!=\'\') LIMIT 1').get(phone || '', email || '');
