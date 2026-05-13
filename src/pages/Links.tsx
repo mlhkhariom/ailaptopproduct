@@ -51,10 +51,11 @@ function EnquiryForm() {
     if (form.phone.replace(/[^0-9]/g, '').length < 10) { setError('Valid 10-digit phone required'); return; }
     setLoading(true); setError('');
     try {
-      const res = await fetch('/api/contacts/enquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) }).then(r => r.json());
-      if (res.success) setSubmitted(true);
-      else setError(res.error || 'Something went wrong');
-    } catch { setError('Network error. Try again.'); }
+      const response = await fetch('/api/contacts/enquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+      const res = await response.json();
+      if (res.success || response.ok) setSubmitted(true);
+      else setError(res.error || 'Something went wrong. Try again.');
+    } catch (e: any) { setError('Network error: ' + (e.message || 'Try again.')); }
     finally { setLoading(false); }
   };
 
