@@ -72,19 +72,13 @@ const AdminProducts = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    let text = '';
     if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-      try {
-        const XLSX = await import('xlsx');
-        const data = await file.arrayBuffer();
-        const wb = XLSX.read(data);
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        text = XLSX.utils.sheet_to_csv(ws);
-      } catch { toast.error('Failed to parse Excel file'); e.target.value = ''; return; }
-    } else {
-      text = await file.text();
+      toast.error('Please save as .csv first (File → Save As → CSV). Excel files not supported directly.');
+      e.target.value = '';
+      return;
     }
 
+    const text = await file.text();
     try {
       const result = await api.importProducts(text);
       toast.success(`Import done! Added: ${result.added}, Updated: ${result.updated}`);
@@ -182,7 +176,7 @@ const AdminProducts = () => {
             <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" asChild>
               <span><Upload className="h-3.5 w-3.5" /> Import CSV</span>
             </Button>
-            <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleImport} />
+            <input type="file" accept=".csv" className="hidden" onChange={handleImport} />
           </label>
           <Button size="sm" className="gap-1.5 text-xs h-8" onClick={openAdd}>
             <Plus className="h-3.5 w-3.5" /> Add Product
