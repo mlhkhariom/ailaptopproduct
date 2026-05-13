@@ -54,7 +54,7 @@ for (let i = 0; i < rows.length; i++) {
     let slug = `${fullName}${model && !fullName.includes(model) ? '-' + model : ''}`
       .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
     // Ensure unique
-    while (usedSlugs.has(slug)) { slug += '-' + Math.random().toString(36).slice(2, 5); }
+    let dupCount = 2; while (usedSlugs.has(slug)) { slug = slug.replace(/-\d+$/, '') + '-' + dupCount++; }
     usedSlugs.add(slug);
 
     // ── DESCRIPTION: rich specs ──
