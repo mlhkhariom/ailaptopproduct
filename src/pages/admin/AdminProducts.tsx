@@ -227,7 +227,7 @@ const AdminProducts = () => {
                   <th className="p-3 font-medium text-muted-foreground text-xs">Price</th>
                   <th className="p-3 font-medium text-muted-foreground text-xs">Rating</th>
                   <th className="p-3 font-medium text-muted-foreground text-xs">Stock</th>
-                  <th className="p-3 font-medium text-muted-foreground text-xs">Status</th>
+                  <th className="p-3 font-medium text-muted-foreground text-xs">Public</th>
                   <th className="p-3 font-medium text-muted-foreground text-xs w-10"></th>
                 </tr>
               </thead>
@@ -267,11 +267,18 @@ const AdminProducts = () => {
                       </div>
                     </td>
                     <td className="p-3">
-                      <div className="flex gap-1">
-                        <Badge variant={p.status === "active" ? "default" : "secondary"} className="text-[10px]">
-                          {p.status}
-                        </Badge>
-                        {p.show_public === 0 && <Badge variant="outline" className="text-[10px] text-orange-600 border-orange-300">Hidden</Badge>}
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={p.show_public !== 0 && p.show_public !== false}
+                          onCheckedChange={async (v) => {
+                            await updateProduct(p.id, { ...p, show_public: v });
+                            fetchProducts({ all: '1' });
+                            toast.success(v ? 'Product visible to public' : 'Product hidden from public');
+                          }}
+                        />
+                        <span className={`text-[10px] font-medium ${p.show_public === 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                          {p.show_public === 0 ? 'Hidden' : 'Public'}
+                        </span>
                       </div>
                     </td>
                     <td className="p-3">
