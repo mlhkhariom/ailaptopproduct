@@ -120,7 +120,7 @@ export function AdminSidebar() {
   const { can } = usePermissions();
   const [erpOpen, setErpOpen] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    "Operations": true, "Finance": true, "People": false, "Procurement": false,
+    "Operations": true, "CRM": true, "Finance": true, "HR & Staff": false, "Reports & Analytics": false, "Procurement": false, "Engagement": false,
   });
 
   const toggleGroup = (label: string) =>
@@ -184,6 +184,14 @@ export function AdminSidebar() {
       )}
 
       <SidebarContent className="px-2">
+        {/* ── Main (Ecommerce) ── */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "Ecommerce"}</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenu(mainMenu)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        {!collapsed && <Separator className="mx-3 bg-sidebar-border/50" />}
+
         {/* ── ERP Section ── */}
         <SidebarGroup>
           <button
@@ -191,7 +199,9 @@ export function AdminSidebar() {
             className="flex items-center justify-between w-full px-3 py-1.5 rounded-lg hover:bg-sidebar-accent/30 transition-colors mb-1"
           >
             {!collapsed && (
-              <span className="text-[10px] uppercase tracking-wider text-sidebar-foreground/60 font-semibold">ERP</span>
+              <span className="text-[10px] uppercase tracking-wider text-sidebar-foreground/60 font-semibold flex items-center gap-1.5">
+                <Building2 className="h-3 w-3" /> ERP / CRM
+              </span>
             )}
             {!collapsed && (erpOpen
               ? <ChevronDown className="h-3 w-3 text-sidebar-foreground/40" />
@@ -226,37 +236,19 @@ export function AdminSidebar() {
 
         {!collapsed && <Separator className="mx-3 bg-sidebar-border/50" />}
 
-        {/* ── Main ── */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "Main"}</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenu(mainMenu)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        {!collapsed && <Separator className="mx-3 bg-sidebar-border/50" />}
-
         {/* ── Tools ── */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "Tools"}</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "Tools & Content"}</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenu(toolsMenu)}</SidebarGroupContent>
         </SidebarGroup>
 
         {!collapsed && <Separator className="mx-3 bg-sidebar-border/50" />}
 
-        {/* ── System ── */}
+        {/* ── System (always visible) ── */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "System"}</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenu(systemMenu)}</SidebarGroupContent>
         </SidebarGroup>
-
-        {user?.role === 'superadmin' && (
-          <>
-            {!collapsed && <Separator className="mx-3 bg-sidebar-border/50" />}
-            <SidebarGroup>
-              <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "Super Admin"}</SidebarGroupLabel>
-              <SidebarGroupContent>{renderMenu(systemMenu)}</SidebarGroupContent>
-            </SidebarGroup>
-          </>
-        )}
       </SidebarContent>
 
       <SidebarFooter className="p-3">
