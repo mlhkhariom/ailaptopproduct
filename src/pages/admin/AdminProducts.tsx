@@ -23,6 +23,7 @@ const emptyForm = {
   category: "", description: "", ingredients: "", benefits: "", usage: "",
   sku: "", slug: "", stock: 10, in_stock: true, status: "active", badge: "",
   meta_title: "", meta_description: "", focus_keywords: "",
+  show_public: true,
 };
 
 const AdminProducts = () => {
@@ -34,7 +35,7 @@ const AdminProducts = () => {
   const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
-    fetchProducts();
+    fetchProducts({ all: '1' });
     api.getCategories().then((cats: any[]) => {
       setCategories(cats.map((c: any) => c.name));
     }).catch(() => {});
@@ -83,7 +84,7 @@ const AdminProducts = () => {
       const result = await api.importProducts(text);
       toast.success(`Import done! Added: ${result.added}, Updated: ${result.updated}`);
       if (result.errors?.length) toast.error(`${result.errors.length} rows had errors`);
-      fetchProducts();
+      fetchProducts({ all: '1' });
     } catch (err: any) { toast.error(err.message); }
     e.target.value = '';
   };
@@ -98,6 +99,7 @@ const AdminProducts = () => {
       benefits: Array.isArray(p.benefits) ? p.benefits.join("\n") : p.benefits || "",
       usage: p.usage || "", sku: p.sku, slug: p.slug,
       stock: p.stock, in_stock: p.in_stock, status: p.status, badge: p.badge || "",
+      show_public: p.show_public !== 0 && p.show_public !== false,
       meta_title: p.meta_title || "", meta_description: p.meta_description || "",
       focus_keywords: (() => {
         if (Array.isArray(p.focus_keywords)) return p.focus_keywords.join(', ');
@@ -134,8 +136,8 @@ const AdminProducts = () => {
       if (editingId) { await updateProduct(editingId, payload); toast.success("Product updated!"); }
       else { await addProduct(payload as any); toast.success("Product added!"); }
       setDialogOpen(false);
-      fetchProducts();
-      fetchProducts();
+      fetchProducts({ all: '1' });
+      fetchProducts({ all: '1' });
     } catch (e: any) { toast.error(e.message); }
   };
 
@@ -156,7 +158,7 @@ const AdminProducts = () => {
         body: JSON.stringify({ ids: selected }),
       }).then(r => r.json());
       setSelected([]);
-      fetchProducts();
+      fetchProducts({ all: '1' });
       toast.success(`${selected.length} products deleted!`);
     } catch { toast.error('Bulk delete failed'); }
   };
@@ -189,7 +191,7 @@ const AdminProducts = () => {
           <CardContent className="p-3 flex items-center justify-between">
             <span className="text-sm font-medium">{selected.length} product(s) selected</span>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="text-xs h-7" onClick={async () => { for (const id of selected) { await updateStock(id, 1); } setSelected([]); fetchProducts(); toast.success("Marked in stock!"); }}>Mark In Stock</Button>
+              <Button size="sm" variant="outline" className="text-xs h-7" onClick={async () => { for (const id of selected) { await updateStock(id, 1); } setSelected([]); fetchProducts({ all: '1' }); toast.success("Marked in stock!"); }}>Mark In Stock</Button>
               <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => { selected.forEach(id => updateStock(id, 0)); setSelected([]); setSelected([]); toast.success("Marked out of stock!"); }}>Mark Out of Stock</Button>
               <Button size="sm" variant="destructive" className="text-xs h-7" onClick={handleBulkDelete}>Delete All</Button>
               <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => setSelected([])}>Cancel</Button>
@@ -265,9 +267,12 @@ const AdminProducts = () => {
                       </div>
                     </td>
                     <td className="p-3">
-                      <Badge variant={p.status === "active" ? "default" : "secondary"} className="text-[10px]">
-                        {p.status}
-                      </Badge>
+                      <div className="flex gap-1">
+                        <Badge variant={p.status === "active" ? "default" : "secondary"} className="text-[10px]">
+                          {p.status}
+                        </Badge>
+                        {p.show_public === 0 && <Badge variant="outline" className="text-[10px] text-orange-600 border-orange-300">Hidden</Badge>}
+                      </div>
                     </td>
                     <td className="p-3">
                       <DropdownMenu>
@@ -340,6 +345,13 @@ const AdminProducts = () => {
                     <SelectItem value="draft">Draft</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="flex items-center gap-3 col-span-2 p-3 rounded-lg border bg-muted/30">
+                <Switch checked={!!form.show_public} onCheckedChange={(v) => setForm({ ...form, show_public: v })} />
+                <div>
+                  <Label className="text-sm font-medium">Show to Public</Label>
+                  <p className="text-[10px] text-muted-foreground">{form.show_public ? 'Visible on website to customers' : 'Hidden from website (internal/ERP only)'}</p>
+                </div>
               </div>
               <div>
                 <Label className="text-xs">Badge</Label>

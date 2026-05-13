@@ -8,8 +8,9 @@ const router = Router();
 
 // GET /api/products — public, with filters
 router.get('/', async (req, res) => {
-  const { category, search, inStock, minPrice, maxPrice, sort } = req.query;
-  let query = "SELECT * FROM products WHERE status = 'active'";
+  const { category, search, inStock, minPrice, maxPrice, sort, all } = req.query;
+  // all=1 → admin sees everything (including hidden from public)
+  let query = all === '1' ? "SELECT * FROM products WHERE 1=1" : "SELECT * FROM products WHERE status = 'active' AND (show_public IS NULL OR show_public = 1)";
   const params = [];
   if (category) { query += ' AND category = ?'; params.push(category); }
   if (inStock === 'true') { query += ' AND in_stock = 1'; }
@@ -113,13 +114,14 @@ router.post('/', authMiddleware, adminOnly, async (req, res) => {
 
 // PUT /api/products/:id — admin only
 router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
-  const { name, name_hi, price, original_price, image, category, description, ingredients, benefits, usage, stock, sku, slug, badge, status, meta_title, meta_description, focus_keywords } = req.body;
-  await db.prepare(`UPDATE products SET name=?,name_hi=?,price=?,original_price=?,image=?,category=?,description=?,ingredients=?,benefits=?,usage=?,stock=?,in_stock=?,sku=?,slug=?,badge=?,status=?,meta_title=?,meta_description=?,focus_keywords=? WHERE id=?`)
+  const { name, name_hi, price, original_price, image, category, description, ingredients, benefits, usage, stock, sku, slug, badge, status, meta_title, meta_description, focus_keywords, show_public } = req.body;
+  await db.prepare(`UPDATE products SET name=?,name_hi=?,price=?,original_price=?,image=?,category=?,description=?,ingredients=?,benefits=?,usage=?,stock=?,in_stock=?,sku=?,slug=?,badge=?,status=?,meta_title=?,meta_description=?,focus_keywords=?,show_public=? WHERE id=?`)
     .run(name, name_hi, price, original_price, image || null, category, description,
       JSON.stringify(ingredients || []), JSON.stringify(benefits || []), usage, stock, stock > 0 ? 1 : 0,
       sku, slug, badge, status || 'active',
       meta_title || null, meta_description || null,
       Array.isArray(focus_keywords) ? JSON.stringify(focus_keywords) : focus_keywords || null,
+      show_public === false || show_public === 0 ? 0 : 1,
       req.params.id);
   res.json({ message: 'Updated' });
 });

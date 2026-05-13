@@ -296,6 +296,7 @@ export const initDB = async () => {
     "ALTER TABLE social_settings ADD COLUMN IF NOT EXISTS youtube_channel_id TEXT",
     "ALTER TABLE social_settings ADD COLUMN IF NOT EXISTS tiktok_access_token TEXT",
     "ALTER TABLE social_settings ADD COLUMN IF NOT EXISTS last_sync_at TIMESTAMPTZ",
+    "ALTER TABLE products ADD COLUMN IF NOT EXISTS show_public INTEGER DEFAULT 1",
     "ALTER TABLE categories ADD COLUMN IF NOT EXISTS category_type TEXT DEFAULT 'ecommerce'",
     "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS due_date DATE",
     "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS discount_type TEXT DEFAULT 'flat'",
