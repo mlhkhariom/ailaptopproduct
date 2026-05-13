@@ -85,12 +85,7 @@ export const useProductStore = create<ProductStore>((set, get) => ({
   },
 
   updateStock: async (id, stock) => {
-    const product = get().products.find(p => p.id === id);
-    if (product) {
-      await api.updateProduct(id, { ...product, stock, in_stock: stock > 0 ? 1 : 0 });
-    } else {
-      await api.updateProduct(id, { stock, in_stock: stock > 0 ? 1 : 0 });
-    }
+    await api.updateProduct(id, { stock, in_stock: stock > 0 ? 1 : 0 });
     set(s => ({ products: s.products.map(p => p.id === id ? { ...p, stock, in_stock: stock > 0, inStock: stock > 0 } : p) }));
   },
 

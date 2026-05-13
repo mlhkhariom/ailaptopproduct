@@ -112,17 +112,26 @@ router.post('/', authMiddleware, adminOnly, async (req, res) => {
   res.status(201).json(await db.prepare('SELECT * FROM products WHERE id = ?').get(id));
 });
 
-// PUT /api/products/:id — admin only
+// PUT /api/products/:id — admin only (supports partial update)
 router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
-  const { name, name_hi, price, original_price, image, category, description, ingredients, benefits, usage, stock, sku, slug, badge, status, meta_title, meta_description, focus_keywords, show_public } = req.body;
+  // Get existing product first, merge with incoming data
+  const existing = await db.prepare('SELECT * FROM products WHERE id=?').get(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Product not found' });
+
+  const { name, name_hi, price, original_price, image, category, description, ingredients, benefits, usage, stock, in_stock, sku, slug, badge, status, meta_title, meta_description, focus_keywords, show_public } = { ...existing, ...req.body };
+
   await db.prepare(`UPDATE products SET name=?,name_hi=?,price=?,original_price=?,image=?,category=?,description=?,ingredients=?,benefits=?,usage=?,stock=?,in_stock=?,sku=?,slug=?,badge=?,status=?,meta_title=?,meta_description=?,focus_keywords=?,show_public=? WHERE id=?`)
-    .run(name, name_hi, price, original_price, image || null, category, description,
-      JSON.stringify(ingredients || []), JSON.stringify(benefits || []), usage, stock, stock > 0 ? 1 : 0,
+    .run(
+      name, name_hi, price, original_price, image || null, category, description,
+      typeof ingredients === 'string' ? ingredients : JSON.stringify(ingredients || []),
+      typeof benefits === 'string' ? benefits : JSON.stringify(benefits || []),
+      usage, stock ?? 0, in_stock !== undefined ? (in_stock ? 1 : 0) : (stock > 0 ? 1 : 0),
       sku, slug, badge, status || 'active',
       meta_title || null, meta_description || null,
       Array.isArray(focus_keywords) ? JSON.stringify(focus_keywords) : focus_keywords || null,
       show_public === false || show_public === 0 ? 0 : 1,
-      req.params.id);
+      req.params.id
+    );
   res.json({ message: 'Updated' });
 });
 
