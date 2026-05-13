@@ -1,4 +1,5 @@
 // Linktree-style page — ailaptopwala.com/links
+import { useState } from "react";
 import { ClipboardList, Instagram, Youtube, Facebook, Phone, MessageCircle, Mail, ShieldCheck, BadgeCheck, Gift, Repeat, MapPin, Navigation, LucideIcon } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 
@@ -37,6 +38,81 @@ const BenefitChip = ({ icon: Icon, label }: { icon: LucideIcon; label: string })
     <Icon className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} />{label}
   </span>
 );
+
+function EnquiryForm() {
+  const [form, setForm] = useState({ name: '', phone: '', email: '', interest: '', budget: '', message: '' });
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name || !form.phone) { setError('Name and phone required'); return; }
+    if (form.phone.replace(/[^0-9]/g, '').length < 10) { setError('Valid 10-digit phone required'); return; }
+    setLoading(true); setError('');
+    try {
+      const res = await fetch('/api/contacts/enquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) }).then(r => r.json());
+      if (res.success) setSubmitted(true);
+      else setError(res.error || 'Something went wrong');
+    } catch { setError('Network error. Try again.'); }
+    finally { setLoading(false); }
+  };
+
+  if (submitted) return (
+    <div className="rounded-2xl border bg-card p-8 text-center shadow-sm">
+      <div className="text-5xl mb-4">🎉</div>
+      <h3 className="text-xl font-bold text-primary mb-2">Thank You!</h3>
+      <p className="text-sm text-muted-foreground mb-1">Your enquiry has been received.</p>
+      <p className="text-sm text-muted-foreground">We will contact you on WhatsApp shortly.</p>
+      <div className="mt-4 p-3 rounded-xl bg-green-50 border border-green-200 text-xs text-green-700">
+        ✅ Auto WhatsApp confirmation sent to {form.phone}
+      </div>
+    </div>
+  );
+
+  return (
+    <form onSubmit={handleSubmit} className="rounded-2xl border bg-card p-5 shadow-sm space-y-3">
+      {error && <p className="text-xs text-red-600 bg-red-50 p-2 rounded-lg">{error}</p>}
+      <div>
+        <label className="text-xs font-medium">Name *</label>
+        <input className="mt-1 w-full h-10 rounded-xl border px-3 text-sm bg-background" placeholder="Your name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+      </div>
+      <div>
+        <label className="text-xs font-medium">Phone (WhatsApp) *</label>
+        <input className="mt-1 w-full h-10 rounded-xl border px-3 text-sm bg-background" placeholder="9876543210" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} maxLength={10} />
+      </div>
+      <div>
+        <label className="text-xs font-medium">Email</label>
+        <input className="mt-1 w-full h-10 rounded-xl border px-3 text-sm bg-background" placeholder="your@email.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+      </div>
+      <div>
+        <label className="text-xs font-medium">Looking for</label>
+        <select className="mt-1 w-full h-10 rounded-xl border px-3 text-sm bg-background" value={form.interest} onChange={e => setForm(f => ({ ...f, interest: e.target.value }))}>
+          <option value="">Select...</option>
+          <option value="Laptop - New">Laptop (New)</option>
+          <option value="Laptop - Refurbished">Laptop (Refurbished)</option>
+          <option value="MacBook">MacBook</option>
+          <option value="Desktop">Desktop</option>
+          <option value="Repair Service">Repair Service</option>
+          <option value="Accessories">Accessories</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div>
+        <label className="text-xs font-medium">Budget (₹)</label>
+        <input className="mt-1 w-full h-10 rounded-xl border px-3 text-sm bg-background" placeholder="e.g. 25000" type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} />
+      </div>
+      <div>
+        <label className="text-xs font-medium">Message (optional)</label>
+        <textarea className="mt-1 w-full rounded-xl border px-3 py-2 text-sm bg-background resize-none" rows={2} placeholder="Any specific requirements..." value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} />
+      </div>
+      <button type="submit" disabled={loading} className="w-full h-11 rounded-xl bg-gradient-to-r from-primary to-orange-500 text-white font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50">
+        {loading ? 'Submitting...' : 'Submit Enquiry'}
+      </button>
+      <p className="text-[10px] text-center text-muted-foreground">You will receive a WhatsApp confirmation instantly</p>
+    </form>
+  );
+}
 
 export default function LinksPage() {
   return (
@@ -88,9 +164,7 @@ export default function LinksPage() {
         <section id="enquiry" className="mt-10 w-full">
           <h2 className="mb-1 text-center text-lg font-bold">Enquiry <span className="text-primary">Form</span></h2>
           <p className="mb-4 text-center text-sm text-muted-foreground">Fill the form & our team will reach out shortly.</p>
-          <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-            <iframe src="https://docs.google.com/forms/d/e/1FAIpQLScxuqTNvb_KpgsksTnAf4foq9vCUlMmtGGXOEETkAV3QayWLA/viewform?embedded=true" width="100%" height="1460" frameBorder={0} title="AI Laptopwala Enquiry Form" className="block w-full" />
-          </div>
+          <EnquiryForm />
         </section>
 
         {/* Footer */}

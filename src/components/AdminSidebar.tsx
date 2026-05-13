@@ -109,6 +109,7 @@ const systemMenu = [
   { title: "User & Roles", url: "/admin/users", icon: UserCog, badge: "" },
   { title: "Reports", url: "/admin/reports", icon: TrendingUp, badge: "" },
   { title: "Settings", url: "/admin/settings", icon: Settings, badge: "" },
+  { title: "Linktree Page", url: "/admin/settings?tab=linktree", icon: Share2, badge: "" },
 ];
 
 export function AdminSidebar() {

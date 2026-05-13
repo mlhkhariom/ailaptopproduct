@@ -28,6 +28,42 @@ router.post('/', async (req, res) => {
   res.status(201).json({ message: 'Query submitted' });
 });
 
+// POST /api/contacts/enquiry — Linktree form → CRM lead + WhatsApp auto-reply
+router.post('/enquiry', async (req, res) => {
+  const { name, phone, email, interest, budget, message } = req.body;
+  if (!name || !phone) return res.status(400).json({ error: 'Name and phone required' });
+
+  const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
+  if (cleanPhone.length !== 10) return res.status(400).json({ error: 'Valid 10-digit phone required' });
+
+  // Save/update CRM lead
+  const existing = await db.prepare('SELECT id FROM leads WHERE phone=?').get(cleanPhone);
+  let leadId;
+  if (existing) {
+    leadId = existing.id;
+    await db.prepare("UPDATE leads SET interest=COALESCE(NULLIF(?,''),interest), budget=CASE WHEN ?>0 THEN ? ELSE budget END, notes=COALESCE(NULLIF(?,''),notes), updated_at=NOW() WHERE id=?")
+      .run(interest, Number(budget)||0, Number(budget)||0, message, leadId);
+  } else {
+    leadId = uuid();
+    await db.prepare(`INSERT INTO leads (id,name,phone,email,source,interest,budget,deal_value,status,notes) VALUES (?,?,?,?,?,?,?,?,?,?)`)
+      .run(leadId, name, cleanPhone, email || '', 'Enquiry Form', interest || 'General', Number(budget)||0, Number(budget)||0, 'new', message || '');
+  }
+
+  await db.prepare("INSERT INTO lead_activities (id,lead_id,type,note,created_by) VALUES (?,?,?,?,?)")
+    .run(uuid(), leadId, 'form', `Enquiry: ${interest || 'General'}${budget ? ' | Budget ₹' + budget : ''}`, 'system');
+
+  await db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)')
+    .run(uuid(), 'lead', 'New Enquiry', `${name} (${cleanPhone}) — ${interest || 'General'}`, '/admin/erp/crm');
+
+  // Auto WhatsApp thank you
+  try {
+    const { queueNotification } = await import('../whatsapp/notifications.js');
+    await queueNotification(cleanPhone, `🙏 *Thank You, ${name}!*\n\nAapki enquiry receive ho gayi hai.\n${interest ? `\n*Interest:* ${interest}` : ''}${budget ? `\n*Budget:* ₹${Number(budget).toLocaleString('en-IN')}` : ''}\n\nHamari team jaldi contact karegi.\n\n📞 +91 98934 96163\n🌐 ailaptopwala.com\n\n— AI Laptop Wala`, 'enquiry_thankyou');
+  } catch {}
+
+  res.status(201).json({ success: true, message: 'Thank you! We will contact you soon.' });
+});
+
 // GET /api/contacts — admin
 router.get('/', authMiddleware, adminOnly, async (req, res) => {
   const { status } = req.query;
