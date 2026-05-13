@@ -139,7 +139,7 @@ export default function AdminInventory() {
     const sn = await fetch('/api/erp/serials', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json());
     setSerials(Array.isArray(sn) ? sn : []);
     // Load inventory categories
-    fetch('/api/categories?type=inventory', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(cats => { if (Array.isArray(cats) && cats.length > 0) setInventoryCategories(cats.map((c: any) => c.name)); }).catch(() => {});
+    fetch('/api/categories', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(cats => { if (Array.isArray(cats) && cats.length > 0) setInventoryCategories(cats.map((c: any) => c.name)); }).catch(() => {});
     setLoading(false);
   };
 
