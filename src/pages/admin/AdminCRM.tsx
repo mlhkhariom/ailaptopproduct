@@ -29,7 +29,7 @@ const STATUS_COLORS: Record<string, string> = {
   interested: 'bg-yellow-100 text-yellow-700', negotiating: 'bg-orange-100 text-orange-700',
   won: 'bg-green-100 text-green-700', lost: 'bg-red-100 text-red-700',
 };
-const SOURCES = ['WhatsApp', 'Walk-in', 'Phone', 'Instagram', 'Facebook', 'Referral', 'Website', 'JustDial', 'Google'];
+const SOURCES = ['WhatsApp', 'Walk-in', 'Phone', 'Instagram', 'Facebook', 'Referral', 'Website', 'JustDial', 'Google', 'Enquiry Form', 'Ecommerce'];
 
 const emptyForm = {
   name: '', phone: '', email: '', source: 'WhatsApp',
@@ -56,6 +56,9 @@ export default function AdminCRM() {
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'dashboard';
+  const defaultSource = searchParams.get('source') || '';
+
+  useEffect(() => { if (defaultSource) setSourceFilter(defaultSource); }, []);
 
   const load = async () => {
     setLoading(true);

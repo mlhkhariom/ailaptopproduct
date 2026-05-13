@@ -93,8 +93,13 @@ function EnquiryForm() {
           <option value="Laptop - Refurbished">Laptop (Refurbished)</option>
           <option value="MacBook">MacBook</option>
           <option value="Desktop">Desktop</option>
-          <option value="Repair Service">Repair Service</option>
+          <option value="Repair Service">Repair / Service</option>
+          <option value="Screen Replacement">Screen Replacement</option>
+          <option value="RAM/SSD Upgrade">RAM / SSD Upgrade</option>
+          <option value="Data Recovery">Data Recovery</option>
           <option value="Accessories">Accessories</option>
+          <option value="Printer">Printer</option>
+          <option value="CCTV">CCTV</option>
           <option value="Other">Other</option>
         </select>
       </div>

@@ -103,6 +103,7 @@ const toolsMenu = [
   { title: "Media Library", url: "/admin/media", icon: Image, badge: "" },
   { title: "Reviews", url: "/admin/reviews", icon: Star, badge: "" },
   { title: "Contact Queries", url: "/admin/contacts", icon: Mail, badge: "" },
+  { title: "Service Leads", url: "/admin/erp/crm?tab=list&source=Enquiry Form", icon: ClipboardList, badge: "" },
 ];
 
 const systemMenu = [
