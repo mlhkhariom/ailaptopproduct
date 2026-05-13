@@ -77,6 +77,7 @@ import RepairTrack from "./pages/RepairTrack";
 import CustomerPortal from "./pages/CustomerPortal";
 import NotFound from "./pages/NotFound";
 import CMSPage from "./pages/CMSPage";
+import LinksPage from "./pages/Links";
 import FAQ from "./pages/FAQ";
 
 const queryClient = new QueryClient();
@@ -164,6 +165,7 @@ const App = () => (
             <Route path="/admin/erp/attendance" element={<AdminRoute><AdminAttendance /></AdminRoute>} />
             <Route path="/admin/erp/wa-templates" element={<AdminRoute><AdminWATemplates /></AdminRoute>} />
             <Route path="/page/:slug" element={<CMSPage />} />
+            <Route path="/links" element={<LinksPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           {/* Global site-wide features (admin-controlled) */}
