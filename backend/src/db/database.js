@@ -364,6 +364,10 @@ export const initDB = async () => {
       notes TEXT, outcome TEXT, next_date DATE,
       created_by TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
+    `CREATE TABLE IF NOT EXISTS lead_activities (
+      id TEXT PRIMARY KEY, lead_id TEXT NOT NULL, type TEXT DEFAULT 'note',
+      note TEXT, created_by TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     `CREATE TABLE IF NOT EXISTS suppliers (
       id TEXT PRIMARY KEY, name TEXT NOT NULL, contact_person TEXT, phone TEXT, email TEXT,
       address TEXT, gstin TEXT, payment_terms TEXT DEFAULT 'net30',

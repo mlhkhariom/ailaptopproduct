@@ -49,8 +49,8 @@ router.post('/enquiry', async (req, res) => {
       .run(leadId, name, cleanPhone, 'Enquiry Form', interest || 'General', 'new', message || '');
   }
 
-  await db.prepare("INSERT INTO lead_activities (id,lead_id,type,note,created_by) VALUES (?,?,?,?,?)")
-    .run(uuid(), leadId, 'form', `Enquiry: ${interest || 'General'}${message ? ' | ' + message.slice(0, 100) : ''}`, 'system');
+  try { await db.prepare("INSERT INTO lead_activities (id,lead_id,type,note,created_by) VALUES (?,?,?,?,?)")
+    .run(uuid(), leadId, 'form', `Enquiry: ${interest || 'General'}${message ? ' | ' + message.slice(0, 100) : ''}`, 'system'); } catch {}
 
   await db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)')
     .run(uuid(), 'lead', 'New Enquiry', `${name} (${cleanPhone}) — ${interest || 'General'}`, '/admin/erp/crm');
