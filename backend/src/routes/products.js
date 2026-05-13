@@ -130,4 +130,15 @@ router.delete('/:id', authMiddleware, adminOnly, async (req, res) => {
   res.json({ message: 'Deleted' });
 });
 
+// DELETE /api/products/bulk/delete — superadmin only
+router.post('/bulk/delete', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'superadmin') return res.status(403).json({ error: 'Only Super Admin can bulk delete products' });
+  const { ids } = req.body;
+  if (!ids?.length) return res.status(400).json({ error: 'ids array required' });
+  for (const id of ids) {
+    await db.prepare('DELETE FROM products WHERE id=?').run(id);
+  }
+  res.json({ message: `${ids.length} products deleted`, count: ids.length });
+});
+
 export default router;

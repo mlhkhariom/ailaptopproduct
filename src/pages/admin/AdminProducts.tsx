@@ -13,6 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminLayout from "@/components/AdminLayout";
+import { useAuth } from "@/contexts/AuthContext";
 import { useProductStore } from "@/store/productStore";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ const emptyForm = {
 
 const AdminProducts = () => {
   const { products, fetchProducts, addProduct, updateProduct, deleteProduct, deleteProducts, duplicateProduct, updateStock } = useProductStore();
+  const { user } = useAuth();
   const [categories, setCategories] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"all" | "active" | "out">("all");
@@ -69,10 +71,23 @@ const AdminProducts = () => {
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const text = await file.text();
+
+    let text = '';
+    if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+      // Parse Excel file
+      const XLSX = await import('xlsx');
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data);
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_csv(ws);
+      text = rows;
+    } else {
+      text = await file.text();
+    }
+
     try {
       const result = await api.importProducts(text);
-      toast.success(`Import done! Added: ${result.added}, Updated: ${result.updated}`);
+      toast.success(`Import done! Added: ${result.added}, Updated: ${result.updated}, Stock synced`);
       if (result.errors?.length) toast.error(`${result.errors.length} rows had errors`);
       fetchProducts();
     } catch (err: any) { toast.error(err.message); }
@@ -137,9 +152,19 @@ const AdminProducts = () => {
   };
 
   const handleBulkDelete = async () => {
-    await deleteProducts(selected);
-    setSelected([]);
-    toast.success(`${selected.length} products deleted!`);
+    if (user?.role !== 'superadmin') { toast.error('Only Super Admin can bulk delete products'); return; }
+    if (!confirm(`Permanently delete ${selected.length} products? This cannot be undone.`)) return;
+    try {
+      const token = localStorage.getItem('ailaptopwala_token');
+      await fetch('/api/products/bulk/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ids: selected }),
+      }).then(r => r.json());
+      setSelected([]);
+      fetchProducts();
+      toast.success(`${selected.length} products deleted!`);
+    } catch { toast.error('Bulk delete failed'); }
   };
 
   return (
@@ -157,7 +182,7 @@ const AdminProducts = () => {
             <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" asChild>
               <span><Upload className="h-3.5 w-3.5" /> Import CSV</span>
             </Button>
-            <input type="file" accept=".csv" className="hidden" onChange={handleImport} />
+            <input type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleImport} />
           </label>
           <Button size="sm" className="gap-1.5 text-xs h-8" onClick={openAdd}>
             <Plus className="h-3.5 w-3.5" /> Add Product
