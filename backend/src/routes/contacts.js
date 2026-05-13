@@ -41,25 +41,24 @@ router.post('/enquiry', async (req, res) => {
   let leadId;
   if (existing) {
     leadId = existing.id;
-    await db.prepare("UPDATE leads SET interest=COALESCE(NULLIF(?,''),interest), budget=CASE WHEN ?>0 THEN ? ELSE budget END, notes=COALESCE(NULLIF(?,''),notes), updated_at=NOW() WHERE id=?")
-      .run(interest, Number(budget)||0, Number(budget)||0, message, leadId);
+    await db.prepare("UPDATE leads SET interest=COALESCE(NULLIF(?,''),interest), notes=COALESCE(NULLIF(?,''),notes), updated_at=NOW() WHERE id=?")
+      .run(interest, message, leadId);
   } else {
     leadId = uuid();
-    await db.prepare(`INSERT INTO leads (id,name,phone,email,source,interest,budget,deal_value,status,notes) VALUES (?,?,?,?,?,?,?,?,?,?)`)
-      .run(leadId, name, cleanPhone, email || '', 'Enquiry Form', interest || 'General', Number(budget)||0, Number(budget)||0, 'new', message || '');
+    await db.prepare(`INSERT INTO leads (id,name,phone,source,interest,status,notes) VALUES (?,?,?,?,?,?,?)`)
+      .run(leadId, name, cleanPhone, 'Enquiry Form', interest || 'General', 'new', message || '');
   }
 
   await db.prepare("INSERT INTO lead_activities (id,lead_id,type,note,created_by) VALUES (?,?,?,?,?)")
-    .run(uuid(), leadId, 'form', `Enquiry: ${interest || 'General'}${budget ? ' | Budget ₹' + budget : ''}`, 'system');
+    .run(uuid(), leadId, 'form', `Enquiry: ${interest || 'General'}${message ? ' | ' + message.slice(0, 100) : ''}`, 'system');
 
   await db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)')
     .run(uuid(), 'lead', 'New Enquiry', `${name} (${cleanPhone}) — ${interest || 'General'}`, '/admin/erp/crm');
 
-  // Auto WhatsApp thank you
-  try {
-    const { queueNotification } = await import('../whatsapp/notifications.js');
-    await queueNotification(cleanPhone, `🙏 *Thank You, ${name}!*\n\nAapki enquiry receive ho gayi hai.\n${interest ? `\n*Interest:* ${interest}` : ''}${budget ? `\n*Budget:* ₹${Number(budget).toLocaleString('en-IN')}` : ''}\n\nHamari team jaldi contact karegi.\n\n📞 +91 98934 96163\n🌐 ailaptopwala.com\n\n— AI Laptop Wala`, 'enquiry_thankyou');
-  } catch {}
+  // Auto WhatsApp thank you (non-blocking — don't delay response)
+  import('../whatsapp/notifications.js').then(({ queueNotification }) => {
+    queueNotification(cleanPhone, `🙏 *Thank You, ${name}!*\n\nAapki enquiry receive ho gayi hai.\n${interest ? `\n*Interest:* ${interest}` : ''}\n\nHamari team jaldi contact karegi.\n\n📞 +91 98934 96163\n🌐 ailaptopwala.com\n\n— AI Laptop Wala`, 'enquiry_thankyou');
+  }).catch(() => {});
 
   res.status(201).json({ success: true, message: 'Thank you! We will contact you soon.' });
 });
