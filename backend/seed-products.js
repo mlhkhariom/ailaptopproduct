@@ -78,6 +78,8 @@ for (let i = 0; i < PRODUCTS.length; i++) {
 
   await db.prepare(`INSERT INTO products (id,name,price,original_price,category,stock,in_stock,sku,slug,status,description,ingredients,benefits,usage,badge,show_public,meta_title,meta_description,focus_keywords,rating,reviews,reorder_level) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
     .run(uuid(), fullName, r.sellingPrice || r.purchasePrice || 0, Math.round((r.sellingPrice || r.purchasePrice || 0) * 1.25) || null, CAT_MAP[r.category] || r.category, r.stock, r.stock > 0 ? 1 : 0, r.sku, slug, 'active', description, JSON.stringify(ingredients), JSON.stringify(benefits), r.condition || null, badge, 1, metaTitle, metaDesc, JSON.stringify(focusKeywords), 4.5, 0, 5);
+    // Link to default branch
+    try { await db.prepare("INSERT INTO branch_stock (id,branch_id,product_id,stock,reorder_level) VALUES (?,?,?,?,?) ON CONFLICT (branch_id,product_id) DO UPDATE SET stock=EXCLUDED.stock").run(uuid(), "branch-silver-mall", id, r.stock, 5); } catch {}
   added++;
 }
 
