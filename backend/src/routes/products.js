@@ -166,16 +166,24 @@ router.get('/:slug', async (req, res) => {
 
 // POST /api/products — admin only
 router.post('/', authMiddleware, adminOnly, async (req, res) => {
-  const { name, name_hi, price, original_price, image, category, description, ingredients, benefits, usage, stock, sku, slug, badge, meta_title, meta_description, focus_keywords } = req.body;
+  const { name, name_hi, price, original_price, image, category, description, ingredients, benefits, usage, stock, sku, slug, badge, meta_title, meta_description, focus_keywords, branch_id } = req.body;
   if (!name || !price) return res.status(400).json({ error: 'name and price required' });
   const id = uuid();
   const finalSlug = slug || name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
-  await db.prepare(`INSERT INTO products (id,name,name_hi,price,original_price,image,category,description,ingredients,benefits,usage,stock,in_stock,sku,slug,badge,meta_title,meta_description,focus_keywords)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+  await db.prepare(`INSERT INTO products (id,name,name_hi,price,original_price,image,category,description,ingredients,benefits,usage,stock,in_stock,sku,slug,badge,meta_title,meta_description,focus_keywords,show_public)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
     .run(id, name, name_hi, price, original_price, image, category, description,
       JSON.stringify(ingredients || []), JSON.stringify(benefits || []), usage, stock || 0, stock > 0 ? 1 : 0,
       sku || `ALW-${Date.now()}`, finalSlug, badge, meta_title || null, meta_description || null,
-      Array.isArray(focus_keywords) ? JSON.stringify(focus_keywords) : focus_keywords || null);
+      Array.isArray(focus_keywords) ? JSON.stringify(focus_keywords) : focus_keywords || null, 1);
+
+  // Auto-link to branch_stock (default: Silver Mall)
+  const targetBranch = branch_id || 'branch-silver-mall';
+  try {
+    await db.prepare('INSERT INTO branch_stock (id,branch_id,product_id,stock,reorder_level) VALUES (?,?,?,?,?) ON CONFLICT (branch_id,product_id) DO UPDATE SET stock=EXCLUDED.stock')
+      .run(uuid(), targetBranch, id, stock || 0, 5);
+  } catch {}
+
   res.status(201).json(await db.prepare('SELECT * FROM products WHERE id = ?').get(id));
 });
 
@@ -199,6 +207,18 @@ router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
       show_public === false || show_public === 0 ? 0 : 1,
       req.params.id
     );
+  // Sync branch_stock when stock changes
+  try {
+    const hasBranch = await db.prepare('SELECT id FROM branch_stock WHERE product_id=? LIMIT 1').get(req.params.id);
+    if (hasBranch) {
+      await db.prepare('UPDATE branch_stock SET stock=? WHERE product_id=? AND branch_id=(SELECT branch_id FROM branch_stock WHERE product_id=? LIMIT 1)')
+        .run(stock ?? 0, req.params.id, req.params.id);
+    } else {
+      await db.prepare('INSERT INTO branch_stock (id,branch_id,product_id,stock,reorder_level) VALUES (?,?,?,?,?)')
+        .run(uuid(), 'branch-silver-mall', req.params.id, stock ?? 0, 5);
+    }
+  } catch {}
+
   res.json({ message: 'Updated' });
 });
 
