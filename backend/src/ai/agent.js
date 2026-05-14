@@ -19,12 +19,16 @@ export const createOrderWithPaymentLink = async (contactPhone, productId, custom
   await db.prepare(`INSERT INTO orders (id,order_number,items,subtotal,total,payment_method,payment_status,address) VALUES (?,?,?,?,?,'razorpay','pending','{}')`)
     .run(orderId, order_number, JSON.stringify([{ id: product.id, name: product.name, quantity: 1, price: product.price }]), product.price, product.price);
 
-  // Create Razorpay payment link
-  const keyId = await db.prepare("SELECT value FROM app_settings WHERE key='razorpay_key_id'").get()?.value;
-  const keySecret = await db.prepare("SELECT value FROM app_settings WHERE key='razorpay_key_secret'").get()?.value;
+  // Create payment link using admin's default gateway (same as billing)
+  const { Config } = await import('../lib/config.js');
+  const frontendUrl = await Config.frontendUrl();
+  const defaultGateway = (await db.prepare("SELECT value FROM app_settings WHERE key='default_invoice_gateway'").get())?.value || 'razorpay';
+
+  const keyId = (await db.prepare("SELECT value FROM app_settings WHERE key='razorpay_key_id'").get())?.value;
+  const keySecret = (await db.prepare("SELECT value FROM app_settings WHERE key='razorpay_key_secret'").get())?.value;
 
   if (!keyId || !keySecret) {
-    return { order_number, product, payment_link: null, message: `Order ${order_number} created! Pay ₹${product.price.toLocaleString('en-IN')} via UPI/Cash on delivery.\n\nTrack: ailaptopwala.com/track-order?order=${order_number}` };
+    return { order_number, product, payment_link: null, message: `Order ${order_number} created! Pay ₹${product.price.toLocaleString('en-IN')} via UPI/Cash on delivery.\n\nTrack: ${frontendUrl}/track-order?order=${order_number}` };
   }
 
   try {
@@ -39,7 +43,7 @@ export const createOrderWithPaymentLink = async (contactPhone, productId, custom
         customer: { name: customerName || 'Customer', contact: phone },
         notify: { sms: true },
         notes: { order_number, product_id: product.id, source: 'whatsapp_agent' },
-        callback_url: `https://ailaptopwala.com/order-success?order=${order_number}`,
+        callback_url: `${frontendUrl}/order-success?order=${order_number}`,
       }),
     });
     const data = await res.json();
