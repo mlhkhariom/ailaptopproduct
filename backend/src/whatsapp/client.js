@@ -160,10 +160,10 @@ export const initWhatsApp = async () => {
     // Skip @lid (newsletter/link IDs), @g.us (groups), @broadcast
     if (!msg.isGroup && msg.type === 'chat' && msg.from.endsWith('@c.us')) {
       try {
-        const rawPhone = msg.from.replace('@c.us', '');
+        const rawPhone = msg.from.replace('@c.us', '').replace('+', '');
         // Normalize: 919165100124 → 9165100124 (10 digit Indian)
         const phone = rawPhone.startsWith('91') && rawPhone.length === 12 ? rawPhone.slice(2) : rawPhone;
-        const existing = await db.prepare('SELECT id FROM leads WHERE phone=? OR phone=?').get(phone, rawPhone);
+        const existing = await db.prepare('SELECT id FROM leads WHERE phone=? OR phone=? OR phone=? OR phone=?').get(phone, rawPhone, '+91' + phone, '+' + rawPhone);
         if (!existing) {
           const leadId = uuid();
           await db.prepare(`INSERT INTO leads (id,name,phone,source,interest,status,notes) VALUES (?,?,?,'WhatsApp','WhatsApp Inquiry','new',?)`)
