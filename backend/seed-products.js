@@ -72,7 +72,7 @@ for (let i = 0; i < PRODUCTS.length; i++) {
     const metaTitle = `${fullName}${specShort ? " (" + specShort + ")" : ""} | ${catLabel} Indore – AI Laptop Wala`.slice(0, 120);
     const priceText = (r.sellingPrice || r.purchasePrice) ? "₹" + (r.sellingPrice || r.purchasePrice).toLocaleString("en-IN") : "Best Price";
     const metaDesc = `Buy ${fullName}${specShort ? " with " + specShort : ""} at ${priceText} in Indore. ${r.condition || "Certified Refurbished"}, 90-day warranty, COD available. Free delivery. AI Laptop Wala.`.slice(0, 220);
-    const focusKeywords = [fullName.toLowerCase(), r.brand.toLowerCase() + " laptop indore", "buy " + fullName.toLowerCase(), catLabel.toLowerCase() + " indore", "refurbished " + r.brand.toLowerCase() + " indore", r.ram ? r.ram.toLowerCase() + " laptop" : "", "laptop shop indore"].filter(k => k.length > 5);
+    const focusKeywords = [fullName.toLowerCase(), r.brand.toLowerCase() + " laptop indore", "buy " + fullName.toLowerCase(), catLabel.toLowerCase() + " indore", "refurbished " + r.brand.toLowerCase() + " indore", r.ram ? String(r.ram).toLowerCase() + " laptop" : "", "laptop shop indore"].filter(k => k.length > 5);
 
   const badge = r.condition === 'New' ? 'New' : r.condition === 'Open Box' ? 'Open Box' : r.category === 'APPLE' ? 'Premium' : null;
 
