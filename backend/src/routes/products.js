@@ -259,6 +259,19 @@ router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
     }
   } catch {}
 
+  // Price drop alert — notify wishlisted users
+  if (price && existing.price && price < existing.price) {
+    try {
+      const wishlisted = await db.prepare('SELECT w.user_id, u.phone FROM wishlists w JOIN users u ON w.user_id=u.id WHERE w.product_id=? AND w.notify_price_drop=1').all(req.params.id);
+      if (wishlisted.length > 0) {
+        const { queueWhatsAppNotification } = await import('../whatsapp/notifications.js');
+        for (const w of wishlisted) {
+          if (w.phone) queueWhatsAppNotification(w.phone, `🔔 Price Drop Alert!\n\n${existing.name} is now ₹${price.toLocaleString('en-IN')} (was ₹${existing.price.toLocaleString('en-IN')})\n\n👉 Buy now: https://ailaptopwala.com/products/${existing.slug}`);
+        }
+      }
+    } catch {}
+  }
+
   res.json({ message: 'Updated' });
 });
 

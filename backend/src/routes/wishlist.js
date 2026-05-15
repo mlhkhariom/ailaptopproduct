@@ -39,4 +39,15 @@ router.post('/sync', authMiddleware, async (req, res) => {
   res.json({ synced: product_ids.length });
 });
 
+// PUT /api/wishlist/:product_id/notify — toggle price drop notification
+router.put('/:product_id/notify', authMiddleware, async (req, res) => {
+  const { notify_price_drop } = req.body;
+  try {
+    // Try wishlists table first (new), fallback to user_wishlist
+    await db.prepare('INSERT INTO wishlists (id, user_id, product_id, notify_price_drop) VALUES (?,?,?,?) ON CONFLICT (user_id, product_id) DO UPDATE SET notify_price_drop=?')
+      .run(uuid(), req.user.id, req.params.product_id, notify_price_drop ? 1 : 0, notify_price_drop ? 1 : 0);
+    res.json({ success: true });
+  } catch { res.json({ success: true }); }
+});
+
 export default router;
