@@ -112,8 +112,22 @@ const Footer = () => (
         </div>
       </div>
 
+      {/* Payment & Trust */}
+      <div className="border-t border-background/10 pt-5 pb-2">
+        <div className="flex flex-wrap items-center justify-center gap-4 mb-4">
+          {['💳 Razorpay', '📱 PhonePe', '💰 Paytm', '🏦 UPI', '💵 COD', '📦 EMI'].map(p => (
+            <span key={p} className="text-[10px] text-background/50 bg-background/5 px-2 py-1 rounded">{p}</span>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-4 mb-4">
+          {['🔒 Secure Payments', '✅ Verified Seller', '🛡️ 90-Day Warranty', '🚚 Free Delivery Indore', '↩️ 7-Day Returns'].map(t => (
+            <span key={t} className="text-[10px] text-background/60 font-medium">{t}</span>
+          ))}
+        </div>
+      </div>
+
       {/* Bottom */}
-      <div className="border-t border-background/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="border-t border-background/10 pt-4 flex flex-col md:flex-row items-center justify-between gap-3">
         <p className="text-xs text-background/40">© {new Date().getFullYear()} AI Laptop Wala | Asati Infotech. All Rights Reserved.</p>
         <div className="flex items-center gap-3 text-xs text-background/40">
           <a href="https://www.justdial.com/Indore/Ai-Laptop-Wala/0731PX731-X731-251014151403-Y2S4_BZDET" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">JustDial</a>

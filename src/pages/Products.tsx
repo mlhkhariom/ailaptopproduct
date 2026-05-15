@@ -12,6 +12,7 @@ import CustomerLayout from "@/components/layout/CustomerLayout";
 import SEOHead from "@/components/common/SEOHead";
 import ProductCardSkeleton from "@/components/ecommerce/ProductCardSkeleton";
 import ProductCard from "@/components/ecommerce/ProductCard";
+import QuickView from "@/components/ecommerce/QuickView";
 import { useProductStore } from "@/store/productStore";
 import { api } from "@/lib/api";
 
@@ -32,6 +33,7 @@ const Products = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [quickViewProduct, setQuickViewProduct] = useState<any>(null);
 
   // Filter state from URL
   const category = searchParams.get("category") || "All";
@@ -342,6 +344,7 @@ const Products = () => {
           </div>
         </div>
       </div>
+      <QuickView product={quickViewProduct} open={!!quickViewProduct} onClose={() => setQuickViewProduct(null)} />
     </CustomerLayout>
   );
 };

@@ -137,6 +137,7 @@ const Account = () => {
                 {(user as any).phone && <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" />{(user as any).phone}</div>}
                 <div className="flex items-center gap-2"><ShoppingBag className="h-4 w-4 text-muted-foreground" />{myOrders.length} orders</div>
                 <div className="flex items-center gap-2"><Heart className="h-4 w-4 text-muted-foreground" />{wishlistProducts.length} wishlist items</div>
+                <div className="flex items-center gap-2">🏆 <span className="text-xs">Loyalty: {myOrders.filter((o: any) => o.payment_status === 'paid').length * 50} points</span></div>
               </div>
               {((user as any).role === "admin" || (user as any).role === "superadmin") && (
                 <Button className="w-full mt-4 gap-2" onClick={() => navigate("/admin")}>Go to Admin Panel</Button>
