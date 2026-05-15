@@ -35,18 +35,33 @@ const Checkout = () => {
     phone: (user as any)?.phone || '',
     address: '', city: '', state: '', pin: '',
   });
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
 
   useEffect(() => {
     api.getShipping(subtotal).then(setShipping).catch(() => {});
     api.getPaymentMethods().then(d => {
       setPaymentMethods(d);
-      // Auto-select first enabled method
       if (d.razorpay?.enabled) setPaymentMethod('razorpay');
       else if (d.phonepe?.enabled) setPaymentMethod('phonepe');
       else if (d.cashfree?.enabled) setPaymentMethod('cashfree');
       else if (d.paytm?.enabled) setPaymentMethod('paytm');
       else setPaymentMethod('cod');
     }).catch(() => {});
+    // Fetch saved addresses
+    if (user) {
+      fetch('/api/addresses', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } })
+        .then(r => r.json()).then(addrs => {
+          if (Array.isArray(addrs) && addrs.length > 0) {
+            setSavedAddresses(addrs);
+            const def = addrs.find((a: any) => a.is_default) || addrs[0];
+            if (def) {
+              setSelectedAddressId(def.id);
+              setAddr({ firstName: def.name.split(' ')[0], lastName: def.name.split(' ').slice(1).join(' '), email: user?.email || '', phone: def.phone, address: def.address, city: def.city, state: def.state, pin: def.pin });
+            }
+          }
+        }).catch(() => {});
+    }
   }, [subtotal]);
 
   const shippingCharge = paymentMethod === 'cod' ? (shipping.standard + shipping.cod_charge) : shipping.standard;
@@ -286,6 +301,37 @@ const Checkout = () => {
             <Card>
               <CardHeader><CardTitle className="text-lg">Shipping Address</CardTitle></CardHeader>
               <CardContent className="space-y-4">
+                {/* Saved Addresses */}
+                {savedAddresses.length > 0 && (
+                  <div className="space-y-2 mb-4">
+                    <p className="text-sm font-medium text-muted-foreground">Saved Addresses</p>
+                    <div className="grid gap-2">
+                      {savedAddresses.map((sa: any) => (
+                        <button key={sa.id} onClick={() => {
+                          setSelectedAddressId(sa.id);
+                          setAddr({ firstName: sa.name.split(' ')[0], lastName: sa.name.split(' ').slice(1).join(' '), email: user?.email || '', phone: sa.phone, address: sa.address, city: sa.city, state: sa.state, pin: sa.pin });
+                        }}
+                          className={`text-left p-3 rounded-lg border-2 transition-all ${selectedAddressId === sa.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}>
+                          <div className="flex items-center gap-2">
+                            <span className={`w-3 h-3 rounded-full border-2 ${selectedAddressId === sa.id ? 'border-primary bg-primary' : 'border-muted-foreground'}`} />
+                            <span className="text-sm font-semibold">{sa.label || 'Address'}</span>
+                            {sa.is_default ? <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">Default</span> : null}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1 ml-5">{sa.name} • {sa.phone}</p>
+                          <p className="text-xs text-muted-foreground ml-5">{sa.address}, {sa.city} - {sa.pin}</p>
+                        </button>
+                      ))}
+                      <button onClick={() => { setSelectedAddressId('new'); setAddr({ firstName: '', lastName: '', email: user?.email || '', phone: '', address: '', city: '', state: '', pin: '' }); }}
+                        className={`text-left p-3 rounded-lg border-2 border-dashed transition-all ${selectedAddressId === 'new' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}>
+                        <p className="text-sm font-medium text-primary">+ Add New Address</p>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Address Form (show if no saved or 'new' selected) */}
+                {(savedAddresses.length === 0 || selectedAddressId === 'new' || !selectedAddressId) && (
+                <>
                 <div className="grid grid-cols-2 gap-4">
                   <div><Label className="text-sm">First Name</Label><Input className="mt-1" value={addr.firstName} onChange={e => setAddr(a => ({ ...a, firstName: e.target.value }))} /></div>
                   <div><Label className="text-sm">Last Name</Label><Input className="mt-1" value={addr.lastName} onChange={e => setAddr(a => ({ ...a, lastName: e.target.value }))} /></div>
@@ -298,6 +344,8 @@ const Checkout = () => {
                   <div><Label className="text-sm">State</Label><Input className="mt-1" value={addr.state} onChange={e => setAddr(a => ({ ...a, state: e.target.value }))} /></div>
                   <div><Label className="text-sm">PIN *</Label><Input className="mt-1" value={addr.pin} onChange={e => setAddr(a => ({ ...a, pin: e.target.value }))} /></div>
                 </div>
+                </>
+                )}
               </CardContent>
             </Card>
 

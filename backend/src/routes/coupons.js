@@ -21,6 +21,15 @@ router.post('/validate', async (req, res) => {
   res.json({ valid: true, discount, coupon });
 });
 
+// GET /api/coupons/active — public (show available coupons to customers)
+router.get('/active', async (req, res) => {
+  const now = new Date().toISOString();
+  const coupons = await db.prepare(`SELECT code, discount_type, discount_value, min_order, description 
+    FROM coupons WHERE is_active=1 AND (expires_at IS NULL OR expires_at > ?) 
+    ORDER BY discount_value DESC LIMIT 5`).all(now);
+  res.json(coupons);
+});
+
 // GET /api/coupons — admin
 router.get('/', authMiddleware, adminOnly, async (req, res) => {
   res.json(await db.prepare('SELECT * FROM coupons ORDER BY created_at DESC').all());

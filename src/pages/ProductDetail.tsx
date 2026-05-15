@@ -33,6 +33,7 @@ const ProductDetail = () => {
   const [productData, setProductData] = useState<any>(null);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+  const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
 
   // Fetch full product data (with images + variants)
   useEffect(() => {
@@ -49,6 +50,7 @@ const ProductDetail = () => {
       setLoading(false);
     }).catch(() => setLoading(false));
     if (products.length === 0) fetchProducts();
+    fetch('/api/coupons/active').then(r => r.json()).then(c => { if (Array.isArray(c)) setAvailableCoupons(c); }).catch(() => {});
   }, [id]);
 
   const product = productData || products.find((p) => p.id === id || p.slug === id);
@@ -308,6 +310,27 @@ const ProductDetail = () => {
                   ))}
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-2">Available on Visa, MasterCard & RuPay credit cards</p>
+              </div>
+            )}
+
+            {/* Available Coupons */}
+            {availableCoupons.length > 0 && (
+              <div className="mb-4 p-3 rounded-xl border bg-green-50/50">
+                <p className="text-xs font-semibold text-green-700 mb-2">🎟️ Available Offers</p>
+                <div className="space-y-1.5">
+                  {availableCoupons.slice(0, 3).map((c: any) => (
+                    <div key={c.code} className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">
+                        {c.discount_type === 'percentage' ? `${c.discount_value}% off` : `₹${c.discount_value} off`}
+                        {c.min_order ? ` on orders above ₹${c.min_order}` : ''}
+                      </span>
+                      <button className="font-bold text-primary border border-dashed border-primary px-2 py-0.5 rounded"
+                        onClick={() => { navigator.clipboard.writeText(c.code); toast.success(`Coupon ${c.code} copied!`); }}>
+                        {c.code}
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

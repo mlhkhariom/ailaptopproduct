@@ -97,7 +97,18 @@ const Cart = () => {
                   )}
                 </div>
                 {!shipping.free && shipping.free_above && subtotal < shipping.free_above && (
-                  <p className="text-[10px] text-orange-600">Add ₹{shipping.free_above - subtotal} more for free shipping!</p>
+                  <div className="mt-2">
+                    <div className="flex justify-between text-[10px] mb-1">
+                      <span className="text-orange-600 font-medium">Add ₹{(shipping.free_above - subtotal).toLocaleString('en-IN')} more for free shipping!</span>
+                      <span className="text-muted-foreground">₹{shipping.free_above}</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-orange-400 to-green-500 rounded-full transition-all" style={{ width: `${Math.min((subtotal / shipping.free_above) * 100, 100)}%` }} />
+                    </div>
+                  </div>
+                )}
+                {shipping.free && (
+                  <p className="text-[10px] text-green-600 font-medium mt-1">🎉 You've unlocked free shipping!</p>
                 )}
                 {discount > 0 && (
                   <div className="flex justify-between text-sm">
