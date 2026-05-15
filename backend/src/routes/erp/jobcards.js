@@ -70,7 +70,13 @@ router.post('/job-cards', authMiddleware, adminOnly, async (req, res) => {
       preferred_date);
   await db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)')
     .run(uuid(), 'service', 'New Job Card', `${customer_name} - ${device_brand} ${device_model}`, '/admin/erp/job-cards');
-  res.status(201).json({ id, booking_number });
+  // Auto-set SLA deadline (priority: urgent=24h, high=48h, normal=72h, low=96h)
+  const slaHours = { urgent: 24, high: 48, normal: 72, low: 96 };
+  const deadline = new Date(Date.now() + (slaHours[priority] || 72) * 3600000).toISOString();
+  try { await db.prepare('UPDATE job_cards SET sla_deadline=? WHERE id=?').run(deadline, id); } catch {}
+  // Also try on service_bookings
+  try { await db.prepare('UPDATE service_bookings SET sla_deadline=? WHERE id=?').run(deadline, id).catch(() => {}); } catch {}
+  res.status(201).json({ id, booking_number, sla_deadline: deadline });
 });
 
 router.put('/job-cards/:id', authMiddleware, adminOnly, async (req, res) => {

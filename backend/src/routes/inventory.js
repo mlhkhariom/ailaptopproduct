@@ -223,4 +223,16 @@ router.post('/auto-reorder/generate', authMiddleware, adminOnly, async (req, res
   res.status(201).json({ success: true, po_number: poNumber, items_count: items.length });
 });
 
+// GET /api/inventory/stock-count-sheet — printable stock count sheet
+router.get('/stock-count-sheet', authMiddleware, adminOnly, async (req, res) => {
+  const products = await db.prepare("SELECT name, sku, stock, category FROM products WHERE status='active' ORDER BY category, name").all();
+  const html = `<!DOCTYPE html><html><head><title>Stock Count Sheet</title><style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #ddd;padding:6px;text-align:left}th{background:#f5f5f5}.header{display:flex;justify-content:space-between;margin-bottom:20px}@media print{button{display:none}}</style></head><body>
+  <div class="header"><div><h2>Stock Count Sheet</h2><p>AI Laptop Wala — ${new Date().toLocaleDateString('en-IN')}</p></div><button onclick="window.print()">🖨️ Print</button></div>
+  <table><thead><tr><th>#</th><th>Product</th><th>SKU</th><th>Category</th><th>System Stock</th><th>Physical Count</th><th>Difference</th><th>Notes</th></tr></thead><tbody>
+  ${products.map((p, i) => `<tr><td>${i + 1}</td><td>${p.name}</td><td>${p.sku || '-'}</td><td>${p.category || '-'}</td><td>${p.stock}</td><td style="width:80px"></td><td style="width:80px"></td><td style="width:120px"></td></tr>`).join('')}
+  </tbody></table><p style="margin-top:20px;font-size:11px">Total Products: ${products.length} | Counted by: _____________ | Date: _____________ | Verified by: _____________</p></body></html>`;
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
 export default router;

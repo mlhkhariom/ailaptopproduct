@@ -458,6 +458,24 @@ router.put('/recurring-expenses/:id', authMiddleware, adminOnly, async (req, res
 
 
 
+// ── HSN CODES ─────────────────────────────────────────────
+
+// GET /api/erp/billing/hsn-codes — common HSN codes for laptop business
+router.get('/billing/hsn-codes', authMiddleware, async (req, res) => {
+  res.json([
+    { code: '8471', description: 'Laptops, Desktops, Computers', gst: 18 },
+    { code: '8473', description: 'Computer Parts & Accessories', gst: 18 },
+    { code: '8504', description: 'Chargers, Adapters, Power Supply', gst: 18 },
+    { code: '8523', description: 'SSD, HDD, Storage Devices', gst: 18 },
+    { code: '8534', description: 'RAM, Memory Modules', gst: 18 },
+    { code: '8528', description: 'Monitors, Displays', gst: 18 },
+    { code: '8443', description: 'Printers, Scanners', gst: 18 },
+    { code: '9988', description: 'Repair & Maintenance Services', gst: 18 },
+    { code: '9983', description: 'IT Support Services', gst: 18 },
+    { code: '8517', description: 'Networking Equipment, Routers', gst: 18 },
+  ]);
+});
+
 // ── CREDIT NOTES ──────────────────────────────────────────
 
 // POST /api/erp/billing/credit-note — issue credit note against invoice

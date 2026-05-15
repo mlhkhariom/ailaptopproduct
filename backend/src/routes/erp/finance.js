@@ -446,4 +446,28 @@ router.post('/supplier-payments', authMiddleware, adminOnly, async (req, res) =>
   res.status(201).json({ success: true, id });
 });
 
+// ── BANK RECONCILIATION ───────────────────────────────────
+
+// GET /api/erp/bank-reconciliation — compare system vs bank
+router.get('/bank-reconciliation', authMiddleware, adminOnly, async (req, res) => {
+  const { from, to } = req.query;
+  const startDate = from || new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+  const endDate = to || new Date().toISOString().split('T')[0];
+
+  // System records
+  const orderPayments = await db.prepare("SELECT order_number as ref, total as amount, 'order' as type, payment_method, created_at FROM orders WHERE payment_status='paid' AND DATE(created_at) BETWEEN ? AND ? ORDER BY created_at").all(startDate, endDate);
+  const invoicePayments = await db.prepare("SELECT invoice_number as ref, collected as amount, 'invoice' as type, payment_method, created_at FROM billing WHERE status='paid' AND DATE(created_at) BETWEEN ? AND ? ORDER BY created_at").all(startDate, endDate);
+  const expensePayments = await db.prepare("SELECT id as ref, amount, 'expense' as type, payment_method, date as created_at FROM expenses WHERE status='approved' AND DATE(date) BETWEEN ? AND ? ORDER BY date").all(startDate, endDate);
+
+  const totalIn = [...orderPayments, ...invoicePayments].reduce((s, p) => s + (p.amount || 0), 0);
+  const totalOut = expensePayments.reduce((s, p) => s + (p.amount || 0), 0);
+
+  res.json({
+    period: { from: startDate, to: endDate },
+    inflow: [...orderPayments, ...invoicePayments].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
+    outflow: expensePayments,
+    summary: { total_in: totalIn, total_out: totalOut, net: totalIn - totalOut },
+  });
+});
+
 export default router;
