@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
-import db from '../db/database.js';
-import { authMiddleware } from '../middleware/auth.js';
-import { adminOnly } from '../middleware/adminOnly.js';
+import db from '../../db/database.js';
+import { authMiddleware } from '../../middleware/auth.js';
+import { adminOnly } from '../../middleware/adminOnly.js';
 
 const router = Router();
 
@@ -56,7 +56,7 @@ router.post('/enquiry', async (req, res) => {
     .run(uuid(), 'lead', 'New Enquiry', `${name} (${cleanPhone}) — ${interest || 'General'}`, '/admin/erp/crm');
 
   // Auto WhatsApp thank you (non-blocking)
-  import('../whatsapp/notifications.js').then(({ queueNotification }) => {
+  import('../../whatsapp/notifications.js').then(({ queueNotification }) => {
     queueNotification(cleanPhone, `🙏 *Thank You, ${name}!*\n\nAapki enquiry receive ho gayi hai.\n${interest ? `\n*Interest:* ${interest}` : ''}\n\nHamari team jaldi contact karegi.\n\n📞 +91 98934 96163\n🌐 ailaptopwala.com\n\n— AI Laptop Wala`, 'enquiry_thankyou');
   }).catch(() => {});
 

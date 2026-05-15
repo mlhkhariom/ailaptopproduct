@@ -4,9 +4,9 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import db from '../db/database.js';
-import { authMiddleware } from '../middleware/auth.js';
-import { adminOnly } from '../middleware/adminOnly.js';
+import db from '../../db/database.js';
+import { authMiddleware } from '../../middleware/auth.js';
+import { adminOnly } from '../../middleware/adminOnly.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadDir = path.resolve(__dirname, '../../../uploads/media');

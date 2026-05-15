@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
-import db from '../db/database.js';
-import { authMiddleware, optionalAuth } from '../middleware/auth.js';
-import { adminOnly } from '../middleware/adminOnly.js';
-import { notifyOrderPlaced, notifyOrderShipped, notifyOrderDelivered, notifyInvoiceReady } from '../whatsapp/notifications.js';
-import { sendEmail, EmailTemplates } from '../lib/email.js';
+import db from '../../db/database.js';
+import { authMiddleware, optionalAuth } from '../../middleware/auth.js';
+import { adminOnly } from '../../middleware/adminOnly.js';
+import { notifyOrderPlaced, notifyOrderShipped, notifyOrderDelivered, notifyInvoiceReady } from '../../whatsapp/notifications.js';
+import { sendEmail, EmailTemplates } from '../../lib/email.js';
 
 const router = Router();
 
@@ -117,7 +117,7 @@ router.get('/my', authMiddleware, async (req, res) => {
 // GET /api/orders/:id/invoice-pdf — download GST invoice PDF
 router.get('/:id/invoice-pdf', async (req, res) => {
   try {
-    const { generateInvoicePDF } = await import('../lib/invoicePdf.js');
+    const { generateInvoicePDF } = await import('../../lib/invoicePdf.js');
     const pdf = await generateInvoicePDF(req.params.id);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=invoice-${req.params.id}.pdf`);

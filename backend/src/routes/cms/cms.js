@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
-import db from '../db/database.js';
-import { authMiddleware } from '../middleware/auth.js';
-import { adminOnly } from '../middleware/adminOnly.js';
+import db from '../../db/database.js';
+import { authMiddleware } from '../../middleware/auth.js';
+import { adminOnly } from '../../middleware/adminOnly.js';
 
 const router = Router();
 
@@ -149,8 +149,8 @@ router.delete('/banners/:id', authMiddleware, adminOnly, async (req, res) => {
 router.get('/faqs', async (req, res) => {
   const { category } = req.query;
   let q = "SELECT * FROM faqs WHERE is_active=1";
-  const params: string[] = [];
-  if (category) { q += ' AND category=?'; params.push(category as string); }
+  const params = [];
+  if (category) { q += ' AND category=?'; params.push(category); }
   q += ' ORDER BY sort_order';
   res.json(await db.prepare(q).all(...params));
 });

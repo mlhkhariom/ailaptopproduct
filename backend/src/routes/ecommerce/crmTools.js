@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
-import db from '../db/database.js';
-import { authMiddleware } from '../middleware/auth.js';
-import { adminOnly } from '../middleware/adminOnly.js';
-import { sendEmail } from '../lib/email.js';
+import db from '../../db/database.js';
+import { authMiddleware } from '../../middleware/auth.js';
+import { adminOnly } from '../../middleware/adminOnly.js';
+import { sendEmail } from '../../lib/email.js';
 
 const router = Router();
 
