@@ -85,4 +85,35 @@ router.delete('/admin/pages/:id', authMiddleware, adminOnly, async (req, res) =>
   res.json({ message: 'Deleted' });
 });
 
+// ── HOMEPAGE SECTIONS ─────────────────────────────────────
+
+// GET /api/cms/homepage-sections — public
+router.get('/homepage-sections', async (req, res) => {
+  const sections = await db.prepare('SELECT * FROM homepage_sections WHERE is_active=1 ORDER BY sort_order').all();
+  res.json(sections.map(s => ({ ...s, config: typeof s.config === 'string' ? JSON.parse(s.config) : s.config })));
+});
+
+// POST /api/cms/homepage-sections — admin create
+router.post('/homepage-sections', authMiddleware, adminOnly, async (req, res) => {
+  const { type, title, subtitle, config, sort_order } = req.body;
+  const id = uuid();
+  await db.prepare('INSERT INTO homepage_sections (id, type, title, subtitle, config, sort_order) VALUES (?,?,?,?,?,?)')
+    .run(id, type, title || '', subtitle || '', JSON.stringify(config || {}), sort_order || 0);
+  res.status(201).json(await db.prepare('SELECT * FROM homepage_sections WHERE id=?').get(id));
+});
+
+// PUT /api/cms/homepage-sections/:id — admin update
+router.put('/homepage-sections/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { type, title, subtitle, config, sort_order, is_active } = req.body;
+  await db.prepare('UPDATE homepage_sections SET type=COALESCE(?,type), title=COALESCE(?,title), subtitle=COALESCE(?,subtitle), config=COALESCE(?,config), sort_order=COALESCE(?,sort_order), is_active=COALESCE(?,is_active) WHERE id=?')
+    .run(type, title, subtitle, config ? JSON.stringify(config) : null, sort_order, is_active, req.params.id);
+  res.json({ success: true });
+});
+
+// DELETE /api/cms/homepage-sections/:id — admin delete
+router.delete('/homepage-sections/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM homepage_sections WHERE id=?').run(req.params.id);
+  res.json({ success: true });
+});
+
 export default router;

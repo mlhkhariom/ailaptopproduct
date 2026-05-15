@@ -402,10 +402,21 @@ const ProductDetail = () => {
                   <Scale className="h-4 w-4" /> Compare
                 </Button>
               )}
-              <Button variant="outline" className="gap-2" onClick={copyLink}>
-                {copied ? <CheckCheck className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
-                {copied ? 'Copied!' : 'Share'}
-              </Button>
+              <div className="relative group">
+                <Button variant="outline" className="gap-2" onClick={() => {
+                  if (navigator.share) { navigator.share({ title: product.name, text: `Check out ${product.name} at ₹${activePrice.toLocaleString('en-IN')}`, url: pageUrl }); }
+                  else copyLink();
+                }}>
+                  {copied ? <CheckCheck className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
+                  {copied ? 'Copied!' : 'Share'}
+                </Button>
+                <div className="absolute top-full right-0 mt-1 bg-card border rounded-lg shadow-lg p-2 hidden group-hover:block z-10 min-w-[140px]">
+                  <a href={`https://wa.me/?text=${encodeURIComponent(product.name + ' ₹' + activePrice.toLocaleString('en-IN') + ' ' + pageUrl)}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted rounded">💬 WhatsApp</a>
+                  <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted rounded">📘 Facebook</a>
+                  <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(product.name + ' ₹' + activePrice)}&url=${encodeURIComponent(pageUrl)}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted rounded">🐦 Twitter</a>
+                  <button onClick={copyLink} className="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted rounded w-full text-left">📋 Copy Link</button>
+                </div>
+              </div>
             </div>
 
             {/* Trust badges */}
@@ -451,20 +462,41 @@ const ProductDetail = () => {
 
           <TabsContent value="specs" className="mt-4">
             <div className="grid sm:grid-cols-2 gap-2">
-              {[
-                ['SKU', product.sku],
-                ['Category', product.category],
-                ['Stock', product.inStock ? `${product.stock} units` : 'Out of Stock'],
-                ['Condition', 'Certified Refurbished'],
-                ['Warranty', '6 Months'],
-                ['Brand', 'AI Laptop Wala'],
-              ].filter(([,v]) => v).map(([k, v]) => (
-                <div key={k} className="flex justify-between py-2.5 px-3 rounded-lg bg-muted/30 text-sm">
-                  <span className="text-muted-foreground">{k}</span>
-                  <span className="font-medium">{v}</span>
-                </div>
-              ))}
+              {/* Structured specs from JSON */}
+              {product.specifications && Object.keys(product.specifications).length > 0 ? (
+                Object.entries(product.specifications).map(([k, v]) => (
+                  <div key={k} className="flex justify-between py-2.5 px-3 rounded-lg bg-muted/30 text-sm">
+                    <span className="text-muted-foreground">{k}</span>
+                    <span className="font-medium">{String(v)}</span>
+                  </div>
+                ))
+              ) : (
+                [
+                  ['SKU', product.sku],
+                  ['Category', product.category],
+                  ['Brand', product.brand || product.name?.split(' ')[0]],
+                  ['Stock', activeInStock ? `${activeStock} units` : 'Out of Stock'],
+                  ['Condition', 'Certified Refurbished'],
+                  ['Warranty', product.warranty || '6 Months'],
+                ].filter(([,v]) => v).map(([k, v]) => (
+                  <div key={k} className="flex justify-between py-2.5 px-3 rounded-lg bg-muted/30 text-sm">
+                    <span className="text-muted-foreground">{k}</span>
+                    <span className="font-medium">{v}</span>
+                  </div>
+                ))
+              )}
             </div>
+            {/* Highlights */}
+            {product.highlights && product.highlights.length > 0 && (
+              <div className="mt-4">
+                <h3 className="font-bold text-sm mb-2">Highlights</h3>
+                <ul className="space-y-1.5">
+                  {product.highlights.map((h: string, i: number) => (
+                    <li key={i} className="flex items-center gap-2 text-sm"><span className="h-1.5 w-1.5 rounded-full bg-primary" />{h}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="reviews" className="mt-4">

@@ -376,6 +376,12 @@ export const initDB = async () => {
       is_active INTEGER DEFAULT 1,
       created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW()
     )`,
+    `CREATE TABLE IF NOT EXISTS homepage_sections (
+      id TEXT PRIMARY KEY, type TEXT NOT NULL,
+      title TEXT, subtitle TEXT, config JSONB DEFAULT '{}',
+      sort_order INTEGER DEFAULT 0, is_active INTEGER DEFAULT 1,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     // Social — YouTube + TikTok support
     "ALTER TABLE social_settings ADD COLUMN IF NOT EXISTS youtube_api_key TEXT",
     "ALTER TABLE social_settings ADD COLUMN IF NOT EXISTS youtube_channel_id TEXT",
