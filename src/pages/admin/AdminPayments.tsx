@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AdminLayout from "@/components/AdminLayout";
+import AdminLayout from "@/components/layout/AdminLayout";
 import { api } from "@/lib/api";
 
 const statusConfig: Record<string, { label: string; color: string; icon: typeof CheckCircle }> = {

@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, ArrowLeft, Search, Laptop, Wrench, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import CustomerLayout from "@/components/CustomerLayout";
+import CustomerLayout from "@/components/layout/CustomerLayout";
 
 const NotFound = () => {
   const location = useLocation();

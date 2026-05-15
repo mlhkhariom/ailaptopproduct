@@ -1,4 +1,4 @@
-import SEOHead from "@/components/SEOHead";
+import SEOHead from "@/components/common/SEOHead";
 import { useState } from "react";
 import { Search, Package, CheckCircle, Clock, Wrench, XCircle, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";

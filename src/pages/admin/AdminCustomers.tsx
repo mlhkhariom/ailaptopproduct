@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import AdminLayout from "@/components/AdminLayout";
+import AdminLayout from "@/components/layout/AdminLayout";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 

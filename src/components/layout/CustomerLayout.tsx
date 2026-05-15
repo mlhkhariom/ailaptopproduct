@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import Header from "./Header";
 import Footer from "./Footer";
-import WhatsAppWidget from "./WhatsAppWidget";
+import WhatsAppWidget from "../common/WhatsAppWidget";
 import CustomerBottomNav from "./CustomerBottomNav";
-import PWAInstallPrompt from "./PWAInstallPrompt";
-import PromoPopup from "./PromoPopup";
+import PWAInstallPrompt from "../common/PWAInstallPrompt";
+import PromoPopup from "../common/PromoPopup";
 import { useCartStore } from "@/store/cartStore";
 
 const CustomerLayout = ({ children }: { children: React.ReactNode }) => {

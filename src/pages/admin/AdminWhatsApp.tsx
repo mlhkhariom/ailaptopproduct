@@ -16,8 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import AdminLayout from "@/components/AdminLayout";
-import { WhatsAppChatPanel } from "@/components/WhatsAppChatPanel";
+import AdminLayout from "@/components/layout/AdminLayout";
+import { WhatsAppChatPanel } from "@/components/common/WhatsAppChatPanel";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";

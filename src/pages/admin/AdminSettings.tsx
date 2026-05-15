@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import InvoiceSettingsTab from "@/components/settings/InvoiceSettingsTab";
 import FeaturesSettingsTab from "@/components/settings/FeaturesSettingsTab";
-import AdminLayout from "@/components/AdminLayout";
+import AdminLayout from "@/components/layout/AdminLayout";
 import { api } from "@/lib/api";
 import { SocialSettings } from "@/components/SocialSettings";
 

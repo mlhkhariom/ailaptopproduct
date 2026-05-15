@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ShoppingCart, Send, CheckCircle, Clock } from "lucide-react";
-import AdminLayout from "@/components/AdminLayout";
+import AdminLayout from "@/components/layout/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

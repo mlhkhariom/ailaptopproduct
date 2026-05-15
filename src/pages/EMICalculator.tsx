@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import CustomerLayout from "@/components/CustomerLayout";
-import SEOHead from "@/components/SEOHead";
+import CustomerLayout from "@/components/layout/CustomerLayout";
+import SEOHead from "@/components/common/SEOHead";
 
 export default function EMICalculator() {
   const [amount, setAmount] = useState(20000);

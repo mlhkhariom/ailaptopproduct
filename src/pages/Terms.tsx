@@ -1,5 +1,5 @@
-import CustomerLayout from "@/components/CustomerLayout";
-import SEOHead from "@/components/SEOHead";
+import CustomerLayout from "@/components/layout/CustomerLayout";
+import SEOHead from "@/components/common/SEOHead";
 
 const sections = [
   { title: "1. Acceptance of Terms", content: "By accessing ailaptopwala.com, you agree to these Terms & Conditions. This website is operated by Asati Infotech (AI Laptop Wala). All products listed are certified refurbished laptops, desktops, and accessories." },

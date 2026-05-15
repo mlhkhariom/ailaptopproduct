@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import ERPLayout from "@/components/ERPLayout";
+import ERPLayout from "@/components/layout/ERPLayout";
 import JobCardTimeline from "@/components/JobCardTimeline";
 import JobCardPhotos from "@/components/JobCardPhotos";
 import { Button } from "@/components/ui/button";

@@ -1,4 +1,4 @@
-import SEOHead from "@/components/SEOHead";
+import SEOHead from "@/components/common/SEOHead";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, UserPlus, Leaf, Mail, Lock, User, Phone } from "lucide-react";

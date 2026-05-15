@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import CustomerLayout from "@/components/CustomerLayout";
-import SEOHead from "@/components/SEOHead";
+import CustomerLayout from "@/components/layout/CustomerLayout";
+import SEOHead from "@/components/common/SEOHead";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 

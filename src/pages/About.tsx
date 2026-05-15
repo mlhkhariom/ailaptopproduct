@@ -2,8 +2,8 @@ import { Laptop, Shield, Wrench, Target, MapPin, Phone, Mail, Clock, Instagram, 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import CustomerLayout from "@/components/CustomerLayout";
-import SEOHead from "@/components/SEOHead";
+import CustomerLayout from "@/components/layout/CustomerLayout";
+import SEOHead from "@/components/common/SEOHead";
 
 const values = [
   { icon: Laptop, title: "Certified Refurbished", desc: "Every laptop tested, cleaned & certified. Grade A quality. Dell, HP, Lenovo, Apple, Asus, Acer — all brands." },

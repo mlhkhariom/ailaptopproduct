@@ -2,7 +2,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { CheckCircle, Package, ArrowRight, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import CustomerLayout from "@/components/CustomerLayout";
+import CustomerLayout from "@/components/layout/CustomerLayout";
 
 const OrderSuccess = () => {
   const [params] = useSearchParams();

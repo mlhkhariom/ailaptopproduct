@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import ERPLayout from "@/components/ERPLayout";
+import ERPLayout from "@/components/layout/ERPLayout";
 import { exportToCSV } from "@/lib/exportUtils";
 import BranchSelector from "@/components/BranchSelector";
 import { Button } from "@/components/ui/button";

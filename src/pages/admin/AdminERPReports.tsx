@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import ERPLayout from "@/components/ERPLayout";
+import ERPLayout from "@/components/layout/ERPLayout";
 import { exportToCSV } from "@/lib/exportUtils";
 import BranchSelector from "@/components/BranchSelector";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

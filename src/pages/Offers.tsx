@@ -3,8 +3,8 @@ import { Tag, Gift, Percent, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import CustomerLayout from "@/components/CustomerLayout";
-import SEOHead from "@/components/SEOHead";
+import CustomerLayout from "@/components/layout/CustomerLayout";
+import SEOHead from "@/components/common/SEOHead";
 import { toast } from "sonner";
 
 export default function Offers() {

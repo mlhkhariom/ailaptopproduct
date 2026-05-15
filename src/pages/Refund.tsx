@@ -1,5 +1,5 @@
-import CustomerLayout from "@/components/CustomerLayout";
-import SEOHead from "@/components/SEOHead";
+import CustomerLayout from "@/components/layout/CustomerLayout";
+import SEOHead from "@/components/common/SEOHead";
 
 const sections = [
   { title: "Return Eligibility", content: "You can return a product within 7 days of delivery if: the product has a manufacturing defect, wrong product was delivered, or the product is damaged during shipping. Products must be in original condition with all accessories and packaging." },

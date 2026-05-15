@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { BarChart3, TrendingUp, Users, ShoppingBag, IndianRupee, ArrowUpRight, ArrowDownRight, RefreshCw } from "lucide-react";
-import AdminLayout from "@/components/AdminLayout";
+import AdminLayout from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

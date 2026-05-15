@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Zap, Plus, Trash2, Play, Pause } from "lucide-react";
-import AdminLayout from "@/components/AdminLayout";
+import AdminLayout from "@/components/layout/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

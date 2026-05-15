@@ -1,6 +1,6 @@
 import RecurringExpenses from "@/components/RecurringExpenses";
 import { useState, useEffect } from "react";
-import ERPLayout from "@/components/ERPLayout";
+import ERPLayout from "@/components/layout/ERPLayout";
 import BranchSelector from "@/components/BranchSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

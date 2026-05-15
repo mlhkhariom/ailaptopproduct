@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import ERPLayout from "@/components/ERPLayout";
+import ERPLayout from "@/components/layout/ERPLayout";
 import { usePermissions } from "@/hooks/usePermissions";
 import BranchSelector from "@/components/BranchSelector";
 import { Button } from "@/components/ui/button";

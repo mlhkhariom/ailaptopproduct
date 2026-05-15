@@ -1,4 +1,4 @@
-import SEOHead from "@/components/SEOHead";
+import SEOHead from "@/components/common/SEOHead";
 import { useState, useEffect } from "react";
 import { User, Mail, Phone, MapPin, ShoppingBag, Heart, LogOut, Save, Loader2, Lock, FileText, Package, Truck, CheckCircle, Clock, Download, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
-import CustomerLayout from "@/components/CustomerLayout";
-import ProductCard from "@/components/ProductCard";
+import CustomerLayout from "@/components/layout/CustomerLayout";
+import ProductCard from "@/components/ecommerce/ProductCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlistStore } from "@/store/wishlistStore";
 import { useProductStore } from "@/store/productStore";

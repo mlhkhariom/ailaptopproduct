@@ -4,16 +4,16 @@ import { ArrowLeft, MessageCircle, ShieldCheck, Star, Heart, Share2, CheckCheck,
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import CustomerLayout from "@/components/CustomerLayout";
-import SEOHead from "@/components/SEOHead";
-import ReviewsSection from "@/components/ReviewsSection";
-import ProductCard from "@/components/ProductCard";
-import ProductReels from "@/components/ProductReels";
+import CustomerLayout from "@/components/layout/CustomerLayout";
+import SEOHead from "@/components/common/SEOHead";
+import ReviewsSection from "@/components/ecommerce/ReviewsSection";
+import ProductCard from "@/components/ecommerce/ProductCard";
+import ProductReels from "@/components/ecommerce/ProductReels";
 import { useProductStore } from "@/store/productStore";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
 import { useSiteSettings } from "@/contexts/SiteSettingsContext";
-import { trackProductView } from "@/components/SiteWidgets";
+import { trackProductView } from "@/components/common/SiteWidgets";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 

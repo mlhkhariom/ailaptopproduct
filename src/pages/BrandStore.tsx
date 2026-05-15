@@ -2,9 +2,9 @@ import { useParams, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import CustomerLayout from "@/components/CustomerLayout";
-import SEOHead from "@/components/SEOHead";
-import ProductCard from "@/components/ProductCard";
+import CustomerLayout from "@/components/layout/CustomerLayout";
+import SEOHead from "@/components/common/SEOHead";
+import ProductCard from "@/components/ecommerce/ProductCard";
 import { useProductStore } from "@/store/productStore";
 
 const BRAND_INFO: Record<string, { logo?: string; desc: string; tagline: string }> = {

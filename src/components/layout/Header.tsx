@@ -9,9 +9,9 @@ import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import GlobalSearch from "@/components/GlobalSearch";
-import { FreeShippingBanner } from "@/components/SiteFeatures";
-import { DarkModeToggle } from "@/components/SiteWidgets";
+import GlobalSearch from "@/components/ecommerce/GlobalSearch";
+import { FreeShippingBanner } from "@/components/common/SiteFeatures";
+import { DarkModeToggle } from "@/components/common/SiteWidgets";
 
 const navLinks = [
   { label: "Home", to: "/" },

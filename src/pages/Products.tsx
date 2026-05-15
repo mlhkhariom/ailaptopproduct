@@ -8,10 +8,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { LayoutGrid, List, Search, X, SlidersHorizontal, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import CustomerLayout from "@/components/CustomerLayout";
-import SEOHead from "@/components/SEOHead";
-import ProductCardSkeleton from "@/components/ProductCardSkeleton";
-import ProductCard from "@/components/ProductCard";
+import CustomerLayout from "@/components/layout/CustomerLayout";
+import SEOHead from "@/components/common/SEOHead";
+import ProductCardSkeleton from "@/components/ecommerce/ProductCardSkeleton";
+import ProductCard from "@/components/ecommerce/ProductCard";
 import { useProductStore } from "@/store/productStore";
 import { api } from "@/lib/api";
 

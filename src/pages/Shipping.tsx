@@ -1,5 +1,5 @@
-import CustomerLayout from "@/components/CustomerLayout";
-import SEOHead from "@/components/SEOHead";
+import CustomerLayout from "@/components/layout/CustomerLayout";
+import SEOHead from "@/components/common/SEOHead";
 
 const sections = [
   { title: "Delivery Areas", content: "We deliver across India. Free delivery is available within Indore city. For other locations, a flat shipping charge of ₹150 applies on orders below ₹5,000. Orders above ₹5,000 get free shipping pan-India." },

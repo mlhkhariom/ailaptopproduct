@@ -1,6 +1,6 @@
-import AdminLayout from "@/components/AdminLayout";
+import AdminLayout from "@/components/layout/AdminLayout";
 import { Link, useLocation } from "react-router-dom";
-import MobileBottomNav from "@/components/MobileBottomNav";
+import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { ChevronRight, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";

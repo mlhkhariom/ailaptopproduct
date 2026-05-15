@@ -1,4 +1,4 @@
-import SEOHead from "@/components/SEOHead";
+import SEOHead from "@/components/common/SEOHead";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, Tag } from "lucide-react";
@@ -7,8 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import CustomerLayout from "@/components/CustomerLayout";
-import ProductCard from "@/components/ProductCard";
+import CustomerLayout from "@/components/layout/CustomerLayout";
+import ProductCard from "@/components/ecommerce/ProductCard";
 import { useCartStore } from "@/store/cartStore";
 import { useProductStore } from "@/store/productStore";
 import { toast } from "sonner";

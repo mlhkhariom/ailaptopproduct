@@ -1,5 +1,5 @@
-import CustomerLayout from "@/components/CustomerLayout";
-import SEOHead from "@/components/SEOHead";
+import CustomerLayout from "@/components/layout/CustomerLayout";
+import SEOHead from "@/components/common/SEOHead";
 
 const sections = [
   { title: "Information We Collect", content: "We collect information you provide when creating an account, placing orders, or contacting us: name, email, phone number, shipping address, and payment information (processed securely via Razorpay). We also collect device/browser data for analytics." },
