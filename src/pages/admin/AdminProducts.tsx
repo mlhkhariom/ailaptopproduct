@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminLayout from "@/components/layout/AdminLayout";
 import ProductFormDialog from "@/components/products/ProductFormDialog";
+import VariantManager from "@/components/products/VariantManager";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProductStore } from "@/store/productStore";
 import { api } from "@/lib/api";
@@ -47,6 +48,7 @@ const AdminProducts = () => {
   const [form, setForm] = useState<any>(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [viewProduct, setViewProduct] = useState<any | null>(null);
+  const [variantProduct, setVariantProduct] = useState<any | null>(null);
 
   const filtered = products
     .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()) || (p.name_hi && p.name_hi.includes(search)))
@@ -314,6 +316,7 @@ const AdminProducts = () => {
                         <DropdownMenuContent align="end" className="w-40">
                           <DropdownMenuItem className="text-xs" onClick={() => setViewProduct(p)}><Eye className="h-3 w-3 mr-2" /> View</DropdownMenuItem>
                           <DropdownMenuItem className="text-xs" onClick={() => openEdit(p)}><Edit className="h-3 w-3 mr-2" /> Edit</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs" onClick={() => setVariantProduct(p)}><Package className="h-3 w-3 mr-2" /> Variants</DropdownMenuItem>
                           <DropdownMenuItem className="text-xs" onClick={() => { duplicateProduct(p.id); toast.success("Product duplicated!"); }}><Copy className="h-3 w-3 mr-2" /> Duplicate</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-xs text-destructive" onClick={() => setDeleteConfirm(p.id)}><Trash2 className="h-3 w-3 mr-2" /> Delete</DropdownMenuItem>
@@ -378,6 +381,9 @@ const AdminProducts = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Variant Manager */}
+      <VariantManager open={!!variantProduct} onClose={() => setVariantProduct(null)} productId={variantProduct?.id || ''} productName={variantProduct?.name || ''} />
     </AdminLayout>
   );
 };
