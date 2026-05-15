@@ -70,13 +70,8 @@ const Index = () => {
 
   useEffect(() => {
     fetchProducts();
-    api.getCMS('banner').then((d: any) => {
-      const list = Array.isArray(d) ? d : [];
-      const parsed = list.filter((i: any) => i.is_active !== false).map((i: any) => {
-        const c = typeof i.content === 'string' ? JSON.parse(i.content) : i.content;
-        return { ...c, _id: i.id };
-      });
-      setBanners(parsed);
+    fetch('/api/cms/banners').then(r => r.json()).then((d: any) => {
+      if (Array.isArray(d)) setBanners(d);
     }).catch(() => {});
     api.getCMS('benefit').then((d: any) => {
       const list = Array.isArray(d) ? d : [];
@@ -177,7 +172,7 @@ const Index = () => {
         <section className="relative h-[280px] md:h-[360px] overflow-hidden bg-muted">
           {banners.map((b, i) => (
             <div
-              key={b._id}
+              key={b.id}
               className="absolute inset-0 transition-opacity duration-700"
               style={{ opacity: i === currentBanner ? 1 : 0, zIndex: i === currentBanner ? 2 : 1 }}
             >
@@ -187,8 +182,8 @@ const Index = () => {
                 <div className="max-w-lg text-white">
                   {b.title && <h2 className="text-2xl md:text-4xl font-serif font-bold mb-3">{b.title}</h2>}
                   {b.subtitle && <p className="text-sm md:text-base mb-5 opacity-90">{b.subtitle}</p>}
-                  {b.cta && b.link && <Link to={b.link}><Button size="lg" className="gap-2">{b.cta} <ArrowRight className="h-4 w-4" /></Button></Link>}
-                  {b.cta && !b.link && <Button size="lg" className="gap-2">{b.cta} <ArrowRight className="h-4 w-4" /></Button>}
+                  {b.button_text && b.link && <Link to={b.link}><Button size="lg" className="gap-2">{b.button_text} <ArrowRight className="h-4 w-4" /></Button></Link>}
+                  {b.button_text && !b.link && <Button size="lg" className="gap-2">{b.button_text} <ArrowRight className="h-4 w-4" /></Button>}
                 </div>
               </div>
             </div>
@@ -216,7 +211,7 @@ const Index = () => {
               {benefits.map((b) => {
                 const Icon = iconMap[b.icon] || Laptop;
                 return (
-                  <div key={b._id || b.title} className="flex flex-col items-center text-center gap-2 p-3">
+                  <div key={b.id || b.title} className="flex flex-col items-center text-center gap-2 p-3">
                     <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                       <Icon className="h-6 w-6 text-primary" />
                     </div>

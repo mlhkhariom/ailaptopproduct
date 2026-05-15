@@ -59,7 +59,17 @@ export default function GlobalSearch({ className = "" }: { className?: string })
       {open && query.length >= 2 && (
         <div className="absolute top-full mt-1 left-0 right-0 bg-background border rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
           {loading && <p className="p-3 text-xs text-muted-foreground text-center">Searching...</p>}
-          {!loading && !results.length && <p className="p-3 text-xs text-muted-foreground text-center">No results for "{query}"</p>}
+          {!loading && !results.length && query.length >= 2 && <p className="p-3 text-xs text-muted-foreground text-center">No results for "{query}"</p>}
+          {!query && open && (
+            <div className="p-3">
+              <p className="text-[10px] font-semibold text-muted-foreground mb-2">🔥 Popular Searches</p>
+              <div className="flex flex-wrap gap-1.5">
+                {['Dell Laptop', 'MacBook', 'Gaming', 'HP EliteBook', '8GB RAM', 'SSD'].map(s => (
+                  <button key={s} onClick={() => { setQuery(s); }} className="text-xs bg-muted px-2.5 py-1 rounded-full hover:bg-primary/10 hover:text-primary transition-colors">{s}</button>
+                ))}
+              </div>
+            </div>
+          )}
           {results.map((r: any) => (
             <Link key={r.id} to={`/products/${r.slug || r.id}`} onClick={() => setOpen(false)} className="flex items-center gap-3 p-2.5 hover:bg-muted/50 border-b last:border-0">
               {r.image && <img src={r.image} alt="" className="h-10 w-10 rounded object-cover" />}

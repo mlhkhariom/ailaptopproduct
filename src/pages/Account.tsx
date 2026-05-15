@@ -199,6 +199,9 @@ const Account = () => {
                           <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => window.open(api.getInvoiceUrl(order.order_number), '_blank')}>
                             <FileText className="h-3 w-3" /> Invoice
                           </Button>
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => window.open(`/api/orders/${order.id}/invoice-pdf`, '_blank')}>
+                            <Download className="h-3 w-3" /> PDF
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>

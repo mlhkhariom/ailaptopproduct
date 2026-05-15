@@ -95,8 +95,16 @@ export default function ProductFormDialog({ open, onClose, form, setForm, editin
           </div>
 
           <div><Label className="text-xs">Description</Label><Textarea className="mt-1" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+
+          {/* Brand + Warranty */}
+          <div className="grid grid-cols-3 gap-4">
+            <div><Label className="text-xs">Brand</Label><Input className="mt-1" value={form.brand || ''} onChange={(e) => setForm({ ...form, brand: e.target.value })} placeholder="Dell, HP, Lenovo..." /></div>
+            <div><Label className="text-xs">Warranty</Label><Input className="mt-1" value={form.warranty || ''} onChange={(e) => setForm({ ...form, warranty: e.target.value })} placeholder="6 Months" /></div>
+            <div><Label className="text-xs">Badge</Label><Input className="mt-1" value={form.badge || ''} onChange={(e) => setForm({ ...form, badge: e.target.value })} placeholder="Deal, New, Hot" /></div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
-            <div><Label className="text-xs">Specifications (one per line)</Label><Textarea className="mt-1" rows={3} value={form.ingredients} onChange={(e) => setForm({ ...form, ingredients: e.target.value })} placeholder="Intel Core i5 6th Gen&#10;8GB RAM&#10;256GB SSD" /></div>
+            <div><Label className="text-xs">Specifications (one per line: Key: Value)</Label><Textarea className="mt-1" rows={3} value={form.ingredients} onChange={(e) => setForm({ ...form, ingredients: e.target.value })} placeholder="Processor: Intel Core i5 6th Gen&#10;RAM: 8GB DDR4&#10;Storage: 256GB SSD" /></div>
             <div><Label className="text-xs">Key Features (one per line)</Label><Textarea className="mt-1" rows={3} value={form.benefits} onChange={(e) => setForm({ ...form, benefits: e.target.value })} placeholder="6 Month Warranty&#10;Windows 11 Pro&#10;Certified Refurbished" /></div>
           </div>
           <div><Label className="text-xs">Condition / Grade</Label><Input className="mt-1 h-9" value={form.usage} onChange={(e) => setForm({ ...form, usage: e.target.value })} placeholder="Excellent / Good / Used" /></div>
