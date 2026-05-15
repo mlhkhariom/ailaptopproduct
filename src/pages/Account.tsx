@@ -16,6 +16,7 @@ import CustomerLayout from "@/components/layout/CustomerLayout";
 import ProductCard from "@/components/ecommerce/ProductCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlistStore } from "@/store/wishlistStore";
+import { useCartStore } from "@/store/cartStore";
 import { useProductStore } from "@/store/productStore";
 import { api } from "@/lib/api";
 
@@ -210,6 +211,14 @@ const Account = () => {
                               if (res.success) { toast.success(res.message); setMyOrders(o => o.map(x => x.id === order.id ? { ...x, status: 'cancelled' } : x)); }
                               else toast.error(res.error || 'Cannot cancel');
                             }}>Cancel</Button>
+                          )}
+                          {order.status === 'delivered' && (
+                            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => {
+                              const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                              const { addItem } = useCartStore.getState();
+                              items.forEach((i: any) => addItem({ id: i.id, name: i.name, price: i.price, image: i.image, slug: i.slug }));
+                              toast.success('Items added to cart!');
+                            }}>🔄 Reorder</Button>
                           )}
                         </div>
                       </CardContent>

@@ -116,6 +116,19 @@ export function startKPIAlertScheduler() {
         }
       }
     } catch (e) { console.error('KPI alert scheduler error:', e.message); }
+
+    // Low stock alert
+    try {
+      const lowStock = await db.prepare("SELECT name, stock FROM products WHERE status='active' AND stock > 0 AND stock <= 3 LIMIT 10").all();
+      if (lowStock.length > 0) {
+        const adminPhone = (await db.prepare("SELECT value FROM app_settings WHERE key='admin_phone'").get())?.value;
+        if (adminPhone) {
+          const list = lowStock.map(p => `• ${p.name}: ${p.stock} left`).join('\n');
+          const { queueWhatsAppNotification } = await import('./notifications.js');
+          queueWhatsAppNotification(adminPhone, `⚠️ *Low Stock Alert*\n\n${lowStock.length} products running low:\n\n${list}\n\nRestock soon! → ailaptopwala.com/admin/inventory`);
+        }
+      }
+    } catch {}
   };
 
   // Run every hour

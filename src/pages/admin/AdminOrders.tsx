@@ -84,9 +84,14 @@ const AdminOrders = () => {
           <h1 className="text-2xl font-serif font-bold">Orders</h1>
           <p className="text-sm text-muted-foreground">{counts.placed} new · {counts.shipped} shipped · {counts.delivered} delivered</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={load}>
-          <RefreshCw className="h-3.5 w-3.5" /> Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={() => window.open('/api/orders/export/csv', '_blank')}>
+            <Download className="h-3.5 w-3.5" /> Export CSV
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={load}>
+            <RefreshCw className="h-3.5 w-3.5" /> Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Status Tabs */}

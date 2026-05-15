@@ -210,6 +210,19 @@ router.put('/:id/status', authMiddleware, adminOnly, async (req, res) => {
   res.json({ message: 'Status updated' });
 });
 
+// GET /api/orders/export/csv — admin export orders as CSV
+router.get('/export/csv', authMiddleware, adminOnly, async (req, res) => {
+  const orders = await db.prepare('SELECT order_number, status, payment_status, payment_method, subtotal, discount, total, coupon_code, tracking_id, courier, created_at, address FROM orders ORDER BY created_at DESC').all();
+  const header = 'Order#,Status,Payment,Method,Subtotal,Discount,Total,Coupon,Tracking,Courier,Date,Customer,Phone,City\n';
+  const rows = orders.map(o => {
+    const addr = typeof o.address === 'string' ? JSON.parse(o.address || '{}') : (o.address || {});
+    return `${o.order_number},${o.status},${o.payment_status},${o.payment_method},${o.subtotal},${o.discount},${o.total},${o.coupon_code || ''},${o.tracking_id || ''},${o.courier || ''},${new Date(o.created_at).toLocaleDateString('en-IN')},${(addr.name || '').replace(/,/g, '')},${addr.phone || ''},${addr.city || ''}`;
+  }).join('\n');
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename=orders-export.csv');
+  res.send(header + rows);
+});
+
 export default router;
 
 

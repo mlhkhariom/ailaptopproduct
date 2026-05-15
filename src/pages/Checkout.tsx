@@ -449,6 +449,10 @@ const Checkout = () => {
               <Separator />
               <div className="flex justify-between font-bold text-lg"><span>Total</span><span>₹{finalTotal}</span></div>
               {shipping.free && paymentMethod !== 'cod' && <p className="text-xs text-primary text-center">🎉 Free shipping applied!</p>}
+              <div className="text-xs text-muted-foreground text-center mt-1 p-2 bg-muted/50 rounded">
+                📦 Estimated Delivery: <strong>{addr.pin?.startsWith('452') ? '1-2 days' : '3-5 days'}</strong>
+                {addr.pin?.startsWith('452') && ' (Indore — Free)'}
+              </div>
 
               {/* Available Coupons */}
               {!appliedCoupon && (
