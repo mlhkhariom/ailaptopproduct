@@ -56,6 +56,8 @@ import AdminAutomations from "./pages/admin/AdminAutomations";
 import AdminEmailCampaigns from "./pages/admin/AdminEmailCampaigns";
 import AdminShippingRules from "./pages/admin/AdminShippingRules";
 import AdminBroadcast from "./pages/admin/AdminBroadcast";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import Notifications from "./pages/Notifications";
 import AdminJobCards from "./pages/admin/AdminJobCards";
 import AdminStaffExpenses from "./pages/admin/AdminStaffExpenses";
 import AdminStaff from "./pages/admin/AdminStaff";
@@ -113,6 +115,7 @@ const App = () => (
             <Route path="/emi-calculator" element={<EMICalculator />} />
             <Route path="/offers" element={<Offers />} />
             <Route path="/bulk-order" element={<BulkOrder />} />
+            <Route path="/notifications" element={<Notifications />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:id" element={<BlogPost />} />
@@ -165,6 +168,7 @@ const App = () => (
             <Route path="/admin/email-campaigns" element={<AdminRoute><AdminEmailCampaigns /></AdminRoute>} />
             <Route path="/admin/shipping-rules" element={<AdminRoute><AdminShippingRules /></AdminRoute>} />
             <Route path="/admin/broadcast" element={<AdminRoute><AdminBroadcast /></AdminRoute>} />
+            <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
             <Route path="/admin/evolution" element={<AdminRoute><AdminEvolution /></AdminRoute>} />
             <Route path="/admin/customers" element={<AdminRoute><AdminCustomers /></AdminRoute>} />
             <Route path="/admin/categories" element={<AdminRoute><AdminCategories /></AdminRoute>} />

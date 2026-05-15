@@ -90,7 +90,7 @@ const Header = () => {
 
             {/* Notifications Bell */}
             {user && (
-              <Link to="/account">
+              <Link to="/notifications">
                 <Button variant="ghost" size="icon" className="relative h-9 w-9">
                   <Bell className="h-4 w-4" />
                 </Button>

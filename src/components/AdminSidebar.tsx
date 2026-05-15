@@ -89,6 +89,7 @@ const erpGroups = [
 
 const mainMenu = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, badge: "" },
+  { title: "Analytics", url: "/admin/analytics", icon: BarChart3, badge: "NEW" },
   { title: "Products", url: "/admin/products", icon: Package, badge: "" },
   { title: "Orders", url: "/admin/orders", icon: ShoppingBag, badge: "" },
   { title: "Returns", url: "/admin/returns", icon: RotateCcw, badge: "" },

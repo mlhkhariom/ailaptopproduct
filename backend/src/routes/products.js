@@ -181,6 +181,24 @@ router.post('/import', authMiddleware, adminOnly, async (req, res) => {
   res.json({ added, updated, errors, total: lines.length - 1 });
 });
 
+// GET /api/products/barcode/:id — generate barcode label HTML (printable)
+router.get('/barcode/:id', authMiddleware, adminOnly, async (req, res) => {
+  const product = await db.prepare('SELECT name, sku, price, slug FROM products WHERE id=?').get(req.params.id);
+  if (!product) return res.status(404).json({ error: 'Product not found' });
+  const sku = product.sku || 'N/A';
+  // Simple Code128-like barcode as SVG
+  const bars = sku.split('').map((c, i) => {
+    const w = ((c.charCodeAt(0) % 3) + 1);
+    return `<rect x="${i * 4}" y="0" width="${w}" height="40" fill="black"/>`;
+  }).join('');
+  const svg = `<svg width="${sku.length * 4 + 10}" height="40" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
+  const html = `<!DOCTYPE html><html><head><title>Label: ${product.name}</title><style>body{font-family:sans-serif;text-align:center;padding:20px}.label{border:1px dashed #ccc;padding:15px;display:inline-block;width:280px}h3{margin:0 0 5px;font-size:14px}p{margin:2px 0;font-size:11px;color:#666}.barcode{margin:10px 0}.price{font-size:18px;font-weight:bold}@media print{.no-print{display:none}}</style></head><body>
+  <button class="no-print" onclick="window.print()">🖨️ Print Label</button>
+  <div class="label"><h3>${product.name}</h3><p>SKU: ${sku}</p><div class="barcode">${svg}</div><p class="price">₹${product.price?.toLocaleString('en-IN')}</p><p>ailaptopwala.com/products/${product.slug}</p></div></body></html>`;
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
 // GET /api/products/:slug — AFTER /export and /import
 router.get('/:slug', async (req, res) => {
   const p = await db.prepare('SELECT * FROM products WHERE slug = ? OR id = ?').get(req.params.slug, req.params.slug);
@@ -290,6 +308,27 @@ router.post('/bulk/delete', authMiddleware, async (req, res) => {
     await db.prepare('DELETE FROM products WHERE id=?').run(id);
   }
   res.json({ message: `${ids.length} products deleted`, count: ids.length });
+});
+
+// POST /api/products/bulk/update — admin bulk update (price, stock, status, category)
+router.post('/bulk/update', authMiddleware, adminOnly, async (req, res) => {
+  const { ids, updates } = req.body;
+  if (!ids?.length || !updates) return res.status(400).json({ error: 'ids array and updates object required' });
+
+  const allowed = ['price', 'original_price', 'stock', 'status', 'category', 'brand', 'show_public', 'badge'];
+  const fields = Object.keys(updates).filter(k => allowed.includes(k));
+  if (fields.length === 0) return res.status(400).json({ error: 'No valid fields to update' });
+
+  for (const id of ids) {
+    const sets = fields.map(f => `${f}=?`).join(', ');
+    const values = fields.map(f => updates[f]);
+    await db.prepare(`UPDATE products SET ${sets}, updated_at=NOW() WHERE id=?`).run(...values, id);
+    // Sync stock to branch_stock
+    if (updates.stock !== undefined) {
+      await db.prepare('UPDATE branch_stock SET stock=? WHERE product_id=?').run(updates.stock, id);
+    }
+  }
+  res.json({ message: `${ids.length} products updated`, count: ids.length, fields });
 });
 
 export default router;
