@@ -108,4 +108,26 @@ router.put('/change-password', authMiddleware, async (req, res) => {
   res.json({ message: 'Password changed' });
 });
 
+// POST /api/auth/google — Google One Tap / OAuth login
+router.post('/google', async (req, res) => {
+  const { email, name, picture, sub } = req.body; // from Google ID token decoded on frontend
+  if (!email) return res.status(400).json({ error: 'Email required' });
+
+  try {
+    let user = await db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    if (!user) {
+      // Auto-register
+      const id = uuid();
+      const password = bcrypt.hashSync(sub || uuid(), 10); // random password (user uses Google to login)
+      await db.prepare('INSERT INTO users (id, name, email, password, role) VALUES (?,?,?,?,?)')
+        .run(id, name || email.split('@')[0], email, password, 'customer');
+      user = await db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+    }
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, process.env.JWT_SECRET || 'ailaptopwala-secret-2024', { expiresIn: '30d' });
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+  } catch (e) {
+    res.status(500).json({ error: 'Google login failed' });
+  }
+});
+
 export default router;
