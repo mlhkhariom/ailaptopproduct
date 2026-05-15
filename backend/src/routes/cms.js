@@ -85,6 +85,142 @@ router.delete('/admin/pages/:id', authMiddleware, adminOnly, async (req, res) =>
   res.json({ message: 'Deleted' });
 });
 
+// ── MENUS ─────────────────────────────────────────────────
+
+// GET /api/cms/menus/:location — public
+router.get('/menus/:location', async (req, res) => {
+  const menu = await db.prepare('SELECT * FROM menus WHERE location=?').get(req.params.location);
+  res.json(menu ? { ...menu, items: typeof menu.items === 'string' ? JSON.parse(menu.items) : menu.items } : { location: req.params.location, items: [] });
+});
+
+// PUT /api/cms/menus/:location — admin save menu
+router.put('/menus/:location', authMiddleware, adminOnly, async (req, res) => {
+  const { items } = req.body;
+  const existing = await db.prepare('SELECT id FROM menus WHERE location=?').get(req.params.location);
+  if (existing) {
+    await db.prepare('UPDATE menus SET items=?, updated_at=NOW() WHERE location=?').run(JSON.stringify(items), req.params.location);
+  } else {
+    await db.prepare('INSERT INTO menus (id, location, items) VALUES (?,?,?)').run(uuid(), req.params.location, JSON.stringify(items));
+  }
+  res.json({ success: true });
+});
+
+// ── BANNERS ───────────────────────────────────────────────
+
+// GET /api/cms/banners — public (active + scheduled)
+router.get('/banners', async (req, res) => {
+  const now = new Date().toISOString();
+  const banners = await db.prepare("SELECT * FROM banners WHERE is_active=1 AND (starts_at IS NULL OR starts_at <= ?) AND (ends_at IS NULL OR ends_at >= ?) ORDER BY sort_order").all(now, now);
+  res.json(banners);
+});
+
+// GET /api/cms/banners/all — admin (all banners)
+router.get('/banners/all', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM banners ORDER BY sort_order').all());
+});
+
+// POST /api/cms/banners — admin create
+router.post('/banners', authMiddleware, adminOnly, async (req, res) => {
+  const { title, subtitle, image, link, button_text, position, sort_order, starts_at, ends_at } = req.body;
+  if (!image) return res.status(400).json({ error: 'image required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO banners (id, title, subtitle, image, link, button_text, position, sort_order, starts_at, ends_at) VALUES (?,?,?,?,?,?,?,?,?,?)')
+    .run(id, title, subtitle, image, link, button_text, position || 'homepage', sort_order || 0, starts_at || null, ends_at || null);
+  res.status(201).json(await db.prepare('SELECT * FROM banners WHERE id=?').get(id));
+});
+
+// PUT /api/cms/banners/:id
+router.put('/banners/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { title, subtitle, image, link, button_text, sort_order, is_active, starts_at, ends_at } = req.body;
+  await db.prepare('UPDATE banners SET title=COALESCE(?,title), subtitle=COALESCE(?,subtitle), image=COALESCE(?,image), link=COALESCE(?,link), button_text=COALESCE(?,button_text), sort_order=COALESCE(?,sort_order), is_active=COALESCE(?,is_active), starts_at=COALESCE(?,starts_at), ends_at=COALESCE(?,ends_at) WHERE id=?')
+    .run(title, subtitle, image, link, button_text, sort_order, is_active, starts_at, ends_at, req.params.id);
+  res.json({ success: true });
+});
+
+// DELETE /api/cms/banners/:id
+router.delete('/banners/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM banners WHERE id=?').run(req.params.id);
+  res.json({ success: true });
+});
+
+// ── FAQS ──────────────────────────────────────────────────
+
+// GET /api/cms/faqs — public
+router.get('/faqs', async (req, res) => {
+  const { category } = req.query;
+  let q = "SELECT * FROM faqs WHERE is_active=1";
+  const params: string[] = [];
+  if (category) { q += ' AND category=?'; params.push(category as string); }
+  q += ' ORDER BY sort_order';
+  res.json(await db.prepare(q).all(...params));
+});
+
+// GET /api/cms/faqs/all — admin
+router.get('/faqs/all', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM faqs ORDER BY category, sort_order').all());
+});
+
+// POST /api/cms/faqs
+router.post('/faqs', authMiddleware, adminOnly, async (req, res) => {
+  const { question, answer, category, sort_order } = req.body;
+  if (!question || !answer) return res.status(400).json({ error: 'question and answer required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO faqs (id, question, answer, category, sort_order) VALUES (?,?,?,?,?)').run(id, question, answer, category || 'General', sort_order || 0);
+  res.status(201).json(await db.prepare('SELECT * FROM faqs WHERE id=?').get(id));
+});
+
+// PUT /api/cms/faqs/:id
+router.put('/faqs/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { question, answer, category, sort_order, is_active } = req.body;
+  await db.prepare('UPDATE faqs SET question=COALESCE(?,question), answer=COALESCE(?,answer), category=COALESCE(?,category), sort_order=COALESCE(?,sort_order), is_active=COALESCE(?,is_active) WHERE id=?')
+    .run(question, answer, category, sort_order, is_active, req.params.id);
+  res.json({ success: true });
+});
+
+// DELETE /api/cms/faqs/:id
+router.delete('/faqs/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM faqs WHERE id=?').run(req.params.id);
+  res.json({ success: true });
+});
+
+// ── POPUPS ────────────────────────────────────────────────
+
+// GET /api/cms/popups/active — public (for frontend to show)
+router.get('/popups/active', async (req, res) => {
+  const now = new Date().toISOString();
+  const popup = await db.prepare("SELECT * FROM popups WHERE is_active=1 AND (starts_at IS NULL OR starts_at <= ?) AND (ends_at IS NULL OR ends_at >= ?) ORDER BY created_at DESC LIMIT 1").get(now, now);
+  res.json(popup || null);
+});
+
+// GET /api/cms/popups — admin all
+router.get('/popups', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM popups ORDER BY created_at DESC').all());
+});
+
+// POST /api/cms/popups
+router.post('/popups', authMiddleware, adminOnly, async (req, res) => {
+  const { title, body, image, button_text, button_link, type, trigger_type, trigger_value, show_on, starts_at, ends_at } = req.body;
+  if (!title) return res.status(400).json({ error: 'title required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO popups (id, title, body, image, button_text, button_link, type, trigger_type, trigger_value, show_on, starts_at, ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(id, title, body, image, button_text, button_link, type || 'modal', trigger_type || 'delay', trigger_value || '5', show_on || 'all', starts_at || null, ends_at || null);
+  res.status(201).json(await db.prepare('SELECT * FROM popups WHERE id=?').get(id));
+});
+
+// PUT /api/cms/popups/:id
+router.put('/popups/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { title, body, image, button_text, button_link, type, trigger_type, trigger_value, is_active, starts_at, ends_at } = req.body;
+  await db.prepare('UPDATE popups SET title=COALESCE(?,title), body=COALESCE(?,body), image=COALESCE(?,image), button_text=COALESCE(?,button_text), button_link=COALESCE(?,button_link), type=COALESCE(?,type), trigger_type=COALESCE(?,trigger_type), trigger_value=COALESCE(?,trigger_value), is_active=COALESCE(?,is_active), starts_at=COALESCE(?,starts_at), ends_at=COALESCE(?,ends_at) WHERE id=?')
+    .run(title, body, image, button_text, button_link, type, trigger_type, trigger_value, is_active, starts_at, ends_at, req.params.id);
+  res.json({ success: true });
+});
+
+// DELETE /api/cms/popups/:id
+router.delete('/popups/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM popups WHERE id=?').run(req.params.id);
+  res.json({ success: true });
+});
+
 // ── HOMEPAGE SECTIONS ─────────────────────────────────────
 
 // GET /api/cms/homepage-sections — public

@@ -4,6 +4,7 @@ import Footer from "./Footer";
 import WhatsAppWidget from "./WhatsAppWidget";
 import CustomerBottomNav from "./CustomerBottomNav";
 import PWAInstallPrompt from "./PWAInstallPrompt";
+import PromoPopup from "./PromoPopup";
 import { useCartStore } from "@/store/cartStore";
 
 const CustomerLayout = ({ children }: { children: React.ReactNode }) => {
@@ -31,6 +32,7 @@ const CustomerLayout = ({ children }: { children: React.ReactNode }) => {
       <WhatsAppWidget />
       <CustomerBottomNav />
       <PWAInstallPrompt />
+      <PromoPopup />
     </div>
   );
 };

@@ -382,6 +382,34 @@ export const initDB = async () => {
       sort_order INTEGER DEFAULT 0, is_active INTEGER DEFAULT 1,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
+    `CREATE TABLE IF NOT EXISTS menus (
+      id TEXT PRIMARY KEY, location TEXT NOT NULL,
+      items JSONB NOT NULL DEFAULT '[]',
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS banners (
+      id TEXT PRIMARY KEY, title TEXT, subtitle TEXT,
+      image TEXT NOT NULL, link TEXT, button_text TEXT,
+      position TEXT DEFAULT 'homepage',
+      sort_order INTEGER DEFAULT 0, is_active INTEGER DEFAULT 1,
+      starts_at TIMESTAMPTZ, ends_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS faqs (
+      id TEXT PRIMARY KEY, question TEXT NOT NULL, answer TEXT NOT NULL,
+      category TEXT DEFAULT 'General',
+      sort_order INTEGER DEFAULT 0, is_active INTEGER DEFAULT 1,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS popups (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, body TEXT,
+      image TEXT, button_text TEXT, button_link TEXT,
+      type TEXT DEFAULT 'modal', trigger_type TEXT DEFAULT 'delay',
+      trigger_value TEXT DEFAULT '5',
+      show_on TEXT DEFAULT 'all', is_active INTEGER DEFAULT 1,
+      starts_at TIMESTAMPTZ, ends_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     // Social — YouTube + TikTok support
     "ALTER TABLE social_settings ADD COLUMN IF NOT EXISTS youtube_api_key TEXT",
     "ALTER TABLE social_settings ADD COLUMN IF NOT EXISTS youtube_channel_id TEXT",

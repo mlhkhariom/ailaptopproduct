@@ -14,21 +14,21 @@ const FAQ = () => {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
 
-  useEffect(() => { api.getCMS('faq').then(d => setFaqs(d.filter((f: any) => f.is_active))).catch(() => {}); }, []);
+  useEffect(() => { fetch('/api/cms/faqs').then(r => r.json()).then(d => { if (Array.isArray(d)) setFaqs(d); }).catch(() => {}); }, []);
 
-  const categories = ["All", ...Array.from(new Set(faqs.map((f: any) => f.content?.category).filter(Boolean)))];
+  const categories = ["All", ...Array.from(new Set(faqs.map((f: any) => f.category).filter(Boolean)))];
 
   const filtered = faqs
-    .filter(f => category === "All" || f.content?.category === category)
-    .filter(f => f.content?.question?.toLowerCase().includes(search.toLowerCase()) || f.content?.answer?.toLowerCase().includes(search.toLowerCase()));
+    .filter(f => category === "All" || f.category === category)
+    .filter(f => f.question?.toLowerCase().includes(search.toLowerCase()) || f.answer?.toLowerCase().includes(search.toLowerCase()));
 
   const faqSchema = filtered.length > 0 ? {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": filtered.map(f => ({
       "@type": "Question",
-      "name": f.content?.question,
-      "acceptedAnswer": { "@type": "Answer", "text": f.content?.answer }
+      "name": f.question,
+      "acceptedAnswer": { "@type": "Answer", "text": f.answer }
     }))
   } : null;
 
@@ -65,12 +65,12 @@ const FAQ = () => {
                 <AccordionItem key={faq.id} value={faq.id} className="border rounded-xl px-4 data-[state=open]:shadow-md transition-shadow">
                   <AccordionTrigger className="text-sm font-medium text-left hover:no-underline py-4">
                     <div className="flex items-center gap-3">
-                      <Badge variant="secondary" className="text-[9px] shrink-0">{faq.content?.category}</Badge>
-                      {faq.content?.question}
+                      <Badge variant="secondary" className="text-[9px] shrink-0">{faq.category}</Badge>
+                      {faq.question}
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-sm text-muted-foreground leading-relaxed pb-4">
-                    {faq.content?.answer}
+                    {faq.answer}
                   </AccordionContent>
                 </AccordionItem>
               ))}

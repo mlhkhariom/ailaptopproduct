@@ -428,15 +428,104 @@ const AdminCMS = () => (
           <TabsTrigger value="testimonials" className="text-xs gap-1.5"><Star className="h-3.5 w-3.5" /> Testimonials</TabsTrigger>
           <TabsTrigger value="faqs" className="text-xs gap-1.5"><HelpCircle className="h-3.5 w-3.5" /> FAQs</TabsTrigger>
           <TabsTrigger value="pages" className="text-xs gap-1.5"><Layout className="h-3.5 w-3.5" /> Pages</TabsTrigger>
+          <TabsTrigger value="popups" className="text-xs gap-1.5">🎯 Popups</TabsTrigger>
+          <TabsTrigger value="menus" className="text-xs gap-1.5">📋 Menus</TabsTrigger>
         </TabsList>
         <TabsContent value="banners"><BannersTab /></TabsContent>
         <TabsContent value="benefits"><BenefitsTab /></TabsContent>
         <TabsContent value="testimonials"><TestimonialsTab /></TabsContent>
         <TabsContent value="faqs"><FAQsTab /></TabsContent>
         <TabsContent value="pages"><PagesTab /></TabsContent>
+        <TabsContent value="popups"><PopupsTab /></TabsContent>
+        <TabsContent value="menus"><MenusTab /></TabsContent>
       </Tabs>
     </div>
   </AdminLayout>
 );
+
+// ── Popups Tab ────────────────────────────────────────────
+const PopupsTab = () => {
+  const [popups, setPopups] = useState<any[]>([]);
+  const [form, setForm] = useState({ title: '', body: '', button_text: '', button_link: '', trigger_type: 'delay', trigger_value: '5' });
+  const [showForm, setShowForm] = useState(false);
+  const token = localStorage.getItem('ailaptopwala_token');
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const load = () => fetch('/api/cms/popups', { headers }).then(r => r.json()).then(d => { if (Array.isArray(d)) setPopups(d); });
+  useEffect(() => { load(); }, []);
+  const save = async () => {
+    if (!form.title) return;
+    await fetch('/api/cms/popups', { method: 'POST', headers, body: JSON.stringify(form) });
+    setShowForm(false); setForm({ title: '', body: '', button_text: '', button_link: '', trigger_type: 'delay', trigger_value: '5' }); load();
+  };
+  const toggle = async (id: string, active: boolean) => { await fetch(`/api/cms/popups/${id}`, { method: 'PUT', headers, body: JSON.stringify({ is_active: active ? 1 : 0 }) }); load(); };
+  const remove = async (id: string) => { await fetch(`/api/cms/popups/${id}`, { method: 'DELETE', headers }); load(); };
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-between"><h3 className="font-bold">Popups & Announcements</h3><Button size="sm" onClick={() => setShowForm(!showForm)}>+ Add Popup</Button></div>
+      {showForm && (
+        <Card><CardContent className="p-4 space-y-3">
+          <Input placeholder="Title *" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+          <Input placeholder="Body text" value={form.body} onChange={e => setForm(f => ({ ...f, body: e.target.value }))} />
+          <div className="grid grid-cols-2 gap-3">
+            <Input placeholder="Button text" value={form.button_text} onChange={e => setForm(f => ({ ...f, button_text: e.target.value }))} />
+            <Input placeholder="Button link" value={form.button_link} onChange={e => setForm(f => ({ ...f, button_link: e.target.value }))} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <select className="border rounded px-3 py-2 text-sm" value={form.trigger_type} onChange={e => setForm(f => ({ ...f, trigger_type: e.target.value }))}>
+              <option value="delay">Show after delay</option><option value="scroll">Show on scroll</option><option value="exit">Exit intent</option>
+            </select>
+            <Input placeholder="Delay (seconds)" value={form.trigger_value} onChange={e => setForm(f => ({ ...f, trigger_value: e.target.value }))} />
+          </div>
+          <Button onClick={save}>Save Popup</Button>
+        </CardContent></Card>
+      )}
+      {popups.map(p => (
+        <Card key={p.id} className={!p.is_active ? 'opacity-50' : ''}><CardContent className="p-3 flex items-center justify-between">
+          <div><p className="font-medium text-sm">{p.title}</p><p className="text-xs text-muted-foreground">Trigger: {p.trigger_type} ({p.trigger_value}s)</p></div>
+          <div className="flex gap-1"><Button size="sm" variant="ghost" onClick={() => toggle(p.id, !p.is_active)}>{p.is_active ? 'Disable' : 'Enable'}</Button><Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(p.id)}>Delete</Button></div>
+        </CardContent></Card>
+      ))}
+    </div>
+  );
+};
+
+// ── Menus Tab ─────────────────────────────────────────────
+const MenusTab = () => {
+  const [location, setLocation] = useState('header');
+  const [items, setItems] = useState<any[]>([]);
+  const [newItem, setNewItem] = useState({ label: '', url: '' });
+  const token = localStorage.getItem('ailaptopwala_token');
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const load = () => fetch(`/api/cms/menus/${location}`, { headers }).then(r => r.json()).then(d => setItems(d.items || []));
+  useEffect(() => { load(); }, [location]);
+  const save = async () => { await fetch(`/api/cms/menus/${location}`, { method: 'PUT', headers, body: JSON.stringify({ items }) }); toast.success('Menu saved!'); };
+  const addItem = () => { if (!newItem.label || !newItem.url) return; setItems([...items, newItem]); setNewItem({ label: '', url: '' }); };
+  const removeItem = (i: number) => setItems(items.filter((_, idx) => idx !== i));
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <h3 className="font-bold">Menu Manager</h3>
+        <select className="border rounded px-3 py-1.5 text-sm" value={location} onChange={e => setLocation(e.target.value)}>
+          <option value="header">Header Menu</option><option value="footer">Footer Menu</option><option value="mobile">Mobile Menu</option>
+        </select>
+      </div>
+      <div className="space-y-2">
+        {items.map((item: any, i: number) => (
+          <div key={i} className="flex items-center gap-2 p-2 border rounded">
+            <span className="text-sm font-medium flex-1">{item.label}</span>
+            <span className="text-xs text-muted-foreground">{item.url}</span>
+            <Button size="sm" variant="ghost" className="text-destructive h-7" onClick={() => removeItem(i)}>×</Button>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <Input placeholder="Label" value={newItem.label} onChange={e => setNewItem(n => ({ ...n, label: e.target.value }))} className="h-9" />
+        <Input placeholder="/url" value={newItem.url} onChange={e => setNewItem(n => ({ ...n, url: e.target.value }))} className="h-9" />
+        <Button size="sm" onClick={addItem}>Add</Button>
+      </div>
+      <Button onClick={save}>Save Menu</Button>
+    </div>
+  );
+};
 
 export default AdminCMS;
