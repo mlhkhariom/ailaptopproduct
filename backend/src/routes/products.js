@@ -8,21 +8,45 @@ const router = Router();
 
 // GET /api/products — public, with filters
 router.get('/', async (req, res) => {
-  const { category, search, inStock, minPrice, maxPrice, sort, all } = req.query;
+  const { category, search, inStock, minPrice, maxPrice, sort, all, brand, ram, processor, page, limit: rawLimit } = req.query;
   // all=1 → admin sees everything (including hidden from public)
   let query = all === '1' ? "SELECT * FROM products WHERE 1=1" : "SELECT * FROM products WHERE status = 'active' AND (show_public IS NULL OR show_public = 1)";
   const params = [];
-  if (category) { query += ' AND category = ?'; params.push(category); }
+  if (category && category !== 'All') { query += ' AND category = ?'; params.push(category); }
+  if (brand) { query += ' AND brand = ?'; params.push(brand); }
   if (inStock === 'true') { query += ' AND in_stock = 1'; }
   if (minPrice) { query += ' AND price >= ?'; params.push(Number(minPrice)); }
   if (maxPrice) { query += ' AND price <= ?'; params.push(Number(maxPrice)); }
-  if (search) { query += ' AND (name LIKE ? OR name_hi LIKE ?)'; params.push(`%${search}%`, `%${search}%`); }
-  const sortMap = { price_asc: 'price ASC', price_desc: 'price DESC', rating: 'rating DESC', name: 'name ASC' };
+  if (ram) { query += ' AND (name ILIKE ? OR description ILIKE ?)'; params.push(`%${ram}%`, `%${ram}%`); }
+  if (processor) { query += ' AND (name ILIKE ? OR description ILIKE ?)'; params.push(`%${processor}%`, `%${processor}%`); }
+  if (search) { query += ' AND (name ILIKE ? OR name_hi ILIKE ? OR description ILIKE ? OR brand ILIKE ?)'; params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`); }
+
+  // Count total before pagination
+  const countQuery = query.replace('SELECT *', 'SELECT COUNT(*) as total');
+  const totalResult = await db.prepare(countQuery).get(...params);
+  const total = totalResult?.total || 0;
+
+  const sortMap = { price_asc: 'price ASC', price_desc: 'price DESC', rating: 'rating DESC', name: 'name ASC', newest: 'created_at DESC', popular: 'reviews DESC' };
   query += ` ORDER BY ${sortMap[sort] || 'created_at DESC'}`;
+
+  // Pagination
+  const limit = Math.min(Number(rawLimit) || 20, 100);
+  const currentPage = Math.max(Number(page) || 1, 1);
+  const offset = (currentPage - 1) * limit;
+  query += ` LIMIT ${limit} OFFSET ${offset}`;
+
   const products = (await db.prepare(query).all(...params)).map(p => ({
     ...p, ingredients: JSON.parse(p.ingredients || '[]'), benefits: JSON.parse(p.benefits || '[]'), in_stock: !!p.in_stock,
   }));
-  res.json(products);
+
+  // Get available brands for filter
+  const brands = await db.prepare("SELECT DISTINCT brand FROM products WHERE brand IS NOT NULL AND brand != '' AND status='active' ORDER BY brand").all();
+
+  res.json({
+    products,
+    pagination: { page: currentPage, limit, total, totalPages: Math.ceil(total / limit) },
+    filters: { brands: brands.map(b => b.brand) }
+  });
 });
 
 // ── MUST be before /:slug ──────────────────────────────────
@@ -161,7 +185,23 @@ router.post('/import', authMiddleware, adminOnly, async (req, res) => {
 router.get('/:slug', async (req, res) => {
   const p = await db.prepare('SELECT * FROM products WHERE slug = ? OR id = ?').get(req.params.slug, req.params.slug);
   if (!p) return res.status(404).json({ error: 'Product not found' });
-  res.json({ ...p, ingredients: JSON.parse(p.ingredients || '[]'), benefits: JSON.parse(p.benefits || '[]'), in_stock: !!p.in_stock });
+
+  // Fetch images and variants
+  const images = await db.prepare('SELECT * FROM product_images WHERE product_id=? ORDER BY sort_order, is_primary DESC').all(p.id);
+  const variants = p.has_variants ? await db.prepare('SELECT * FROM product_variants WHERE product_id=? AND is_active=1 ORDER BY sort_order').all(p.id) : [];
+  const variant_options = p.has_variants ? await db.prepare('SELECT * FROM product_variant_options WHERE product_id=? ORDER BY sort_order').all(p.id) : [];
+
+  res.json({
+    ...p,
+    ingredients: JSON.parse(p.ingredients || '[]'),
+    benefits: JSON.parse(p.benefits || '[]'),
+    specifications: typeof p.specifications === 'string' ? JSON.parse(p.specifications || '{}') : (p.specifications || {}),
+    highlights: typeof p.highlights === 'string' ? JSON.parse(p.highlights || '[]') : (p.highlights || []),
+    images: images.length > 0 ? images : (p.image ? [{ id: 'main', url: p.image, is_primary: 1 }] : []),
+    variants,
+    variant_options: variant_options.map(vo => ({ ...vo, option_values: typeof vo.option_values === 'string' ? JSON.parse(vo.option_values) : vo.option_values })),
+    in_stock: !!p.in_stock
+  });
 });
 
 // POST /api/products — admin only

@@ -98,12 +98,65 @@ export const initDB = async () => {
     );
     CREATE TABLE IF NOT EXISTS products (
       id TEXT PRIMARY KEY, name TEXT NOT NULL, name_hi TEXT, price REAL NOT NULL,
-      original_price REAL, image TEXT, category TEXT, rating REAL DEFAULT 0,
-      reviews INTEGER DEFAULT 0, description TEXT, ingredients TEXT, benefits TEXT,
-      usage TEXT, in_stock INTEGER DEFAULT 1, stock INTEGER DEFAULT 0,
+      original_price REAL, image TEXT, images JSONB DEFAULT '[]', category TEXT, brand TEXT,
+      rating REAL DEFAULT 0, reviews INTEGER DEFAULT 0,
+      description TEXT, specifications JSONB, highlights JSONB,
+      ingredients TEXT, benefits TEXT, usage TEXT,
+      in_stock INTEGER DEFAULT 1, stock INTEGER DEFAULT 0,
       sku TEXT, slug TEXT UNIQUE, badge TEXT, status TEXT DEFAULT 'active',
+      show_public INTEGER DEFAULT 1, has_variants INTEGER DEFAULT 0,
+      warranty TEXT, delivery_info TEXT,
       meta_title TEXT, meta_description TEXT, focus_keywords TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS product_images (
+      id TEXT PRIMARY KEY, product_id TEXT NOT NULL,
+      url TEXT NOT NULL, alt TEXT, sort_order INTEGER DEFAULT 0,
+      is_primary INTEGER DEFAULT 0,
       created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS product_variants (
+      id TEXT PRIMARY KEY, product_id TEXT NOT NULL,
+      name TEXT NOT NULL, sku TEXT,
+      price REAL NOT NULL, original_price REAL,
+      stock INTEGER DEFAULT 0, in_stock INTEGER DEFAULT 1,
+      attributes JSONB NOT NULL DEFAULT '{}',
+      image TEXT, sort_order INTEGER DEFAULT 0,
+      is_active INTEGER DEFAULT 1,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS product_variant_options (
+      id TEXT PRIMARY KEY, product_id TEXT NOT NULL,
+      option_name TEXT NOT NULL, option_values JSONB NOT NULL DEFAULT '[]',
+      sort_order INTEGER DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS user_addresses (
+      id TEXT PRIMARY KEY, user_id TEXT NOT NULL,
+      label TEXT DEFAULT 'Home', name TEXT NOT NULL,
+      phone TEXT NOT NULL, address TEXT NOT NULL,
+      city TEXT NOT NULL, state TEXT NOT NULL, pin TEXT NOT NULL,
+      is_default INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS returns (
+      id TEXT PRIMARY KEY, order_id TEXT NOT NULL, order_number TEXT,
+      user_id TEXT, reason TEXT NOT NULL, type TEXT DEFAULT 'return',
+      status TEXT DEFAULT 'requested', refund_amount REAL,
+      refund_method TEXT DEFAULT 'original', admin_notes TEXT,
+      images JSONB DEFAULT '[]',
+      created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS wishlists (
+      id TEXT PRIMARY KEY, user_id TEXT NOT NULL, product_id TEXT NOT NULL,
+      notify_price_drop INTEGER DEFAULT 0, notify_back_in_stock INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(user_id, product_id)
+    );
+    CREATE TABLE IF NOT EXISTS abandoned_carts (
+      id TEXT PRIMARY KEY, user_id TEXT, email TEXT, phone TEXT,
+      items JSONB NOT NULL, total REAL, reminder_sent INTEGER DEFAULT 0,
+      recovered INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS orders (
       id TEXT PRIMARY KEY, order_number TEXT UNIQUE NOT NULL, user_id TEXT,

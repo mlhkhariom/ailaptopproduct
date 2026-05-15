@@ -8,10 +8,14 @@ export interface Product {
   price: number;
   original_price?: number;
   image: string;
+  images?: any[];
   category: string;
+  brand?: string;
   rating: number;
   reviews: number;
   description: string;
+  specifications?: Record<string, string>;
+  highlights?: string[];
   ingredients: string[];
   benefits: string[];
   usage: string;
@@ -21,14 +25,30 @@ export interface Product {
   slug: string;
   badge?: string;
   status: string;
+  has_variants?: number;
+  variants?: any[];
+  variant_options?: any[];
+  warranty?: string;
+  delivery_info?: string;
+  show_public?: number;
+  created_at?: string;
   // legacy compat
   inStock?: boolean;
   originalPrice?: number;
   nameHi?: string;
 }
 
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 interface ProductStore {
   products: Product[];
+  pagination: Pagination | null;
+  availableBrands: string[];
   isLoading: boolean;
   fetchProducts: (params?: Record<string, string>) => Promise<void>;
   addProduct: (product: Omit<Product, "id">) => Promise<void>;
@@ -42,15 +62,22 @@ interface ProductStore {
 
 export const useProductStore = create<ProductStore>((set, get) => ({
   products: [],
+  pagination: null,
+  availableBrands: [],
   isLoading: false,
 
   fetchProducts: async (params) => {
     set({ isLoading: true });
     try {
       const data = await api.getProducts(params);
-      // normalize field names for legacy compat
-      const products = data.map((p: Product) => ({ ...p, inStock: p.in_stock, originalPrice: p.original_price, nameHi: p.name_hi }));
-      set({ products });
+      // Handle both old array format and new paginated format
+      const rawProducts = Array.isArray(data) ? data : (data.products || []);
+      const products = rawProducts.map((p: Product) => ({ ...p, inStock: p.in_stock, originalPrice: p.original_price, nameHi: p.name_hi }));
+      set({
+        products,
+        pagination: data.pagination || null,
+        availableBrands: data.filters?.brands || [],
+      });
     } finally {
       set({ isLoading: false });
     }
