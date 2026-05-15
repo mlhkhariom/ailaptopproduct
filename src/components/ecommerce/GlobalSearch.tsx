@@ -33,7 +33,12 @@ export default function GlobalSearch({ className = "" }: { className?: string })
 
   const submit = (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (query) navigate(`/products?q=${encodeURIComponent(query)}`);
+    if (query) {
+      // Save to recent searches
+      const recent = JSON.parse(localStorage.getItem('recent_searches') || '[]').filter((s: string) => s !== query);
+      localStorage.setItem('recent_searches', JSON.stringify([query, ...recent].slice(0, 10)));
+      navigate(`/products?q=${encodeURIComponent(query)}`);
+    }
     setOpen(false);
   };
 
@@ -62,6 +67,15 @@ export default function GlobalSearch({ className = "" }: { className?: string })
           {!loading && !results.length && query.length >= 2 && <p className="p-3 text-xs text-muted-foreground text-center">No results for "{query}"</p>}
           {!query && open && (
             <div className="p-3">
+              {/* Recent Searches */}
+              {(() => { const recent = JSON.parse(localStorage.getItem('recent_searches') || '[]'); return recent.length > 0 ? (
+                <div className="mb-3">
+                  <p className="text-[10px] font-semibold text-muted-foreground mb-2">🕐 Recent</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {recent.slice(0, 5).map((s: string) => <button key={s} onClick={() => setQuery(s)} className="text-xs bg-muted px-2.5 py-1 rounded-full hover:bg-primary/10 hover:text-primary">{s}</button>)}
+                  </div>
+                </div>
+              ) : null; })()}
               <p className="text-[10px] font-semibold text-muted-foreground mb-2">🔥 Popular Searches</p>
               <div className="flex flex-wrap gap-1.5">
                 {['Dell Laptop', 'MacBook', 'Gaming', 'HP EliteBook', '8GB RAM', 'SSD'].map(s => (

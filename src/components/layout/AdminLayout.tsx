@@ -1,7 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ExternalLink, Bell, Search, RefreshCw, ChevronRight, CheckCheck, LogOut, Settings, BarChart3, User, X, Package, ShoppingBag, Users, ClipboardList, MessageSquare } from "lucide-react";
+import { ExternalLink, Bell, Search, RefreshCw, ChevronRight, CheckCheck, LogOut, Settings, BarChart3, User, X, Package, ShoppingBag, Users, ClipboardList, MessageSquare, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -200,6 +200,11 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <RefreshCw className="h-4 w-4 text-muted-foreground" />
+              </Button>
+
+              {/* Dark Mode */}
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { document.documentElement.classList.toggle('dark'); localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light'); }}>
+                {typeof window !== 'undefined' && document.documentElement.classList.contains('dark') ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
 
               <DropdownMenu>

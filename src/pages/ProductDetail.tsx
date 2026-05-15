@@ -254,6 +254,14 @@ const ProductDetail = () => {
               <span className="text-sm font-medium">{activeInStock ? `In Stock (${activeStock} units)` : 'Out of Stock'}</span>
             </div>
 
+            {/* Branch Availability */}
+            {activeInStock && (
+              <div className="flex gap-2 mb-3 text-xs">
+                <span className="px-2 py-1 bg-green-50 border border-green-200 rounded-md">📍 Silver Mall: Available</span>
+                <span className="px-2 py-1 bg-muted border rounded-md">📍 Bangali Chouraha: Call to check</span>
+              </div>
+            )}
+
             {/* Notify Me (out of stock) */}
             {!activeInStock && (
               <div className="mb-4 p-3 rounded-xl border border-dashed border-orange-300 bg-orange-50/50">
