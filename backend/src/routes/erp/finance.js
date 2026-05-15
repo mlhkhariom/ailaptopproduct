@@ -405,4 +405,45 @@ router.post('/staff-advances', authMiddleware, adminOnly, async (req, res) => {
 
 
 
+// ── EXPENSE APPROVAL WORKFLOW ──────────────────────────────
+
+// GET /api/erp/expenses/pending — pending expenses for approval
+router.get('/expenses/pending', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare("SELECT e.*, s.name as staff_name FROM expenses e LEFT JOIN staff s ON e.staff_id=s.id WHERE e.status='pending' ORDER BY e.created_at DESC").all());
+});
+
+// PUT /api/erp/expenses/:id/approve
+router.put('/expenses/:id/approve', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare("UPDATE expenses SET status='approved', approved_by=?, approved_at=NOW() WHERE id=?").run(req.user.name || req.user.id, req.params.id);
+  res.json({ success: true });
+});
+
+// PUT /api/erp/expenses/:id/reject
+router.put('/expenses/:id/reject', authMiddleware, adminOnly, async (req, res) => {
+  const { reason } = req.body;
+  await db.prepare("UPDATE expenses SET status='rejected', approved_by=?, approved_at=NOW(), description=description||' [REJECTED: '||?||']' WHERE id=?").run(req.user.name || req.user.id, reason || 'Not approved', req.params.id);
+  res.json({ success: true });
+});
+
+// ── SUPPLIER PAYMENT LEDGER ───────────────────────────────
+
+// GET /api/erp/supplier-payments/:supplierId
+router.get('/supplier-payments/:supplierId', authMiddleware, adminOnly, async (req, res) => {
+  const payments = await db.prepare("SELECT * FROM expenses WHERE category='supplier_payment' AND staff_id=? ORDER BY date DESC").all(req.params.supplierId);
+  const pos = await db.prepare("SELECT po_number, total, status, created_at FROM purchase_orders WHERE supplier_id=? ORDER BY created_at DESC").all(req.params.supplierId);
+  const totalPaid = payments.reduce((s, p) => s + (p.amount || 0), 0);
+  const totalPO = pos.reduce((s, p) => s + (p.total || 0), 0);
+  res.json({ payments, purchase_orders: pos, total_paid: totalPaid, total_po: totalPO, balance_due: totalPO - totalPaid });
+});
+
+// POST /api/erp/supplier-payments — record payment to supplier
+router.post('/supplier-payments', authMiddleware, adminOnly, async (req, res) => {
+  const { supplier_id, amount, payment_method, description, date } = req.body;
+  if (!supplier_id || !amount) return res.status(400).json({ error: 'supplier_id and amount required' });
+  const id = uuid();
+  await db.prepare("INSERT INTO expenses (id, category, amount, description, payment_method, date, staff_id, status, created_by) VALUES (?,?,?,?,?,?,?,'approved',?)")
+    .run(id, 'supplier_payment', amount, description || 'Supplier payment', payment_method || 'bank_transfer', date || new Date().toISOString().split('T')[0], supplier_id, req.user.id);
+  res.status(201).json({ success: true, id });
+});
+
 export default router;

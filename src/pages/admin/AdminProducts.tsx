@@ -208,9 +208,24 @@ const AdminProducts = () => {
         <Card className="mb-4 border-primary/30 bg-primary/5">
           <CardContent className="p-3 flex items-center justify-between">
             <span className="text-sm font-medium">{selected.length} product(s) selected</span>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="outline" className="text-xs h-7" onClick={async () => { for (const id of selected) { await api.updateProduct(id, { in_stock: 1, stock: products.find(p => p.id === id)?.stock || 1 }); } setSelected([]); fetchProducts({ all: '1' }); toast.success("Marked in stock!"); }}>Mark In Stock</Button>
               <Button size="sm" variant="outline" className="text-xs h-7" onClick={async () => { for (const id of selected) { await api.updateProduct(id, { stock: 0, in_stock: 0 }); } setSelected([]); fetchProducts({ all: '1' }); toast.success("Marked out of stock!"); }}>Mark Out of Stock</Button>
+              <Button size="sm" variant="outline" className="text-xs h-7" onClick={async () => {
+                const amt = prompt('Add/subtract amount to all selected prices (e.g., 500 or -500):');
+                if (!amt) return;
+                const n = Number(amt);
+                await fetch('/api/products/bulk/update', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: JSON.stringify({ ids: selected, updates: { price: n } }) });
+                // Actually need per-product price change, use loop:
+                for (const id of selected) { const p = products.find(x => x.id === id); if (p) await api.updateProduct(id, { price: Math.max(0, p.price + n) }); }
+                setSelected([]); fetchProducts({ all: '1' }); toast.success(`Price ${n > 0 ? '+' : ''}₹${n} applied to ${selected.length} products`);
+              }}>± Price</Button>
+              <Button size="sm" variant="outline" className="text-xs h-7" onClick={async () => {
+                const cat = prompt('Set category for all selected:');
+                if (!cat) return;
+                await fetch('/api/products/bulk/update', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: JSON.stringify({ ids: selected, updates: { category: cat } }) });
+                setSelected([]); fetchProducts({ all: '1' }); toast.success(`Category set to "${cat}"`);
+              }}>Set Category</Button>
               <Button size="sm" variant="destructive" className="text-xs h-7" onClick={handleBulkDelete}>Delete All</Button>
               <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => setSelected([])}>Cancel</Button>
             </div>

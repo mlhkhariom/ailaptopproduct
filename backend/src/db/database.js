@@ -441,6 +441,8 @@ export const initDB = async () => {
       id TEXT PRIMARY KEY, category TEXT NOT NULL, amount REAL NOT NULL,
       description TEXT, payment_method TEXT DEFAULT 'cash',
       date DATE DEFAULT CURRENT_DATE, receipt_url TEXT,
+      status TEXT DEFAULT 'pending', approved_by TEXT, approved_at TIMESTAMPTZ,
+      branch_id TEXT, staff_id TEXT,
       created_by TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
     // ERP — Staff
