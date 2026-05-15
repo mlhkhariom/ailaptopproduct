@@ -183,3 +183,16 @@ router.put('/:id/status', authMiddleware, adminOnly, async (req, res) => {
 });
 
 export default router;
+
+
+// POST /api/orders/abandoned-cart — save abandoned cart for recovery
+router.post('/abandoned-cart', async (req, res) => {
+  const { items, total, email, phone, user_id } = req.body;
+  if (!items || !Array.isArray(items) || items.length === 0) return res.status(400).json({ error: 'items required' });
+  
+  const id = uuid();
+  await db.prepare('INSERT INTO abandoned_carts (id, user_id, email, phone, items, total) VALUES (?,?,?,?,?,?)')
+    .run(id, user_id || null, email || null, phone || null, JSON.stringify(items), total || 0);
+  
+  res.status(201).json({ success: true, id });
+});

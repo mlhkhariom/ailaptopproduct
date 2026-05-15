@@ -146,3 +146,32 @@ export function startKPIAlertScheduler() {
 
   console.log('✅ KPI alert + CRM follow-up scheduler started');
 }
+
+// ── Abandoned Cart Recovery (runs every 2 hours) ──────────
+export function startAbandonedCartRecovery() {
+  setInterval(async () => {
+    try {
+      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+      const carts = await db.prepare("SELECT * FROM abandoned_carts WHERE reminder_sent=0 AND recovered=0 AND created_at < ? ORDER BY created_at DESC LIMIT 10").all(twoHoursAgo);
+      
+      if (carts.length === 0) return;
+      
+      for (const cart of carts) {
+        const phone = cart.phone || cart.email;
+        if (!phone || phone.length < 10) continue;
+        
+        const items = typeof cart.items === 'string' ? JSON.parse(cart.items) : cart.items;
+        const itemNames = items.slice(0, 3).map((i) => i.name).join(', ');
+        const msg = `🛒 Aapka cart wait kar raha hai!\n\n${itemNames}${items.length > 3 ? ` +${items.length - 3} more` : ''}\nTotal: ₹${cart.total?.toLocaleString('en-IN')}\n\n👉 Complete your order: https://ailaptopwala.com/cart\n\nKoi sawaal? Reply karein ya call karein: +91 98934 96163`;
+        
+        try {
+          const { queueWhatsAppNotification } = await import('./notifications.js');
+          queueWhatsAppNotification(phone, msg);
+          await db.prepare("UPDATE abandoned_carts SET reminder_sent=1, updated_at=NOW() WHERE id=?").run(cart.id);
+        } catch {}
+      }
+      console.log(`🛒 Abandoned cart recovery: ${carts.length} reminders sent`);
+    } catch (e) { console.error('Abandoned cart error:', e.message); }
+  }, 2 * 60 * 60 * 1000); // Every 2 hours
+  console.log('✅ Abandoned cart recovery scheduler started');
+}
