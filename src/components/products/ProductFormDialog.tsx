@@ -111,9 +111,10 @@ export default function ProductFormDialog({ open, onClose, form, setForm, editin
 
           {/* Image Upload */}
           <div>
-            <Label className="text-xs">Product Image</Label>
+            <Label className="text-xs">Product Image (Primary)</Label>
             <div className="mt-1 space-y-2">
               <Input className="h-9" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://... or upload below" />
+              {form.image && <img src={form.image} alt="Preview" className="h-16 w-16 object-cover rounded border" />}
               <div className="flex gap-2">
                 <label className="flex-1 cursor-pointer">
                   <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
