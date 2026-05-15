@@ -22,6 +22,7 @@ const SORT_OPTIONS = [
   { value: "price_asc", label: "Price: Low to High" },
   { value: "price_desc", label: "Price: High to Low" },
   { value: "rating", label: "Top Rated" },
+  { value: "discount", label: "Biggest Discount" },
 ];
 
 const RAM_OPTIONS = ["4GB", "8GB", "16GB", "32GB"];

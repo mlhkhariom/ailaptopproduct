@@ -83,6 +83,11 @@ const Checkout = () => {
     };
     const { order_number } = await api.placeOrder(orderData);
     clearCart();
+    // Auto-save address for future orders
+    const token = localStorage.getItem('ailaptopwala_token');
+    if (token && addr.address && addr.city && addr.pin && selectedAddressId !== 'new' && savedAddresses.length === 0) {
+      fetch('/api/addresses', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ label: 'Home', name: `${addr.firstName} ${addr.lastName}`, phone: addr.phone, address: addr.address, city: addr.city, state: addr.state, pin: addr.pin, is_default: 1 }) }).catch(() => {});
+    }
     toast.success(`Order ${order_number} placed! 🎉`);
     navigate(`/order-success?order=${order_number}${paymentId ? `&payment_id=${paymentId}` : ''}`);
   };

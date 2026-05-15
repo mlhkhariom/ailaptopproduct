@@ -264,6 +264,24 @@ const Index = () => {
         </div>
       </section>
 
+      {/* ── BEST SELLERS ─────────────────────────────── */}
+      {products.filter(p => (p.reviews || 0) > 0).length > 0 && (
+        <section className="py-10">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl md:text-2xl font-black">🏆 Best <span className="gradient-text">Sellers</span></h2>
+                <p className="text-xs text-muted-foreground">Most popular products</p>
+              </div>
+              <Link to="/products?sort=popular"><Button variant="outline" size="sm">View All</Button></Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
+              {[...products].sort((a, b) => (b.reviews || 0) - (a.reviews || 0)).slice(0, 4).map(p => <ProductCard key={p.id} product={p} />)}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── NEW ARRIVALS ──────────────────────────────── */}
       {products.filter(p => p.created_at && (Date.now() - new Date(p.created_at).getTime()) < 14 * 24 * 3600 * 1000).length > 0 && (
         <section className="py-10 bg-gradient-to-r from-blue-50 to-purple-50">

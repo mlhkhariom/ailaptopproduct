@@ -31,9 +31,21 @@ const OrderSuccess = () => {
         )}
 
         <div className="space-y-3 text-sm text-muted-foreground mb-8">
-          <p>📧 Order confirmation sent to your email</p>
-          <p>🚚 Estimated delivery: 3-7 business days</p>
+          <p>📧 Order confirmation sent to your email & WhatsApp</p>
+          <p>🚚 Estimated delivery: {orderNumber ? '1-2 days (Indore) / 3-5 days (India)' : '3-7 business days'}</p>
           <p>💬 Track your order anytime below</p>
+        </div>
+
+        {/* What happens next */}
+        <div className="text-left mb-8 p-4 rounded-xl bg-muted/50 border">
+          <p className="font-semibold text-sm mb-3">What happens next:</p>
+          <div className="space-y-2 text-xs text-muted-foreground">
+            <div className="flex gap-2"><span className="text-primary font-bold">1.</span> Order confirmed — we're preparing your package</div>
+            <div className="flex gap-2"><span className="text-primary font-bold">2.</span> You'll get WhatsApp update when shipped</div>
+            <div className="flex gap-2"><span className="text-primary font-bold">3.</span> Track with order number anytime</div>
+            <div className="flex gap-2"><span className="text-primary font-bold">4.</span> Delivered to your doorstep!</div>
+          </div>
+          <p className="text-xs mt-3">Need help? Call <a href="tel:+919893496163" className="text-primary font-bold">+91 98934 96163</a></p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

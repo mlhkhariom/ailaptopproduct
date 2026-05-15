@@ -52,7 +52,7 @@ export const useCartStore = create<CartStore>()(
       updateQty: (productId, qty) => set((s) => ({
         items: qty <= 0
           ? s.items.filter((i) => i.product.id !== productId)
-          : s.items.map((i) => i.product.id === productId ? { ...i, qty } : i),
+          : s.items.map((i) => i.product.id === productId ? { ...i, qty: Math.min(qty, i.product.stock || 99) } : i),
       })),
 
       clearCart: () => set({ items: [], appliedCoupon: null, discount: 0 }),

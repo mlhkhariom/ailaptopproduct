@@ -26,7 +26,7 @@ router.get('/', async (req, res) => {
   const totalResult = await db.prepare(countQuery).get(...params);
   const total = totalResult?.total || 0;
 
-  const sortMap = { price_asc: 'price ASC', price_desc: 'price DESC', rating: 'rating DESC', name: 'name ASC', newest: 'created_at DESC', popular: 'reviews DESC' };
+  const sortMap = { price_asc: 'price ASC', price_desc: 'price DESC', rating: 'rating DESC', name: 'name ASC', newest: 'created_at DESC', popular: 'reviews DESC', discount: 'CASE WHEN original_price > 0 THEN (original_price - price) * 100 / original_price ELSE 0 END DESC' };
   query += ` ORDER BY ${sortMap[sort] || 'created_at DESC'}`;
 
   // Pagination
