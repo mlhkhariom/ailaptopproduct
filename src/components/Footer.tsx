@@ -35,26 +35,33 @@ const Footer = () => (
           <h4 className="font-heading font-bold text-sm mb-4 text-background">Quick Links</h4>
           <ul className="space-y-2.5">
             {[
-              { label: "Home", to: "/" },
               { label: "Buy Laptops", to: "/products" },
+              { label: "Offers & Coupons", to: "/offers" },
+              { label: "EMI Calculator", to: "/emi-calculator" },
               { label: "Repair & Services", to: "/services" },
-              { label: "About Us", to: "/about" },
+              { label: "Track Order", to: "/track-order" },
+              { label: "My Account", to: "/account" },
               { label: "Blog", to: "/blog" },
               { label: "Contact Us", to: "/contact" },
-              { label: "Track Order", to: "/track-order" },
-              { label: "Wishlist", to: "/wishlist" },
             ].map(l => (
               <li key={l.to}><Link to={l.to} className="text-sm text-background/60 hover:text-primary transition-colors">{l.label}</Link></li>
             ))}
           </ul>
         </div>
 
-        {/* Services */}
+        {/* Shop by Brand */}
         <div>
-          <h4 className="font-heading font-bold text-sm mb-4 text-background">Repair Services</h4>
+          <h4 className="font-heading font-bold text-sm mb-4 text-background">Shop by Brand</h4>
           <ul className="space-y-2.5">
-            {["Screen Replacement", "Battery Replacement", "Keyboard Repair", "SSD/RAM Upgrade", "OS Installation", "Motherboard Repair", "Data Recovery", "Virus Removal"].map(s => (
-              <li key={s}><Link to="/services" className="text-sm text-background/60 hover:text-primary transition-colors">{s}</Link></li>
+            {[
+              { label: "Dell Laptops", to: "/brands/dell" },
+              { label: "HP Laptops", to: "/brands/hp" },
+              { label: "Lenovo Laptops", to: "/brands/lenovo" },
+              { label: "Apple MacBook", to: "/brands/apple" },
+              { label: "ASUS Laptops", to: "/brands/asus" },
+              { label: "Acer Laptops", to: "/brands/acer" },
+            ].map(l => (
+              <li key={l.to}><Link to={l.to} className="text-sm text-background/60 hover:text-primary transition-colors">{l.label}</Link></li>
             ))}
           </ul>
         </div>

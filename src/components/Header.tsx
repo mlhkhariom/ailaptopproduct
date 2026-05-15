@@ -16,11 +16,11 @@ import { DarkModeToggle } from "@/components/SiteWidgets";
 const navLinks = [
   { label: "Home", to: "/" },
   { label: "Products", to: "/products" },
+  { label: "Offers", to: "/offers" },
   { label: "Repair & Services", to: "/services" },
+  { label: "EMI", to: "/emi-calculator" },
   { label: "Blog", to: "/blog" },
-  { label: "About", to: "/about" },
   { label: "Contact", to: "/contact" },
-  { label: "Track Order", to: "/track-order" },
 ];
 
 const Header = () => {
