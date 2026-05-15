@@ -55,9 +55,14 @@ router.post('/enquiry', async (req, res) => {
   await db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)')
     .run(uuid(), 'lead', 'New Enquiry', `${name} (${cleanPhone}) — ${interest || 'General'}`, '/admin/erp/crm');
 
-  // Auto WhatsApp thank you (non-blocking — don't delay response)
+  // Auto WhatsApp thank you (non-blocking)
   import('../whatsapp/notifications.js').then(({ queueNotification }) => {
     queueNotification(cleanPhone, `🙏 *Thank You, ${name}!*\n\nAapki enquiry receive ho gayi hai.\n${interest ? `\n*Interest:* ${interest}` : ''}\n\nHamari team jaldi contact karegi.\n\n📞 +91 98934 96163\n🌐 ailaptopwala.com\n\n— AI Laptop Wala`, 'enquiry_thankyou');
+  }).catch(() => {});
+
+  // Run CRM automations (non-blocking)
+  import('./crmTools.js').then(({ runLeadAutomations }) => {
+    runLeadAutomations({ id: leadId, name, phone: cleanPhone, source: 'Enquiry Form', interest });
   }).catch(() => {});
 
   res.status(201).json({ success: true, message: 'Thank you! We will contact you soon.' });

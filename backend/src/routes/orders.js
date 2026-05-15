@@ -114,6 +114,17 @@ router.get('/my', authMiddleware, async (req, res) => {
   res.json(orders);
 });
 
+// GET /api/orders/:id/invoice-pdf — download GST invoice PDF
+router.get('/:id/invoice-pdf', async (req, res) => {
+  try {
+    const { generateInvoicePDF } = await import('../lib/invoicePdf.js');
+    const pdf = await generateInvoicePDF(req.params.id);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=invoice-${req.params.id}.pdf`);
+    res.send(pdf);
+  } catch (e) { res.status(404).json({ error: e.message }); }
+});
+
 // GET /api/orders/track/:orderNumber — public tracking
 router.get('/track/:orderNumber', async (req, res) => {
   const order = await db.prepare('SELECT order_number, status, tracking_id, courier, created_at FROM orders WHERE order_number = ?').get(req.params.orderNumber);

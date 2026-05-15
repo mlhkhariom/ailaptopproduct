@@ -30,6 +30,8 @@ const erpGroups = [
       { title: "Leads & Pipeline", url: "/admin/erp/crm", icon: Users, badge: "core" },
       { title: "Follow-ups", url: "/admin/erp/crm?tab=list&status=all", icon: Phone },
       { title: "Kanban Board", url: "/admin/erp/crm?tab=kanban", icon: LayoutDashboard },
+      { title: "Automations", url: "/admin/automations", icon: Zap, badge: "NEW" },
+      { title: "Email Campaigns", url: "/admin/email-campaigns", icon: Mail },
       { title: "Customer 360", url: "/admin/erp/customer360", icon: UserCircle },
     ],
   },

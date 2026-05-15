@@ -459,6 +459,22 @@ export const initDB = async () => {
       id TEXT PRIMARY KEY, lead_id TEXT NOT NULL, type TEXT DEFAULT 'note',
       note TEXT, created_by TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
+    `CREATE TABLE IF NOT EXISTS crm_automations (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, trigger_type TEXT NOT NULL,
+      trigger_conditions JSONB DEFAULT '{}',
+      action_type TEXT NOT NULL, action_config JSONB DEFAULT '{}',
+      is_active INTEGER DEFAULT 1, run_count INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS email_campaigns (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, subject TEXT NOT NULL,
+      body TEXT NOT NULL, recipients TEXT DEFAULT 'all',
+      filter_conditions JSONB DEFAULT '{}',
+      status TEXT DEFAULT 'draft', sent_count INTEGER DEFAULT 0,
+      open_count INTEGER DEFAULT 0, click_count INTEGER DEFAULT 0,
+      scheduled_at TIMESTAMPTZ, sent_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     `CREATE TABLE IF NOT EXISTS suppliers (
       id TEXT PRIMARY KEY, name TEXT NOT NULL, contact_person TEXT, phone TEXT, email TEXT,
       address TEXT, gstin TEXT, payment_terms TEXT DEFAULT 'net30',
