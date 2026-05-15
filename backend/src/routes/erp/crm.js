@@ -267,4 +267,125 @@ router.post('/smtp-test', authMiddleware, adminOnly, async (req, res) => {
 
 
 
+// ── LEAD SOURCE ANALYTICS ─────────────────────────────────
+
+// GET /api/erp/leads/source-analytics
+router.get('/leads/source-analytics', authMiddleware, adminOnly, async (req, res) => {
+  const sources = await db.prepare(`
+    SELECT source, COUNT(*) as total,
+      SUM(CASE WHEN status='won' THEN 1 ELSE 0 END) as won,
+      SUM(CASE WHEN status='lost' THEN 1 ELSE 0 END) as lost,
+      COALESCE(SUM(deal_value),0) as total_value,
+      COALESCE(AVG(score),0) as avg_score
+    FROM leads WHERE source IS NOT NULL GROUP BY source ORDER BY total DESC
+  `).all();
+  res.json(sources.map(s => ({ ...s, conversion_rate: s.total > 0 ? Math.round((s.won / s.total) * 100) : 0 })));
+});
+
+// ── DEAL PIPELINE FORECAST ────────────────────────────────
+
+// GET /api/erp/leads/pipeline-forecast
+router.get('/leads/pipeline-forecast', authMiddleware, adminOnly, async (req, res) => {
+  const pipeline = await db.prepare(`
+    SELECT status, COUNT(*) as count, COALESCE(SUM(deal_value),0) as value,
+      COALESCE(AVG(deal_value),0) as avg_deal
+    FROM leads WHERE status NOT IN ('won','lost') GROUP BY status
+  `).all();
+  const wonThisMonth = await db.prepare("SELECT COUNT(*) as c, COALESCE(SUM(deal_value),0) as v FROM leads WHERE status='won' AND updated_at > NOW() - INTERVAL '30 days'").get();
+  const totalPipeline = pipeline.reduce((s, p) => s + (p.value || 0), 0);
+  // Weighted forecast (each stage has probability)
+  const weights = { new: 0.1, contacted: 0.2, interested: 0.4, negotiation: 0.7 };
+  const forecast = pipeline.reduce((s, p) => s + (p.value || 0) * (weights[p.status] || 0.3), 0);
+  res.json({ pipeline, total_pipeline: totalPipeline, weighted_forecast: Math.round(forecast), won_this_month: wonThisMonth });
+});
+
+// ── DUPLICATE DETECTION + MERGE ───────────────────────────
+
+// GET /api/erp/leads/duplicates — find potential duplicates
+router.get('/leads/duplicates', authMiddleware, adminOnly, async (req, res) => {
+  const duplicates = await db.prepare(`
+    SELECT l1.id as id1, l1.name as name1, l1.phone as phone1, l1.created_at as created1,
+           l2.id as id2, l2.name as name2, l2.phone as phone2, l2.created_at as created2
+    FROM leads l1 JOIN leads l2 ON l1.phone = l2.phone AND l1.id < l2.id
+    LIMIT 20
+  `).all();
+  res.json(duplicates);
+});
+
+// POST /api/erp/leads/merge — merge two leads (keep first, delete second)
+router.post('/leads/merge', authMiddleware, adminOnly, async (req, res) => {
+  const { keep_id, merge_id } = req.body;
+  if (!keep_id || !merge_id) return res.status(400).json({ error: 'keep_id and merge_id required' });
+  // Move activities from merge to keep
+  await db.prepare('UPDATE lead_activities SET lead_id=? WHERE lead_id=?').run(keep_id, merge_id);
+  await db.prepare('UPDATE followups SET lead_id=? WHERE lead_id=?').run(keep_id, merge_id);
+  // Delete merged lead
+  await db.prepare('DELETE FROM leads WHERE id=?').run(merge_id);
+  res.json({ success: true, message: 'Leads merged' });
+});
+
+// ── ROUND-ROBIN ASSIGNMENT ────────────────────────────────
+
+// POST /api/erp/leads/auto-assign — assign next lead to staff in rotation
+router.post('/leads/auto-assign', authMiddleware, adminOnly, async (req, res) => {
+  const { lead_id } = req.body;
+  if (!lead_id) return res.status(400).json({ error: 'lead_id required' });
+  // Get active staff
+  const staff = await db.prepare("SELECT id, name FROM staff WHERE is_active=1 AND role IN ('sales','manager','technician') ORDER BY name").all();
+  if (staff.length === 0) return res.status(400).json({ error: 'No staff available' });
+  // Get last assigned staff
+  const lastAssigned = await db.prepare("SELECT assigned_to FROM leads WHERE assigned_to IS NOT NULL ORDER BY updated_at DESC LIMIT 1").get();
+  const lastIdx = staff.findIndex(s => s.name === lastAssigned?.assigned_to);
+  const nextIdx = (lastIdx + 1) % staff.length;
+  const assignTo = staff[nextIdx];
+  await db.prepare('UPDATE leads SET assigned_to=? WHERE id=?').run(assignTo.name, lead_id);
+  res.json({ success: true, assigned_to: assignTo.name });
+});
+
+// ── CRM REPORTS ───────────────────────────────────────────
+
+// GET /api/erp/leads/reports/conversion-funnel
+router.get('/leads/reports/conversion-funnel', authMiddleware, adminOnly, async (req, res) => {
+  const funnel = await db.prepare(`
+    SELECT 
+      COUNT(*) as total,
+      SUM(CASE WHEN status IN ('contacted','interested','negotiation','won') THEN 1 ELSE 0 END) as contacted,
+      SUM(CASE WHEN status IN ('interested','negotiation','won') THEN 1 ELSE 0 END) as interested,
+      SUM(CASE WHEN status IN ('negotiation','won') THEN 1 ELSE 0 END) as negotiation,
+      SUM(CASE WHEN status='won' THEN 1 ELSE 0 END) as won
+    FROM leads
+  `).get();
+  res.json(funnel);
+});
+
+// GET /api/erp/leads/reports/time-to-close
+router.get('/leads/reports/time-to-close', authMiddleware, adminOnly, async (req, res) => {
+  const avg = await db.prepare("SELECT AVG(EXTRACT(EPOCH FROM (updated_at - created_at))/86400) as avg_days FROM leads WHERE status='won' AND updated_at IS NOT NULL").get();
+  const bySource = await db.prepare("SELECT source, AVG(EXTRACT(EPOCH FROM (updated_at - created_at))/86400) as avg_days, COUNT(*) as count FROM leads WHERE status='won' GROUP BY source").all();
+  res.json({ average_days: Math.round(avg?.avg_days || 0), by_source: bySource });
+});
+
+// ── WHATSAPP TEMPLATES ────────────────────────────────────
+
+// GET /api/erp/wa-templates — saved message templates
+router.get('/wa-templates', authMiddleware, adminOnly, async (req, res) => {
+  const templates = await db.prepare("SELECT * FROM app_settings WHERE key LIKE 'wa_template_%' ORDER BY key").all();
+  res.json(templates.map(t => ({ id: t.key, name: t.key.replace('wa_template_', ''), message: t.value })));
+});
+
+// POST /api/erp/wa-templates — save template
+router.post('/wa-templates', authMiddleware, adminOnly, async (req, res) => {
+  const { name, message } = req.body;
+  if (!name || !message) return res.status(400).json({ error: 'name and message required' });
+  const key = `wa_template_${name.toLowerCase().replace(/\s+/g, '_')}`;
+  await db.prepare("INSERT INTO app_settings (key, value) VALUES (?,?) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value").run(key, message);
+  res.json({ success: true });
+});
+
+// DELETE /api/erp/wa-templates/:name
+router.delete('/wa-templates/:name', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare("DELETE FROM app_settings WHERE key=?").run(`wa_template_${req.params.name}`);
+  res.json({ success: true });
+});
+
 export default router;
