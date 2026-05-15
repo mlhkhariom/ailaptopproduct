@@ -301,4 +301,56 @@ router.patch('/job-cards/:id/approval', authMiddleware, adminOnly, async (req, r
 
 
 
+// ── JOB CARD TIME TRACKING ────────────────────────────────
+
+// POST /api/erp/job-cards/:id/timer/start
+router.post('/job-cards/:id/timer/start', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare("UPDATE job_cards SET timer_start=NOW(), timer_running=1 WHERE id=?").run(req.params.id);
+  res.json({ success: true, started_at: new Date().toISOString() });
+});
+
+// POST /api/erp/job-cards/:id/timer/stop
+router.post('/job-cards/:id/timer/stop', authMiddleware, adminOnly, async (req, res) => {
+  const job = await db.prepare('SELECT timer_start, time_spent FROM job_cards WHERE id=?').get(req.params.id);
+  if (!job?.timer_start) return res.status(400).json({ error: 'Timer not running' });
+  const elapsed = Math.round((Date.now() - new Date(job.timer_start).getTime()) / 60000); // minutes
+  const totalMinutes = (job.time_spent || 0) + elapsed;
+  await db.prepare("UPDATE job_cards SET timer_running=0, timer_start=NULL, time_spent=? WHERE id=?").run(totalMinutes, req.params.id);
+  res.json({ success: true, elapsed_minutes: elapsed, total_minutes: totalMinutes });
+});
+
+// POST /api/erp/job-cards/:id/warranty-check
+router.post('/job-cards/:id/warranty-check', authMiddleware, adminOnly, async (req, res) => {
+  const job = await db.prepare('SELECT * FROM job_cards WHERE id=?').get(req.params.id);
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  // Check if device was sold by us (by serial/phone)
+  const order = await db.prepare("SELECT order_number, created_at FROM orders WHERE items LIKE ? OR address LIKE ? ORDER BY created_at DESC LIMIT 1")
+    .get(`%${job.device_serial || 'NONE'}%`, `%${job.customer_phone || 'NONE'}%`);
+  const warrantyDays = 90;
+  const inWarranty = order ? (Date.now() - new Date(order.created_at).getTime()) < warrantyDays * 24 * 3600 * 1000 : false;
+  res.json({ in_warranty: inWarranty, order: order?.order_number || null, warranty_days: warrantyDays, message: inWarranty ? 'Device is under warranty' : 'Warranty expired or not purchased from us' });
+});
+
+// ── QUOTATION / ESTIMATE ──────────────────────────────────
+
+// POST /api/erp/quotations — create quotation (before invoice)
+router.post('/quotations', authMiddleware, adminOnly, async (req, res) => {
+  const { customer_name, customer_phone, items, notes, valid_days } = req.body;
+  const id = uuid();
+  const quote_number = 'QT-' + Date.now().toString().slice(-6);
+  const subtotal = (items || []).reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0);
+  await db.prepare("INSERT INTO billing (id, invoice_number, customer_name, customer_phone, items, subtotal, total, status, type, notes, due_date) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
+    .run(id, quote_number, customer_name, customer_phone, JSON.stringify(items), subtotal, subtotal, 'draft', 'quotation', notes || '', new Date(Date.now() + (valid_days || 7) * 86400000).toISOString().split('T')[0]);
+  res.status(201).json({ success: true, id, quote_number });
+});
+
+// POST /api/erp/quotations/:id/convert — convert quotation to invoice
+router.post('/quotations/:id/convert', authMiddleware, adminOnly, async (req, res) => {
+  const quote = await db.prepare("SELECT * FROM billing WHERE id=? AND type='quotation'").get(req.params.id);
+  if (!quote) return res.status(404).json({ error: 'Quotation not found' });
+  const invoiceNumber = 'INV-' + Date.now().toString().slice(-6);
+  await db.prepare("UPDATE billing SET type='invoice', invoice_number=?, status='unpaid' WHERE id=?").run(invoiceNumber, req.params.id);
+  res.json({ success: true, invoice_number: invoiceNumber });
+});
+
 export default router;

@@ -158,4 +158,69 @@ router.get('/reorder-suggestions', authMiddleware, adminOnly, async (req, res) =
   res.json(suggestions);
 });
 
+// ── PHYSICAL STOCK AUDIT ──────────────────────────────────
+
+// POST /api/inventory/audit — record physical count
+router.post('/audit', authMiddleware, adminOnly, async (req, res) => {
+  const { items } = req.body; // [{product_id, physical_count}]
+  if (!Array.isArray(items)) return res.status(400).json({ error: 'items array required' });
+  let adjusted = 0;
+  for (const item of items) {
+    const product = await db.prepare('SELECT stock FROM products WHERE id=?').get(item.product_id);
+    if (!product) continue;
+    const diff = item.physical_count - (product.stock || 0);
+    if (diff !== 0) {
+      await db.prepare('UPDATE products SET stock=?, in_stock=? WHERE id=?').run(item.physical_count, item.physical_count > 0 ? 1 : 0, item.product_id);
+      await db.prepare('UPDATE branch_stock SET stock=? WHERE product_id=?').run(item.physical_count, item.product_id);
+      await db.prepare("INSERT INTO stock_movements (id, product_id, type, quantity, note, created_at) VALUES (?,?,?,?,?,NOW())")
+        .run(uuid(), item.product_id, 'audit', diff, `Physical audit: system ${product.stock} → actual ${item.physical_count}`);
+      adjusted++;
+    }
+  }
+  res.json({ success: true, adjusted, total: items.length });
+});
+
+// GET /api/inventory/dead-stock — products with no sales in 60+ days
+router.get('/dead-stock', authMiddleware, adminOnly, async (req, res) => {
+  const deadStock = await db.prepare(`
+    SELECT p.id, p.name, p.stock, p.price, p.created_at,
+      COALESCE((SELECT MAX(o.created_at) FROM orders o WHERE o.items LIKE '%' || p.id || '%'), p.created_at) as last_sold
+    FROM products p WHERE p.status='active' AND p.stock > 0
+    HAVING last_sold < NOW() - INTERVAL '60 days'
+    ORDER BY last_sold ASC LIMIT 50
+  `).all().catch(() => []);
+  // Fallback: products older than 60 days with stock
+  const fallback = deadStock.length > 0 ? deadStock : await db.prepare("SELECT id, name, stock, price, created_at FROM products WHERE status='active' AND stock > 0 AND created_at < NOW() - INTERVAL '60 days' ORDER BY created_at ASC LIMIT 50").all();
+  res.json(fallback);
+});
+
+// GET /api/inventory/auto-reorder — products below reorder level
+router.get('/auto-reorder', authMiddleware, adminOnly, async (req, res) => {
+  const items = await db.prepare(`
+    SELECT p.id, p.name, p.stock, p.sku, bs.reorder_level, s.name as supplier_name, s.id as supplier_id
+    FROM products p
+    LEFT JOIN branch_stock bs ON bs.product_id = p.id
+    LEFT JOIN purchase_orders po ON po.items LIKE '%' || p.id || '%'
+    LEFT JOIN suppliers s ON po.supplier_id = s.id
+    WHERE p.status='active' AND p.stock <= COALESCE(bs.reorder_level, 5)
+    GROUP BY p.id ORDER BY p.stock ASC LIMIT 30
+  `).all().catch(async () => {
+    return await db.prepare("SELECT p.id, p.name, p.stock, p.sku FROM products p LEFT JOIN branch_stock bs ON bs.product_id=p.id WHERE p.status='active' AND p.stock <= COALESCE(bs.reorder_level, 5) ORDER BY p.stock ASC LIMIT 30").all();
+  });
+  res.json(items);
+});
+
+// POST /api/inventory/auto-reorder/generate — auto-create PO for low stock items
+router.post('/auto-reorder/generate', authMiddleware, adminOnly, async (req, res) => {
+  const lowStock = await db.prepare("SELECT p.id, p.name, p.stock, p.price FROM products p LEFT JOIN branch_stock bs ON bs.product_id=p.id WHERE p.status='active' AND p.stock <= COALESCE(bs.reorder_level, 5) AND p.stock > 0 LIMIT 20").all();
+  if (lowStock.length === 0) return res.json({ message: 'No items need reorder' });
+  const id = uuid();
+  const poNumber = 'PO-AUTO-' + Date.now().toString().slice(-6);
+  const items = lowStock.map(p => ({ product_id: p.id, product_name: p.name, quantity: 10, unit_price: Math.round(p.price * 0.6) }));
+  const subtotal = items.reduce((s, i) => s + i.quantity * i.unit_price, 0);
+  await db.prepare("INSERT INTO purchase_orders (id, po_number, status, items, subtotal, total) VALUES (?,?,?,?,?,?)")
+    .run(id, poNumber, 'draft', JSON.stringify(items), subtotal, subtotal);
+  res.status(201).json({ success: true, po_number: poNumber, items_count: items.length });
+});
+
 export default router;

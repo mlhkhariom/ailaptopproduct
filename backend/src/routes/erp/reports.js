@@ -264,4 +264,41 @@ router.get('/yoy-comparison', authMiddleware, adminOnly, async (req, res) => {
 
 
 
+// ── P&L STATEMENT ─────────────────────────────────────────
+
+// GET /api/erp/reports/pnl — Profit & Loss statement
+router.get('/reports/pnl', authMiddleware, adminOnly, async (req, res) => {
+  const { from, to } = req.query;
+  const startDate = from || new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
+  const endDate = to || new Date().toISOString().split('T')[0];
+
+  const revenue = (await db.prepare("SELECT COALESCE(SUM(total),0) as v FROM orders WHERE payment_status='paid' AND DATE(created_at) BETWEEN ? AND ?").get(startDate, endDate))?.v || 0;
+  const serviceRevenue = (await db.prepare("SELECT COALESCE(SUM(total),0) as v FROM billing WHERE status='paid' AND type='invoice' AND DATE(created_at) BETWEEN ? AND ?").get(startDate, endDate))?.v || 0;
+  const expenses = (await db.prepare("SELECT COALESCE(SUM(amount),0) as v FROM expenses WHERE status='approved' AND DATE(date) BETWEEN ? AND ?").get(startDate, endDate))?.v || 0;
+  const salaries = (await db.prepare("SELECT COALESCE(SUM(salary),0) as v FROM staff WHERE is_active=1").get())?.v || 0;
+  const monthlySalary = Math.round(salaries * ((new Date(endDate).getTime() - new Date(startDate).getTime()) / (30 * 86400000)));
+  const cogs = (await db.prepare("SELECT COALESCE(SUM(total),0) as v FROM purchase_orders WHERE status='received' AND DATE(created_at) BETWEEN ? AND ?").get(startDate, endDate))?.v || 0;
+
+  const totalRevenue = revenue + serviceRevenue;
+  const totalExpenses = expenses + monthlySalary + cogs;
+  const netProfit = totalRevenue - totalExpenses;
+
+  res.json({
+    period: { from: startDate, to: endDate },
+    revenue: { orders: revenue, services: serviceRevenue, total: totalRevenue },
+    expenses: { operating: expenses, salaries: monthlySalary, cogs, total: totalExpenses },
+    net_profit: netProfit,
+    margin: totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0,
+  });
+});
+
+// ── CASH FLOW ─────────────────────────────────────────────
+
+// GET /api/erp/reports/cashflow
+router.get('/reports/cashflow', authMiddleware, adminOnly, async (req, res) => {
+  const inflow = await db.prepare("SELECT DATE(created_at) as date, SUM(total) as amount FROM orders WHERE payment_status='paid' AND created_at > NOW() - INTERVAL '30 days' GROUP BY DATE(created_at) ORDER BY date").all();
+  const outflow = await db.prepare("SELECT DATE(date) as date, SUM(amount) as amount FROM expenses WHERE status='approved' AND date > NOW() - INTERVAL '30 days' GROUP BY DATE(date) ORDER BY date").all();
+  res.json({ inflow, outflow });
+});
+
 export default router;

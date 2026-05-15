@@ -458,4 +458,24 @@ router.put('/recurring-expenses/:id', authMiddleware, adminOnly, async (req, res
 
 
 
+// ── CREDIT NOTES ──────────────────────────────────────────
+
+// POST /api/erp/billing/credit-note — issue credit note against invoice
+router.post('/billing/credit-note', authMiddleware, adminOnly, async (req, res) => {
+  const { invoice_id, amount, reason, items } = req.body;
+  if (!invoice_id || !amount) return res.status(400).json({ error: 'invoice_id and amount required' });
+  const invoice = await db.prepare('SELECT * FROM billing WHERE id=?').get(invoice_id);
+  if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+  const id = uuid();
+  const cn_number = 'CN-' + Date.now().toString().slice(-6);
+  await db.prepare("INSERT INTO billing (id, invoice_number, customer_name, customer_phone, items, subtotal, total, status, type, notes) VALUES (?,?,?,?,?,?,?,?,?,?)")
+    .run(id, cn_number, invoice.customer_name, invoice.customer_phone, JSON.stringify(items || []), -amount, -amount, 'issued', 'credit_note', `Against ${invoice.invoice_number}: ${reason || ''}`);
+  res.status(201).json({ success: true, id, cn_number });
+});
+
+// GET /api/erp/billing/credit-notes — list all credit notes
+router.get('/billing/credit-notes', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare("SELECT * FROM billing WHERE type='credit_note' ORDER BY created_at DESC").all());
+});
+
 export default router;

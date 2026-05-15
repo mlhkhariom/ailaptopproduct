@@ -160,6 +160,24 @@ export function startKPIAlertScheduler() {
   console.log('✅ KPI alert + CRM follow-up scheduler started');
 }
 
+// ── Job Card Escalation (runs every hour) ─────────────────
+export function startJobCardEscalation() {
+  setInterval(async () => {
+    try {
+      // Find overdue jobs (created > 48h ago, not completed, not escalated)
+      const overdue = await db.prepare("SELECT jc.*, s.name as tech_name FROM job_cards jc LEFT JOIN staff s ON jc.assigned_to=s.id WHERE jc.status NOT IN ('completed','delivered','cancelled') AND jc.escalated=0 AND jc.created_at < NOW() - INTERVAL '48 hours' LIMIT 5").all();
+      if (overdue.length === 0) return;
+      const adminPhone = (await db.prepare("SELECT value FROM app_settings WHERE key='admin_phone'").get())?.value;
+      if (!adminPhone) return;
+      const list = overdue.map(j => `• ${j.job_number}: ${j.device_name} (${j.tech_name || 'Unassigned'})`).join('\n');
+      const { queueWhatsAppNotification } = await import('./notifications.js');
+      queueWhatsAppNotification(adminPhone, `🚨 *Job Card Escalation*\n\n${overdue.length} repairs overdue (48h+):\n\n${list}\n\nAction needed! → ailaptopwala.com/admin/erp/job-cards`);
+      for (const j of overdue) { await db.prepare('UPDATE job_cards SET escalated=1 WHERE id=?').run(j.id); }
+    } catch (e) { console.error('Escalation error:', e.message); }
+  }, 60 * 60 * 1000);
+  console.log('✅ Job card escalation scheduler started');
+}
+
 // ── Abandoned Cart Recovery (runs every 2 hours) ──────────
 export function startAbandonedCartRecovery() {
   setInterval(async () => {
