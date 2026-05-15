@@ -92,7 +92,7 @@ export default function LeadImportCSV({ open, onClose, onDone }: Props) {
               <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>Choose File</Button>
               <Button size="sm" variant="ghost" className="gap-1.5 text-xs" onClick={downloadSample}><Download className="h-3.5 w-3.5" /> Sample CSV</Button>
             </div>
-            <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFile} />
+            <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFile} />
           </div>
 
           {/* Preview */}

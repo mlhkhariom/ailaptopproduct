@@ -454,6 +454,9 @@ const Checkout = () => {
                 {addr.pin?.startsWith('452') && ' (Indore — Free)'}
               </div>
 
+              {/* Wallet Balance */}
+              <WalletAtCheckout />
+
               {/* Available Coupons */}
               {!appliedCoupon && (
                 <AvailableCouponsCheckout subtotal={subtotal} />
@@ -473,6 +476,25 @@ const Checkout = () => {
     </CustomerLayout>
   );
 };
+
+function WalletAtCheckout() {
+  const [balance, setBalance] = useState(0);
+  const [applied, setApplied] = useState(false);
+  const token = localStorage.getItem('ailaptopwala_token');
+  useEffect(() => {
+    if (!token) return;
+    fetch('/api/wallet', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).then(d => setBalance(d.balance || 0)).catch(() => {});
+  }, []);
+  if (!token || balance <= 0) return null;
+  return (
+    <div className="p-2 rounded-lg bg-purple-50 border border-purple-200 flex items-center justify-between">
+      <div><p className="text-xs font-semibold text-purple-700">💰 Wallet: ₹{balance}</p><p className="text-[10px] text-muted-foreground">Use at checkout</p></div>
+      <Button size="sm" variant={applied ? "secondary" : "outline"} className="text-xs h-7" onClick={() => { setApplied(!applied); (window as any).__useWallet = !applied ? balance : 0; toast(applied ? 'Wallet removed' : `₹${balance} wallet applied!`); }}>
+        {applied ? '✓ Applied' : 'Use'}
+      </Button>
+    </div>
+  );
+}
 
 function AvailableCouponsCheckout({ subtotal }: { subtotal: number }) {
   const [coupons, setCoupons] = useState<any[]>([]);

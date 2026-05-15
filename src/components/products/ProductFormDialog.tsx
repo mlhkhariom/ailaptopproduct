@@ -162,6 +162,13 @@ export default function ProductFormDialog({ open, onClose, form, setForm, editin
             </div>
           </div>
 
+          {/* Additional Images */}
+          <div>
+            <Label className="text-xs">Additional Images (comma-separated URLs)</Label>
+            <Input className="mt-1 h-9 text-xs" value={form.images || ''} onChange={(e) => setForm({ ...form, images: e.target.value })} placeholder="https://img1.jpg, https://img2.jpg, https://img3.jpg" />
+            <p className="text-[10px] text-muted-foreground mt-0.5">Or manage via ⋮ → Variants after saving</p>
+          </div>
+
           {/* Stock */}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center gap-2">

@@ -165,7 +165,27 @@ const AdminBlog = () => {
             <div><Label className="text-xs">Featured Image URL</Label><Input value={form.image} onChange={f('image')} className="mt-1 text-sm" placeholder="https://..." /></div>
             {form.image && <img src={form.image} alt="" className="w-full h-32 object-cover rounded-lg" onError={e => (e.currentTarget.style.display = 'none')} />}
             <div><Label className="text-xs">Excerpt</Label><Textarea value={form.excerpt} onChange={f('excerpt')} className="mt-1 text-sm resize-none" rows={2} /></div>
-            <div><Label className="text-xs">Content</Label><Textarea value={form.content} onChange={f('content')} className="mt-1 text-sm resize-none font-mono" rows={8} placeholder="Write your article here..." /></div>
+            <div>
+              <Label className="text-xs">Content (Markdown supported)</Label>
+              <div className="mt-1 border rounded-lg overflow-hidden">
+                <div className="flex gap-1 p-1.5 bg-muted/50 border-b">
+                  {[
+                    { label: 'B', md: '**', title: 'Bold' },
+                    { label: 'I', md: '_', title: 'Italic' },
+                    { label: 'H2', md: '## ', title: 'Heading' },
+                    { label: '•', md: '- ', title: 'List' },
+                    { label: '🔗', md: '[text](url)', title: 'Link' },
+                    { label: '📷', md: '![alt](url)', title: 'Image' },
+                  ].map(btn => (
+                    <button key={btn.label} type="button" title={btn.title} className="px-2 py-0.5 text-xs font-mono border rounded hover:bg-accent"
+                      onClick={() => { const el = document.getElementById('blog-content') as HTMLTextAreaElement; if (el) { const start = el.selectionStart; const end = el.selectionEnd; const text = el.value; const selected = text.substring(start, end); const newText = btn.md.includes('(') ? btn.md : `${btn.md}${selected}${btn.md}`; setForm((prev: any) => ({ ...prev, content: text.substring(0, start) + newText + text.substring(end) })); } }}>
+                      {btn.label}
+                    </button>
+                  ))}
+                </div>
+                <Textarea id="blog-content" value={form.content} onChange={f('content')} className="border-0 rounded-none text-sm resize-none font-mono focus-visible:ring-0" rows={10} placeholder="# Your Article Title\n\nWrite content with **bold**, _italic_, [links](url)..." />
+              </div>
+            </div>
             <div><Label className="text-xs">Tags (comma separated)</Label><Input value={form.tags} onChange={f('tags')} className="mt-1 text-sm" placeholder="laptop, repair, indore" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-xs">SEO Title</Label><Input value={form.seo_title} onChange={f('seo_title')} className="mt-1 text-sm" /></div>
