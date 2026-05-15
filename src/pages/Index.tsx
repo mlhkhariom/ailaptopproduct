@@ -17,6 +17,50 @@ import homeRepairImg from "@/assets/homeservies.jpeg";
 
 const iconMap: Record<string, any> = { Laptop, Shield, Wrench, Truck, CheckCircle, Star };
 
+// Recently Viewed section
+const RecentlyViewedSection = ({ products }: { products: any[] }) => {
+  const [recentIds, setRecentIds] = useState<string[]>([]);
+  useEffect(() => { setRecentIds(JSON.parse(localStorage.getItem('recently-viewed') || '[]')); }, []);
+  const recentProducts = recentIds.map(id => products.find(p => p.id === id)).filter(Boolean).slice(0, 4);
+  if (recentProducts.length === 0) return null;
+  return (
+    <section className="py-10">
+      <div className="container mx-auto px-4">
+        <h2 className="text-xl md:text-2xl font-black mb-5">Recently <span className="gradient-text">Viewed</span></h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
+          {recentProducts.map((p: any) => <ProductCard key={p.id} product={p} />)}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// Deal countdown timer (resets daily at midnight)
+const DealTimer = () => {
+  const [time, setTime] = useState({ h: 0, m: 0, s: 0 });
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      const end = new Date(now); end.setHours(23, 59, 59, 999);
+      const diff = Math.max(0, end.getTime() - now.getTime());
+      setTime({ h: Math.floor(diff / 3600000), m: Math.floor((diff % 3600000) / 60000), s: Math.floor((diff % 60000) / 1000) });
+    };
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="flex items-center gap-1">
+      {[['h', time.h], ['m', time.m], ['s', time.s]].map(([l, v]) => (
+        <div key={l as string} className="bg-red-600 text-white rounded-lg px-2 py-1 text-center min-w-[36px]">
+          <span className="text-sm font-bold">{String(v).padStart(2, '0')}</span>
+          <span className="text-[8px] block -mt-0.5">{l}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const Index = () => {
   const { products, fetchProducts } = useProductStore();
   const [benefits, setBenefits] = useState<any[]>([]);
@@ -186,6 +230,27 @@ const Index = () => {
         </section>
       )}
 
+      {/* ── DEAL OF THE DAY ─────────────────────────────── */}
+      {products.filter(p => p.badge === 'Deal' || p.original_price > p.price * 1.15).length > 0 && (
+        <section className="py-10 bg-gradient-to-r from-red-50 via-orange-50 to-yellow-50">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">⚡</span>
+                <div>
+                  <h2 className="text-xl md:text-2xl font-black">Deal of the <span className="text-red-600">Day</span></h2>
+                  <p className="text-xs text-muted-foreground">Limited time offers — grab before they're gone!</p>
+                </div>
+              </div>
+              <DealTimer />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
+              {products.filter(p => p.badge === 'Deal' || p.original_price > p.price * 1.15).slice(0, 4).map(p => <ProductCard key={p.id} product={p} />)}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── FEATURED PRODUCTS ────────────────────────────── */}
       <section className="py-12">
         <div className="container mx-auto px-4">
@@ -252,6 +317,9 @@ const Index = () => {
           </div>
         </section>
       )}
+
+      {/* ── RECENTLY VIEWED ──────────────────────────────── */}
+      <RecentlyViewedSection products={products} />
 
       {/* ── STATS / WHY CHOOSE US ─────────────────────────── */}
       <section className="py-12 bg-gradient-to-br from-orange-50 via-white to-orange-50">

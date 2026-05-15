@@ -153,6 +153,8 @@ const Account = () => {
                 <TabsTrigger value="profile" className="gap-1 text-xs"><User className="h-3 w-3" /> Profile</TabsTrigger>
                 <TabsTrigger value="wishlist" className="gap-1 text-xs"><Heart className="h-3 w-3" /> Wishlist ({wishlistProducts.length})</TabsTrigger>
                 <TabsTrigger value="password" className="gap-1 text-xs"><Lock className="h-3 w-3" /> Password</TabsTrigger>
+                <TabsTrigger value="addresses" className="gap-1 text-xs"><MapPin className="h-3 w-3" /> Addresses</TabsTrigger>
+                <TabsTrigger value="returns" className="gap-1 text-xs"><Package className="h-3 w-3" /> Returns</TabsTrigger>
               </TabsList>
 
               {/* ORDERS */}
@@ -276,6 +278,16 @@ const Account = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
+
+              {/* ADDRESSES */}
+              <TabsContent value="addresses" className="mt-4 space-y-3">
+                <AddressesTab />
+              </TabsContent>
+
+              {/* RETURNS */}
+              <TabsContent value="returns" className="mt-4 space-y-3">
+                <ReturnsTab orders={myOrders} />
+              </TabsContent>
             </Tabs>
           </div>
         </div>
@@ -283,5 +295,146 @@ const Account = () => {
     </CustomerLayout>
   );
 };
+
+// ── Addresses Tab ─────────────────────────────────────────
+function AddressesTab() {
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ label: 'Home', name: '', phone: '', address: '', city: '', state: 'Madhya Pradesh', pin: '' });
+  const token = localStorage.getItem('ailaptopwala_token');
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+  const load = () => fetch('/api/addresses', { headers }).then(r => r.json()).then(d => { if (Array.isArray(d)) setAddresses(d); });
+  useEffect(() => { load(); }, []);
+
+  const save = async () => {
+    if (!form.name || !form.phone || !form.address || !form.city || !form.pin) return toast.error('Fill all required fields');
+    await fetch('/api/addresses', { method: 'POST', headers, body: JSON.stringify({ ...form, is_default: addresses.length === 0 }) });
+    toast.success('Address saved!');
+    setShowForm(false); setForm({ label: 'Home', name: '', phone: '', address: '', city: '', state: 'Madhya Pradesh', pin: '' });
+    load();
+  };
+
+  const remove = async (id: string) => { await fetch(`/api/addresses/${id}`, { method: 'DELETE', headers }); toast.success('Deleted'); load(); };
+  const setDefault = async (id: string) => { await fetch(`/api/addresses/${id}/default`, { method: 'PUT', headers }); toast.success('Set as default'); load(); };
+
+  return (
+    <div className="space-y-3">
+      {addresses.map((a: any) => (
+        <Card key={a.id}>
+          <CardContent className="p-4 flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-semibold text-sm">{a.label}</span>
+                {a.is_default ? <Badge variant="secondary" className="text-[10px]">Default</Badge> : null}
+              </div>
+              <p className="text-sm">{a.name} • {a.phone}</p>
+              <p className="text-xs text-muted-foreground">{a.address}, {a.city}, {a.state} - {a.pin}</p>
+            </div>
+            <div className="flex gap-1">
+              {!a.is_default && <Button size="sm" variant="ghost" className="text-xs" onClick={() => setDefault(a.id)}>Set Default</Button>}
+              <Button size="sm" variant="ghost" className="text-xs text-destructive" onClick={() => remove(a.id)}>Delete</Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+      {!showForm ? (
+        <Button variant="outline" className="w-full" onClick={() => setShowForm(true)}>+ Add New Address</Button>
+      ) : (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Label</Label><Input className="mt-1 h-9" value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))} placeholder="Home/Office" /></div>
+              <div><Label className="text-xs">Full Name *</Label><Input className="mt-1 h-9" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+            </div>
+            <div><Label className="text-xs">Phone *</Label><Input className="mt-1 h-9" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+            <div><Label className="text-xs">Address *</Label><Input className="mt-1 h-9" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label className="text-xs">City *</Label><Input className="mt-1 h-9" value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} /></div>
+              <div><Label className="text-xs">State</Label><Input className="mt-1 h-9" value={form.state} onChange={e => setForm(f => ({ ...f, state: e.target.value }))} /></div>
+              <div><Label className="text-xs">PIN *</Label><Input className="mt-1 h-9" value={form.pin} onChange={e => setForm(f => ({ ...f, pin: e.target.value }))} /></div>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={save}>Save Address</Button>
+              <Button variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ── Returns Tab ───────────────────────────────────────────
+function ReturnsTab({ orders }: { orders: any[] }) {
+  const [returns, setReturns] = useState<any[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ order_id: '', reason: '', type: 'return' });
+  const token = localStorage.getItem('ailaptopwala_token');
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+  const load = () => fetch('/api/returns', { headers }).then(r => r.json()).then(d => { if (Array.isArray(d)) setReturns(d); });
+  useEffect(() => { load(); }, []);
+
+  const submit = async () => {
+    if (!form.order_id || !form.reason) return toast.error('Select order and enter reason');
+    const res = await fetch('/api/returns', { method: 'POST', headers, body: JSON.stringify(form) }).then(r => r.json());
+    if (res.success) { toast.success(res.message || 'Return request submitted!'); setShowForm(false); load(); }
+    else toast.error(res.error || 'Failed');
+  };
+
+  const statusColor: Record<string, string> = { requested: 'bg-yellow-100 text-yellow-700', approved: 'bg-green-100 text-green-700', rejected: 'bg-red-100 text-red-700', refunded: 'bg-blue-100 text-blue-700' };
+
+  return (
+    <div className="space-y-3">
+      {returns.length === 0 && !showForm && <p className="text-sm text-muted-foreground text-center py-8">No return requests yet</p>}
+      {returns.map((r: any) => (
+        <Card key={r.id}>
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="font-semibold text-sm">Order: {r.order_number}</p>
+                <p className="text-xs text-muted-foreground mt-1">Reason: {r.reason}</p>
+                <p className="text-xs text-muted-foreground">Type: {r.type} • Amount: ₹{r.refund_amount?.toLocaleString('en-IN')}</p>
+              </div>
+              <Badge className={statusColor[r.status] || 'bg-muted'}>{r.status}</Badge>
+            </div>
+            {r.admin_notes && <p className="text-xs mt-2 p-2 bg-muted rounded">Admin: {r.admin_notes}</p>}
+          </CardContent>
+        </Card>
+      ))}
+      {!showForm ? (
+        <Button variant="outline" className="w-full" onClick={() => setShowForm(true)}>Request Return/Refund</Button>
+      ) : (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div>
+              <Label className="text-xs">Select Order *</Label>
+              <select className="w-full mt-1 h-9 border rounded-md px-3 text-sm" value={form.order_id} onChange={e => setForm(f => ({ ...f, order_id: e.target.value }))}>
+                <option value="">Choose order...</option>
+                {orders.filter(o => o.status === 'delivered').map((o: any) => (
+                  <option key={o.id} value={o.order_number}>{o.order_number} — ₹{o.total}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label className="text-xs">Type</Label>
+              <select className="w-full mt-1 h-9 border rounded-md px-3 text-sm" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+                <option value="return">Return</option>
+                <option value="refund">Refund Only</option>
+                <option value="exchange">Exchange</option>
+              </select>
+            </div>
+            <div><Label className="text-xs">Reason *</Label><Input className="mt-1 h-9" value={form.reason} onChange={e => setForm(f => ({ ...f, reason: e.target.value }))} placeholder="Why do you want to return?" /></div>
+            <div className="flex gap-2">
+              <Button onClick={submit}>Submit Request</Button>
+              <Button variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
 
 export default Account;
