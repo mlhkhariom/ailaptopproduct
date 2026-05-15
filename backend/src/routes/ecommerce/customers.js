@@ -38,4 +38,23 @@ router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
   res.json({ message: 'Updated' });
 });
 
+// GET /api/customers/segments — customer segments with counts
+router.get('/segments', authMiddleware, adminOnly, async (req, res) => {
+  const total = (await db.prepare("SELECT COUNT(*) as c FROM users WHERE role='customer'").get())?.c || 0;
+  const withOrders = (await db.prepare("SELECT COUNT(DISTINCT user_id) as c FROM orders WHERE user_id IS NOT NULL").get())?.c || 0;
+  const vip = (await db.prepare("SELECT COUNT(DISTINCT user_id) as c FROM orders WHERE user_id IS NOT NULL GROUP BY user_id HAVING COUNT(*) >= 3").all())?.length || 0;
+  const recent30 = (await db.prepare("SELECT COUNT(*) as c FROM users WHERE role='customer' AND created_at > NOW() - INTERVAL '30 days'").get())?.c || 0;
+  const inactive = total - withOrders;
+
+  res.json({
+    segments: [
+      { name: 'All Customers', count: total, filter: 'all' },
+      { name: 'VIP (3+ orders)', count: vip, filter: 'vip' },
+      { name: 'Active (has orders)', count: withOrders, filter: 'active' },
+      { name: 'New (last 30 days)', count: recent30, filter: 'new' },
+      { name: 'Inactive (no orders)', count: inactive, filter: 'inactive' },
+    ]
+  });
+});
+
 export default router;

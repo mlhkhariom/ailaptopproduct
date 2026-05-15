@@ -72,6 +72,10 @@ export default function Compare() {
                 {items.map(item => <td key={item.id} className="p-3 text-center border-l text-sm">{item.category || '-'}</td>)}
               </tr>
               <tr className="border-t">
+                <td className="p-3 text-sm text-muted-foreground">Brand</td>
+                {items.map(item => <td key={item.id} className="p-3 text-center border-l text-sm font-medium">{item.brand || item.name?.split(' ')[0] || '-'}</td>)}
+              </tr>
+              <tr className="border-t bg-muted/30">
                 <td className="p-3 text-sm text-muted-foreground">Rating</td>
                 {items.map(item => <td key={item.id} className="p-3 text-center border-l text-sm">{item.rating ? `⭐ ${item.rating}/5` : '-'}</td>)}
               </tr>

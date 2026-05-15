@@ -173,4 +173,18 @@ router.patch('/staff/:id/shift', authMiddleware, adminOnly, async (req, res) => 
 
 
 
+// GET /api/erp/staff/performance — staff performance metrics
+router.get('/staff/performance', authMiddleware, adminOnly, async (req, res) => {
+  const staff = await db.prepare('SELECT id, name, role FROM staff WHERE is_active=1').all();
+  const performance = [];
+  for (const s of staff) {
+    const jobsDone = (await db.prepare("SELECT COUNT(*) as c FROM job_cards WHERE assigned_to=? AND status='completed'").get(s.id))?.c || 0;
+    const jobsTotal = (await db.prepare("SELECT COUNT(*) as c FROM job_cards WHERE assigned_to=?").get(s.id))?.c || 0;
+    const leadsWon = (await db.prepare("SELECT COUNT(*) as c FROM leads WHERE assigned_to=? AND status='won'").get(s.name))?.c || 0;
+    const attendance = (await db.prepare("SELECT COUNT(*) as c FROM attendance WHERE staff_id=? AND status='present' AND date > NOW() - INTERVAL '30 days'").get(s.id))?.c || 0;
+    performance.push({ ...s, jobs_completed: jobsDone, jobs_total: jobsTotal, leads_won: leadsWon, attendance_30d: attendance, completion_rate: jobsTotal > 0 ? Math.round((jobsDone / jobsTotal) * 100) : 0 });
+  }
+  res.json(performance.sort((a, b) => b.completion_rate - a.completion_rate));
+});
+
 export default router;

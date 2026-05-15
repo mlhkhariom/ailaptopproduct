@@ -32,6 +32,14 @@ New Leads: ${newLeads?.c || 0}
 AI Laptop Wala`;
 
     await queueNotification(OWNER_PHONE, msg, 'daily_report');
+
+    // Also send via email
+    try {
+      const { sendEmail } = await import('../lib/email.js');
+      const adminEmail = (await db.prepare("SELECT value FROM app_settings WHERE key='site_email'").get())?.value;
+      if (adminEmail) await sendEmail({ to: adminEmail, subject: `📊 Daily Report — ${today}`, html: `<pre>${msg}</pre>`, toggleKey: 'email_daily_report' });
+    } catch {}
+
     console.log('Daily sales report sent to owner');
   } catch (e) {
     console.error('Daily report error:', e.message);

@@ -130,4 +130,28 @@ router.post('/google', async (req, res) => {
   }
 });
 
+// ── 2FA (Simple PIN-based for admin) ──────────────────────
+
+// POST /api/auth/2fa/setup — admin sets a 6-digit PIN
+router.post('/2fa/setup', authMiddleware, async (req, res) => {
+  const { pin } = req.body;
+  if (!pin || pin.length !== 6 || isNaN(pin)) return res.status(400).json({ error: '6-digit PIN required' });
+  await db.prepare("UPDATE users SET address = jsonb_set(COALESCE(address::jsonb,'{}'), '{twofa_pin}', ?::jsonb) WHERE id=?")
+    .run(JSON.stringify(pin), req.user.id).catch(async () => {
+      // Fallback: store in app_settings
+      await db.prepare("INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value")
+        .run(`2fa_pin_${req.user.id}`, pin);
+    });
+  res.json({ success: true, message: '2FA PIN set' });
+});
+
+// POST /api/auth/2fa/verify — verify PIN on login
+router.post('/2fa/verify', async (req, res) => {
+  const { user_id, pin } = req.body;
+  const stored = (await db.prepare("SELECT value FROM app_settings WHERE key=?").get(`2fa_pin_${user_id}`))?.value;
+  if (!stored) return res.json({ success: true }); // No 2FA set
+  if (stored !== pin) return res.status(401).json({ error: 'Invalid PIN' });
+  res.json({ success: true });
+});
+
 export default router;
