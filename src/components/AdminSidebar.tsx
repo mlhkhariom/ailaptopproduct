@@ -1,4 +1,4 @@
-import { LayoutDashboard, Clock, Tv2, Sun, Moon, Shield, Search, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, Box, Calendar, MessageSquare, CalendarCheck, CalendarX, RefreshCw, Table2, Gift, UserCircle, FileSpreadsheet, Phone } from "lucide-react";
+import { LayoutDashboard, Clock, Tv2, Sun, Moon, Shield, Search, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, Box, Calendar, MessageSquare, CalendarCheck, CalendarX, RefreshCw, Table2, Gift, UserCircle, FileSpreadsheet, Phone, RotateCcw, Layout } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import {
@@ -89,8 +89,11 @@ const mainMenu = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, badge: "" },
   { title: "Products", url: "/admin/products", icon: Package, badge: "" },
   { title: "Orders", url: "/admin/orders", icon: ShoppingBag, badge: "" },
+  { title: "Returns", url: "/admin/returns", icon: RotateCcw, badge: "" },
   { title: "Customers", url: "/admin/customers", icon: Users, badge: "" },
   { title: "Categories", url: "/admin/categories", icon: Tag, badge: "" },
+  { title: "Abandoned Carts", url: "/admin/abandoned-carts", icon: ShoppingCart, badge: "" },
+  { title: "Homepage", url: "/admin/homepage-sections", icon: Layout, badge: "NEW" },
 ];
 
 const toolsMenu = [

@@ -467,4 +467,10 @@ router.post('/settings/reset', authMiddleware, superAdminOnly, async (req, res) 
   res.json({ message: 'Settings reset to defaults (API keys preserved)' });
 });
 
+// GET /api/erp/abandoned-carts — admin
+router.get('/abandoned-carts', authMiddleware, adminOnly, async (req, res) => {
+  const carts = await db.prepare('SELECT * FROM abandoned_carts ORDER BY created_at DESC LIMIT 50').all();
+  res.json(carts);
+});
+
 export default router;
