@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { ArrowLeft, MessageCircle, ShieldCheck, Star, Heart, Share2, CheckCheck, ShoppingCart, Clock, Wrench, Phone, CheckCircle, ZoomIn, Scale } from "lucide-react";
+import { ArrowLeft, MessageCircle, ShieldCheck, Star, Heart, Share2, CheckCheck, ShoppingCart, Clock, Wrench, Phone, CheckCircle, ZoomIn, Scale, Zap, Truck, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +15,7 @@ import { useWishlistStore } from "@/store/wishlistStore";
 import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import { trackProductView } from "@/components/SiteWidgets";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -28,18 +29,29 @@ const ProductDetail = () => {
   const [copied, setCopied] = useState(false);
   const [zoomActive, setZoomActive] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
-
   const [loading, setLoading] = useState(true);
+  const [productData, setProductData] = useState<any>(null);
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
 
+  // Fetch full product data (with images + variants)
   useEffect(() => {
-    if (products.length === 0) {
-      fetchProducts().finally(() => setLoading(false));
-    } else {
+    if (!id) return;
+    setLoading(true);
+    fetch(`/api/products/${id}`).then(r => r.json()).then(data => {
+      if (data.error) { setLoading(false); return; }
+      setProductData(data);
+      if (data.variants?.length > 0) {
+        setSelectedVariant(data.variants[0]);
+        const attrs = typeof data.variants[0].attributes === 'string' ? JSON.parse(data.variants[0].attributes) : data.variants[0].attributes;
+        setSelectedOptions(attrs || {});
+      }
       setLoading(false);
-    }
-  }, []);
+    }).catch(() => setLoading(false));
+    if (products.length === 0) fetchProducts();
+  }, [id]);
 
-  const product = products.find((p) => p.id === id || p.slug === id);
+  const product = productData || products.find((p) => p.id === id || p.slug === id);
 
   useEffect(() => {
     if (product) {
@@ -113,6 +125,31 @@ const ProductDetail = () => {
 
   const benefits = Array.isArray(product.benefits) ? product.benefits : (typeof product.benefits === 'string' ? JSON.parse(product.benefits || '[]') : []);
 
+  // Images — from product_images or fallback to single image
+  const allImages = product.images?.length > 0 ? product.images : (product.image ? [{ id: 'main', url: product.image, alt: product.name }] : []);
+
+  // Variant options
+  const variantOptions = product.variant_options || [];
+  const variants = product.variants || [];
+
+  // Active price (variant or base)
+  const activePrice = selectedVariant?.price || product.price;
+  const activeOriginalPrice = selectedVariant?.original_price || product.originalPrice || product.original_price;
+  const activeStock = selectedVariant?.stock ?? product.stock;
+  const activeInStock = selectedVariant ? selectedVariant.in_stock : product.inStock;
+
+  // Select variant based on chosen options
+  const selectOption = (optName: string, optValue: string) => {
+    const newOptions = { ...selectedOptions, [optName]: optValue };
+    setSelectedOptions(newOptions);
+    // Find matching variant
+    const match = variants.find((v: any) => {
+      const attrs = typeof v.attributes === 'string' ? JSON.parse(v.attributes) : v.attributes;
+      return Object.entries(newOptions).every(([k, val]) => attrs[k] === val);
+    });
+    if (match) setSelectedVariant(match);
+  };
+
   return (
     <CustomerLayout>
       <SEOHead title={seoTitle} description={seoDesc} canonical={`/products/${product.slug || product.id}`} image={productImage} type="product"
@@ -129,8 +166,9 @@ const ProductDetail = () => {
         </nav>
 
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 mb-12">
-          {/* ── IMAGE ─────────────────────────────────────── */}
+          {/* ── IMAGE GALLERY ─────────────────────────────── */}
           <div>
+            {/* Main Image */}
             <div
               className="relative rounded-2xl overflow-hidden bg-muted/30 border aspect-square group"
               onMouseEnter={() => product_zoom && setZoomActive(true)}
@@ -138,21 +176,15 @@ const ProductDetail = () => {
               onMouseMove={(e) => {
                 if (!product_zoom) return;
                 const rect = e.currentTarget.getBoundingClientRect();
-                setZoomPos({
-                  x: ((e.clientX - rect.left) / rect.width) * 100,
-                  y: ((e.clientY - rect.top) / rect.height) * 100,
-                });
+                setZoomPos({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 });
               }}
               style={product_zoom && zoomActive ? { cursor: 'zoom-in' } : {}}
             >
               <img
-                src={product.image}
-                alt={product.name}
+                src={allImages[mainImage]?.url || product.image}
+                alt={allImages[mainImage]?.alt || product.name}
                 className="w-full h-full object-cover transition-transform duration-200"
-                style={product_zoom && zoomActive ? {
-                  transform: `scale(2.2)`,
-                  transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                } : {}}
+                style={product_zoom && zoomActive ? { transform: `scale(2.2)`, transformOrigin: `${zoomPos.x}% ${zoomPos.y}%` } : {}}
               />
               {product_zoom && !zoomActive && (
                 <div className="absolute bottom-3 right-3 bg-black/50 text-white text-[10px] px-2 py-1 rounded flex items-center gap-1">
@@ -162,9 +194,27 @@ const ProductDetail = () => {
               {discount > 0 && <Badge className="absolute top-4 left-4 bg-primary text-white text-sm px-3 py-1">{discount}% OFF</Badge>}
               {product.badge && <Badge className="absolute top-4 right-4 bg-secondary text-white text-xs">{product.badge}</Badge>}
               {product.stock <= 3 && product.inStock && <Badge className="absolute bottom-4 left-4 bg-destructive text-white text-xs">Only {product.stock} left!</Badge>}
+              {/* Nav arrows */}
+              {allImages.length > 1 && (
+                <>
+                  <button className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-1.5 shadow hover:bg-white" onClick={() => setMainImage(i => i > 0 ? i - 1 : allImages.length - 1)}><ChevronLeft className="h-4 w-4" /></button>
+                  <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-1.5 shadow hover:bg-white" onClick={() => setMainImage(i => i < allImages.length - 1 ? i + 1 : 0)}><ChevronRight className="h-4 w-4" /></button>
+                </>
+              )}
             </div>
 
-            {/* Reels linked to this product (enable_reels toggle) */}
+            {/* Thumbnails */}
+            {allImages.length > 1 && (
+              <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
+                {allImages.map((img: any, i: number) => (
+                  <button key={img.id || i} onClick={() => setMainImage(i)}
+                    className={`shrink-0 w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${i === mainImage ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-muted-foreground/30'}`}>
+                    <img src={img.url} alt={img.alt || `${product.name} ${i + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+
             {enable_reels && <ProductReels productId={product.id} />}
           </div>
 
@@ -198,9 +248,39 @@ const ProductDetail = () => {
 
             {/* Stock */}
             <div className="flex items-center gap-2 mb-5">
-              <span className={`w-2.5 h-2.5 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-destructive'}`} />
-              <span className="text-sm font-medium">{product.inStock ? `In Stock (${product.stock} units)` : 'Out of Stock'}</span>
+              <span className={`w-2.5 h-2.5 rounded-full ${activeInStock ? 'bg-green-500' : 'bg-destructive'}`} />
+              <span className="text-sm font-medium">{activeInStock ? `In Stock (${activeStock} units)` : 'Out of Stock'}</span>
             </div>
+
+            {/* ── VARIANT SELECTOR ─────────────────────────── */}
+            {variantOptions.length > 0 && (
+              <div className="space-y-4 mb-5 p-4 rounded-xl border bg-muted/20">
+                {variantOptions.map((opt: any) => {
+                  const values = typeof opt.option_values === 'string' ? JSON.parse(opt.option_values) : opt.option_values;
+                  return (
+                    <div key={opt.id}>
+                      <p className="text-sm font-semibold mb-2">{opt.option_name}: <span className="text-primary">{selectedOptions[opt.option_name] || '—'}</span></p>
+                      <div className="flex flex-wrap gap-2">
+                        {values.map((val: string) => (
+                          <button key={val} onClick={() => selectOption(opt.option_name, val)}
+                            className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${selectedOptions[opt.option_name] === val ? 'border-primary bg-primary text-primary-foreground shadow-sm' : 'hover:border-primary/50 bg-card'}`}>
+                            {val}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+                {selectedVariant && (
+                  <div className="flex items-baseline gap-2 pt-2 border-t">
+                    <span className="text-2xl font-black text-primary">₹{activePrice.toLocaleString('en-IN')}</span>
+                    {activeOriginalPrice && activeOriginalPrice > activePrice && (
+                      <span className="text-sm text-muted-foreground line-through">₹{activeOriginalPrice.toLocaleString('en-IN')}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Key specs from benefits */}
             {benefits.length > 0 && (
@@ -231,18 +311,24 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {/* Qty + Add to Cart */}
-            <div className="flex items-center gap-3 mb-4">
+            {/* Qty + Add to Cart + Buy Now */}
+            <div className="flex items-center gap-3 mb-3">
               <div className="flex items-center border rounded-xl overflow-hidden">
                 <button className="px-3 py-2.5 hover:bg-muted transition-colors text-lg font-bold" onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
                 <span className="px-4 py-2.5 font-bold min-w-[3rem] text-center">{qty}</span>
                 <button className="px-3 py-2.5 hover:bg-muted transition-colors text-lg font-bold" onClick={() => setQty(qty + 1)}>+</button>
               </div>
-              <Button size="lg" className="flex-1 gap-2 h-11 font-bold" disabled={!product.inStock}
-                onClick={() => { addItem(product, qty); toast.success("Added to cart!"); }}>
+              <Button size="lg" className="flex-1 gap-2 h-11 font-bold" disabled={!activeInStock}
+                onClick={() => { addItem({ ...product, price: activePrice, variant: selectedVariant?.name }, qty); toast.success("Added to cart!"); }}>
                 <ShoppingCart className="h-4 w-4" /> Add to Cart
               </Button>
             </div>
+
+            {/* Buy Now */}
+            <Button size="lg" variant="secondary" className="w-full gap-2 h-11 font-bold mb-4" disabled={!activeInStock}
+              onClick={() => { addItem({ ...product, price: activePrice, variant: selectedVariant?.name }, qty); navigate('/checkout'); }}>
+              <Zap className="h-4 w-4" /> Buy Now
+            </Button>
 
             {/* WhatsApp Buy */}
             <a href={`https://wa.me/919893496163?text=Hi, I'm interested in ${encodeURIComponent(product.name)} (₹${product.price.toLocaleString('en-IN')}) - ${pageUrl}`}
