@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Users, Plus, Edit, Trash2, RefreshCw, Search, Phone, MessageCircle, ClipboardList, TrendingUp, Download, Upload, LayoutGrid, List, BarChart3, AlertTriangle, CheckCircle, Target } from "lucide-react";
+import { Users, Plus, Edit, Trash2, RefreshCw, Search, Phone, MessageCircle, ClipboardList, TrendingUp, Download, Upload, LayoutGrid, List, BarChart3, AlertTriangle, CheckCircle, Target, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import CRMKanban from "@/components/CRMKanban";
 import CRMLeadDetail from "@/components/CRMLeadDetail";
@@ -434,12 +434,18 @@ export default function AdminCRM() {
                         </td>
                         <td className="p-3.5" onClick={e => e.stopPropagation()}>
                           <div className="flex gap-1 justify-center">
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600" title="Convert" onClick={() => openConvert(l)}><ClipboardList className="h-3.5 w-3.5" /></Button>
-                            <a href={`https://wa.me/91${l.phone?.replace(/\D/g,'')}`} target="_blank" rel="noreferrer">
-                              <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600"><MessageCircle className="h-3.5 w-3.5" /></Button>
+                            <a href={`tel:+91${l.phone?.replace(/\D/g,'')}`}>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600" title="Call"><Phone className="h-3.5 w-3.5" /></Button>
                             </a>
-                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setForm({ ...emptyForm, ...l }); setEditingId(l.id); setDialogOpen(true); }}><Edit className="h-3.5 w-3.5" /></Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => del(l.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                            <a href={`https://wa.me/91${l.phone?.replace(/\D/g,'')}`} target="_blank" rel="noreferrer">
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" title="WhatsApp"><MessageCircle className="h-3.5 w-3.5" /></Button>
+                            </a>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-orange-600" title="Schedule Follow-up" onClick={async () => {
+                              const date = prompt('Follow-up date (YYYY-MM-DD):');
+                              if (date) { await req('PUT', `/leads/${l.id}`, { ...l, next_followup: date }); toast.success('Follow-up scheduled'); loadLeads(); }
+                            }}><Calendar className="h-3.5 w-3.5" /></Button>
+                            <Button size="icon" variant="ghost" className="h-8 w-8" title="Edit" onClick={() => { setForm({ ...emptyForm, ...l }); setEditingId(l.id); setDialogOpen(true); }}><Edit className="h-3.5 w-3.5" /></Button>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" title="Delete" onClick={() => del(l.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                           </div>
                         </td>
                       </tr>

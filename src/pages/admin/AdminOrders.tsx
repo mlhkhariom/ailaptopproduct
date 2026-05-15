@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Eye, Download, Truck, CheckCircle, Clock, Package, XCircle, RefreshCw, Edit } from "lucide-react";
+import { Search, Eye, Download, Truck, CheckCircle, Clock, Package, XCircle, RefreshCw, Edit, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -28,6 +28,7 @@ const PAYMENT: Record<string, string> = {
 };
 
 const AdminOrders = () => {
+  const token = localStorage.getItem('ailaptopwala_token');
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -142,6 +143,12 @@ const AdminOrders = () => {
                         <div className="flex gap-1">
                           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setViewOrder(o)}><Eye className="h-3.5 w-3.5" /></Button>
                           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openUpdate(o)}><Edit className="h-3.5 w-3.5" /></Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => window.open(`/api/orders/${o.id}/invoice-pdf`, '_blank')} title="Download Invoice"><Download className="h-3.5 w-3.5" /></Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => {
+                            const phone = typeof o.address === 'object' ? o.address?.phone : JSON.parse(o.address || '{}')?.phone;
+                            if (phone) { fetch('/api/whatsapp/send', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, message: `📦 Order #${o.order_number} update: Status is now "${o.status}". Track: ailaptopwala.com/track-order?order=${o.order_number}` }) }).then(() => toast.success('WhatsApp sent!')).catch(() => toast.error('Failed')); }
+                            else toast.error('No phone number');
+                          }} title="Send WhatsApp"><MessageCircle className="h-3.5 w-3.5" /></Button>
                         </div>
                       </div>
                     </div>
