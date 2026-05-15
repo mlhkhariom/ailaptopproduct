@@ -1,4 +1,4 @@
-import { Heart, ShoppingCart, Trash2 } from "lucide-react";
+import { Heart, ShoppingCart, Trash2, Bell, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CustomerLayout from "@/components/layout/CustomerLayout";
 import SEOHead from "@/components/common/SEOHead";
@@ -7,15 +7,26 @@ import { useWishlistStore } from "@/store/wishlistStore";
 import { useCartStore } from "@/store/cartStore";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 const Wishlist = () => {
   const { items, removeItem, clearWishlist } = useWishlistStore();
   const { addItem } = useCartStore();
+  const [notifyIds, setNotifyIds] = useState<Set<string>>(new Set());
 
   const moveToCart = (item: any) => {
     addItem({ id: item.id, name: item.name, price: item.price, image: item.image, slug: item.slug });
     removeItem(item.id);
     toast.success(`${item.name} moved to cart`);
+  };
+
+  const toggleNotify = (productId: string) => {
+    const token = localStorage.getItem('ailaptopwala_token');
+    if (!token) { toast.error('Login to enable alerts'); return; }
+    const enabled = !notifyIds.has(productId);
+    fetch(`/api/wishlist/${productId}/notify`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ notify_price_drop: enabled }) });
+    setNotifyIds(prev => { const s = new Set(prev); enabled ? s.add(productId) : s.delete(productId); return s; });
+    toast.success(enabled ? '🔔 Price drop alert enabled!' : 'Alert disabled');
   };
 
   return (
@@ -47,10 +58,13 @@ const Wishlist = () => {
               <div key={item.id} className="relative group">
                 <ProductCard product={item} />
                 <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button size="icon" className="h-8 w-8 bg-primary shadow" onClick={() => moveToCart(item)}>
+                  <Button size="icon" className="h-8 w-8 bg-primary shadow" onClick={() => moveToCart(item)} title="Move to cart">
                     <ShoppingCart className="h-4 w-4" />
                   </Button>
-                  <Button size="icon" variant="destructive" className="h-8 w-8 shadow" onClick={() => { removeItem(item.id); toast.success('Removed from wishlist'); }}>
+                  <Button size="icon" variant={notifyIds.has(item.id) ? "default" : "outline"} className="h-8 w-8 shadow" onClick={() => toggleNotify(item.id)} title="Price drop alert">
+                    {notifyIds.has(item.id) ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+                  </Button>
+                  <Button size="icon" variant="destructive" className="h-8 w-8 shadow" onClick={() => { removeItem(item.id); toast.success('Removed'); }}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>

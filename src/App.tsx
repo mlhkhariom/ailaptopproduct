@@ -34,6 +34,7 @@ import TrackOrder from "./pages/TrackOrder";
 import OrderSuccess from "./pages/OrderSuccess";
 import Services from "./pages/Services";
 import Wishlist from "./pages/Wishlist";
+import Compare from "./pages/Compare";
 import Repair from "./pages/Repair";
 import AdminServices from "./pages/admin/AdminServices";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -135,6 +136,7 @@ const App = () => (
             <Route path="/track" element={<RepairTrack />} />
             <Route path="/my-account" element={<CustomerPortal />} />
             <Route path="/wishlist" element={<Wishlist />} />
+            <Route path="/compare" element={<Compare />} />
 
             {/* Protected Customer */}
             <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />

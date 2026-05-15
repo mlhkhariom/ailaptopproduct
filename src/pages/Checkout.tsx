@@ -441,6 +441,12 @@ const Checkout = () => {
               <Separator />
               <div className="flex justify-between font-bold text-lg"><span>Total</span><span>₹{finalTotal}</span></div>
               {shipping.free && paymentMethod !== 'cod' && <p className="text-xs text-primary text-center">🎉 Free shipping applied!</p>}
+
+              {/* Available Coupons */}
+              {!appliedCoupon && (
+                <AvailableCouponsCheckout subtotal={subtotal} />
+              )}
+
               <Button className="w-full gap-2" size="lg" onClick={handlePlaceOrder} disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
                 {loading ? 'Processing...' : paymentMethod === 'razorpay' ? 'Pay with Razorpay' : paymentMethod === 'phonepe' ? 'Pay with PhonePe' : paymentMethod === 'cashfree' ? 'Pay with Cashfree' : paymentMethod === 'paytm' ? 'Pay with Paytm' : paymentMethod === 'upi' ? 'Pay via UPI' : 'Place Order'}
@@ -455,5 +461,23 @@ const Checkout = () => {
     </CustomerLayout>
   );
 };
+
+function AvailableCouponsCheckout({ subtotal }: { subtotal: number }) {
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const { applyCoupon } = useCartStore();
+  useEffect(() => { fetch('/api/coupons/active').then(r => r.json()).then(d => { if (Array.isArray(d)) setCoupons(d.filter(c => !c.min_order || subtotal >= c.min_order)); }).catch(() => {}); }, [subtotal]);
+  if (coupons.length === 0) return null;
+  return (
+    <div className="p-2 rounded-lg bg-green-50 border border-green-200">
+      <p className="text-[10px] font-semibold text-green-700 mb-1.5">🎟️ Available Coupons</p>
+      {coupons.slice(0, 2).map(c => (
+        <div key={c.code} className="flex items-center justify-between text-xs mb-1">
+          <span className="text-muted-foreground">{c.discount_type === 'percentage' ? `${c.discount_value}%` : `₹${c.discount_value}`} off</span>
+          <button className="font-bold text-green-700 border border-dashed border-green-500 px-2 py-0.5 rounded text-[10px]" onClick={async () => { const ok = await applyCoupon(c.code); if (ok) toast.success(`${c.code} applied!`); else toast.error('Could not apply'); }}>{c.code}</button>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default Checkout;
