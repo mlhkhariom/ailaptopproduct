@@ -19,6 +19,8 @@ process.on('unhandledRejection', (reason) => {
 import authRoutes from './routes/auth.js';
 import productRoutes from './routes/products.js';
 import productVariantRoutes from './routes/productVariants.js';
+import addressRoutes from './routes/addresses.js';
+import returnsRoutes from './routes/returns.js';
 import wishlistRoutes from './routes/wishlist.js';
 import orderRoutes from './routes/orders.js';
 import couponRoutes from './routes/coupons.js';
@@ -95,6 +97,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/products', productVariantRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/addresses', addressRoutes);
+app.use('/api/returns', returnsRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/cms', cmsRoutes);
