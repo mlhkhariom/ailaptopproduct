@@ -16,6 +16,7 @@ import ProductDetail from "./pages/ProductDetail";
 import BrandStore from "./pages/BrandStore";
 import EMICalculator from "./pages/EMICalculator";
 import Offers from "./pages/Offers";
+import BulkOrder from "./pages/BulkOrder";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Blog from "./pages/Blog";
@@ -104,6 +105,7 @@ const App = () => (
             <Route path="/brands/:brand" element={<BrandStore />} />
             <Route path="/emi-calculator" element={<EMICalculator />} />
             <Route path="/offers" element={<Offers />} />
+            <Route path="/bulk-order" element={<BulkOrder />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:id" element={<BlogPost />} />

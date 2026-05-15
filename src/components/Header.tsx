@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Phone, ShoppingCart, Heart, User, LogIn } from "lucide-react";
+import { Menu, X, Phone, ShoppingCart, Heart, User, LogIn, Bell } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
@@ -87,6 +87,15 @@ const Header = () => {
 
             {/* Dark Mode (feature toggle) */}
             <DarkModeToggle />
+
+            {/* Notifications Bell */}
+            {user && (
+              <Link to="/account">
+                <Button variant="ghost" size="icon" className="relative h-9 w-9">
+                  <Bell className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
 
             {/* Cart */}
             <Link to="/cart">

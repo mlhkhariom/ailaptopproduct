@@ -311,7 +311,21 @@ export const initDB = async () => {
     CREATE TABLE IF NOT EXISTS product_reviews (
       id TEXT PRIMARY KEY, product_id TEXT NOT NULL, user_id TEXT,
       customer_name TEXT NOT NULL, rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
-      review TEXT, status TEXT DEFAULT 'pending', created_at TIMESTAMPTZ DEFAULT NOW()
+      review TEXT, images JSONB DEFAULT '[]', verified_purchase INTEGER DEFAULT 0,
+      helpful_count INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'pending', created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS product_questions (
+      id TEXT PRIMARY KEY, product_id TEXT NOT NULL, user_id TEXT,
+      customer_name TEXT NOT NULL, question TEXT NOT NULL,
+      answer TEXT, answered_by TEXT, answered_at TIMESTAMPTZ,
+      status TEXT DEFAULT 'pending', votes INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id TEXT PRIMARY KEY, user_id TEXT,
+      endpoint TEXT NOT NULL UNIQUE, keys JSONB NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS evolution_settings (
       id TEXT PRIMARY KEY DEFAULT 'main',

@@ -430,6 +430,7 @@ const ProductDetail = () => {
             <TabsTrigger value="description">Description</TabsTrigger>
             <TabsTrigger value="specs">Specifications</TabsTrigger>
             <TabsTrigger value="reviews">Reviews ({product.reviews || 0})</TabsTrigger>
+            <TabsTrigger value="qna">Q&A</TabsTrigger>
           </TabsList>
 
           <TabsContent value="description" className="mt-4 space-y-4">
@@ -468,6 +469,10 @@ const ProductDetail = () => {
 
           <TabsContent value="reviews" className="mt-4">
             <ReviewsSection productId={product.id} rating={product.rating} reviewCount={product.reviews || 0} />
+          </TabsContent>
+
+          <TabsContent value="qna" className="mt-4">
+            <ProductQA productId={product.id} />
           </TabsContent>
         </Tabs>
 
@@ -508,5 +513,65 @@ const ProductDetail = () => {
     </CustomerLayout>
   );
 };
+
+// ── Product Q&A Component ─────────────────────────────────
+function ProductQA({ productId }: { productId: string }) {
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [newQ, setNewQ] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/reviews/${productId}/questions`).then(r => r.json()).then(d => { if (Array.isArray(d)) setQuestions(d); }).catch(() => {});
+  }, [productId]);
+
+  const askQuestion = async () => {
+    if (newQ.length < 5) return toast.error('Question too short');
+    setSubmitting(true);
+    const token = localStorage.getItem('ailaptopwala_token');
+    if (!token) { toast.error('Please login to ask a question'); setSubmitting(false); return; }
+    const res = await fetch(`/api/reviews/${productId}/questions`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ question: newQ }) }).then(r => r.json());
+    if (res.message) { toast.success('Question submitted! Admin will answer soon.'); setNewQ(''); }
+    else toast.error(res.error || 'Failed');
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Ask Question */}
+      <div className="flex gap-2">
+        <input placeholder="Ask a question about this product..." className="flex-1 border rounded-lg px-4 py-2.5 text-sm" value={newQ} onChange={e => setNewQ(e.target.value)} onKeyDown={e => e.key === 'Enter' && askQuestion()} />
+        <Button onClick={askQuestion} disabled={submitting}>{submitting ? '...' : 'Ask'}</Button>
+      </div>
+
+      {/* Questions List */}
+      {questions.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6">No questions yet. Be the first to ask!</p>
+      ) : (
+        <div className="space-y-3">
+          {questions.map((q: any) => (
+            <div key={q.id} className="border rounded-lg p-4">
+              <div className="flex items-start gap-2">
+                <span className="text-primary font-bold text-sm">Q:</span>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{q.question}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{q.customer_name} • {new Date(q.created_at).toLocaleDateString('en-IN')}</p>
+                </div>
+              </div>
+              {q.answer && (
+                <div className="flex items-start gap-2 mt-3 pl-4 border-l-2 border-primary/30">
+                  <span className="text-green-600 font-bold text-sm">A:</span>
+                  <div>
+                    <p className="text-sm">{q.answer}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{q.answered_by} • {q.answered_at ? new Date(q.answered_at).toLocaleDateString('en-IN') : ''}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default ProductDetail;
