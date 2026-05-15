@@ -46,6 +46,12 @@ router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
 
 // ── PRODUCT Q&A ───────────────────────────────────────────
 
+// GET /api/reviews/questions/pending — admin: all unanswered questions
+router.get('/questions/pending', authMiddleware, adminOnly, async (req, res) => {
+  const questions = await db.prepare("SELECT q.*, p.name as product_name FROM product_questions q LEFT JOIN products p ON q.product_id=p.id WHERE q.answer IS NULL OR q.status='pending' ORDER BY q.created_at DESC LIMIT 20").all();
+  res.json(questions);
+});
+
 // GET /api/reviews/:productId/questions — public
 router.get('/:productId/questions', async (req, res) => {
   const questions = await db.prepare("SELECT * FROM product_questions WHERE product_id=? AND status='approved' ORDER BY votes DESC, created_at DESC").all(req.params.productId);

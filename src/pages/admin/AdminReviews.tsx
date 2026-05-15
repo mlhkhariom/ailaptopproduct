@@ -72,8 +72,50 @@ const AdminReviews = () => {
           ))}
         </div>
       </div>
+
+      {/* Q&A Management */}
+      <div className="mt-8">
+        <h2 className="text-xl font-black mb-4">Product Q&A (Pending Answers)</h2>
+        <QAManager />
+      </div>
     </AdminLayout>
   );
 };
+
+function QAManager() {
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [answer, setAnswer] = useState('');
+  const token = localStorage.getItem('ailaptopwala_token');
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+  useEffect(() => {
+    // Fetch all pending questions across products
+    fetch('/api/reviews/questions/pending', { headers }).then(r => r.json()).then(d => { if (Array.isArray(d)) setQuestions(d); }).catch(() => {});
+  }, []);
+
+  const answerQuestion = async (id: string) => {
+    if (!answer.trim()) return;
+    await fetch(`/api/reviews/questions/${id}/answer`, { method: 'PUT', headers, body: JSON.stringify({ answer }) });
+    setQuestions(q => q.filter(x => x.id !== id));
+    setAnswer('');
+  };
+
+  if (questions.length === 0) return <p className="text-sm text-muted-foreground">No pending questions</p>;
+
+  return (
+    <div className="space-y-3">
+      {questions.map(q => (
+        <div key={q.id} className="border rounded-lg p-4">
+          <p className="text-sm font-medium">Q: {q.question}</p>
+          <p className="text-xs text-muted-foreground">{q.customer_name} • {q.product_name || ''}</p>
+          <div className="flex gap-2 mt-2">
+            <input className="flex-1 border rounded px-3 py-1.5 text-sm" placeholder="Type answer..." value={answer} onChange={e => setAnswer(e.target.value)} />
+            <Button size="sm" onClick={() => answerQuestion(q.id)}>Answer</Button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default AdminReviews;

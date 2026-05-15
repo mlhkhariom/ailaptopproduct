@@ -203,6 +203,14 @@ const Account = () => {
                           <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => window.open(`/api/orders/${order.id}/invoice-pdf`, '_blank')}>
                             <Download className="h-3 w-3" /> PDF
                           </Button>
+                          {['placed', 'processing'].includes(order.status) && (
+                            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive" onClick={async () => {
+                              if (!confirm('Cancel this order?')) return;
+                              const res = await fetch(`/api/orders/${order.id}/cancel`, { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json());
+                              if (res.success) { toast.success(res.message); setMyOrders(o => o.map(x => x.id === order.id ? { ...x, status: 'cancelled' } : x)); }
+                              else toast.error(res.error || 'Cannot cancel');
+                            }}>Cancel</Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>

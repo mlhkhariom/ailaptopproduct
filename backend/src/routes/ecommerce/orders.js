@@ -125,6 +125,23 @@ router.get('/:id/invoice-pdf', async (req, res) => {
   } catch (e) { res.status(404).json({ error: e.message }); }
 });
 
+// POST /api/orders/:id/cancel — customer cancels order (only if placed/processing)
+router.post('/:id/cancel', authMiddleware, async (req, res) => {
+  const order = await db.prepare('SELECT * FROM orders WHERE (id=? OR order_number=?) AND user_id=?').get(req.params.id, req.params.id, req.user.id);
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+  if (!['placed', 'processing'].includes(order.status)) return res.status(400).json({ error: 'Cannot cancel — order already ' + order.status });
+  await db.prepare("UPDATE orders SET status='cancelled' WHERE id=?").run(order.id);
+  // Restore stock
+  try {
+    const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+    for (const item of items) {
+      await db.prepare('UPDATE products SET stock=stock+?, in_stock=1 WHERE id=?').run(item.quantity || 1, item.id);
+      await db.prepare('UPDATE branch_stock SET stock=stock+? WHERE product_id=?').run(item.quantity || 1, item.id);
+    }
+  } catch {}
+  res.json({ success: true, message: 'Order cancelled. Refund will be processed within 5-7 days.' });
+});
+
 // GET /api/orders/track/:orderNumber — public tracking
 router.get('/track/:orderNumber', async (req, res) => {
   const order = await db.prepare('SELECT order_number, status, tracking_id, courier, created_at FROM orders WHERE order_number = ?').get(req.params.orderNumber);
