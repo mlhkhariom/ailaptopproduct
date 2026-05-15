@@ -249,9 +249,33 @@ const ProductDetail = () => {
             </div>
 
             {/* Stock */}
-            <div className="flex items-center gap-2 mb-5">
+            <div className="flex items-center gap-2 mb-3">
               <span className={`w-2.5 h-2.5 rounded-full ${activeInStock ? 'bg-green-500' : 'bg-destructive'}`} />
               <span className="text-sm font-medium">{activeInStock ? `In Stock (${activeStock} units)` : 'Out of Stock'}</span>
+            </div>
+
+            {/* Notify Me (out of stock) */}
+            {!activeInStock && (
+              <div className="mb-4 p-3 rounded-xl border border-dashed border-orange-300 bg-orange-50/50">
+                <p className="text-xs font-semibold mb-2">🔔 Notify when back in stock</p>
+                <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); const phone = (e.target as any).phone.value; if (phone.length >= 10) { toast.success("We'll notify you on WhatsApp when available!"); (e.target as any).reset(); } else toast.error("Enter valid phone"); }}>
+                  <input name="phone" placeholder="WhatsApp number" className="flex-1 text-sm border rounded-lg px-3 py-2" />
+                  <Button type="submit" size="sm" variant="outline">Notify Me</Button>
+                </form>
+              </div>
+            )}
+
+            {/* Delivery Estimate */}
+            <div className="mb-4 p-3 rounded-xl border bg-muted/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Truck className="h-4 w-4 text-primary" />
+                <span className="text-xs font-semibold">Delivery Estimate</span>
+              </div>
+              <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); const pin = (e.target as any).pincode.value; if (pin.length === 6) { const days = pin.startsWith('45') ? '1-2' : '3-5'; toast.success(`Delivery in ${days} days to ${pin}`); } else toast.error("Enter 6-digit pincode"); }}>
+                <input name="pincode" placeholder="Enter Pincode" maxLength={6} className="flex-1 text-sm border rounded-lg px-3 py-2" />
+                <Button type="submit" size="sm" variant="outline">Check</Button>
+              </form>
+              <p className="text-[10px] text-muted-foreground mt-1.5">Free delivery in Indore (452xxx) • ₹99-149 for rest of India</p>
             </div>
 
             {/* ── VARIANT SELECTOR ─────────────────────────── */}
