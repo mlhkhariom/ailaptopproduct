@@ -158,6 +158,24 @@ export const initDB = async () => {
       recovered INTEGER DEFAULT 0,
       created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW()
     );
+    CREATE TABLE IF NOT EXISTS wallet (
+      id TEXT PRIMARY KEY, user_id TEXT NOT NULL UNIQUE,
+      balance REAL DEFAULT 0, updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS wallet_transactions (
+      id TEXT PRIMARY KEY, user_id TEXT NOT NULL,
+      type TEXT NOT NULL, amount REAL NOT NULL,
+      description TEXT, ref_id TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS referrals (
+      id TEXT PRIMARY KEY, referrer_id TEXT NOT NULL,
+      referred_email TEXT, referred_id TEXT,
+      code TEXT UNIQUE NOT NULL,
+      reward_amount REAL DEFAULT 500,
+      status TEXT DEFAULT 'pending',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
     CREATE TABLE IF NOT EXISTS orders (
       id TEXT PRIMARY KEY, order_number TEXT UNIQUE NOT NULL, user_id TEXT,
       items TEXT NOT NULL, subtotal REAL NOT NULL, discount REAL DEFAULT 0,

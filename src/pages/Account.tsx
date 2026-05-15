@@ -155,6 +155,7 @@ const Account = () => {
                 <TabsTrigger value="password" className="gap-1 text-xs"><Lock className="h-3 w-3" /> Password</TabsTrigger>
                 <TabsTrigger value="addresses" className="gap-1 text-xs"><MapPin className="h-3 w-3" /> Addresses</TabsTrigger>
                 <TabsTrigger value="returns" className="gap-1 text-xs"><Package className="h-3 w-3" /> Returns</TabsTrigger>
+                <TabsTrigger value="wallet" className="gap-1 text-xs">💰 Wallet</TabsTrigger>
               </TabsList>
 
               {/* ORDERS */}
@@ -287,6 +288,11 @@ const Account = () => {
               {/* RETURNS */}
               <TabsContent value="returns" className="mt-4 space-y-3">
                 <ReturnsTab orders={myOrders} />
+              </TabsContent>
+
+              {/* WALLET */}
+              <TabsContent value="wallet" className="mt-4 space-y-3">
+                <WalletTab />
               </TabsContent>
             </Tabs>
           </div>
@@ -429,6 +435,89 @@ function ReturnsTab({ orders }: { orders: any[] }) {
             <div className="flex gap-2">
               <Button onClick={submit}>Submit Request</Button>
               <Button variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ── Wallet + Referral Tab ─────────────────────────────────
+function WalletTab() {
+  const [wallet, setWallet] = useState<any>({ balance: 0, transactions: [] });
+  const [referral, setReferral] = useState<any>({ code: '', referred_count: 0, total_earned: 0 });
+  const [refCode, setRefCode] = useState('');
+  const token = localStorage.getItem('ailaptopwala_token');
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+  useEffect(() => {
+    fetch('/api/wallet', { headers }).then(r => r.json()).then(d => setWallet(d)).catch(() => {});
+    fetch('/api/wallet/referral', { headers }).then(r => r.json()).then(d => setReferral(d)).catch(() => {});
+  }, []);
+
+  const applyCode = async () => {
+    if (!refCode.trim()) return;
+    const res = await fetch('/api/wallet/referral/apply', { method: 'POST', headers, body: JSON.stringify({ code: refCode }) }).then(r => r.json());
+    if (res.success) { toast.success(res.message); setRefCode(''); fetch('/api/wallet', { headers }).then(r => r.json()).then(setWallet); }
+    else toast.error(res.error || 'Failed');
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Balance */}
+      <Card>
+        <CardContent className="p-5 text-center">
+          <p className="text-sm text-muted-foreground mb-1">Wallet Balance</p>
+          <p className="text-4xl font-black text-primary">₹{wallet.balance?.toLocaleString('en-IN') || '0'}</p>
+          <p className="text-xs text-muted-foreground mt-1">Use at checkout for instant discount</p>
+        </CardContent>
+      </Card>
+
+      {/* Referral */}
+      <Card>
+        <CardContent className="p-5">
+          <h3 className="font-bold text-sm mb-3">🎁 Refer & Earn ₹500</h3>
+          <p className="text-xs text-muted-foreground mb-3">Share your code with friends. They get ₹250, you get ₹500 when they sign up!</p>
+          <div className="flex gap-2 mb-3">
+            <div className="flex-1 bg-muted rounded-lg px-4 py-2.5 font-mono font-bold text-center tracking-wider">{referral.code || '...'}</div>
+            <Button variant="outline" onClick={() => { navigator.clipboard.writeText(referral.code); toast.success('Code copied!'); }}>Copy</Button>
+          </div>
+          <div className="flex gap-4 text-xs text-muted-foreground">
+            <span>Friends joined: <strong>{referral.referred_count}</strong></span>
+            <span>Total earned: <strong>₹{referral.total_earned}</strong></span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Apply Code */}
+      <Card>
+        <CardContent className="p-5">
+          <h3 className="font-bold text-sm mb-2">Have a referral code?</h3>
+          <div className="flex gap-2">
+            <Input placeholder="Enter code" value={refCode} onChange={e => setRefCode(e.target.value)} className="h-9" />
+            <Button size="sm" onClick={applyCode}>Apply</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Transactions */}
+      {wallet.transactions?.length > 0 && (
+        <Card>
+          <CardContent className="p-5">
+            <h3 className="font-bold text-sm mb-3">Transaction History</h3>
+            <div className="space-y-2">
+              {wallet.transactions.map((t: any) => (
+                <div key={t.id} className="flex justify-between items-center py-2 border-b last:border-0">
+                  <div>
+                    <p className="text-sm font-medium">{t.description}</p>
+                    <p className="text-[10px] text-muted-foreground">{new Date(t.created_at).toLocaleDateString('en-IN')}</p>
+                  </div>
+                  <span className={`font-bold text-sm ${t.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {t.amount > 0 ? '+' : ''}₹{Math.abs(t.amount)}
+                  </span>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
