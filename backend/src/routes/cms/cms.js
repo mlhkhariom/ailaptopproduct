@@ -85,6 +85,27 @@ router.delete('/admin/pages/:id', authMiddleware, adminOnly, async (req, res) =>
   res.json({ message: 'Deleted' });
 });
 
+// ── TESTIMONIALS (with video support) ─────────────────────
+
+// GET /api/cms/testimonials — public
+router.get('/testimonials', async (req, res) => {
+  const testimonials = await db.prepare("SELECT * FROM cms_content WHERE section='testimonial' AND is_active=1 ORDER BY sort_order").all();
+  res.json(testimonials.map(t => {
+    const content = typeof t.content === 'string' ? JSON.parse(t.content) : t.content;
+    return { id: t.id, ...content };
+  }));
+});
+
+// POST /api/cms/testimonials — admin add (supports video_url)
+router.post('/testimonials', authMiddleware, adminOnly, async (req, res) => {
+  const { name, role, text, rating, image, video_url } = req.body;
+  if (!name || !text) return res.status(400).json({ error: 'name and text required' });
+  const id = uuid();
+  await db.prepare("INSERT INTO cms_content (id, section, content, is_active, sort_order) VALUES (?,?,?,1,0)")
+    .run(id, 'testimonial', JSON.stringify({ name, role, text, rating: rating || 5, image, video_url }));
+  res.status(201).json({ success: true, id });
+});
+
 // ── MENUS ─────────────────────────────────────────────────
 
 // GET /api/cms/menus/:location — public

@@ -28,7 +28,14 @@ router.get('/', async (req, res) => {
 router.get('/:slug', async (req, res) => {
   const post = await db.prepare('SELECT * FROM blog_posts WHERE slug = ? OR id = ?').get(req.params.slug, req.params.slug);
   if (!post) return res.status(404).json({ error: 'Post not found' });
-  res.json({ ...post, tags: parseTags(post.tags) });
+  // Increment views
+  await db.prepare('UPDATE blog_posts SET views = COALESCE(views,0) + 1 WHERE id=?').run(post.id).catch(() => {});
+  // Calculate reading time (avg 200 words/min)
+  const wordCount = (post.content || '').split(/\s+/).length;
+  const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+  // Related posts (same category)
+  const related = await db.prepare("SELECT id, title, slug, image, excerpt, published_at FROM blog_posts WHERE category=? AND id!=? AND status='published' ORDER BY published_at DESC LIMIT 3").all(post.category || '', post.id);
+  res.json({ ...post, tags: parseTags(post.tags), reading_time: readingTime, views: (post.views || 0) + 1, related });
 });
 
 // POST /api/blog — admin
@@ -53,6 +60,20 @@ router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
 router.delete('/:id', authMiddleware, adminOnly, async (req, res) => {
   await db.prepare('DELETE FROM blog_posts WHERE id = ?').run(req.params.id);
   res.json({ message: 'Deleted' });
+});
+
+// GET /api/blog/categories — all blog categories
+router.get('/meta/categories', async (req, res) => {
+  const cats = await db.prepare("SELECT DISTINCT category FROM blog_posts WHERE category IS NOT NULL AND category != '' AND status='published' ORDER BY category").all();
+  res.json(cats.map(c => c.category));
+});
+
+// GET /api/blog/tags — all tags used
+router.get('/meta/tags', async (req, res) => {
+  const posts = await db.prepare("SELECT tags FROM blog_posts WHERE status='published' AND tags IS NOT NULL").all();
+  const allTags = new Set();
+  posts.forEach(p => { parseTags(p.tags).forEach(t => allTags.add(t)); });
+  res.json([...allTags].sort());
 });
 
 export default router;

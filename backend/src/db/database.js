@@ -194,6 +194,8 @@ export const initDB = async () => {
       id TEXT PRIMARY KEY, title TEXT NOT NULL, slug TEXT UNIQUE, content TEXT,
       excerpt TEXT, image TEXT, category TEXT, author TEXT,
       status TEXT DEFAULT 'draft', tags TEXT, seo_title TEXT, seo_description TEXT,
+      views INTEGER DEFAULT 0, reading_time INTEGER DEFAULT 0,
+      og_image TEXT, canonical_url TEXT,
       published_at TIMESTAMPTZ, created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS contact_queries (
