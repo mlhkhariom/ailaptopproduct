@@ -64,7 +64,7 @@ export const FreeShippingBanner = () => {
     <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border-b border-primary/20 py-2 px-4 text-center relative">
       <p className="text-xs font-medium text-primary inline-flex items-center gap-1.5">
         <Truck className="h-3.5 w-3.5" />
-        Free shipping on orders above ₹{shipping_free_above || '999'} | 90-day warranty on all laptops
+        Free Delivery in Indore 🚚 | EMI Available 💳 | 90-Day Warranty ✅ | Home Service 🏠
       </p>
       <button
         onClick={() => { sessionStorage.setItem('free_ship_dismissed', '1'); setDismissed(true); }}
