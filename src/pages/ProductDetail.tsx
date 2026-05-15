@@ -518,6 +518,20 @@ const ProductDetail = () => {
           </div>
         )}
 
+        {/* ── CUSTOMERS ALSO BOUGHT ───────────────────────── */}
+        {(() => {
+          const alsoBought = products.filter(p => p.id !== product.id && p.category !== product.category && Math.abs(p.price - product.price) < product.price * 0.5).slice(0, 4);
+          if (alsoBought.length === 0) return null;
+          return (
+            <div className="mb-10">
+              <h2 className="text-xl font-black mb-5">Customers Also <span className="gradient-text">Bought</span></h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
+                {alsoBought.map(p => <ProductCard key={p.id} product={p} />)}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ── RECENTLY VIEWED ───────────────────────────────── */}
         {recentlyViewed.length > 0 && (
           <div>
