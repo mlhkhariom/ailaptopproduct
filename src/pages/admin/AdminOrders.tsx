@@ -104,10 +104,13 @@ const AdminOrders = () => {
         </TabsList>
       </Tabs>
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search by order ID, customer..." className="pl-8 h-9" value={search} onChange={e => setSearch(e.target.value)} />
+      {/* Search + Date Filter */}
+      <div className="flex gap-3 mb-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search by order ID, phone, customer..." className="pl-8 h-9" value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <Input type="date" className="h-9 w-36" onChange={e => { const d = e.target.value; if (d) setOrders(prev => prev.filter(o => o.created_at?.startsWith(d))); else load(); }} />
       </div>
 
       {/* Orders Table */}

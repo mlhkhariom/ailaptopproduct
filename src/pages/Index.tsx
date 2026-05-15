@@ -66,6 +66,7 @@ const Index = () => {
   const [benefits, setBenefits] = useState<any[]>([]);
   const [testimonials, setTestimonials] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
+  const [dbCategories, setDbCategories] = useState<any[]>([]);
   const [currentBanner, setCurrentBanner] = useState(0);
 
   useEffect(() => {
@@ -73,6 +74,7 @@ const Index = () => {
     fetch('/api/cms/banners').then(r => r.json()).then((d: any) => {
       if (Array.isArray(d)) setBanners(d);
     }).catch(() => {});
+    fetch('/api/categories').then(r => r.json()).then((d: any) => { if (Array.isArray(d)) setDbCategories(d); }).catch(() => {});
     api.getCMS('benefit').then((d: any) => {
       const list = Array.isArray(d) ? d : [];
       setBenefits(list.map((i: any) => {
@@ -436,12 +438,12 @@ const Index = () => {
           <h2 className="text-2xl md:text-3xl font-black text-center mb-2">Shop by <span className="gradient-text">Category</span></h2>
           <div className="section-divider mb-8" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
+            {(dbCategories.length > 0 ? dbCategories.map(c => ({ name: c.name, slug: c.name, icon: c.image || '📦', desc: c.description || '' })) : [
               { name: 'Laptops', slug: 'Laptops', icon: '💻', desc: 'Dell, HP, Lenovo refurbished' },
               { name: 'MacBooks', slug: 'MacBooks', icon: '🍎', desc: 'Open-box Apple MacBooks' },
               { name: 'Gaming', slug: 'Gaming', icon: '🎮', desc: 'ROG, Legion, Omen' },
               { name: 'Desktops', slug: 'Desktops', icon: '🖥️', desc: 'HP, Dell, Lenovo desktops' },
-            ].map(cat => (
+            ]).slice(0, 8).map(cat => (
               <Link key={cat.slug} to={`/products?category=${cat.slug}`} className="group">
                 <div className="bg-card border rounded-xl p-5 text-center hover:border-primary hover:shadow-md transition-all">
                   <div className="text-3xl mb-2">{cat.icon}</div>
