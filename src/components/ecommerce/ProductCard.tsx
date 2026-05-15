@@ -26,7 +26,7 @@ const ProductCard = ({ product }: { product: any }) => {
     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50">
       <Link to={`/products/${product.slug || product.id}`}>
         <div className="relative overflow-hidden aspect-square bg-muted">
-          <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img src={product.image} alt={product.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           {discount > 0 && <Badge className="absolute top-3 left-3 bg-accent text-accent-foreground">{discount}% OFF</Badge>}
           {isNewArrival && <Badge className="absolute top-3 right-3 bg-green-600 text-white text-[9px]">NEW</Badge>}
           {isLowStock && show_stock_count && <Badge variant="destructive" className="absolute top-3 left-3 text-[9px]" style={discount > 0 ? { top: '2.5rem' } : {}}>Only {product.stock} left!</Badge>}
