@@ -54,6 +54,8 @@ import AdminAbandonedCarts from "./pages/admin/AdminAbandonedCarts";
 import AdminHomepageSections from "./pages/admin/AdminHomepageSections";
 import AdminAutomations from "./pages/admin/AdminAutomations";
 import AdminEmailCampaigns from "./pages/admin/AdminEmailCampaigns";
+import AdminShippingRules from "./pages/admin/AdminShippingRules";
+import AdminBroadcast from "./pages/admin/AdminBroadcast";
 import AdminJobCards from "./pages/admin/AdminJobCards";
 import AdminStaffExpenses from "./pages/admin/AdminStaffExpenses";
 import AdminStaff from "./pages/admin/AdminStaff";
@@ -161,6 +163,8 @@ const App = () => (
             <Route path="/admin/homepage-sections" element={<AdminRoute><AdminHomepageSections /></AdminRoute>} />
             <Route path="/admin/automations" element={<AdminRoute><AdminAutomations /></AdminRoute>} />
             <Route path="/admin/email-campaigns" element={<AdminRoute><AdminEmailCampaigns /></AdminRoute>} />
+            <Route path="/admin/shipping-rules" element={<AdminRoute><AdminShippingRules /></AdminRoute>} />
+            <Route path="/admin/broadcast" element={<AdminRoute><AdminBroadcast /></AdminRoute>} />
             <Route path="/admin/evolution" element={<AdminRoute><AdminEvolution /></AdminRoute>} />
             <Route path="/admin/customers" element={<AdminRoute><AdminCustomers /></AdminRoute>} />
             <Route path="/admin/categories" element={<AdminRoute><AdminCategories /></AdminRoute>} />

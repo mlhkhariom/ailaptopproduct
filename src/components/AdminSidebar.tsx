@@ -1,4 +1,4 @@
-import { LayoutDashboard, Clock, Tv2, Sun, Moon, Shield, Search, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, Box, Calendar, MessageSquare, CalendarCheck, CalendarX, RefreshCw, Table2, Gift, UserCircle, FileSpreadsheet, Phone, RotateCcw, Layout } from "lucide-react";
+import { LayoutDashboard, Clock, Tv2, Sun, Moon, Shield, Search, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, Box, Calendar, MessageSquare, CalendarCheck, CalendarX, RefreshCw, Table2, Gift, UserCircle, FileSpreadsheet, Phone, RotateCcw, Layout, Send } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import {
@@ -100,6 +100,7 @@ const mainMenu = [
 
 const toolsMenu = [
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageCircle, badge: "" },
+  { title: "WA Broadcast", url: "/admin/broadcast", icon: Send, badge: "NEW" },
   { title: "Evolution API", url: "/admin/evolution", icon: Zap, badge: "" },
   { title: "Social Media", url: "/admin/social", icon: Share2, badge: "NEW" },
   { title: "Reels & Videos", url: "/admin/reels", icon: Play, badge: "" },
@@ -115,6 +116,7 @@ const systemMenu = [
   { title: "User & Roles", url: "/admin/users", icon: UserCog, badge: "" },
   { title: "Reports", url: "/admin/reports", icon: TrendingUp, badge: "" },
   { title: "Settings", url: "/admin/settings", icon: Settings, badge: "" },
+  { title: "Shipping Rules", url: "/admin/shipping-rules", icon: Truck, badge: "" },
   { title: "Linktree Page", url: "/admin/settings?tab=linktree", icon: Share2, badge: "" },
 ];
 

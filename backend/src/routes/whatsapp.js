@@ -274,4 +274,35 @@ router.get('/analytics', authMiddleware, adminOnly, async (req, res) => {
   res.json({ totalMessages, botReplies, totalContacts, unread, topRules });
 });
 
+// POST /api/whatsapp/broadcast — send message to multiple contacts
+router.post('/broadcast', authMiddleware, adminOnly, async (req, res) => {
+  const { message, phones, filter } = req.body;
+  if (!message) return res.status(400).json({ error: 'message required' });
+
+  let recipients = [];
+  if (Array.isArray(phones) && phones.length > 0) {
+    recipients = phones;
+  } else if (filter === 'all_leads') {
+    const leads = await db.prepare("SELECT phone FROM leads WHERE phone IS NOT NULL AND phone != ''").all();
+    recipients = leads.map(l => l.phone);
+  } else if (filter === 'all_customers') {
+    const customers = await db.prepare("SELECT phone FROM users WHERE phone IS NOT NULL AND phone != '' AND role='customer'").all();
+    recipients = customers.map(c => c.phone);
+  } else if (filter === 'recent_orders') {
+    const orders = await db.prepare("SELECT DISTINCT address->>'phone' as phone FROM orders WHERE created_at > NOW() - INTERVAL '30 days'").all();
+    recipients = orders.map(o => o.phone).filter(Boolean);
+  }
+
+  if (recipients.length === 0) return res.status(400).json({ error: 'No recipients found' });
+
+  const { queueWhatsAppNotification } = await import('../whatsapp/notifications.js');
+  let queued = 0;
+  for (const phone of recipients) {
+    const clean = phone.replace(/[^0-9]/g, '').slice(-10);
+    if (clean.length === 10) { queueWhatsAppNotification(clean, message); queued++; }
+  }
+
+  res.json({ success: true, queued, total: recipients.length });
+});
+
 export default router;
