@@ -150,6 +150,40 @@ export default function APIKeysSettings() {
                     </div>
                   ))}
                 </div>
+                {/* Connection status + last saved indicator */}
+                <div className="flex items-center justify-between mt-4 pt-3 border-t">
+                  <div className="flex items-center gap-2">
+                    {isConfigured(svc) ? (
+                      <span className="flex items-center gap-1 text-[10px] text-green-600"><CheckCircle className="h-3 w-3" /> Keys saved</span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-[10px] text-muted-foreground"><AlertCircle className="h-3 w-3" /> Enter API keys above</span>
+                    )}
+                  </div>
+                  {isConfigured(svc) && svc.id === 'ai' && (
+                    <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={async () => {
+                      try {
+                        const r = await fetch('/api/ai/test', { method: 'POST', headers });
+                        if (r.ok) toast.success('AI connected!'); else toast.error('AI connection failed');
+                      } catch { toast.error('Cannot reach AI API'); }
+                    }}>Test Connection</Button>
+                  )}
+                  {isConfigured(svc) && svc.id === 'smtp' && (
+                    <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={async () => {
+                      try {
+                        const r = await fetch('/api/notifications/test-email', { method: 'POST', headers, body: JSON.stringify({ to: v('smtp_user') }) });
+                        if (r.ok) toast.success('Email sent!'); else toast.error('SMTP failed');
+                      } catch { toast.error('SMTP error'); }
+                    }}>Send Test</Button>
+                  )}
+                  {isConfigured(svc) && svc.id === 'whatsapp' && (
+                    <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={async () => {
+                      try {
+                        const r = await fetch('/api/notifications/test-whatsapp', { method: 'POST', headers, body: JSON.stringify({ to: v('wa_business_phone') }) });
+                        if (r.ok) toast.success('WhatsApp sent!'); else toast.error('WA failed');
+                      } catch { toast.error('WA error'); }
+                    }}>Send Test</Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
             );
