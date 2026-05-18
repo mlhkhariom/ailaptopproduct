@@ -473,4 +473,88 @@ router.get('/abandoned-carts', authMiddleware, adminOnly, async (req, res) => {
   res.json(carts);
 });
 
+// ══════════════════════════════════════════════════════════
+// APPROVAL ENGINE ROUTES
+// ══════════════════════════════════════════════════════════
+
+// GET /api/erp/approvals — pending approvals for current user's role
+router.get('/approvals', authMiddleware, adminOnly, async (req, res) => {
+  const { getPendingApprovals } = await import('../../lib/approvalEngine.js');
+  res.json(await getPendingApprovals(req.user.role));
+});
+
+// GET /api/erp/approvals/all — all approvals (admin)
+router.get('/approvals/all', authMiddleware, adminOnly, async (req, res) => {
+  res.json(await db.prepare('SELECT * FROM approvals ORDER BY created_at DESC LIMIT 50').all());
+});
+
+// POST /api/erp/approvals/:id/approve
+router.post('/approvals/:id/approve', authMiddleware, adminOnly, async (req, res) => {
+  const { approve } = await import('../../lib/approvalEngine.js');
+  const result = await approve(req.params.id, req.user.name, req.body.notes);
+  res.json(result);
+});
+
+// POST /api/erp/approvals/:id/reject
+router.post('/approvals/:id/reject', authMiddleware, adminOnly, async (req, res) => {
+  const { reject } = await import('../../lib/approvalEngine.js');
+  const result = await reject(req.params.id, req.user.name, req.body.reason);
+  res.json(result);
+});
+
+// ══════════════════════════════════════════════════════════
+// ACCOUNTING ENGINE ROUTES
+// ══════════════════════════════════════════════════════════
+
+// GET /api/erp/accounting/trial-balance
+router.get('/accounting/trial-balance', authMiddleware, adminOnly, async (req, res) => {
+  const { getTrialBalance } = await import('../../lib/accountingEngine.js');
+  res.json(await getTrialBalance());
+});
+
+// GET /api/erp/accounting/ledger/:account
+router.get('/accounting/ledger/:account', authMiddleware, adminOnly, async (req, res) => {
+  const { getAccountLedger } = await import('../../lib/accountingEngine.js');
+  res.json(await getAccountLedger(req.params.account, req.query.from, req.query.to));
+});
+
+// GET /api/erp/accounting/balance/:account
+router.get('/accounting/balance/:account', authMiddleware, adminOnly, async (req, res) => {
+  const { getAccountBalance } = await import('../../lib/accountingEngine.js');
+  res.json({ account: req.params.account, balance: await getAccountBalance(req.params.account) });
+});
+
+// POST /api/erp/accounting/entry — manual journal entry
+router.post('/accounting/entry', authMiddleware, adminOnly, async (req, res) => {
+  const { recordEntry } = await import('../../lib/accountingEngine.js');
+  try {
+    const id = await recordEntry({ ...req.body, created_by: req.user.name });
+    res.json({ success: true, id });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// ══════════════════════════════════════════════════════════
+// AUDIT ENGINE ROUTES
+// ══════════════════════════════════════════════════════════
+
+// GET /api/erp/audit — audit logs (filterable)
+router.get('/audit', authMiddleware, adminOnly, async (req, res) => {
+  const { getAuditLogs } = await import('../../lib/auditEngine.js');
+  res.json(await getAuditLogs(req.query));
+});
+
+// GET /api/erp/audit/:module/:refId — trail for specific record
+router.get('/audit/:module/:refId', authMiddleware, adminOnly, async (req, res) => {
+  const { getAuditTrail } = await import('../../lib/auditEngine.js');
+  res.json(await getAuditTrail(req.params.module, req.params.refId));
+});
+
+// POST /api/erp/audit/:id/rollback — undo a change
+router.post('/audit/:id/rollback', authMiddleware, adminOnly, async (req, res) => {
+  const { rollback } = await import('../../lib/auditEngine.js');
+  const result = await rollback(req.params.id);
+  if (result.error) return res.status(400).json(result);
+  res.json(result);
+});
+
 export default router;

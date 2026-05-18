@@ -426,6 +426,27 @@ export const initDB = async () => {
       status TEXT DEFAULT 'pending', completed_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
+    `CREATE TABLE IF NOT EXISTS approvals (
+      id TEXT PRIMARY KEY, module TEXT NOT NULL, ref_id TEXT,
+      title TEXT NOT NULL, amount REAL DEFAULT 0,
+      requested_by TEXT, approver_role TEXT DEFAULT 'manager',
+      data JSONB DEFAULT '{}', status TEXT DEFAULT 'pending',
+      approved_by TEXT, notes TEXT, approved_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS journal_entries (
+      id TEXT PRIMARY KEY, date DATE NOT NULL,
+      description TEXT, ref_module TEXT, ref_id TEXT,
+      total_amount REAL DEFAULT 0, created_by TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS ledger (
+      id TEXT PRIMARY KEY, entry_id TEXT NOT NULL,
+      account TEXT NOT NULL, type TEXT NOT NULL,
+      amount REAL NOT NULL, date DATE NOT NULL,
+      description TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     "ALTER TABLE job_cards ADD COLUMN IF NOT EXISTS timer_running INTEGER DEFAULT 0",
     "ALTER TABLE job_cards ADD COLUMN IF NOT EXISTS time_spent INTEGER DEFAULT 0",
     "ALTER TABLE job_cards ADD COLUMN IF NOT EXISTS sla_deadline TIMESTAMPTZ",
