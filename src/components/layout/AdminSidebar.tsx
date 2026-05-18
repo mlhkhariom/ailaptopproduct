@@ -1,4 +1,4 @@
-import { LayoutDashboard, Clock, Tv2, Sun, Moon, Shield, Search, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, Box, Calendar, MessageSquare, CalendarCheck, CalendarX, RefreshCw, Table2, Gift, UserCircle, FileSpreadsheet, Phone, RotateCcw, Layout, Send } from "lucide-react";
+import { LayoutDashboard, Clock, Tv2, Sun, Moon, Shield, Search, Package, ShoppingBag, FileText, Share2, Image, MessageCircle, Settings, Users, Tag, ChevronDown, ChevronRight, Zap, IndianRupee, BarChart3, Palette, Mail, UserCog, Bell, Ticket, Wrench, Star, Play, Building2, Truck, ArrowUpDown, ClipboardList, Wallet, UserCheck, Receipt, ShoppingCart, TrendingUp, Cpu, DollarSign, Box, Calendar, MessageSquare, CalendarCheck, CalendarX, RefreshCw, Table2, Gift, UserCircle, FileSpreadsheet, Phone, RotateCcw, Layout, Send, Key } from "lucide-react";
 import { NavLink } from "@/components/layout/NavLink";
 import { useState } from "react";
 import {
@@ -126,6 +126,7 @@ const settingsMenu = [
   { title: "CRM", url: "/admin/settings/crm", icon: Users },
   { title: "Notifications", url: "/admin/settings/notifications", icon: Bell },
   { title: "Security & AI", url: "/admin/settings/security", icon: Shield },
+  { title: "API Keys", url: "/admin/settings/api-keys", icon: Key },
 ];
 
 
