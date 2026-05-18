@@ -19,7 +19,7 @@ export default function SiteSettings() {
 
   const save = async () => {
     setSaving(true);
-    await fetch('/api/app-settings', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(s) });
+    await fetch('/api/app-settings', { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(s) });
     toast.success('Site settings saved!'); setSaving(false);
   };
 
