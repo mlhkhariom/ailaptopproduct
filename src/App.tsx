@@ -84,6 +84,7 @@ import CRMSettingsPage from "./pages/admin/settings/CRMSettings";
 import NotificationSettingsPage from "./pages/admin/settings/NotificationSettings";
 import SecuritySettingsPage from "./pages/admin/settings/SecuritySettings";
 import APIKeysSettingsPage from "./pages/admin/settings/APIKeysSettings";
+import AboutPageSettingsPage from "./pages/admin/settings/AboutPageSettings";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminCMS from "./pages/admin/AdminCMS";
 import AdminContacts from "./pages/admin/AdminContacts";
@@ -203,6 +204,7 @@ const App = () => (
             <Route path="/admin/settings/notifications" element={<AdminRoute><NotificationSettingsPage /></AdminRoute>} />
             <Route path="/admin/settings/security" element={<AdminRoute><SecuritySettingsPage /></AdminRoute>} />
             <Route path="/admin/settings/api-keys" element={<AdminRoute><APIKeysSettingsPage /></AdminRoute>} />
+            <Route path="/admin/settings/about-page" element={<AdminRoute><AboutPageSettingsPage /></AdminRoute>} />
             <Route path="/admin/cms" element={<AdminRoute><AdminCMS /></AdminRoute>} />
             <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
             <Route path="/admin/contacts" element={<AdminRoute><AdminContacts /></AdminRoute>} />

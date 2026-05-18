@@ -200,35 +200,6 @@ export default function SiteSettings() {
             </CardContent>
           </Card>
 
-          {/* ─── ABOUT PAGE CONTENT ─── */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">About Page Content</CardTitle>
-              <CardDescription>Manage what shows on the public About Us page</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div><Label className="text-xs">Happy Customers count</Label><Input className="mt-1" value={v('stat_customers', '5000+')} onChange={e => set('stat_customers', e.target.value)} /></div>
-                <div><Label className="text-xs">Google Rating</Label><Input className="mt-1" value={v('stat_rating', '4.8')} onChange={e => set('stat_rating', e.target.value)} /></div>
-              </div>
-              <div><Label className="text-xs">About Hero Text</Label><textarea className="mt-1 w-full border rounded-lg px-3 py-2 text-sm min-h-[70px] resize-none" value={v('about_hero_text')} onChange={e => set('about_hero_text', e.target.value)} placeholder="Indore's most trusted laptop store. We buy, sell and repair laptops..." /></div>
-              <div><Label className="text-xs">Founder Name</Label><Input className="mt-1" value={v('founder_name', 'Bhagwan Das Asati')} onChange={e => set('founder_name', e.target.value)} /></div>
-              <div><Label className="text-xs">Founder Role</Label><Input className="mt-1" value={v('founder_role', 'Founder — Asati Infotech')} onChange={e => set('founder_role', e.target.value)} /></div>
-              <div><Label className="text-xs">Founder Description</Label><textarea className="mt-1 w-full border rounded-lg px-3 py-2 text-sm min-h-[60px] resize-none" value={v('founder_desc')} onChange={e => set('founder_desc', e.target.value)} placeholder="15+ years in laptop sales & repair..." /></div>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div><Label className="text-xs">Value 1 Title</Label><Input className="mt-1" value={v('about_value1_title', 'Certified Refurbished')} onChange={e => set('about_value1_title', e.target.value)} /></div>
-                <div><Label className="text-xs">Value 1 Description</Label><Input className="mt-1" value={v('about_value1_desc', 'Every laptop tested, cleaned & certified.')} onChange={e => set('about_value1_desc', e.target.value)} /></div>
-                <div><Label className="text-xs">Value 2 Title</Label><Input className="mt-1" value={v('about_value2_title', '6 Month Warranty')} onChange={e => set('about_value2_title', e.target.value)} /></div>
-                <div><Label className="text-xs">Value 2 Description</Label><Input className="mt-1" value={v('about_value2_desc', 'Free repair if any issue within warranty.')} onChange={e => set('about_value2_desc', e.target.value)} /></div>
-                <div><Label className="text-xs">Value 3 Title</Label><Input className="mt-1" value={v('about_value3_title', 'Expert Repair & Home Service')} onChange={e => set('about_value3_title', e.target.value)} /></div>
-                <div><Label className="text-xs">Value 3 Description</Label><Input className="mt-1" value={v('about_value3_desc', 'Same day repair. Free home pickup & delivery.')} onChange={e => set('about_value3_desc', e.target.value)} /></div>
-                <div><Label className="text-xs">Value 4 Title</Label><Input className="mt-1" value={v('about_value4_title', 'Best Price Guarantee')} onChange={e => set('about_value4_title', e.target.value)} /></div>
-                <div><Label className="text-xs">Value 4 Description</Label><Input className="mt-1" value={v('about_value4_desc', '40-60% off MRP. No hidden charges.')} onChange={e => set('about_value4_desc', e.target.value)} /></div>
-              </div>
-              <p className="text-[10px] text-muted-foreground border-t pt-2">Branches are managed in ERP Settings → Branch Manager. Social links from Social Media section above.</p>
-            </CardContent>
-          </Card>
-
           {/* ─── FEATURE TOGGLES ─── */}
           <Card>
             <CardHeader>
