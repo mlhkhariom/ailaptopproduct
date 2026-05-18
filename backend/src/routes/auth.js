@@ -87,9 +87,11 @@ router.post('/login', async (req, res) => {
 
 // GET /api/auth/me
 import { authMiddleware } from '../middleware/auth.js';
+import { getUserPermissions } from '../middleware/rbac.js';
 router.get('/me', authMiddleware, async (req, res) => {
   const user = await db.prepare('SELECT id, name, email, role, phone, address, created_at FROM users WHERE id = ?').get(req.user.id);
-  res.json(user);
+  const rbac = getUserPermissions(req);
+  res.json({ ...user, ...rbac });
 });
 
 // PUT /api/auth/me
