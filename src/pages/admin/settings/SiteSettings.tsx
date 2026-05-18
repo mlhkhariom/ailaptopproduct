@@ -200,6 +200,18 @@ export default function SiteSettings() {
             </CardContent>
           </Card>
 
+          {/* ─── ABOUT PAGE STATS ─── */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">About Page Stats</CardTitle>
+              <CardDescription>Numbers shown on About page (dynamic)</CardDescription>
+            </CardHeader>
+            <CardContent className="grid sm:grid-cols-2 gap-4">
+              <div><Label className="text-xs">Happy Customers count</Label><Input className="mt-1" value={v('stat_customers', '5000+')} onChange={e => set('stat_customers', e.target.value)} /></div>
+              <div><Label className="text-xs">Google Rating</Label><Input className="mt-1" value={v('stat_rating', '4.8')} onChange={e => set('stat_rating', e.target.value)} /></div>
+            </CardContent>
+          </Card>
+
           {/* ─── FEATURE TOGGLES ─── */}
           <Card>
             <CardHeader>

@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import CustomerLayout from "@/components/layout/CustomerLayout";
 import SEOHead from "@/components/common/SEOHead";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
+import { useEffect, useState } from "react";
 
 const values = [
   { icon: Laptop, title: "Certified Refurbished", desc: "Every laptop tested, cleaned & certified. Grade A quality. Dell, HP, Lenovo, Apple, Asus, Acer — all brands." },
@@ -18,47 +20,34 @@ const team = [
   { name: "Customer Support", role: "Sales & After-Sales", avatar: "CS", desc: "Dedicated support team available Mon-Sat 10AM-8PM. WhatsApp support always available at +91 98934 96163." },
 ];
 
-const stats = [
-  { value: "5000+", label: "Happy Customers" },
-  { value: "15+", label: "Years Experience" },
-  { value: "4.8★", label: "Google Rating" },
-  { value: "2", label: "Branches in Indore" },
-];
+const About = () => {
+  const settings = useSiteSettings() as any;
+  const [branches, setBranches] = useState<any[]>([]);
 
-const branches = [
-  {
-    name: "Branch 1 — Silver Mall",
-    address: "LB-21, Block-B, Silver Mall, 8-A, RNT Marg, South Tukoganj, Indore, MP 452001",
-    map: "https://maps.app.goo.gl/Z4e1Z91HVKwjm5xp9",
-    note: "Near Shrimaya Hotel, RNT Road",
-  },
-  {
-    name: "Branch 2 — Bangali Chouraha",
-    address: "21, G3, Sai Residency, Ashish Nagar, Near Bangali Chouraha, Indore, MP 452016",
-    map: "https://maps.app.goo.gl/drVLkuS9tGjEmwUF7",
-    note: "Near Bangali Chouraha",
-  },
-];
+  useEffect(() => {
+    fetch('/api/erp/branches').then(r => r.json()).then(d => { if (Array.isArray(d)) setBranches(d.filter((b: any) => b.is_active)); }).catch(() => {});
+  }, []);
 
-const socials = [
-  { icon: Instagram, label: "Instagram", url: "https://www.instagram.com/ailaptopwala", color: "text-pink-500" },
-  { icon: Youtube, label: "YouTube", url: "https://www.youtube.com/@AiLaptopwalaindore", color: "text-red-500" },
-  { icon: Facebook, label: "Facebook", url: "https://www.facebook.com/profile.php?id=61563386652422", color: "text-blue-500" },
-  { icon: MessageCircle, label: "WhatsApp", url: "https://wa.me/919893496163", color: "text-green-500" },
-];
+  const storeName = settings.store_name || 'AI Laptop Wala';
+  const storePhone = settings.store_phone || '+91 98934 96163';
+  const storeEmail = settings.store_email || 'contact@ailaptopwala.com';
+  const whatsapp = settings.whatsapp_number || '919893496163';
+  const foundedYear = settings.founded_year || '2011';
+  const businessHours = settings.business_hours || 'Mon-Sat 10:00 AM - 9:00 PM';
+  const address = settings.store_address || 'Silver Mall, RNT Marg, Indore';
 
-const listings = [
-  { label: "JustDial — Silver Mall", url: "https://www.justdial.com/Indore/Ai-Laptop-Wala/0731PX731-X731-251014151403-Y2S4_BZDET" },
-  { label: "JustDial — RNT Road", url: "https://www.justdial.com/Indore/Ai-Laptopwala-Rnt-Road/0731PX731-X731-260220122854-E9T8_BZDET" },
-  { label: "JustDial — Asati Infotech", url: "https://www.justdial.com/Indore/Asati-Infotech-Silver-Mall-Near-Shrimaya-Hotel-Rnt-Road/0731PX731-X731-111212153207-K3X8_BZDET" },
-  { label: "IndiaMart — Asati Infotech", url: "https://www.indiamart.com/asati-infotech" },
-];
+  const socials = [
+    settings.social_instagram && { icon: Instagram, label: "Instagram", url: settings.social_instagram, color: "text-pink-500" },
+    settings.social_youtube && { icon: Youtube, label: "YouTube", url: settings.social_youtube, color: "text-red-500" },
+    settings.social_facebook && { icon: Facebook, label: "Facebook", url: settings.social_facebook, color: "text-blue-500" },
+    { icon: MessageCircle, label: "WhatsApp", url: `https://wa.me/${whatsapp}`, color: "text-green-500" },
+  ].filter(Boolean);
 
-const About = () => (
+  return (
   <CustomerLayout>
     <SEOHead
-      title="About Us — AI Laptop Wala Indore | Asati Infotech Since 2011"
-      description="AI Laptop Wala — Indore's most trusted laptop store since 2011. Founded by Bhagwan Das Asati (Asati Infotech). 2 branches: Silver Mall & Bangali Chouraha. 5000+ happy customers."
+      title={`About Us — ${storeName} Indore | Since ${foundedYear}`}
+      description={`${storeName} — Indore's most trusted laptop store since ${foundedYear}. ${branches.length} branches. 5000+ happy customers.`}
       canonical="/about"
       breadcrumbs={[{ name: "About Us" }]}
     />
@@ -66,12 +55,12 @@ const About = () => (
     {/* Hero */}
     <section className="bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-16">
       <div className="container mx-auto px-4 text-center max-w-3xl">
-        <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4">💻 Since 2011 — Asati Infotech</span>
-        <h1 className="text-4xl md:text-5xl font-bold mb-4">About AI Laptop Wala</h1>
+        <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4">Since {foundedYear} — {settings.legal_name || 'Asati Infotech'}</span>
+        <h1 className="text-4xl md:text-5xl font-bold mb-4">About {storeName}</h1>
         <p className="text-lg text-muted-foreground leading-relaxed">
-          Indore's most trusted laptop store. We buy, sell and repair laptops since 2011.
-          2 branches across Indore — Silver Mall (RNT Marg) & Bangali Chouraha.
-          Serving 5000+ happy customers across Madhya Pradesh.
+          Indore's most trusted laptop store. We buy, sell and repair laptops since {foundedYear}.
+          {branches.length > 0 && ` ${branches.length} branches across Indore.`}
+          {' '}Serving 5000+ happy customers across Madhya Pradesh.
         </p>
       </div>
     </section>
@@ -80,7 +69,7 @@ const About = () => (
     <section className="py-10 border-b">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          {stats.map(s => (
+          { [{value: settings.stat_customers || "5000+", label: "Happy Customers"}, {value: `${new Date().getFullYear() - parseInt(foundedYear || "2011")}+`, label: "Years Experience"}, {value: settings.stat_rating || "4.8", label: "Google Rating"}, {value: String(branches.length || 2), label: "Branches"}].map(s => (
             <div key={s.label}>
               <p className="text-3xl font-bold text-primary">{s.value}</p>
               <p className="text-sm text-muted-foreground mt-1">{s.label}</p>
@@ -139,7 +128,7 @@ const About = () => (
         <h2 className="text-3xl font-bold text-center mb-2">Our Branches</h2>
         <p className="text-muted-foreground text-center mb-10">2 convenient locations in Indore</p>
         <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-          {branches.map((b) => (
+          {branches.map((b: any) => (
             <Card key={b.name} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6 space-y-3">
                 <h3 className="font-bold text-primary">{b.name}</h3>
@@ -168,7 +157,7 @@ const About = () => (
       <div className="container mx-auto px-4 max-w-3xl">
         <h2 className="text-2xl font-bold text-center mb-6">Find Us Online</h2>
         <div className="flex flex-wrap justify-center gap-3 mb-8">
-          {socials.map(s => (
+          {socials.map((s: any) => (
             <a key={s.label} href={s.url} target="_blank" rel="noreferrer">
               <Button variant="outline" className={`gap-2 ${s.color}`}>
                 <s.icon className="h-4 w-4" /> {s.label}
@@ -178,7 +167,7 @@ const About = () => (
         </div>
         <h3 className="text-center text-sm font-medium text-muted-foreground mb-3">Business Listings</h3>
         <div className="flex flex-wrap justify-center gap-2">
-          {listings.map(l => (
+          {(settings.social_justdial || settings.social_indiamart ? [{label: "JustDial", url: settings.social_justdial}, {label: "IndiaMart", url: settings.social_indiamart}].filter((l: any) => l.url) : []).map((l: any) => (
             <a key={l.label} href={l.url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
               <ExternalLink className="h-3 w-3" /> {l.label}
             </a>
@@ -200,6 +189,7 @@ const About = () => (
       </div>
     </section>
   </CustomerLayout>
-);
+  );
+};
 
 export default About;
