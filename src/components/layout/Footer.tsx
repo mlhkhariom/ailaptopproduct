@@ -1,8 +1,16 @@
 import { Link } from "react-router-dom";
 import { Phone, Mail, MapPin, ExternalLink } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 
-const Footer = () => (
+const Footer = () => {
+  const { store_name, store_phone, store_email } = useSiteSettings();
+  const phone = (store_phone || '{phoneDisplay}').replace(/[^0-9+]/g, '');
+  const phoneDisplay = store_phone || '{phoneDisplay}';
+  const email = store_email || '{email}';
+  const name = store_name || 'AI Laptop Wala';
+
+  return (
   <footer className="bg-foreground text-background py-12 md:py-16">
     <div className="container mx-auto px-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 md:gap-8 mb-10">
@@ -102,11 +110,11 @@ const Footer = () => (
                 <a href="https://maps.app.goo.gl/drVLkuS9tGjEmwUF7" target="_blank" rel="noreferrer" className="text-[10px] text-primary hover:underline">Get Directions →</a>
               </div>
             </div>
-            <a href="tel:+919893496163" className="flex items-center gap-2.5 text-sm text-background/60 hover:text-primary transition-colors">
-              <Phone size={14} className="text-primary shrink-0" /> +91 98934 96163
+            <a href={`tel:${phone}`} className="flex items-center gap-2.5 text-sm text-background/60 hover:text-primary transition-colors">
+              <Phone size={14} className="text-primary shrink-0" /> {phoneDisplay}
             </a>
-            <a href="mailto:contact@ailaptopwala.com" className="flex items-center gap-2.5 text-sm text-background/60 hover:text-primary transition-colors">
-              <Mail size={14} className="text-primary shrink-0" /> contact@ailaptopwala.com
+            <a href={`mailto:${email}`} className="flex items-center gap-2.5 text-sm text-background/60 hover:text-primary transition-colors">
+              <Mail size={14} className="text-primary shrink-0" /> {email}
             </a>
           </div>
         </div>
@@ -128,7 +136,7 @@ const Footer = () => (
 
       {/* Bottom */}
       <div className="border-t border-background/10 pt-4 flex flex-col md:flex-row items-center justify-between gap-3">
-        <p className="text-xs text-background/40">© {new Date().getFullYear()} AI Laptop Wala | Asati Infotech. All Rights Reserved.</p>
+        <p className="text-xs text-background/40">© {new Date().getFullYear()} {name} | Asati Infotech. All Rights Reserved.</p>
         <div className="flex items-center gap-3 text-xs text-background/40">
           <a href="https://www.justdial.com/Indore/Ai-Laptop-Wala/0731PX731-X731-251014151403-Y2S4_BZDET" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">JustDial</a>
           <span>·</span>
@@ -139,6 +147,8 @@ const Footer = () => (
       </div>
     </div>
   </footer>
+
 );
+};
 
 export default Footer;

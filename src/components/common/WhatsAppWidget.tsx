@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import { MessageCircle, X, Send } from "lucide-react";
 
 const quickMessages = [
@@ -11,6 +12,8 @@ const quickMessages = [
 
 const WhatsAppWidget = () => {
   const [open, setOpen] = useState(false);
+  const { store_phone } = useSiteSettings();
+  const waPhone = (store_phone || "9893496163").replace(/[^0-9]/g, "");
 
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
@@ -40,7 +43,7 @@ const WhatsAppWidget = () => {
             </div>
             <div className="space-y-2">
               {quickMessages.map((qm) => (
-                <a key={qm.label} href={`https://wa.me/919893496163?text=${encodeURIComponent(qm.msg)}`}
+                <a key={qm.label} href={`https://wa.me/91${waPhone}?text=${encodeURIComponent(qm.msg)}`}
                   target="_blank" rel="noreferrer"
                   className="flex items-center gap-2 w-full text-xs font-medium bg-card hover:bg-green-50 border border-border/50 rounded-xl px-3 py-2.5 transition-colors group">
                   <Send size={11} className="text-[#25D366] shrink-0 group-hover:translate-x-0.5 transition-transform" />
@@ -51,7 +54,7 @@ const WhatsAppWidget = () => {
           </div>
 
           <div className="p-3 border-t border-border/50">
-            <a href="https://wa.me/919893496163" target="_blank" rel="noreferrer"
+            <a href={`https://wa.me/91${waPhone}`} target="_blank" rel="noreferrer"
               className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#25D366] py-2.5 text-sm font-bold text-white hover:bg-[#20b858] transition-colors">
               <MessageCircle size={14} /> Open WhatsApp Chat
             </a>

@@ -31,7 +31,7 @@ const Header = () => {
   const cartCount = useCartStore((s) => s.getItemCount());
   const wishlistCount = useWishlistStore((s) => s.items.length);
   const { user, logout, isAdmin } = useAuth();
-  const { sticky_header, wishlist_enabled } = useSiteSettings();
+  const { sticky_header, wishlist_enabled, store_phone, store_name } = useSiteSettings();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -126,7 +126,7 @@ const Header = () => {
             )}
 
             {/* WhatsApp CTA */}
-            <a href="https://wa.me/919893496163" target="_blank" rel="noreferrer"
+            <a href={`https://wa.me/91${(store_phone || "9893496163").replace(/[^0-9]/g, "")}`} target="_blank" rel="noreferrer"
               className="hidden lg:inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all glow-cyan ml-1">
               <Phone size={12} /> WhatsApp
             </a>
@@ -155,7 +155,7 @@ const Header = () => {
               {l.label}
             </Link>
           ))}
-          <a href="https://wa.me/919893496163" target="_blank" rel="noreferrer"
+          <a href={`https://wa.me/91${(store_phone || "9893496163").replace(/[^0-9]/g, "")}`} target="_blank" rel="noreferrer"
             className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-primary px-8 py-4 text-base font-bold text-primary-foreground glow-cyan active:scale-95 transition-transform"
             onClick={() => setMobileOpen(false)}>
             <Phone size={18} /> WhatsApp Us

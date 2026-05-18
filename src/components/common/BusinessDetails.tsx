@@ -1,3 +1,4 @@
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import { Building2, Award, User, Hash, Calendar, Briefcase, MapPin, Phone } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
