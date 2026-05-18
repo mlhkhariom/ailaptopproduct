@@ -11,7 +11,7 @@ export default function CRMSettings() {
   const [s, setS] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const token = localStorage.getItem('ailaptopwala_token');
-  useEffect(() => { fetch('/api/app-settings', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).then(d => setS(d || {})).catch(() => {}); }, []);
+  useEffect(() => { fetch('/api/app-settings').then(r => r.json()).then(d => setS(d || {})).catch(() => {}); }, []);
   const save = async () => { setSaving(true); await fetch('/api/app-settings', { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(s) }); toast.success('Saved!'); setSaving(false); };
   const v = (key: string) => s[key] || '';
   const set = (key: string, val: string) => setS(p => ({ ...p, [key]: val }));
