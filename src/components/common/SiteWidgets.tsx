@@ -82,7 +82,7 @@ export const NewsletterPopup = () => {
         </button>
         {subscribed ? (
           <div className="text-center py-6">
-            <div className="text-5xl mb-3">🎉</div>
+            <div className="text-5xl mb-3"></div>
             <h3 className="font-serif text-2xl font-bold mb-2">Subscribed!</h3>
             <p className="text-sm text-muted-foreground">Check your inbox for your welcome discount.</p>
           </div>

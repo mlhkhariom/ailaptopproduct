@@ -101,12 +101,12 @@ const ReelsSection = () => {
                   <div className="absolute bottom-0 left-0 right-0 p-2">
                     <p className="text-white text-[10px] font-medium line-clamp-2">{reel.title}</p>
                     {reel.views && reel.views !== '0' && (
-                      <p className="text-white/60 text-[9px] mt-0.5">👁 {reel.views}</p>
+                      <p className="text-white/60 text-[9px] mt-0.5">{reel.views}</p>
                     )}
                     {/* Linked product badge */}
                     {reel.product_name && (
                       <div className="mt-1 bg-primary/80 text-white text-[9px] px-1.5 py-0.5 rounded-full inline-block font-medium">
-                        🛍 {reel.product_name}
+                        {reel.product_name}
                       </div>
                     )}
                   </div>
@@ -142,7 +142,7 @@ const ReelsSection = () => {
             {playing.product_slug && (
               <Link to={`/products/${playing.product_slug}`} onClick={() => setPlaying(null)}
                 className="mt-3 flex items-center justify-center gap-2 w-full bg-primary text-white py-3 rounded-xl font-bold text-sm">
-                🛍 View Product: {playing.product_name}
+                View Product: {playing.product_name}
               </Link>
             )}
           </div>

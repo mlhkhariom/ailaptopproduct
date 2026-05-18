@@ -128,12 +128,12 @@ const Footer = () => {
       {/* Payment & Trust */}
       <div className="border-t border-background/10 pt-5 pb-2">
         <div className="flex flex-wrap items-center justify-center gap-4 mb-4">
-          {['💳 Razorpay', '📱 PhonePe', '💰 Paytm', '🏦 UPI', '💵 COD', '📦 EMI'].map(p => (
+          {['Razorpay', 'PhonePe', 'Paytm', 'UPI', 'COD', 'EMI'].map(p => (
             <span key={p} className="text-[10px] text-background/50 bg-background/5 px-2 py-1 rounded">{p}</span>
           ))}
         </div>
         <div className="flex flex-wrap items-center justify-center gap-4 mb-4">
-          {['🔒 Secure Payments', '✅ Verified Seller', '🛡️ 90-Day Warranty', '🚚 Free Delivery Indore', '↩️ 7-Day Returns'].map(t => (
+          {['Secure Payments', 'Verified Seller', '90-Day Warranty', 'Free Delivery Indore', '7-Day Returns'].map(t => (
             <span key={t} className="text-[10px] text-background/60 font-medium">{t}</span>
           ))}
         </div>
@@ -147,7 +147,7 @@ const Footer = () => {
           <span>·</span>
           <a href="https://www.indiamart.com/asati-infotech" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">IndiaMart</a>
           <span>·</span>
-          <span>Crafted with ❤️ by <a href="https://mlhk.in" target="_blank" rel="noreferrer" className="text-primary hover:underline">Hariom Vishwkarma</a></span>
+          <span>Crafted by <a href="https://mlhk.in" target="_blank" rel="noreferrer" className="text-primary hover:underline">Hariom Vishwkarma</a></span>
         </div>
       </div>
     </div>

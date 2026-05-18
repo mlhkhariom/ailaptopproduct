@@ -25,7 +25,7 @@ const STATUS_COLORS: Record<string, any> = {
   pending: 'secondary', in_progress: 'default', completed: 'outline', cancelled: 'destructive',
 };
 const STATUS_LABELS: Record<string, string> = {
-  pending: '⏳ Pending', in_progress: '🔧 In Progress', completed: '✅ Completed', cancelled: '❌ Cancelled',
+  pending: 'Pending', in_progress: 'In Progress', completed: 'Completed', cancelled: 'Cancelled',
 };
 
 

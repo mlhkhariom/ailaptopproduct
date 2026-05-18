@@ -48,7 +48,7 @@ const MediaMessage = ({ msg, chatId, token }: { msg: any; chatId: string; token:
         ) : (
           <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2">
             {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            <span>📷 {loading ? 'Loading...' : 'Tap to load image'}</span>
+            <span>{loading ? 'Loading...' : 'Tap to load image'}</span>
           </div>
         )}
         {msg.body && msg.type !== 'image' && msg.type !== 'sticker' && <p className="text-xs mt-1 text-gray-600">{msg.body}</p>}
@@ -64,7 +64,7 @@ const MediaMessage = ({ msg, chatId, token }: { msg: any; chatId: string; token:
         ) : (
           <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2">
             {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-            <span>🎥 {loading ? 'Loading...' : 'Tap to load video'}</span>
+            <span>{loading ? 'Loading...' : 'Tap to load video'}</span>
           </div>
         )}
       </div>
@@ -79,7 +79,7 @@ const MediaMessage = ({ msg, chatId, token }: { msg: any; chatId: string; token:
         ) : (
           <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2">
             {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-            <span>🎤 {msg.type === 'ptt' ? 'Voice message' : 'Audio'} — {loading ? 'Loading...' : 'Tap to play'}</span>
+            <span>{msg.type === 'ptt' ? 'Voice message' : 'Audio'} — {loading ? 'Loading...' : 'Tap to play'}</span>
           </div>
         )}
       </div>
@@ -96,7 +96,7 @@ const MediaMessage = ({ msg, chatId, token }: { msg: any; chatId: string; token:
         ) : (
           <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2">
             {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            <span>📄 {msg.body || 'Document'} — {loading ? 'Loading...' : 'Tap to download'}</span>
+            <span>{msg.body || 'Document'} — {loading ? 'Loading...' : 'Tap to download'}</span>
           </div>
         )}
       </div>
@@ -152,7 +152,7 @@ export const WhatsAppChatPanel = ({ socket, status, aiSettings, contactAI, onTog
       }
     };
     const onAck = ({ id, ack }: any) => setMessages(prev => prev.map(m => m.id === id ? { ...m, ack } : m));
-    const onRevoked = ({ id }: any) => setMessages(prev => prev.map(m => m.id === id ? { ...m, body: '🚫 This message was deleted', revoked: true } : m));
+    const onRevoked = ({ id }: any) => setMessages(prev => prev.map(m => m.id === id ? { ...m, body: 'This message was deleted', revoked: true } : m));
     const onReaction = ({ msgId, reaction }: any) => setMessages(prev => prev.map(m => m.id === msgId ? { ...m, reaction } : m));
 
     socket.on('whatsapp:chats', onChats);
@@ -262,7 +262,7 @@ export const WhatsAppChatPanel = ({ socket, status, aiSettings, contactAI, onTog
       <div className={`flex-1 flex flex-col overflow-hidden ${!showMobile ? 'hidden md:flex' : 'flex'}`}>
         {!activeChat ? (
           <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
-            <span className="text-5xl">💬</span>
+            <span className="text-5xl"></span>
             <p className="text-sm">Select a chat to start messaging</p>
           </div>
         ) : (
@@ -336,7 +336,7 @@ export const WhatsAppChatPanel = ({ socket, status, aiSettings, contactAI, onTog
                 <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-1.5 text-xs border-l-4 border-green-500">
                   <Reply className="h-3.5 w-3.5 text-green-600 shrink-0" />
                   <span className="flex-1 truncate text-gray-600">{replyTo.body || '[media]'}</span>
-                  <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+                  <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-gray-600">×</button>
                 </div>
               )}
               <div className="flex items-center gap-2">

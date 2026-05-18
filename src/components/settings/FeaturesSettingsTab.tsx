@@ -69,7 +69,7 @@ export default function FeaturesSettingsTab({ siteFeatures, setSiteFeatures, sav
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <Label className="text-sm font-semibold cursor-pointer" htmlFor={f.key}>{f.label}</Label>
-                    {f.danger && siteFeatures[f.key] && <Badge className="bg-red-100 text-red-700 text-[10px]">⚠ Active</Badge>}
+                    {f.danger && siteFeatures[f.key] && <Badge className="bg-red-100 text-red-700 text-[10px]">Active</Badge>}
                     <Badge className={`text-[10px] ${siteFeatures[f.key] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{siteFeatures[f.key] ? 'ON' : 'OFF'}</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{f.desc}</p>

@@ -132,7 +132,7 @@ export default function ProductFormDialog({ open, onClose, form, setForm, editin
                     } catch { toast.error('Upload error'); setForm((f: any) => ({ ...f, _uploading: false })); }
                   }} />
                   <span className="flex items-center justify-center gap-2 h-10 rounded-md border text-xs font-medium w-full bg-muted hover:bg-accent cursor-pointer">
-                    {form._uploading ? '⏳ Uploading...' : '📁 Upload Image'}
+                    {form._uploading ? 'Uploading...' : 'Upload Image'}
                   </span>
                 </label>
                 <label className="flex-1 cursor-pointer">
@@ -150,13 +150,13 @@ export default function ProductFormDialog({ open, onClose, form, setForm, editin
                       else { toast.error('Upload failed'); setForm((f: any) => ({ ...f, _uploading: false })); }
                     } catch { toast.error('Upload error'); setForm((f: any) => ({ ...f, _uploading: false })); }
                   }} />
-                  <span className="flex items-center justify-center gap-2 h-10 rounded-md border text-xs font-medium w-full bg-muted hover:bg-accent cursor-pointer">📷 Camera</span>
+                  <span className="flex items-center justify-center gap-2 h-10 rounded-md border text-xs font-medium w-full bg-muted hover:bg-accent cursor-pointer">Camera</span>
                 </label>
               </div>
               {form.image && !form._uploading && (
                 <div className="flex items-center gap-3 p-2 bg-green-50 border border-green-200 rounded-lg">
                   <img src={form.image} alt="Preview" className="h-14 w-14 rounded-lg object-cover border shrink-0" onError={(e) => (e.currentTarget.style.display = "none")} />
-                  <p className="text-xs font-medium text-green-700">✅ Image ready</p>
+                  <p className="text-xs font-medium text-green-700">Image ready</p>
                 </div>
               )}
             </div>

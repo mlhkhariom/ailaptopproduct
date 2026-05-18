@@ -84,7 +84,7 @@ const ReviewsSection = ({ productId, rating, reviewCount }: Props) => {
       {user ? (
         submitted ? (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-700">
-            ✅ Thank you! Your review is under review and will be published soon.
+            Thank you! Your review is under review and will be published soon.
           </div>
         ) : (
           <Card>

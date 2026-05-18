@@ -233,7 +233,7 @@ const Index = () => {
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">⚡</span>
+                <Zap className="h-6 w-6 text-red-500" />
                 <div>
                   <h2 className="text-xl md:text-2xl font-black">Deal of the <span className="text-red-600">Day</span></h2>
                   <p className="text-xs text-muted-foreground">Limited time offers — grab before they're gone!</p>
@@ -438,11 +438,11 @@ const Index = () => {
           <h2 className="text-2xl md:text-3xl font-black text-center mb-2">Shop by <span className="gradient-text">Category</span></h2>
           <div className="section-divider mb-8" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {(dbCategories.length > 0 ? dbCategories.map(c => ({ name: c.name, slug: c.name, icon: c.image || '📦', desc: c.description || '' })) : [
-              { name: 'Laptops', slug: 'Laptops', icon: '💻', desc: 'Dell, HP, Lenovo refurbished' },
-              { name: 'MacBooks', slug: 'MacBooks', icon: '🍎', desc: 'Open-box Apple MacBooks' },
-              { name: 'Gaming', slug: 'Gaming', icon: '🎮', desc: 'ROG, Legion, Omen' },
-              { name: 'Desktops', slug: 'Desktops', icon: '🖥️', desc: 'HP, Dell, Lenovo desktops' },
+            {(dbCategories.length > 0 ? dbCategories.map(c => ({ name: c.name, slug: c.name, icon: c.image || '', desc: c.description || '' })) : [
+              { name: 'Laptops', slug: 'Laptops', icon: '', desc: 'Dell, HP, Lenovo refurbished' },
+              { name: 'MacBooks', slug: 'MacBooks', icon: '', desc: 'Open-box Apple MacBooks' },
+              { name: 'Gaming', slug: 'Gaming', icon: '', desc: 'ROG, Legion, Omen' },
+              { name: 'Desktops', slug: 'Desktops', icon: '', desc: 'HP, Dell, Lenovo desktops' },
             ]).slice(0, 8).map(cat => (
               <Link key={cat.slug} to={`/products?category=${cat.slug}`} className="group">
                 <div className="bg-card border rounded-xl p-5 text-center hover:border-primary hover:shadow-md transition-all">

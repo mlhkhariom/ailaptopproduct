@@ -117,7 +117,7 @@ export const SocialSettings = () => {
             </>
           ) : (
             <div className="flex items-center gap-2 text-sm text-muted-foreground bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2">
-              🔒 Only Super Admin can edit API settings
+              Only Super Admin can edit API settings
             </div>
           )}
         </div>

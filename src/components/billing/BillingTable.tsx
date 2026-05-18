@@ -105,7 +105,7 @@ export default function BillingTable({ rows, onView, onSendWA, onEdit, onPayClic
                     <p className="text-sm text-muted-foreground">{new Date(r.created_at).toLocaleDateString('en-IN')}</p>
                     {r.due_date && r.payment_status !== 'paid' && (
                       <p className={`text-[10px] font-medium ${new Date(r.due_date) < new Date() ? 'text-red-600' : 'text-blue-600'}`}>
-                        {new Date(r.due_date) < new Date() ? '⚠ Overdue' : `Due: ${new Date(r.due_date).toLocaleDateString('en-IN')}`}
+                        {new Date(r.due_date) < new Date() ? 'Overdue' : `Due: ${new Date(r.due_date).toLocaleDateString('en-IN')}`}
                       </p>
                     )}
                   </td>

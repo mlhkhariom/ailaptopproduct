@@ -64,7 +64,7 @@ export const FreeShippingBanner = () => {
     <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border-b border-primary/20 py-2 px-4 text-center relative">
       <p className="text-xs font-medium text-primary inline-flex items-center gap-1.5">
         <Truck className="h-3.5 w-3.5" />
-        Free Delivery in Indore 🚚 | EMI Available 💳 | 90-Day Warranty ✅ | Home Service 🏠
+        Free Delivery in Indore • EMI Available • 90-Day Warranty • Home Service
       </p>
       <button
         onClick={() => { sessionStorage.setItem('free_ship_dismissed', '1'); setDismissed(true); }}
@@ -93,7 +93,7 @@ export const CookieConsent = () => {
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t shadow-lg p-4">
       <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 max-w-4xl">
         <p className="text-sm text-muted-foreground text-center sm:text-left">
-          🍪 We use cookies to improve your experience. By continuing, you agree to our <a href="/privacy" className="text-primary underline">Privacy Policy</a>.
+          We use cookies to improve your experience. By continuing, you agree to our <a href="/privacy" className="text-primary underline">Privacy Policy</a>.
         </p>
         <div className="flex gap-2 shrink-0">
           <button onClick={() => setShow(false)} className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5">Decline</button>
