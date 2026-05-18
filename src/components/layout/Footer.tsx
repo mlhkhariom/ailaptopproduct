@@ -4,11 +4,16 @@ import logo from "@/assets/logo.jpeg";
 import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 
 const Footer = () => {
-  const { store_name, store_phone, store_email } = useSiteSettings();
-  const phone = (store_phone || '{phoneDisplay}').replace(/[^0-9+]/g, '');
-  const phoneDisplay = store_phone || '{phoneDisplay}';
-  const email = store_email || '{email}';
+  const settings = useSiteSettings() as any;
+  const { store_name, store_phone, store_email } = settings;
+  const phone = (store_phone || '+91 98934 96163').replace(/[^0-9+]/g, '');
+  const phoneDisplay = store_phone || '+91 98934 96163';
+  const email = store_email || 'contact@ailaptopwala.com';
   const name = store_name || 'AI Laptop Wala';
+  const branch1Name = settings.branch1_name || 'Silver Mall (Main)';
+  const branch1Addr = settings.branch1_address || 'LB-21, Block-B, Silver Mall, RNT Marg, Indore 452001';
+  const branch2Name = settings.branch2_name || 'Bangali Chouraha';
+  const branch2Addr = settings.branch2_address || '21, G3, Sai Residency, Ashish Nagar, Indore 452016';
 
   return (
   <footer className="bg-foreground text-background py-12 md:py-16">
@@ -97,16 +102,16 @@ const Footer = () => {
             <div className="flex items-start gap-2.5">
               <MapPin size={14} className="text-primary mt-0.5 shrink-0" />
               <div>
-                <p className="text-xs font-semibold text-background/80 mb-0.5">Silver Mall (Main)</p>
-                <p className="text-xs text-background/50 leading-relaxed">LB-21, Block-B, Silver Mall, 8-A, RNT Marg, Indore 452001</p>
+                <p className="text-xs font-semibold text-background/80 mb-0.5">{branch1Name}</p>
+                <p className="text-xs text-background/50 leading-relaxed">{branch1Addr}</p>
                 <a href="https://maps.app.goo.gl/Z4e1Z91HVKwjm5xp9" target="_blank" rel="noreferrer" className="text-[10px] text-primary hover:underline">Get Directions →</a>
               </div>
             </div>
             <div className="flex items-start gap-2.5">
               <MapPin size={14} className="text-primary mt-0.5 shrink-0" />
               <div>
-                <p className="text-xs font-semibold text-background/80 mb-0.5">Bangali Chouraha</p>
-                <p className="text-xs text-background/50 leading-relaxed">21, G3, Sai Residency, Near Bangali Chouraha, Indore 452016</p>
+                <p className="text-xs font-semibold text-background/80 mb-0.5">{branch2Name}</p>
+                <p className="text-xs text-background/50 leading-relaxed">{branch2Addr}</p>
                 <a href="https://maps.app.goo.gl/drVLkuS9tGjEmwUF7" target="_blank" rel="noreferrer" className="text-[10px] text-primary hover:underline">Get Directions →</a>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Save, Eye, EyeOff, Globe, Phone, Mail, Shield, Key, Bell, Truck, CreditCard, Lock, Palette, Search, FileText, Users, Database, Webhook, AlertTriangle, CheckCircle, ExternalLink, Copy, RotateCcw, Download, Wrench, Star, Package, MessageCircle, Play, Cookie, RefreshCw, BarChart3 } from "lucide-react";
+import { Save, Eye, EyeOff, Globe, Phone, Mail, Shield, Key, Bell, Truck, CreditCard, Lock, Palette, Search, FileText, Users, Database, Webhook, AlertTriangle, CheckCircle, ExternalLink, Copy, RotateCcw, Download, Wrench, Star, Package, MessageCircle, Play, Cookie, RefreshCw, BarChart3, Layout } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import InvoiceSettingsTab from "@/components/settings/InvoiceSettingsTab";
 import FeaturesSettingsTab from "@/components/settings/FeaturesSettingsTab";
+import FooterSettingsTab from "@/components/settings/FooterSettingsTab";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { api } from "@/lib/api";
 import { SocialSettings } from "@/components/SocialSettings";
@@ -70,6 +71,7 @@ const AdminSettings = () => {
           <TabsTrigger value="notifications" className="text-xs gap-1"><Bell className="h-3 w-3" /> Alerts</TabsTrigger>
           <TabsTrigger value="security" className="text-xs gap-1"><Lock className="h-3 w-3" /> Security</TabsTrigger>
           <TabsTrigger value="features" className="text-xs gap-1"><Wrench className="h-3 w-3" /> Features</TabsTrigger>
+          <TabsTrigger value="footer" className="text-xs gap-1"><Layout className="h-3 w-3" /> Footer</TabsTrigger>
         </TabsList>
 
         {/* GENERAL */}
@@ -937,6 +939,9 @@ const AdminSettings = () => {
         {/* FEATURES */}
         <TabsContent value="features">
           <FeaturesSettingsTab siteFeatures={siteFeatures} setSiteFeatures={setSiteFeatures} saveFeatures={saveFeatures} savingFeatures={savingFeatures} />
+        </TabsContent>
+        <TabsContent value="footer">
+          <FooterSettingsTab settings={settings} setSettings={setSettings} save={saveSettings} saving={saving} />
         </TabsContent>
       </Tabs>
     </AdminLayout>
