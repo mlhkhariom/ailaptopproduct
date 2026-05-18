@@ -100,22 +100,22 @@ export default function ERPSettings() {
             </CardContent>
           </Card>
 
-          {/* Branch Management */}
+          {/* Branch Management — Dynamic */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2"><MapPin className="h-4 w-4" /> Branch Management</CardTitle>
-              <CardDescription>Multi-branch settings</CardDescription>
+              <CardDescription>Add, edit, delete branches. Set default.</CardDescription>
             </CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-4">
-              <div><Label className="text-xs">Default branch ID</Label><Input className="mt-1" value={v('default_branch', 'branch-silver-mall')} onChange={e => set('default_branch', e.target.value)} /></div>
-              <div><Label className="text-xs">Multi-branch enabled</Label>
-                <div className="mt-2"><Switch checked={v('multi_branch') !== '0' && v('multi_branch') !== 'no'} onCheckedChange={c => set('multi_branch', c ? 'yes' : 'no')} /></div>
-              </div>
-              <div><Label className="text-xs">Stock transfer approval</Label>
-                <div className="mt-2"><Switch checked={v('transfer_approval') !== '0'} onCheckedChange={c => set('transfer_approval', c ? '1' : '0')} /></div>
-              </div>
-              <div><Label className="text-xs">Branch stock sync on order</Label>
-                <div className="mt-2"><Switch checked={v('branch_stock_sync', '1') !== '0'} onCheckedChange={c => set('branch_stock_sync', c ? '1' : '0')} /></div>
+            <CardContent className="space-y-4">
+              {/* Branch List */}
+              <BranchManager token={token} defaultBranch={v('default_branch', 'branch-silver-mall')} setDefault={(id: string) => set('default_branch', id)} />
+              <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                <div><Label className="text-xs">Multi-branch enabled</Label>
+                  <div className="mt-2"><Switch checked={v('multi_branch') !== '0' && v('multi_branch') !== 'no'} onCheckedChange={c => set('multi_branch', c ? 'yes' : 'no')} /></div>
+                </div>
+                <div><Label className="text-xs">Stock transfer approval</Label>
+                  <div className="mt-2"><Switch checked={v('transfer_approval') !== '0'} onCheckedChange={c => set('transfer_approval', c ? '1' : '0')} /></div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -160,5 +160,59 @@ export default function ERPSettings() {
         </div>
       </div>
     </AdminLayout>
+  );
+}
+
+// Branch Manager (dynamic CRUD)
+function BranchManager({ token, defaultBranch, setDefault }: { token: string | null; defaultBranch: string; setDefault: (id: string) => void }) {
+  const [branches, setBranches] = useState<any[]>([]);
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({ name: '', address: '', phone: '' });
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+  const load = () => fetch('/api/erp/branches', { headers }).then(r => r.json()).then(d => { if (Array.isArray(d)) setBranches(d); }).catch(() => {});
+  useEffect(() => { load(); }, []);
+
+  const add = async () => {
+    if (!form.name) return toast.error('Branch name required');
+    const id = 'branch-' + form.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    await fetch('/api/erp/branches', { method: 'POST', headers, body: JSON.stringify({ id, ...form, is_active: 1 }) });
+    toast.success('Branch added'); setAdding(false); setForm({ name: '', address: '', phone: '' }); load();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm('Delete this branch? Stock data may be affected.')) return;
+    await fetch(`/api/erp/branches/${id}`, { method: 'DELETE', headers });
+    toast.success('Branch deleted'); load();
+  };
+
+  return (
+    <div className="space-y-3">
+      {branches.map(b => (
+        <div key={b.id} className={`flex items-center justify-between p-3 rounded-lg border ${b.id === defaultBranch ? 'border-primary bg-primary/5' : ''}`}>
+          <div>
+            <p className="font-medium text-sm">{b.name} {b.id === defaultBranch && <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded ml-2">Default</span>}</p>
+            <p className="text-xs text-muted-foreground">{b.address}</p>
+          </div>
+          <div className="flex gap-1">
+            {b.id !== defaultBranch && <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => setDefault(b.id)}>Set Default</Button>}
+            <Button size="sm" variant="ghost" className="text-xs h-7 text-destructive" onClick={() => remove(b.id)}>Delete</Button>
+          </div>
+        </div>
+      ))}
+      {!adding ? (
+        <Button variant="outline" size="sm" className="w-full" onClick={() => setAdding(true)}>+ Add Branch</Button>
+      ) : (
+        <div className="p-3 border rounded-lg space-y-2">
+          <Input placeholder="Branch name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="h-8" />
+          <Input placeholder="Address" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="h-8" />
+          <Input placeholder="Phone" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="h-8" />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={add}>Add</Button>
+            <Button size="sm" variant="ghost" onClick={() => setAdding(false)}>Cancel</Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

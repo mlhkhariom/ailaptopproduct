@@ -40,6 +40,11 @@ router.put('/branches/:id', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // Branch stats
+router.delete('/branches/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare('DELETE FROM branches WHERE id=?').run(req.params.id);
+  res.json({ success: true });
+});
+
 router.get('/branches/:id/stats', authMiddleware, adminOnly, async (req, res) => {
   const bid = req.params.id;
   const [orders, jobs] = await Promise.all([
