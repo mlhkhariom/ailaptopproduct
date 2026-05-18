@@ -957,10 +957,10 @@ const AdminSettings = () => {
               </CardContent></Card>
               <Card><CardContent className="p-4"><h3 className="font-semibold text-sm mb-3">Shipping & Orders</h3>
                 <div className="space-y-2">
-                  <div><Label className="text-xs">Free shipping above (₹)</Label><Input className="mt-1 h-8" value={settings.shipping_free_above || ''} onChange={e => setAppSettings((s: any) => ({...s, shipping_free_above: e.target.value}))} /></div>
-                  <div><Label className="text-xs">Flat shipping rate (₹)</Label><Input className="mt-1 h-8" value={settings.shipping_flat_rate || ''} onChange={e => setAppSettings((s: any) => ({...s, shipping_flat_rate: e.target.value}))} /></div>
-                  <div><Label className="text-xs">COD extra charge (₹)</Label><Input className="mt-1 h-8" value={settings.shipping_cod_charge || ''} onChange={e => setAppSettings((s: any) => ({...s, shipping_cod_charge: e.target.value}))} /></div>
-                  <div><Label className="text-xs">Return window (days)</Label><Input className="mt-1 h-8" value={settings.return_window_days || '7'} onChange={e => setAppSettings((s: any) => ({...s, return_window_days: e.target.value}))} /></div>
+                  <div><Label className="text-xs">Free shipping above (₹)</Label><Input className="mt-1 h-8" value={appSettings.shipping_free_above || ''} onChange={e => setAppSettings((s: any) => ({...s, shipping_free_above: e.target.value}))} /></div>
+                  <div><Label className="text-xs">Flat shipping rate (₹)</Label><Input className="mt-1 h-8" value={appSettings.shipping_flat_rate || ''} onChange={e => setAppSettings((s: any) => ({...s, shipping_flat_rate: e.target.value}))} /></div>
+                  <div><Label className="text-xs">COD extra charge (₹)</Label><Input className="mt-1 h-8" value={appSettings.shipping_cod_charge || ''} onChange={e => setAppSettings((s: any) => ({...s, shipping_cod_charge: e.target.value}))} /></div>
+                  <div><Label className="text-xs">Return window (days)</Label><Input className="mt-1 h-8" value={appSettings.return_window_days || '7'} onChange={e => setAppSettings((s: any) => ({...s, return_window_days: e.target.value}))} /></div>
                 </div>
               </CardContent></Card>
             </div>
@@ -974,15 +974,15 @@ const AdminSettings = () => {
             <h2 className="text-lg font-bold">ERP Settings</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Job Card SLA</h3>
-                <div><Label className="text-xs">Urgent SLA (hours)</Label><Input className="mt-1 h-8" value={settings.sla_urgent || '24'} onChange={e => setAppSettings((s: any) => ({...s, sla_urgent: e.target.value}))} /></div>
-                <div><Label className="text-xs">High SLA (hours)</Label><Input className="mt-1 h-8" value={settings.sla_high || '48'} onChange={e => setAppSettings((s: any) => ({...s, sla_high: e.target.value}))} /></div>
-                <div><Label className="text-xs">Normal SLA (hours)</Label><Input className="mt-1 h-8" value={settings.sla_normal || '72'} onChange={e => setAppSettings((s: any) => ({...s, sla_normal: e.target.value}))} /></div>
-                <div><Label className="text-xs">Escalation after (hours)</Label><Input className="mt-1 h-8" value={settings.escalation_hours || '48'} onChange={e => setAppSettings((s: any) => ({...s, escalation_hours: e.target.value}))} /></div>
+                <div><Label className="text-xs">Urgent SLA (hours)</Label><Input className="mt-1 h-8" value={appSettings.sla_urgent || '24'} onChange={e => setAppSettings((s: any) => ({...s, sla_urgent: e.target.value}))} /></div>
+                <div><Label className="text-xs">High SLA (hours)</Label><Input className="mt-1 h-8" value={appSettings.sla_high || '48'} onChange={e => setAppSettings((s: any) => ({...s, sla_high: e.target.value}))} /></div>
+                <div><Label className="text-xs">Normal SLA (hours)</Label><Input className="mt-1 h-8" value={appSettings.sla_normal || '72'} onChange={e => setAppSettings((s: any) => ({...s, sla_normal: e.target.value}))} /></div>
+                <div><Label className="text-xs">Escalation after (hours)</Label><Input className="mt-1 h-8" value={appSettings.escalation_hours || '48'} onChange={e => setAppSettings((s: any) => ({...s, escalation_hours: e.target.value}))} /></div>
               </CardContent></Card>
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Inventory</h3>
-                <div><Label className="text-xs">Low stock threshold</Label><Input className="mt-1 h-8" value={settings.low_stock_threshold || '5'} onChange={e => setAppSettings((s: any) => ({...s, low_stock_threshold: e.target.value}))} /></div>
-                <div><Label className="text-xs">Auto-reorder enabled</Label><Input className="mt-1 h-8" value={settings.auto_reorder || 'yes'} onChange={e => setAppSettings((s: any) => ({...s, auto_reorder: e.target.value}))} /></div>
-                <div><Label className="text-xs">PO approval required</Label><Input className="mt-1 h-8" value={settings.po_approval_required || 'yes'} onChange={e => setAppSettings((s: any) => ({...s, po_approval_required: e.target.value}))} /></div>
+                <div><Label className="text-xs">Low stock threshold</Label><Input className="mt-1 h-8" value={appSettings.low_stock_threshold || '5'} onChange={e => setAppSettings((s: any) => ({...s, low_stock_threshold: e.target.value}))} /></div>
+                <div><Label className="text-xs">Auto-reorder enabled</Label><Input className="mt-1 h-8" value={appSettings.auto_reorder || 'yes'} onChange={e => setAppSettings((s: any) => ({...s, auto_reorder: e.target.value}))} /></div>
+                <div><Label className="text-xs">PO approval required</Label><Input className="mt-1 h-8" value={appSettings.po_approval_required || 'yes'} onChange={e => setAppSettings((s: any) => ({...s, po_approval_required: e.target.value}))} /></div>
               </CardContent></Card>
             </div>
             <Button onClick={() => saveAppSettings('Settings')} disabled={saving} className="gap-2"><Save className="h-4 w-4" /> Save ERP Settings</Button>
@@ -995,13 +995,13 @@ const AdminSettings = () => {
             <h2 className="text-lg font-bold">CRM Settings</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Lead Management</h3>
-                <div><Label className="text-xs">Lead stages (comma-separated)</Label><Input className="mt-1 h-8" value={settings.lead_stages || 'new,contacted,interested,negotiation,won,lost'} onChange={e => setAppSettings((s: any) => ({...s, lead_stages: e.target.value}))} /></div>
-                <div><Label className="text-xs">Auto-assign method</Label><Input className="mt-1 h-8" value={settings.lead_assign_method || 'round_robin'} onChange={e => setAppSettings((s: any) => ({...s, lead_assign_method: e.target.value}))} /></div>
-                <div><Label className="text-xs">Follow-up reminder (hours)</Label><Input className="mt-1 h-8" value={settings.followup_reminder_hours || '2'} onChange={e => setAppSettings((s: any) => ({...s, followup_reminder_hours: e.target.value}))} /></div>
+                <div><Label className="text-xs">Lead stages (comma-separated)</Label><Input className="mt-1 h-8" value={appSettings.lead_stages || 'new,contacted,interested,negotiation,won,lost'} onChange={e => setAppSettings((s: any) => ({...s, lead_stages: e.target.value}))} /></div>
+                <div><Label className="text-xs">Auto-assign method</Label><Input className="mt-1 h-8" value={appSettings.lead_assign_method || 'round_robin'} onChange={e => setAppSettings((s: any) => ({...s, lead_assign_method: e.target.value}))} /></div>
+                <div><Label className="text-xs">Follow-up reminder (hours)</Label><Input className="mt-1 h-8" value={appSettings.followup_reminder_hours || '2'} onChange={e => setAppSettings((s: any) => ({...s, followup_reminder_hours: e.target.value}))} /></div>
               </CardContent></Card>
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Pipeline</h3>
-                <div><Label className="text-xs">Default deal value (₹)</Label><Input className="mt-1 h-8" value={settings.default_deal_value || '0'} onChange={e => setAppSettings((s: any) => ({...s, default_deal_value: e.target.value}))} /></div>
-                <div><Label className="text-xs">Lead sources (comma-separated)</Label><Input className="mt-1 h-8" value={settings.lead_sources || 'WhatsApp,Enquiry Form,Walk-in,Referral,Social Media'} onChange={e => setAppSettings((s: any) => ({...s, lead_sources: e.target.value}))} /></div>
+                <div><Label className="text-xs">Default deal value (₹)</Label><Input className="mt-1 h-8" value={appSettings.default_deal_value || '0'} onChange={e => setAppSettings((s: any) => ({...s, default_deal_value: e.target.value}))} /></div>
+                <div><Label className="text-xs">Lead sources (comma-separated)</Label><Input className="mt-1 h-8" value={appSettings.lead_sources || 'WhatsApp,Enquiry Form,Walk-in,Referral,Social Media'} onChange={e => setAppSettings((s: any) => ({...s, lead_sources: e.target.value}))} /></div>
               </CardContent></Card>
             </div>
             <Button onClick={() => saveAppSettings('Settings')} disabled={saving} className="gap-2"><Save className="h-4 w-4" /> Save CRM Settings</Button>
@@ -1014,12 +1014,12 @@ const AdminSettings = () => {
             <h2 className="text-lg font-bold">CMS Settings</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Blog</h3>
-                <div><Label className="text-xs">Posts per page</Label><Input className="mt-1 h-8" value={settings.blog_per_page || '10'} onChange={e => setAppSettings((s: any) => ({...s, blog_per_page: e.target.value}))} /></div>
-                <div><Label className="text-xs">Default author</Label><Input className="mt-1 h-8" value={settings.blog_default_author || 'AI Laptop Wala'} onChange={e => setAppSettings((s: any) => ({...s, blog_default_author: e.target.value}))} /></div>
+                <div><Label className="text-xs">Posts per page</Label><Input className="mt-1 h-8" value={appSettings.blog_per_page || '10'} onChange={e => setAppSettings((s: any) => ({...s, blog_per_page: e.target.value}))} /></div>
+                <div><Label className="text-xs">Default author</Label><Input className="mt-1 h-8" value={appSettings.blog_default_author || 'AI Laptop Wala'} onChange={e => setAppSettings((s: any) => ({...s, blog_default_author: e.target.value}))} /></div>
               </CardContent></Card>
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">SEO Defaults</h3>
-                <div><Label className="text-xs">Default meta title suffix</Label><Input className="mt-1 h-8" value={settings.seo_title_suffix || '| AI Laptop Wala'} onChange={e => setAppSettings((s: any) => ({...s, seo_title_suffix: e.target.value}))} /></div>
-                <div><Label className="text-xs">Default OG image</Label><Input className="mt-1 h-8" value={settings.seo_og_image || ''} onChange={e => setAppSettings((s: any) => ({...s, seo_og_image: e.target.value}))} /></div>
+                <div><Label className="text-xs">Default meta title suffix</Label><Input className="mt-1 h-8" value={appSettings.seo_title_suffix || '| AI Laptop Wala'} onChange={e => setAppSettings((s: any) => ({...s, seo_title_suffix: e.target.value}))} /></div>
+                <div><Label className="text-xs">Default OG image</Label><Input className="mt-1 h-8" value={appSettings.seo_og_image || ''} onChange={e => setAppSettings((s: any) => ({...s, seo_og_image: e.target.value}))} /></div>
               </CardContent></Card>
             </div>
             <Button onClick={() => saveAppSettings('Settings')} disabled={saving} className="gap-2"><Save className="h-4 w-4" /> Save CMS Settings</Button>
@@ -1032,15 +1032,15 @@ const AdminSettings = () => {
             <h2 className="text-lg font-bold">HR & Staff Settings</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Attendance</h3>
-                <div><Label className="text-xs">Work start time</Label><Input className="mt-1 h-8" value={settings.work_start_time || '10:00'} onChange={e => setAppSettings((s: any) => ({...s, work_start_time: e.target.value}))} /></div>
-                <div><Label className="text-xs">Work end time</Label><Input className="mt-1 h-8" value={settings.work_end_time || '19:00'} onChange={e => setAppSettings((s: any) => ({...s, work_end_time: e.target.value}))} /></div>
-                <div><Label className="text-xs">Late threshold (minutes)</Label><Input className="mt-1 h-8" value={settings.late_threshold || '15'} onChange={e => setAppSettings((s: any) => ({...s, late_threshold: e.target.value}))} /></div>
+                <div><Label className="text-xs">Work start time</Label><Input className="mt-1 h-8" value={appSettings.work_start_time || '10:00'} onChange={e => setAppSettings((s: any) => ({...s, work_start_time: e.target.value}))} /></div>
+                <div><Label className="text-xs">Work end time</Label><Input className="mt-1 h-8" value={appSettings.work_end_time || '19:00'} onChange={e => setAppSettings((s: any) => ({...s, work_end_time: e.target.value}))} /></div>
+                <div><Label className="text-xs">Late threshold (minutes)</Label><Input className="mt-1 h-8" value={appSettings.late_threshold || '15'} onChange={e => setAppSettings((s: any) => ({...s, late_threshold: e.target.value}))} /></div>
               </CardContent></Card>
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Leave & Payroll</h3>
-                <div><Label className="text-xs">Annual leaves</Label><Input className="mt-1 h-8" value={settings.annual_leaves || '12'} onChange={e => setAppSettings((s: any) => ({...s, annual_leaves: e.target.value}))} /></div>
-                <div><Label className="text-xs">Sick leaves</Label><Input className="mt-1 h-8" value={settings.sick_leaves || '6'} onChange={e => setAppSettings((s: any) => ({...s, sick_leaves: e.target.value}))} /></div>
-                <div><Label className="text-xs">Payroll day</Label><Input className="mt-1 h-8" value={settings.payroll_day || '1'} onChange={e => setAppSettings((s: any) => ({...s, payroll_day: e.target.value}))} /></div>
-                <div><Label className="text-xs">Expense approval above (₹)</Label><Input className="mt-1 h-8" value={settings.expense_approval_above || '1000'} onChange={e => setAppSettings((s: any) => ({...s, expense_approval_above: e.target.value}))} /></div>
+                <div><Label className="text-xs">Annual leaves</Label><Input className="mt-1 h-8" value={appSettings.annual_leaves || '12'} onChange={e => setAppSettings((s: any) => ({...s, annual_leaves: e.target.value}))} /></div>
+                <div><Label className="text-xs">Sick leaves</Label><Input className="mt-1 h-8" value={appSettings.sick_leaves || '6'} onChange={e => setAppSettings((s: any) => ({...s, sick_leaves: e.target.value}))} /></div>
+                <div><Label className="text-xs">Payroll day</Label><Input className="mt-1 h-8" value={appSettings.payroll_day || '1'} onChange={e => setAppSettings((s: any) => ({...s, payroll_day: e.target.value}))} /></div>
+                <div><Label className="text-xs">Expense approval above (₹)</Label><Input className="mt-1 h-8" value={appSettings.expense_approval_above || '1000'} onChange={e => setAppSettings((s: any) => ({...s, expense_approval_above: e.target.value}))} /></div>
               </CardContent></Card>
             </div>
             <Button onClick={() => saveAppSettings('Settings')} disabled={saving} className="gap-2"><Save className="h-4 w-4" /> Save HR Settings</Button>
@@ -1053,14 +1053,14 @@ const AdminSettings = () => {
             <h2 className="text-lg font-bold">Finance & Accounting</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Tax & GST</h3>
-                <div><Label className="text-xs">GSTIN</Label><Input className="mt-1 h-8" value={settings.gstin || ''} onChange={e => setAppSettings((s: any) => ({...s, gstin: e.target.value}))} /></div>
-                <div><Label className="text-xs">Default GST rate (%)</Label><Input className="mt-1 h-8" value={settings.default_gst_rate || '18'} onChange={e => setAppSettings((s: any) => ({...s, default_gst_rate: e.target.value}))} /></div>
-                <div><Label className="text-xs">Invoice prefix</Label><Input className="mt-1 h-8" value={settings.invoice_prefix || 'INV-'} onChange={e => setAppSettings((s: any) => ({...s, invoice_prefix: e.target.value}))} /></div>
+                <div><Label className="text-xs">GSTIN</Label><Input className="mt-1 h-8" value={appSettings.gstin || ''} onChange={e => setAppSettings((s: any) => ({...s, gstin: e.target.value}))} /></div>
+                <div><Label className="text-xs">Default GST rate (%)</Label><Input className="mt-1 h-8" value={appSettings.default_gst_rate || '18'} onChange={e => setAppSettings((s: any) => ({...s, default_gst_rate: e.target.value}))} /></div>
+                <div><Label className="text-xs">Invoice prefix</Label><Input className="mt-1 h-8" value={appSettings.invoice_prefix || 'INV-'} onChange={e => setAppSettings((s: any) => ({...s, invoice_prefix: e.target.value}))} /></div>
               </CardContent></Card>
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Bank Details</h3>
-                <div><Label className="text-xs">Bank name</Label><Input className="mt-1 h-8" value={settings.bank_name || ''} onChange={e => setAppSettings((s: any) => ({...s, bank_name: e.target.value}))} /></div>
-                <div><Label className="text-xs">Account number</Label><Input className="mt-1 h-8" value={settings.bank_account || ''} onChange={e => setAppSettings((s: any) => ({...s, bank_account: e.target.value}))} /></div>
-                <div><Label className="text-xs">IFSC</Label><Input className="mt-1 h-8" value={settings.bank_ifsc || ''} onChange={e => setAppSettings((s: any) => ({...s, bank_ifsc: e.target.value}))} /></div>
+                <div><Label className="text-xs">Bank name</Label><Input className="mt-1 h-8" value={appSettings.bank_name || ''} onChange={e => setAppSettings((s: any) => ({...s, bank_name: e.target.value}))} /></div>
+                <div><Label className="text-xs">Account number</Label><Input className="mt-1 h-8" value={appSettings.bank_account || ''} onChange={e => setAppSettings((s: any) => ({...s, bank_account: e.target.value}))} /></div>
+                <div><Label className="text-xs">IFSC</Label><Input className="mt-1 h-8" value={appSettings.bank_ifsc || ''} onChange={e => setAppSettings((s: any) => ({...s, bank_ifsc: e.target.value}))} /></div>
               </CardContent></Card>
             </div>
             <Button onClick={() => saveAppSettings('Settings')} disabled={saving} className="gap-2"><Save className="h-4 w-4" /> Save Finance Settings</Button>
@@ -1073,15 +1073,15 @@ const AdminSettings = () => {
             <h2 className="text-lg font-bold">AI & Automation</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">AI Agent</h3>
-                <div><Label className="text-xs">AI Provider</Label><Input className="mt-1 h-8" value={settings.ai_provider || 'openrouter'} onChange={e => setAppSettings((s: any) => ({...s, ai_provider: e.target.value}))} /></div>
-                <div><Label className="text-xs">AI Model</Label><Input className="mt-1 h-8" value={settings.ai_model || 'google/gemini-2.0-flash-exp:free'} onChange={e => setAppSettings((s: any) => ({...s, ai_model: e.target.value}))} /></div>
-                <div><Label className="text-xs">Daily message limit per contact</Label><Input className="mt-1 h-8" value={settings.ai_daily_limit || '50'} onChange={e => setAppSettings((s: any) => ({...s, ai_daily_limit: e.target.value}))} /></div>
-                <div><Label className="text-xs">Business hours (e.g., 10-21)</Label><Input className="mt-1 h-8" value={settings.ai_business_hours || '10-21'} onChange={e => setAppSettings((s: any) => ({...s, ai_business_hours: e.target.value}))} /></div>
+                <div><Label className="text-xs">AI Provider</Label><Input className="mt-1 h-8" value={appSettings.ai_provider || 'openrouter'} onChange={e => setAppSettings((s: any) => ({...s, ai_provider: e.target.value}))} /></div>
+                <div><Label className="text-xs">AI Model</Label><Input className="mt-1 h-8" value={appSettings.ai_model || 'google/gemini-2.0-flash-exp:free'} onChange={e => setAppSettings((s: any) => ({...s, ai_model: e.target.value}))} /></div>
+                <div><Label className="text-xs">Daily message limit per contact</Label><Input className="mt-1 h-8" value={appSettings.ai_daily_limit || '50'} onChange={e => setAppSettings((s: any) => ({...s, ai_daily_limit: e.target.value}))} /></div>
+                <div><Label className="text-xs">Business hours (e.g., 10-21)</Label><Input className="mt-1 h-8" value={appSettings.ai_business_hours || '10-21'} onChange={e => setAppSettings((s: any) => ({...s, ai_business_hours: e.target.value}))} /></div>
               </CardContent></Card>
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Automation</h3>
-                <div><Label className="text-xs">Abandoned cart reminder (hours)</Label><Input className="mt-1 h-8" value={settings.abandoned_cart_hours || '2'} onChange={e => setAppSettings((s: any) => ({...s, abandoned_cart_hours: e.target.value}))} /></div>
-                <div><Label className="text-xs">Low stock alert threshold</Label><Input className="mt-1 h-8" value={settings.low_stock_threshold || '3'} onChange={e => setAppSettings((s: any) => ({...s, low_stock_threshold: e.target.value}))} /></div>
-                <div><Label className="text-xs">Daily report time (24h)</Label><Input className="mt-1 h-8" value={settings.daily_report_hour || '21'} onChange={e => setAppSettings((s: any) => ({...s, daily_report_hour: e.target.value}))} /></div>
+                <div><Label className="text-xs">Abandoned cart reminder (hours)</Label><Input className="mt-1 h-8" value={appSettings.abandoned_cart_hours || '2'} onChange={e => setAppSettings((s: any) => ({...s, abandoned_cart_hours: e.target.value}))} /></div>
+                <div><Label className="text-xs">Low stock alert threshold</Label><Input className="mt-1 h-8" value={appSettings.low_stock_threshold || '3'} onChange={e => setAppSettings((s: any) => ({...s, low_stock_threshold: e.target.value}))} /></div>
+                <div><Label className="text-xs">Daily report time (24h)</Label><Input className="mt-1 h-8" value={appSettings.daily_report_hour || '21'} onChange={e => setAppSettings((s: any) => ({...s, daily_report_hour: e.target.value}))} /></div>
               </CardContent></Card>
             </div>
             <Button onClick={() => saveAppSettings('Settings')} disabled={saving} className="gap-2"><Save className="h-4 w-4" /> Save AI Settings</Button>
@@ -1096,13 +1096,13 @@ const AdminSettings = () => {
             {/* Reuse old API tab content — redirect */}
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Payment Gateways</h3>
-                <div><Label className="text-xs">Razorpay Key ID</Label><Input className="mt-1 h-8" type="password" value={settings.razorpay_key_id || ''} onChange={e => setAppSettings((s: any) => ({...s, razorpay_key_id: e.target.value}))} /></div>
-                <div><Label className="text-xs">Razorpay Secret</Label><Input className="mt-1 h-8" type="password" value={settings.razorpay_key_secret || ''} onChange={e => setAppSettings((s: any) => ({...s, razorpay_key_secret: e.target.value}))} /></div>
+                <div><Label className="text-xs">Razorpay Key ID</Label><Input className="mt-1 h-8" type="password" value={appSettings.razorpay_key_id || ''} onChange={e => setAppSettings((s: any) => ({...s, razorpay_key_id: e.target.value}))} /></div>
+                <div><Label className="text-xs">Razorpay Secret</Label><Input className="mt-1 h-8" type="password" value={appSettings.razorpay_key_secret || ''} onChange={e => setAppSettings((s: any) => ({...s, razorpay_key_secret: e.target.value}))} /></div>
               </CardContent></Card>
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Email (SMTP)</h3>
-                <div><Label className="text-xs">SMTP Host</Label><Input className="mt-1 h-8" value={settings.smtp_host || ''} onChange={e => setAppSettings((s: any) => ({...s, smtp_host: e.target.value}))} /></div>
-                <div><Label className="text-xs">SMTP User</Label><Input className="mt-1 h-8" value={settings.smtp_user || ''} onChange={e => setAppSettings((s: any) => ({...s, smtp_user: e.target.value}))} /></div>
-                <div><Label className="text-xs">SMTP Password</Label><Input className="mt-1 h-8" type="password" value={settings.smtp_pass || ''} onChange={e => setAppSettings((s: any) => ({...s, smtp_pass: e.target.value}))} /></div>
+                <div><Label className="text-xs">SMTP Host</Label><Input className="mt-1 h-8" value={appSettings.smtp_host || ''} onChange={e => setAppSettings((s: any) => ({...s, smtp_host: e.target.value}))} /></div>
+                <div><Label className="text-xs">SMTP User</Label><Input className="mt-1 h-8" value={appSettings.smtp_user || ''} onChange={e => setAppSettings((s: any) => ({...s, smtp_user: e.target.value}))} /></div>
+                <div><Label className="text-xs">SMTP Password</Label><Input className="mt-1 h-8" type="password" value={appSettings.smtp_pass || ''} onChange={e => setAppSettings((s: any) => ({...s, smtp_pass: e.target.value}))} /></div>
               </CardContent></Card>
             </div>
             <Button onClick={() => saveAppSettings('Settings')} disabled={saving} className="gap-2"><Save className="h-4 w-4" /> Save Integrations</Button>
@@ -1115,12 +1115,12 @@ const AdminSettings = () => {
             <h2 className="text-lg font-bold">System & DevOps</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Maintenance</h3>
-                <div><Label className="text-xs">Maintenance mode</Label><Input className="mt-1 h-8" value={settings.maintenance_mode || 'off'} onChange={e => setAppSettings((s: any) => ({...s, maintenance_mode: e.target.value}))} placeholder="off / on" /></div>
-                <div><Label className="text-xs">Maintenance message</Label><Input className="mt-1 h-8" value={settings.maintenance_message || ''} onChange={e => setAppSettings((s: any) => ({...s, maintenance_message: e.target.value}))} /></div>
+                <div><Label className="text-xs">Maintenance mode</Label><Input className="mt-1 h-8" value={appSettings.maintenance_mode || 'off'} onChange={e => setAppSettings((s: any) => ({...s, maintenance_mode: e.target.value}))} placeholder="off / on" /></div>
+                <div><Label className="text-xs">Maintenance message</Label><Input className="mt-1 h-8" value={appSettings.maintenance_message || ''} onChange={e => setAppSettings((s: any) => ({...s, maintenance_message: e.target.value}))} /></div>
               </CardContent></Card>
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Cache & Performance</h3>
-                <div><Label className="text-xs">Config cache TTL (seconds)</Label><Input className="mt-1 h-8" value={settings.config_cache_ttl || '30'} onChange={e => setAppSettings((s: any) => ({...s, config_cache_ttl: e.target.value}))} /></div>
-                <div><Label className="text-xs">Max upload size (MB)</Label><Input className="mt-1 h-8" value={settings.max_upload_mb || '50'} onChange={e => setAppSettings((s: any) => ({...s, max_upload_mb: e.target.value}))} /></div>
+                <div><Label className="text-xs">Config cache TTL (seconds)</Label><Input className="mt-1 h-8" value={appSettings.config_cache_ttl || '30'} onChange={e => setAppSettings((s: any) => ({...s, config_cache_ttl: e.target.value}))} /></div>
+                <div><Label className="text-xs">Max upload size (MB)</Label><Input className="mt-1 h-8" value={appSettings.max_upload_mb || '50'} onChange={e => setAppSettings((s: any) => ({...s, max_upload_mb: e.target.value}))} /></div>
                 <Button variant="outline" size="sm" className="mt-2" onClick={() => { fetch('/api/health').then(r => r.json()).then(d => alert(`Status: ${d.status}\nUptime: ${Math.round(d.uptime)}s\nMemory: ${d.memory}`)); }}>Check Health</Button>
               </CardContent></Card>
             </div>
