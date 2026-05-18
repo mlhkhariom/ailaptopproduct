@@ -77,6 +77,12 @@ import AdminEvolution from "./pages/admin/AdminEvolution";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminCategories from "./pages/admin/AdminCategories";
 import AdminSettings from "./pages/admin/AdminSettings";
+import SiteSettingsPage from "./pages/admin/settings/SiteSettings";
+import EcommerceSettingsPage from "./pages/admin/settings/EcommerceSettings";
+import ERPSettingsPage from "./pages/admin/settings/ERPSettings";
+import CRMSettingsPage from "./pages/admin/settings/CRMSettings";
+import NotificationSettingsPage from "./pages/admin/settings/NotificationSettings";
+import SecuritySettingsPage from "./pages/admin/settings/SecuritySettings";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminCMS from "./pages/admin/AdminCMS";
 import AdminContacts from "./pages/admin/AdminContacts";
@@ -189,6 +195,12 @@ const App = () => (
             <Route path="/admin/customers" element={<AdminRoute><AdminCustomers /></AdminRoute>} />
             <Route path="/admin/categories" element={<AdminRoute><AdminCategories /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+            <Route path="/admin/settings/site" element={<AdminRoute><SiteSettingsPage /></AdminRoute>} />
+            <Route path="/admin/settings/ecommerce" element={<AdminRoute><EcommerceSettingsPage /></AdminRoute>} />
+            <Route path="/admin/settings/erp" element={<AdminRoute><ERPSettingsPage /></AdminRoute>} />
+            <Route path="/admin/settings/crm" element={<AdminRoute><CRMSettingsPage /></AdminRoute>} />
+            <Route path="/admin/settings/notifications" element={<AdminRoute><NotificationSettingsPage /></AdminRoute>} />
+            <Route path="/admin/settings/security" element={<AdminRoute><SecuritySettingsPage /></AdminRoute>} />
             <Route path="/admin/cms" element={<AdminRoute><AdminCMS /></AdminRoute>} />
             <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
             <Route path="/admin/contacts" element={<AdminRoute><AdminContacts /></AdminRoute>} />

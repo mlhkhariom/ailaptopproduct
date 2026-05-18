@@ -116,10 +116,18 @@ const toolsMenu = [
 const systemMenu = [
   { title: "User & Roles", url: "/admin/users", icon: UserCog, badge: "" },
   { title: "Reports", url: "/admin/reports", icon: TrendingUp, badge: "" },
-  { title: "Settings", url: "/admin/settings", icon: Settings, badge: "" },
   { title: "Shipping Rules", url: "/admin/shipping-rules", icon: Truck, badge: "" },
-  { title: "Linktree Page", url: "/admin/settings?tab=linktree", icon: Share2, badge: "" },
 ];
+
+const settingsMenu = [
+  { title: "Site & General", url: "/admin/settings/site", icon: Settings },
+  { title: "Ecommerce", url: "/admin/settings/ecommerce", icon: ShoppingCart },
+  { title: "ERP", url: "/admin/settings/erp", icon: Wrench },
+  { title: "CRM", url: "/admin/settings/crm", icon: Users },
+  { title: "Notifications", url: "/admin/settings/notifications", icon: Bell },
+  { title: "Security & AI", url: "/admin/settings/security", icon: Shield },
+];
+
 
 export function AdminSidebar() {
   const { state } = useSidebar();
@@ -258,6 +266,12 @@ export function AdminSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "System"}</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenu(systemMenu)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* ── Settings ── */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "Settings"}</SidebarGroupLabel>
+          <SidebarGroupContent>{renderMenu(settingsMenu)}</SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
