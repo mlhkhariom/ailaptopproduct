@@ -203,7 +203,7 @@ router.post('/staff/:id/documents', authMiddleware, adminOnly, async (req, res) 
 // DELETE /api/erp/staff/:id/documents/:docId
 router.delete('/staff/:id/documents/:docId', authMiddleware, adminOnly, async (req, res) => {
   const staff = await db.prepare('SELECT documents FROM staff WHERE id=?').get(req.params.id);
-  const docs = (typeof staff?.documents === 'string' ? JSON.parse(staff.documents || '[]') : (staff?.documents || [])).filter((d: any) => d.id !== req.params.docId);
+  const docs = (typeof staff?.documents === 'string' ? JSON.parse(staff.documents || '[]') : (staff?.documents || [])).filter((d) => d.id !== req.params.docId);
   await db.prepare('UPDATE staff SET documents=? WHERE id=?').run(JSON.stringify(docs), req.params.id);
   res.json({ success: true });
 });
