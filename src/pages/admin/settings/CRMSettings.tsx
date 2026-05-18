@@ -203,6 +203,92 @@ export default function CRMSettings() {
             </CardContent>
           </Card>
 
+          {/* Priority Levels & Lost Reasons */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Priority & Lost Reasons</CardTitle>
+              <CardDescription>Predefined options for quick selection</CardDescription>
+            </CardHeader>
+            <CardContent className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs">Priority levels (comma-separated)</Label>
+                <Input className="mt-1" value={v('lead_priorities', 'urgent,high,normal,low')} onChange={e => set('lead_priorities', e.target.value)} />
+                <p className="text-[10px] text-muted-foreground mt-1">Used in lead form dropdown</p>
+              </div>
+              <div>
+                <Label className="text-xs">Lost reasons (comma-separated)</Label>
+                <Input className="mt-1" value={v('lost_reasons', 'Price too high,Bought elsewhere,Not interested,No response,Budget issue')} onChange={e => set('lost_reasons', e.target.value)} />
+                <p className="text-[10px] text-muted-foreground mt-1">Shown when marking lead as lost</p>
+              </div>
+              <div>
+                <Label className="text-xs">Predefined tags (comma-separated)</Label>
+                <Input className="mt-1" value={v('lead_tags', 'hot-lead,follow-up,vip,callback,demo-done,price-sent')} onChange={e => set('lead_tags', e.target.value)} />
+                <p className="text-[10px] text-muted-foreground mt-1">Quick-add tags in lead detail</p>
+              </div>
+              <div>
+                <Label className="text-xs">Campaign sender name</Label>
+                <Input className="mt-1" value={v('campaign_sender_name', 'AI Laptop Wala')} onChange={e => set('campaign_sender_name', e.target.value)} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Business Hours & Auto-close */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Business Hours & Auto-close</CardTitle>
+              <CardDescription>When AI agent replies + auto-close inactive leads</CardDescription>
+            </CardHeader>
+            <CardContent className="grid md:grid-cols-2 gap-4">
+              <div><Label className="text-xs">Business hours start</Label><Input className="mt-1" type="time" value={v('crm_hours_start', '10:00')} onChange={e => set('crm_hours_start', e.target.value)} /></div>
+              <div><Label className="text-xs">Business hours end</Label><Input className="mt-1" type="time" value={v('crm_hours_end', '21:00')} onChange={e => set('crm_hours_end', e.target.value)} /></div>
+              <div><Label className="text-xs">Auto-close inactive leads after (days)</Label><Input className="mt-1" type="number" value={v('auto_close_days', '90')} onChange={e => set('auto_close_days', e.target.value)} /><p className="text-[10px] text-muted-foreground mt-1">0 = disabled</p></div>
+              <div><Label className="text-xs">Auto-close status</Label>
+                <Select value={v('auto_close_status', 'lost')} onValueChange={val => set('auto_close_status', val)}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lost">Mark as Lost</SelectItem>
+                    <SelectItem value="archived">Archive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Duplicate Detection & Notifications */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Duplicate Detection & Notifications</CardTitle>
+            </CardHeader>
+            <CardContent className="grid md:grid-cols-2 gap-4">
+              <div><Label className="text-xs">Duplicate detection</Label>
+                <div className="mt-2"><Switch checked={v('duplicate_detection', '1') !== '0'} onCheckedChange={c => set('duplicate_detection', c ? '1' : '0')} /></div>
+                <p className="text-[10px] text-muted-foreground mt-1">Check phone number before creating lead</p>
+              </div>
+              <div><Label className="text-xs">Match field for duplicates</Label>
+                <Select value={v('duplicate_field', 'phone')} onValueChange={val => set('duplicate_field', val)}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="phone">Phone number</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="both">Phone OR Email</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">Notify on new lead</Label>
+                <div className="mt-2"><Switch checked={v('notify_new_lead', '1') !== '0'} onCheckedChange={c => set('notify_new_lead', c ? '1' : '0')} /></div>
+              </div>
+              <div><Label className="text-xs">Notify on lead won</Label>
+                <div className="mt-2"><Switch checked={v('notify_lead_won', '1') !== '0'} onCheckedChange={c => set('notify_lead_won', c ? '1' : '0')} /></div>
+              </div>
+              <div><Label className="text-xs">Notify on overdue follow-up</Label>
+                <div className="mt-2"><Switch checked={v('notify_overdue_followup', '1') !== '0'} onCheckedChange={c => set('notify_overdue_followup', c ? '1' : '0')} /></div>
+              </div>
+              <div><Label className="text-xs">Notify assigned staff via WhatsApp</Label>
+                <div className="mt-2"><Switch checked={v('notify_staff_whatsapp', '1') !== '0'} onCheckedChange={c => set('notify_staff_whatsapp', c ? '1' : '0')} /></div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Button onClick={save} disabled={saving} className="w-full gap-2"><Save className="h-4 w-4" />{saving ? 'Saving...' : 'Save All CRM Settings'}</Button>
         </div>
       </div>
