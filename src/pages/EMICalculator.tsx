@@ -31,7 +31,7 @@ export default function EMICalculator() {
       <SEOHead title="EMI Calculator | AI Laptop Wala" description="Calculate EMI for laptops. No Cost EMI available on 3 & 6 months. Bajaj Finance EMI in Indore." canonical="/emi-calculator" />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-black mb-2">💳 EMI <span className="gradient-text">Calculator</span></h1>
+          <h1 className="text-3xl font-black mb-2">EMI <span className="gradient-text">Calculator</span></h1>
           <p className="text-muted-foreground text-sm">No Cost EMI on 3 & 6 months • Bajaj Finance available</p>
         </div>
 

@@ -70,13 +70,13 @@ export default function GlobalSearch({ className = "" }: { className?: string })
               {/* Recent Searches */}
               {(() => { const recent = JSON.parse(localStorage.getItem('recent_searches') || '[]'); return recent.length > 0 ? (
                 <div className="mb-3">
-                  <p className="text-[10px] font-semibold text-muted-foreground mb-2">🕐 Recent</p>
+                  <p className="text-[10px] font-semibold text-muted-foreground mb-2">Recent</p>
                   <div className="flex flex-wrap gap-1.5">
                     {recent.slice(0, 5).map((s: string) => <button key={s} onClick={() => setQuery(s)} className="text-xs bg-muted px-2.5 py-1 rounded-full hover:bg-primary/10 hover:text-primary">{s}</button>)}
                   </div>
                 </div>
               ) : null; })()}
-              <p className="text-[10px] font-semibold text-muted-foreground mb-2">🔥 Popular Searches</p>
+              <p className="text-[10px] font-semibold text-muted-foreground mb-2">Popular Searches</p>
               <div className="flex flex-wrap gap-1.5">
                 {['Dell Laptop', 'MacBook', 'Gaming', 'HP EliteBook', '8GB RAM', 'SSD'].map(s => (
                   <button key={s} onClick={() => { setQuery(s); }} className="text-xs bg-muted px-2.5 py-1 rounded-full hover:bg-primary/10 hover:text-primary transition-colors">{s}</button>

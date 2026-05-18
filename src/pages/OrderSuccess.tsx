@@ -15,7 +15,7 @@ const OrderSuccess = () => {
         <div className="h-24 w-24 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
           <CheckCircle className="h-14 w-14 text-green-500" />
         </div>
-        <h1 className="text-3xl font-serif font-bold mb-2">Order Placed! 🎉</h1>
+        <h1 className="text-3xl font-serif font-bold mb-2">Order Placed!</h1>
         <p className="text-muted-foreground mb-6">
           Thank you for shopping with AI Laptop Wala. Your order has been confirmed.
         </p>

@@ -18,7 +18,7 @@ export default function SitemapPage() {
     <CustomerLayout>
       <SEOHead title="Sitemap — AI Laptop Wala" description="Complete sitemap of AI Laptop Wala. Browse all pages, products, categories, and blog posts." canonical="/sitemap" />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <h1 className="text-3xl font-black mb-8">🗺️ Sitemap</h1>
+        <h1 className="text-3xl font-black mb-8">Sitemap</h1>
 
         <div className="grid md:grid-cols-3 gap-8">
           {/* Main Pages */}

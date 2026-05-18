@@ -27,7 +27,7 @@ export default function BulkOrder() {
         <div className="text-5xl mb-4">🎉</div>
         <h2 className="text-2xl font-black mb-2">Request Received!</h2>
         <p className="text-muted-foreground">Our team will contact you within 2 hours with a custom quote.</p>
-        <p className="text-sm mt-4">📞 For urgent orders: <a href="tel:+919893496163" className="text-primary font-bold">+91 98934 96163</a></p>
+        <p className="text-sm mt-4">For urgent orders: <a href="tel:+919893496163" className="text-primary font-bold">+91 98934 96163</a></p>
       </div>
     </CustomerLayout>
   );

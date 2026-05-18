@@ -26,7 +26,7 @@ export default function StoreLocator() {
       <SEOHead title="Store Locator — AI Laptop Wala Indore" description="Visit AI Laptop Wala stores in Indore. Silver Mall (RNT Marg) and Bangali Chouraha (Ashish Nagar). Get directions." canonical="/store-locator" />
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-black mb-2">📍 Our <span className="gradient-text">Stores</span></h1>
+          <h1 className="text-3xl font-black mb-2">Our <span className="gradient-text">Stores</span></h1>
           <p className="text-muted-foreground text-sm">Visit us at any of our 2 branches in Indore</p>
         </div>
 
@@ -53,7 +53,7 @@ export default function StoreLocator() {
 
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-6 text-center">
-            <h3 className="font-bold text-lg mb-2">🏠 Home Service Available</h3>
+            <h3 className="font-bold text-lg mb-2">Home Service Available</h3>
             <p className="text-sm text-muted-foreground mb-3">Can't visit? We come to you! Laptop repair at your doorstep across Indore.</p>
             <a href="https://wa.me/919893496163?text=Hi, I need home service for laptop repair"><Button variant="outline" className="gap-2">📱 Book Home Service</Button></a>
           </CardContent>

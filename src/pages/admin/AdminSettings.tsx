@@ -947,7 +947,7 @@ const AdminSettings = () => {
         {/* ECOMMERCE (shipping + payments + invoice combined) */}
         <TabsContent value="ecommerce">
           <div className="space-y-6">
-            <h2 className="text-lg font-bold">🛒 Ecommerce Settings</h2>
+            <h2 className="text-lg font-bold">Ecommerce Settings</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4"><h3 className="font-semibold text-sm mb-3">Payment Gateways</h3>
                 {['razorpay_key_id','phonepe_merchant_id','cashfree_app_id','paytm_mid','merchant_upi'].map(k => (
@@ -971,7 +971,7 @@ const AdminSettings = () => {
         {/* ERP */}
         <TabsContent value="erp">
           <div className="space-y-6">
-            <h2 className="text-lg font-bold">🔧 ERP Settings</h2>
+            <h2 className="text-lg font-bold">ERP Settings</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Job Card SLA</h3>
                 <div><Label className="text-xs">Urgent SLA (hours)</Label><Input className="mt-1 h-8" value={settings.sla_urgent || '24'} onChange={e => setSettings((s: any) => ({...s, sla_urgent: e.target.value}))} /></div>
@@ -992,7 +992,7 @@ const AdminSettings = () => {
         {/* CRM */}
         <TabsContent value="crm">
           <div className="space-y-6">
-            <h2 className="text-lg font-bold">👥 CRM Settings</h2>
+            <h2 className="text-lg font-bold">CRM Settings</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Lead Management</h3>
                 <div><Label className="text-xs">Lead stages (comma-separated)</Label><Input className="mt-1 h-8" value={settings.lead_stages || 'new,contacted,interested,negotiation,won,lost'} onChange={e => setSettings((s: any) => ({...s, lead_stages: e.target.value}))} /></div>
@@ -1011,7 +1011,7 @@ const AdminSettings = () => {
         {/* CMS */}
         <TabsContent value="cms">
           <div className="space-y-6">
-            <h2 className="text-lg font-bold">📝 CMS Settings</h2>
+            <h2 className="text-lg font-bold">CMS Settings</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Blog</h3>
                 <div><Label className="text-xs">Posts per page</Label><Input className="mt-1 h-8" value={settings.blog_per_page || '10'} onChange={e => setSettings((s: any) => ({...s, blog_per_page: e.target.value}))} /></div>
@@ -1029,7 +1029,7 @@ const AdminSettings = () => {
         {/* HR/Staff */}
         <TabsContent value="hr">
           <div className="space-y-6">
-            <h2 className="text-lg font-bold">👨‍💼 HR & Staff Settings</h2>
+            <h2 className="text-lg font-bold">HR & Staff Settings</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Attendance</h3>
                 <div><Label className="text-xs">Work start time</Label><Input className="mt-1 h-8" value={settings.work_start_time || '10:00'} onChange={e => setSettings((s: any) => ({...s, work_start_time: e.target.value}))} /></div>
@@ -1050,7 +1050,7 @@ const AdminSettings = () => {
         {/* Finance */}
         <TabsContent value="finance">
           <div className="space-y-6">
-            <h2 className="text-lg font-bold">💰 Finance & Accounting</h2>
+            <h2 className="text-lg font-bold">Finance & Accounting</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Tax & GST</h3>
                 <div><Label className="text-xs">GSTIN</Label><Input className="mt-1 h-8" value={settings.gstin || ''} onChange={e => setSettings((s: any) => ({...s, gstin: e.target.value}))} /></div>
@@ -1070,7 +1070,7 @@ const AdminSettings = () => {
         {/* AI & Automation */}
         <TabsContent value="ai">
           <div className="space-y-6">
-            <h2 className="text-lg font-bold">🤖 AI & Automation</h2>
+            <h2 className="text-lg font-bold">AI & Automation</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">AI Agent</h3>
                 <div><Label className="text-xs">AI Provider</Label><Input className="mt-1 h-8" value={settings.ai_provider || 'openrouter'} onChange={e => setSettings((s: any) => ({...s, ai_provider: e.target.value}))} /></div>
@@ -1091,7 +1091,7 @@ const AdminSettings = () => {
         {/* Integrations (old API tab) */}
         <TabsContent value="integrations">
           <div className="space-y-6">
-            <h2 className="text-lg font-bold">🔌 Integrations</h2>
+            <h2 className="text-lg font-bold">Integrations</h2>
             <p className="text-sm text-muted-foreground">API keys, SMTP, WhatsApp, and third-party connections</p>
             {/* Reuse old API tab content — redirect */}
             <div className="grid md:grid-cols-2 gap-4">
@@ -1112,7 +1112,7 @@ const AdminSettings = () => {
         {/* System */}
         <TabsContent value="system">
           <div className="space-y-6">
-            <h2 className="text-lg font-bold">⚙️ System & DevOps</h2>
+            <h2 className="text-lg font-bold">System & DevOps</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Card><CardContent className="p-4 space-y-2"><h3 className="font-semibold text-sm mb-3">Maintenance</h3>
                 <div><Label className="text-xs">Maintenance mode</Label><Input className="mt-1 h-8" value={settings.maintenance_mode || 'off'} onChange={e => setSettings((s: any) => ({...s, maintenance_mode: e.target.value}))} placeholder="off / on" /></div>

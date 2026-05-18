@@ -498,7 +498,7 @@ function WalletTab() {
       {/* Referral */}
       <Card>
         <CardContent className="p-5">
-          <h3 className="font-bold text-sm mb-3">🎁 Refer & Earn ₹500</h3>
+          <h3 className="font-bold text-sm mb-3">Refer & Earn ₹500</h3>
           <p className="text-xs text-muted-foreground mb-3">Share your code with friends. They get ₹250, you get ₹500 when they sign up!</p>
           <div className="flex gap-2 mb-3">
             <div className="flex-1 bg-muted rounded-lg px-4 py-2.5 font-mono font-bold text-center tracking-wider">{referral.code || '...'}</div>

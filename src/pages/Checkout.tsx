@@ -493,7 +493,7 @@ function WalletAtCheckout() {
   if (!token || balance <= 0) return null;
   return (
     <div className="p-2 rounded-lg bg-purple-50 border border-purple-200 flex items-center justify-between">
-      <div><p className="text-xs font-semibold text-purple-700">💰 Wallet: ₹{balance}</p><p className="text-[10px] text-muted-foreground">Use at checkout</p></div>
+      <div><p className="text-xs font-semibold text-purple-700">Wallet: ₹{balance}</p><p className="text-[10px] text-muted-foreground">Use at checkout</p></div>
       <Button size="sm" variant={applied ? "secondary" : "outline"} className="text-xs h-7" onClick={() => { setApplied(!applied); (window as any).__useWallet = !applied ? balance : 0; toast(applied ? 'Wallet removed' : `₹${balance} wallet applied!`); }}>
         {applied ? '✓ Applied' : 'Use'}
       </Button>
@@ -508,7 +508,7 @@ function AvailableCouponsCheckout({ subtotal }: { subtotal: number }) {
   if (coupons.length === 0) return null;
   return (
     <div className="p-2 rounded-lg bg-green-50 border border-green-200">
-      <p className="text-[10px] font-semibold text-green-700 mb-1.5">🎟️ Available Coupons</p>
+      <p className="text-[10px] font-semibold text-green-700 mb-1.5">Available Coupons</p>
       {coupons.slice(0, 2).map(c => (
         <div key={c.code} className="flex items-center justify-between text-xs mb-1">
           <span className="text-muted-foreground">{c.discount_type === 'percentage' ? `${c.discount_value}%` : `₹${c.discount_value}`} off</span>

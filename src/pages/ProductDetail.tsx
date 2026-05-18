@@ -265,7 +265,7 @@ const ProductDetail = () => {
             {/* Notify Me (out of stock) */}
             {!activeInStock && (
               <div className="mb-4 p-3 rounded-xl border border-dashed border-orange-300 bg-orange-50/50">
-                <p className="text-xs font-semibold mb-2">🔔 Notify when back in stock</p>
+                <p className="text-xs font-semibold mb-2">Notify when back in stock</p>
                 <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); const phone = (e.target as any).phone.value; if (phone.length >= 10) { toast.success("We'll notify you on WhatsApp when available!"); (e.target as any).reset(); } else toast.error("Enter valid phone"); }}>
                   <input name="phone" placeholder="WhatsApp number" className="flex-1 text-sm border rounded-lg px-3 py-2" />
                   <Button type="submit" size="sm" variant="outline">Notify Me</Button>
@@ -331,7 +331,7 @@ const ProductDetail = () => {
             {/* EMI Calculator (feature toggle) */}
             {emi_calculator && product.price >= 3000 && (
               <div className="mb-4 p-3 rounded-xl border-2 border-primary/20 bg-primary/5">
-                <p className="text-xs font-semibold text-primary mb-2">💳 EMI Options (No Cost EMI available)</p>
+                <p className="text-xs font-semibold text-primary mb-2">EMI Options (No Cost EMI available)</p>
                 <div className="grid grid-cols-3 gap-2">
                   {[3, 6, 12].map(months => (
                     <div key={months} className="text-center p-2 rounded-lg bg-card border">
@@ -348,7 +348,7 @@ const ProductDetail = () => {
             {/* Available Coupons */}
             {availableCoupons.length > 0 && (
               <div className="mb-4 p-3 rounded-xl border bg-green-50/50">
-                <p className="text-xs font-semibold text-green-700 mb-2">🎟️ Available Offers</p>
+                <p className="text-xs font-semibold text-green-700 mb-2">Available Offers</p>
                 <div className="space-y-1.5">
                   {availableCoupons.slice(0, 3).map((c: any) => (
                     <div key={c.code} className="flex items-center justify-between text-xs">

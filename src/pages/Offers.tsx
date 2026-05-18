@@ -21,7 +21,7 @@ export default function Offers() {
       <SEOHead title="Offers & Coupons | AI Laptop Wala" description="Get the best deals on laptops in Indore. Active coupons, discounts, and offers at AI Laptop Wala." canonical="/offers" />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-black mb-2">🎉 Offers & <span className="gradient-text">Coupons</span></h1>
+          <h1 className="text-3xl font-black mb-2">Offers & <span className="gradient-text">Coupons</span></h1>
           <p className="text-muted-foreground text-sm">Active deals and discount codes — apply at checkout</p>
         </div>
 
