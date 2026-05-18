@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import { validateEnv } from './lib/envValidation.js';
+validateEnv();
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -84,7 +86,7 @@ await registerRoutes(app);
 registerEventSubscribers();
 app.use('/uploads', express.static(path.resolve(__dirname, '../../uploads')));
 
-app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOString(), uptime: process.uptime(), memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB' }));
 
 // OG meta tags for social bots (WhatsApp, Facebook, Twitter)
 app.get('/og/products/:slug', async (req, res) => {
@@ -280,6 +282,11 @@ app.use((err, req, res, next) => {
     ...(process.env.NODE_ENV !== 'production' && { stack: err.stack?.split('\n')[0] }),
   });
 });
+
+// ── Global Error Handlers (MUST be last) ──────────────────
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, async () => {

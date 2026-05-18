@@ -7,7 +7,7 @@ import { adminOnly } from '../../middleware/adminOnly.js';
 const router = Router();
 
 // POST /api/push/subscribe — save push subscription
-router.post('/subscribe', async (req, res) => {
+router.post("/subscribe", async (req, res) => {
   const { endpoint, keys, user_id } = req.body;
   if (!endpoint || !keys) return res.status(400).json({ error: 'endpoint and keys required' });
 
