@@ -57,9 +57,9 @@ export default function CRMSettings() {
     toast.success('Template saved'); setNewTpl({ name: '', message: '' });
     fetch('/api/erp/wa-templates', { headers }).then(r => r.json()).then(d => { if (Array.isArray(d)) setTemplates(d); });
   };
-  const deleteTemplate = async (name: string) => {
-    await fetch(`/api/erp/wa-templates/${name}`, { method: 'DELETE', headers });
-    setTemplates(t => t.filter(x => x.name !== name));
+  const deleteTemplate = async (id: string) => {
+    await fetch(`/api/erp/wa-templates/${id}`, { method: 'DELETE', headers });
+    setTemplates(t => t.filter(x => x.id !== id));
   };
 
   const toggleAutomation = async (id: string, active: boolean) => {
@@ -363,7 +363,7 @@ export default function CRMSettings() {
                       <span className="text-[9px] text-gray-500 float-right mt-1 ml-2">10:30 AM</span>
                     </div>
                   </div>
-                  <Button size="sm" variant="ghost" className="text-destructive h-7 shrink-0" onClick={() => deleteTemplate(t.name)}><X className="h-3 w-3" /></Button>
+                  <Button size="sm" variant="ghost" className="text-destructive h-7 shrink-0" onClick={() => deleteTemplate(t.id || t.name)}><X className="h-3 w-3" /></Button>
                 </div>
               ))}
               <div className="p-4 border-2 border-dashed rounded-lg space-y-3">
