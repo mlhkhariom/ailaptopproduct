@@ -194,7 +194,7 @@ const App = () => (
             <Route path="/admin/evolution" element={<AdminRoute><AdminEvolution /></AdminRoute>} />
             <Route path="/admin/customers" element={<AdminRoute><AdminCustomers /></AdminRoute>} />
             <Route path="/admin/categories" element={<AdminRoute><AdminCategories /></AdminRoute>} />
-            <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+            <Route path="/admin/settings" element={<AdminRoute><SiteSettingsPage /></AdminRoute>} />
             <Route path="/admin/settings/site" element={<AdminRoute><SiteSettingsPage /></AdminRoute>} />
             <Route path="/admin/settings/ecommerce" element={<AdminRoute><EcommerceSettingsPage /></AdminRoute>} />
             <Route path="/admin/settings/erp" element={<AdminRoute><ERPSettingsPage /></AdminRoute>} />
