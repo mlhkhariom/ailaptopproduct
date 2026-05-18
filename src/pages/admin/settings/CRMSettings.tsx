@@ -111,20 +111,33 @@ export default function CRMSettings() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Lead Sources</CardTitle>
-              <CardDescription>Where leads come from — used in attribution reports</CardDescription>
+              <CardDescription>Where leads come from — used in attribution, filters, and reports</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {sources.map(src => (
-                  <Badge key={src} variant="secondary" className="gap-1 px-3 py-1.5 text-xs cursor-default">
-                    {src}
-                    <button onClick={() => setList('lead_sources', sources.filter(x => x !== src))} className="ml-1 opacity-60 hover:opacity-100"><X className="h-3 w-3" /></button>
-                  </Badge>
-                ))}
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {sources.map(src => {
+                  const icons: Record<string, string> = { 'WhatsApp': '💬', 'Enquiry Form': '📋', 'Walk-in': '🚶', 'Referral': '🤝', 'Social Media': '📱', 'Website': '🌐', 'Phone Call': '📞', 'JustDial': '📍', 'IndiaMart': '🏭', 'Google Ads': '📢', 'Facebook': '👤', 'Instagram': '📸', 'YouTube': '▶️', 'Email': '✉️', 'Exhibition': '🎪', 'Repeat Customer': '🔄' };
+                  return (
+                    <div key={src} className="group relative flex items-center gap-2 p-2.5 rounded-lg border bg-card hover:border-primary/40 hover:shadow-sm transition-all">
+                      <span className="text-base">{icons[src] || '📌'}</span>
+                      <span className="text-xs font-medium flex-1 truncate">{src}</span>
+                      <button onClick={() => setList('lead_sources', sources.filter(x => x !== src))} className="opacity-0 group-hover:opacity-100 absolute -top-1.5 -right-1.5 bg-destructive text-white rounded-full w-4 h-4 flex items-center justify-center transition-opacity"><X className="h-2.5 w-2.5" /></button>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="flex gap-2">
-                <Input placeholder="New source..." value={newSource} onChange={e => setNewSource(e.target.value)} className="h-8 max-w-[200px]" onKeyDown={e => { if (e.key === 'Enter' && newSource.trim()) { setList('lead_sources', [...sources, newSource.trim()]); setNewSource(''); } }} />
-                <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => { if (newSource.trim()) { setList('lead_sources', [...sources, newSource.trim()]); setNewSource(''); } }}><Plus className="h-3 w-3" /> Add</Button>
+              {/* Quick add presets */}
+              <div className="pt-3 border-t">
+                <p className="text-[10px] font-medium text-muted-foreground mb-2">QUICK ADD COMMON SOURCES:</p>
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {['Phone Call', 'Google Ads', 'Facebook', 'Instagram', 'YouTube', 'Email', 'JustDial', 'IndiaMart', 'Exhibition', 'Repeat Customer'].filter(x => !sources.includes(x)).map(preset => (
+                    <button key={preset} onClick={() => setList('lead_sources', [...sources, preset])} className="text-[10px] px-2 py-1 rounded-md border border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors">+ {preset}</button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input placeholder="Custom source name..." value={newSource} onChange={e => setNewSource(e.target.value)} className="h-8 max-w-[220px]" onKeyDown={e => { if (e.key === 'Enter' && newSource.trim()) { setList('lead_sources', [...sources, newSource.trim()]); setNewSource(''); } }} />
+                  <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => { if (newSource.trim()) { setList('lead_sources', [...sources, newSource.trim()]); setNewSource(''); } }}><Plus className="h-3 w-3" /> Add Custom</Button>
+                </div>
               </div>
             </CardContent>
           </Card>
