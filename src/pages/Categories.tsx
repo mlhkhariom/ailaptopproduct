@@ -20,7 +20,7 @@ export default function Categories() {
           {categories.map(cat => (
             <Link key={cat.id} to={`/products?category=${cat.name}`} className="group">
               <div className="bg-card border rounded-xl p-6 text-center hover:border-primary hover:shadow-lg transition-all">
-                {cat.image ? <img src={cat.image} alt={cat.name} className="w-16 h-16 object-cover rounded-lg mx-auto mb-3" /> : <div className="text-4xl mb-3">{cat.icon || '📦'}</div>}
+                {cat.image ? <img src={cat.image} alt={cat.name} className="w-16 h-16 object-cover rounded-lg mx-auto mb-3" /> : <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3"><Grid3X3 className="h-7 w-7 text-primary" /></div>}
                 <h3 className="font-bold text-sm group-hover:text-primary">{cat.name}</h3>
                 {cat.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{cat.description}</p>}
               </div>
@@ -29,7 +29,7 @@ export default function Categories() {
           {categories.length === 0 && ['Laptops', 'MacBooks', 'Gaming', 'Desktops', 'Accessories', 'Components'].map(c => (
             <Link key={c} to={`/products?category=${c}`} className="group">
               <div className="bg-card border rounded-xl p-6 text-center hover:border-primary hover:shadow-lg transition-all">
-                <div className="text-4xl mb-3">💻</div>
+                <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3"><Grid3X3 className="h-7 w-7 text-primary" /></div>
                 <h3 className="font-bold text-sm group-hover:text-primary">{c}</h3>
               </div>
             </Link>

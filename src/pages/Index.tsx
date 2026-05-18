@@ -446,7 +446,7 @@ const Index = () => {
             ]).slice(0, 8).map(cat => (
               <Link key={cat.slug} to={`/products?category=${cat.slug}`} className="group">
                 <div className="bg-card border rounded-xl p-5 text-center hover:border-primary hover:shadow-md transition-all">
-                  <div className="text-3xl mb-2">{cat.icon}</div>
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2 text-2xl">{cat.icon}</div>
                   <h3 className="font-bold text-sm mb-1">{cat.name}</h3>
                   <p className="text-xs text-muted-foreground">{cat.desc}</p>
                 </div>

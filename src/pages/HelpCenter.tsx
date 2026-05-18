@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { HelpCircle, MessageCircle, Phone, Mail, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +33,18 @@ const HELP_TOPICS = [
 
 export default function HelpCenter() {
   const [search, setSearch] = useState('');
-  const filtered = search ? HELP_TOPICS.map(t => ({ ...t, questions: t.questions.filter(q => q.q.toLowerCase().includes(search.toLowerCase()) || q.a.toLowerCase().includes(search.toLowerCase())) })).filter(t => t.questions.length > 0) : HELP_TOPICS;
+  const [dbFaqs, setDbFaqs] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/cms/faqs').then(r => r.json()).then(d => { if (Array.isArray(d) && d.length > 0) setDbFaqs(d); }).catch(() => {});
+  }, []);
+
+  // Use DB FAQs if available, else fallback to hardcoded
+  const topics = dbFaqs.length > 0
+    ? Object.entries(dbFaqs.reduce((acc: any, f: any) => { const cat = f.category || 'General'; if (!acc[cat]) acc[cat] = []; acc[cat].push({ q: f.question, a: f.answer }); return acc; }, {})).map(([category, questions]) => ({ category, questions: questions as any[] }))
+    : HELP_TOPICS;
+
+  const filtered = search ? topics.map(t => ({ ...t, questions: t.questions.filter(q => q.q.toLowerCase().includes(search.toLowerCase()) || q.a.toLowerCase().includes(search.toLowerCase())) })).filter(t => t.questions.length > 0) : topics;
 
   return (
     <CustomerLayout>

@@ -1,15 +1,26 @@
-import { MapPin, Phone, Clock, Navigation } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MapPin, Phone, Clock, Navigation, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import CustomerLayout from "@/components/layout/CustomerLayout";
 import SEOHead from "@/components/common/SEOHead";
 
-const branches = [
+const DEFAULT_BRANCHES = [
   { name: 'Silver Mall (Main Branch)', address: 'LB-21, Block-B, Silver Mall, 8-A, RNT Marg, Indore 452001', phone: '+91 98934 96163', hours: 'Mon-Sat: 11AM - 9PM | Sun: 12PM - 3PM', map: 'https://maps.app.goo.gl/Z4e1Z91HVKwjm5xp9', embed: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3680.2!2d75.857!3d22.719!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sSilver+Mall+Indore!5e0!3m2!1sen!2sin!4v1' },
   { name: 'Bangali Chouraha (New Branch)', address: '21, G3, Sai Residency, Near Bangali Chouraha, Ashish Nagar, Indore 452016', phone: '+91 98934 96163', hours: 'Mon-Sat: 11AM - 9PM | Sun: Closed', map: 'https://maps.app.goo.gl/drVLkuS9tGjEmwUF7', embed: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3680.5!2d75.88!3d22.72!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sBangali+Chouraha!5e0!3m2!1sen!2sin!4v1' },
 ];
 
 export default function StoreLocator() {
+  const [branches, setBranches] = useState(DEFAULT_BRANCHES);
+
+  useEffect(() => {
+    // Try to fetch from API (dynamic), fallback to defaults
+    fetch('/api/erp/branches/public').then(r => r.json()).then(d => {
+      if (Array.isArray(d) && d.length > 0) {
+        setBranches(d.map(b => ({ name: b.name, address: b.address, phone: b.phone || '+91 98934 96163', hours: 'Mon-Sat: 11AM - 9PM', map: b.map_url || '#', embed: b.map_embed || '' })));
+      }
+    }).catch(() => {});
+  }, []);
   return (
     <CustomerLayout>
       <SEOHead title="Store Locator — AI Laptop Wala Indore" description="Visit AI Laptop Wala stores in Indore. Silver Mall (RNT Marg) and Bangali Chouraha (Ashish Nagar). Get directions." canonical="/store-locator" />

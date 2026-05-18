@@ -16,6 +16,11 @@ async function auditLog(req, module, action, ref_id, old_value, new_value) {
 // ── Audit Log Helper ─────────────────────────────────────
 // ── BRANCHES ──────────────────────────────────────────────
 
+// Public branches (for store locator)
+router.get('/branches/public', async (req, res) => {
+  res.json(await db.prepare('SELECT id, name, address, phone FROM branches WHERE is_active=1 ORDER BY name').all() || []);
+});
+
 router.get('/branches', authMiddleware, adminOnly, async (req, res) => {
   res.json(await db.prepare('SELECT * FROM branches ORDER BY name ASC').all() || []);
 });
