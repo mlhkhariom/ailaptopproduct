@@ -134,4 +134,47 @@ async function buildBreadcrumb(cat) {
   return crumbs;
 }
 
+// ══════════════════════════════════════════════════════════
+// CATEGORY RULES (Auto-assign, Featured, Trending)
+// ══════════════════════════════════════════════════════════
+
+// POST /api/categories/auto-assign — auto-assign products to category by keyword
+router.post('/auto-assign', authMiddleware, adminOnly, async (req, res) => {
+  const { category, keywords } = req.body; // keywords: ["gaming", "rtx", "rog"]
+  if (!category || !keywords?.length) return res.status(400).json({ error: 'category and keywords[] required' });
+  let assigned = 0;
+  for (const kw of keywords) {
+    const result = await db.prepare("UPDATE products SET category=? WHERE (name ILIKE ? OR description ILIKE ?) AND (category IS NULL OR category = '') AND status='active'")
+      .run(category, `%${kw}%`, `%${kw}%`);
+    assigned += result?.changes || 0;
+  }
+  res.json({ success: true, assigned, keywords });
+});
+
+// GET /api/categories/featured — featured/trending categories
+router.get('/featured/list', async (req, res) => {
+  // Categories with most products
+  const featured = await db.prepare(`
+    SELECT c.id, c.name, c.slug, c.image, c.icon, COUNT(p.id) as product_count
+    FROM categories c LEFT JOIN products p ON p.category = c.name AND p.status='active'
+    WHERE c.is_active=1 GROUP BY c.id ORDER BY product_count DESC LIMIT 8
+  `).all();
+  res.json(featured);
+});
+
+// GET /api/categories/trending — categories with most recent orders
+router.get('/trending/list', async (req, res) => {
+  const trending = await db.prepare(`
+    SELECT p.category as name, COUNT(*) as order_count
+    FROM orders o, jsonb_array_elements(o.items::jsonb) as item
+    JOIN products p ON p.id = item->>'id'
+    WHERE o.created_at > NOW() - INTERVAL '30 days'
+    GROUP BY p.category ORDER BY order_count DESC LIMIT 5
+  `).all().catch(async () => {
+    // Fallback: just top categories by product count
+    return db.prepare("SELECT category as name, COUNT(*) as order_count FROM products WHERE status='active' AND category IS NOT NULL GROUP BY category ORDER BY order_count DESC LIMIT 5").all();
+  });
+  res.json(trending);
+});
+
 export default router;
