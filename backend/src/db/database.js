@@ -93,7 +93,15 @@ export const initDB = async () => {
     );
     CREATE TABLE IF NOT EXISTS categories (
       id TEXT PRIMARY KEY, name TEXT NOT NULL, name_hi TEXT, slug TEXT UNIQUE,
-      description TEXT, image TEXT, is_active INTEGER DEFAULT 1,
+      parent_id TEXT, description TEXT, image TEXT, icon TEXT,
+      sort_order INTEGER DEFAULT 0, is_active INTEGER DEFAULT 1,
+      meta_title TEXT, meta_description TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS brands (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, slug TEXT UNIQUE,
+      logo TEXT, description TEXT, is_active INTEGER DEFAULT 1,
+      meta_title TEXT, meta_description TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS products (

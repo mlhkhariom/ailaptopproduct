@@ -39,13 +39,19 @@ router.get('/', async (req, res) => {
     ...p, ingredients: JSON.parse(p.ingredients || '[]'), benefits: JSON.parse(p.benefits || '[]'), in_stock: !!p.in_stock,
   }));
 
-  // Get available brands for filter
+  // Get available filters (dynamic from actual data)
   const brands = await db.prepare("SELECT DISTINCT brand FROM products WHERE brand IS NOT NULL AND brand != '' AND status='active' ORDER BY brand").all();
+  const categories = await db.prepare("SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND status='active' ORDER BY category").all();
+  const priceRange = await db.prepare("SELECT MIN(price) as min, MAX(price) as max FROM products WHERE status='active'").get();
 
   res.json({
     products,
     pagination: { page: currentPage, limit, total, totalPages: Math.ceil(total / limit) },
-    filters: { brands: brands.map(b => b.brand) }
+    filters: {
+      brands: brands.map(b => b.brand),
+      categories: categories.map(c => c.category),
+      price_range: { min: priceRange?.min || 0, max: priceRange?.max || 200000 },
+    }
   });
 });
 
