@@ -502,7 +502,7 @@ export const initDB = async () => {
     // Multi-Branch
     `CREATE TABLE IF NOT EXISTS branches (
       id TEXT PRIMARY KEY, name TEXT NOT NULL, address TEXT, phone TEXT,
-      manager TEXT, is_active INTEGER DEFAULT 1, created_at TIMESTAMPTZ DEFAULT NOW()
+      manager TEXT, map_url TEXT, is_active INTEGER DEFAULT 1, created_at TIMESTAMPTZ DEFAULT NOW()
     )`,
     // Branch-wise stock
     `CREATE TABLE IF NOT EXISTS branch_stock (
@@ -729,6 +729,7 @@ export const initDB = async () => {
     "ALTER TABLE service_bookings ADD COLUMN IF NOT EXISTS payment_link TEXT",
     "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS payment_link TEXT",
     "ALTER TABLE expenses ADD COLUMN IF NOT EXISTS receipt_url TEXT",
+    "ALTER TABLE branches ADD COLUMN IF NOT EXISTS map_url TEXT",
     `CREATE TABLE IF NOT EXISTS recurring_expenses (
       id TEXT PRIMARY KEY, category TEXT NOT NULL, amount REAL NOT NULL,
       description TEXT, payment_method TEXT DEFAULT 'cash', branch_id TEXT,

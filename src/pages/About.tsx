@@ -126,28 +126,28 @@ const About = () => {
     <section className="py-16">
       <div className="container mx-auto px-4">
         <h2 className="text-3xl font-bold text-center mb-2">Our Branches</h2>
-        <p className="text-muted-foreground text-center mb-10">2 convenient locations in Indore</p>
-        <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+        <p className="text-muted-foreground text-center mb-10">{branches.length} convenient location{branches.length > 1 ? 's' : ''} in Indore</p>
+        <div className={`grid gap-6 max-w-4xl mx-auto ${branches.length === 1 ? 'max-w-lg' : branches.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
           {branches.map((b: any) => (
-            <Card key={b.name} className="hover:shadow-lg transition-shadow">
+            <Card key={b.id || b.name} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6 space-y-3">
                 <h3 className="font-bold text-primary">{b.name}</h3>
-                <div className="flex items-start gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                  <p className="text-muted-foreground">{b.address}</p>
-                </div>
-                <p className="text-xs text-muted-foreground">{b.note}</p>
-                <a href={b.map} target="_blank" rel="noreferrer">
-                  <Button size="sm" variant="outline" className="gap-1.5 w-full">
-                    <MapPin className="h-3.5 w-3.5" /> Get Directions
-                  </Button>
-                </a>
+                {b.address && <div className="flex items-start gap-2 text-sm"><MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" /><p className="text-muted-foreground">{b.address}</p></div>}
+                {b.phone && <div className="flex items-center gap-2 text-sm"><Phone className="h-3.5 w-3.5 text-muted-foreground" /><a href={`tel:${b.phone}`} className="text-muted-foreground hover:text-primary">{b.phone}</a></div>}
+                {b.manager && <p className="text-xs text-muted-foreground">Manager: {b.manager}</p>}
+                {b.map_url && (
+                  <a href={b.map_url} target="_blank" rel="noreferrer">
+                    <Button size="sm" variant="outline" className="gap-1.5 w-full mt-2">
+                      <MapPin className="h-3.5 w-3.5" /> Get Directions
+                    </Button>
+                  </a>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
         <div className="text-center mt-6 text-sm text-muted-foreground">
-          <Clock className="h-4 w-4 inline mr-1" /> Open Monday – Saturday: 10:00 AM – 8:00 PM
+          <Clock className="h-4 w-4 inline mr-1" /> {businessHours || 'Open Monday – Saturday: 10:00 AM – 8:00 PM'}
         </div>
       </div>
     </section>

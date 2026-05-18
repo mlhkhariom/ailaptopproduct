@@ -168,7 +168,7 @@ function BranchManager({ token, defaultBranch, setDefault }: { token: string | n
   const [branches, setBranches] = useState<any[]>([]);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', address: '', phone: '', manager: '' });
+  const [form, setForm] = useState({ name: '', address: '', phone: '', manager: '', map_url: '' });
   const headers: any = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
   const load = () => fetch('/api/erp/branches', { headers }).then(r => r.json()).then(d => { if (Array.isArray(d)) setBranches(d); }).catch(() => {});
@@ -177,12 +177,12 @@ function BranchManager({ token, defaultBranch, setDefault }: { token: string | n
   const add = async () => {
     if (!form.name) return toast.error('Branch name required');
     await fetch('/api/erp/branches', { method: 'POST', headers, body: JSON.stringify(form) });
-    toast.success('Branch added'); setAdding(false); setForm({ name: '', address: '', phone: '', manager: '' }); load();
+    toast.success('Branch added'); setAdding(false); setForm({ name: '', address: '', phone: '', manager: '', map_url: '' }); load();
   };
 
   const update = async (id: string) => {
     await fetch(`/api/erp/branches/${id}`, { method: 'PUT', headers, body: JSON.stringify({ ...form, is_active: true }) });
-    toast.success('Branch updated'); setEditing(null); setForm({ name: '', address: '', phone: '', manager: '' }); load();
+    toast.success('Branch updated'); setEditing(null); setForm({ name: '', address: '', phone: '', manager: '', map_url: '' }); load();
   };
 
   const toggleActive = async (b: any) => {
@@ -196,7 +196,7 @@ function BranchManager({ token, defaultBranch, setDefault }: { token: string | n
     toast.success('Branch deleted'); load();
   };
 
-  const startEdit = (b: any) => { setEditing(b.id); setForm({ name: b.name, address: b.address || '', phone: b.phone || '', manager: b.manager || '' }); };
+  const startEdit = (b: any) => { setEditing(b.id); setForm({ name: b.name, address: b.address || '', phone: b.phone || '', manager: b.manager || '', map_url: b.map_url || '' }); };
 
   return (
     <div className="space-y-3">
@@ -217,6 +217,7 @@ function BranchManager({ token, defaultBranch, setDefault }: { token: string | n
                 <div><Label className="text-[10px]">Branch Name *</Label><Input className="mt-1 h-8" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
                 <div><Label className="text-[10px]">Manager Name</Label><Input className="mt-1 h-8" value={form.manager} onChange={e => setForm(f => ({ ...f, manager: e.target.value }))} /></div>
                 <div><Label className="text-[10px]">Address</Label><Input className="mt-1 h-8" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
+                <div className="sm:col-span-2"><Label className="text-[10px]">Google Maps Link</Label><Input className="mt-1 h-8" value={form.map_url} onChange={e => setForm(f => ({ ...f, map_url: e.target.value }))} placeholder="https://maps.app.goo.gl/..." /></div>
                 <div><Label className="text-[10px]">Phone</Label><Input className="mt-1 h-8" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
               </div>
               <div className="flex gap-2">
@@ -266,10 +267,11 @@ function BranchManager({ token, defaultBranch, setDefault }: { token: string | n
             <div><Label className="text-[10px]">Manager Name</Label><Input className="mt-1 h-8" placeholder="e.g., Rahul Sharma" value={form.manager} onChange={e => setForm(f => ({ ...f, manager: e.target.value }))} /></div>
             <div><Label className="text-[10px]">Full Address</Label><Input className="mt-1 h-8" placeholder="Shop 12, Silver Mall, RNT Marg, Indore" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
             <div><Label className="text-[10px]">Phone Number</Label><Input className="mt-1 h-8" placeholder="+91 98934 96163" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+            <div className="sm:col-span-2"><Label className="text-[10px]">Google Maps Link</Label><Input className="mt-1 h-8" placeholder="https://maps.app.goo.gl/..." value={form.map_url} onChange={e => setForm(f => ({ ...f, map_url: e.target.value }))} /></div>
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={add} disabled={!form.name}>Add Branch</Button>
-            <Button size="sm" variant="ghost" onClick={() => { setAdding(false); setForm({ name: '', address: '', phone: '', manager: '' }); }}>Cancel</Button>
+            <Button size="sm" variant="ghost" onClick={() => { setAdding(false); setForm({ name: '', address: '', phone: '', manager: '', map_url: '' }); }}>Cancel</Button>
           </div>
         </div>
       )}

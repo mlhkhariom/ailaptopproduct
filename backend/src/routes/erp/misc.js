@@ -26,16 +26,16 @@ router.get('/branches', authMiddleware, adminOnly, async (req, res) => {
 });
 
 router.post('/branches', authMiddleware, adminOnly, async (req, res) => {
-  const { name, address, phone, manager } = req.body;
+  const { name, address, phone, manager, map_url } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
   const id = uuid();
-  await db.prepare('INSERT INTO branches (id,name,address,phone,manager) VALUES (?,?,?,?,?)').run(id, name, address, phone, manager);
+  await db.prepare('INSERT INTO branches (id,name,address,phone,manager,map_url) VALUES (?,?,?,?,?,?)').run(id, name, address, phone, manager, map_url || null);
   res.status(201).json({ id });
 });
 
 router.put('/branches/:id', authMiddleware, adminOnly, async (req, res) => {
-  const { name, address, phone, manager, is_active } = req.body;
-  await db.prepare('UPDATE branches SET name=?,address=?,phone=?,manager=?,is_active=? WHERE id=?').run(name, address, phone, manager, is_active ? 1 : 0, req.params.id);
+  const { name, address, phone, manager, map_url, is_active } = req.body;
+  await db.prepare('UPDATE branches SET name=?,address=?,phone=?,manager=?,map_url=?,is_active=? WHERE id=?').run(name, address, phone, manager, map_url || null, is_active ? 1 : 0, req.params.id);
   res.json({ message: 'Updated' });
 });
 
