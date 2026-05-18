@@ -112,62 +112,74 @@ const Account = () => {
     <CustomerLayout>
       <SEOHead title="My Account — AI Laptop Wala" canonical="/account" noindex={true} />
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-6 md:py-8 max-w-5xl">
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-serif font-bold">My Account</h1>
-          <Button variant="outline" className="gap-2 text-destructive" onClick={() => { logout(); navigate("/"); }}>
+          <h1 className="text-2xl md:text-3xl font-black">My Account</h1>
+          <Button variant="ghost" size="sm" className="gap-2 text-destructive" onClick={() => { logout(); navigate("/"); }}>
             <LogOut className="h-4 w-4" /> Logout
           </Button>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Sidebar */}
-          <Card className="md:col-span-1 h-fit">
-            <CardContent className="p-6 text-center">
-              <Avatar className="h-20 w-20 mx-auto mb-4">
-                <AvatarFallback className="bg-primary/10 text-primary text-2xl font-serif">
+        {/* Profile Card — Full width on mobile */}
+        <Card className="mb-6">
+          <CardContent className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+              <Avatar className="h-16 w-16 md:h-20 md:w-20 shrink-0">
+                <AvatarFallback className="bg-primary/10 text-primary text-xl md:text-2xl font-bold">
                   {user.name?.split(' ').map((n: string) => n[0]).join('') || '?'}
                 </AvatarFallback>
               </Avatar>
-              <h2 className="font-semibold text-lg">{user.name}</h2>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
-              <Badge variant={(user as any).role === "admin" ? "default" : "secondary"} className="mt-2 capitalize">{(user as any).role || 'customer'}</Badge>
-              <Separator className="my-4" />
-              <div className="text-left space-y-2 text-sm">
-                <div className="flex items-center gap-2"><Mail className="h-4 w-4 text-muted-foreground shrink-0" /><span className="truncate">{user.email}</span></div>
-                {(user as any).phone && <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" />{(user as any).phone}</div>}
-                <div className="flex items-center gap-2"><ShoppingBag className="h-4 w-4 text-muted-foreground" />{myOrders.length} orders</div>
-                <div className="flex items-center gap-2"><Heart className="h-4 w-4 text-muted-foreground" />{wishlistProducts.length} wishlist items</div>
-                <div className="flex items-center gap-2">🏆 <span className="text-xs">Loyalty: {myOrders.filter((o: any) => o.payment_status === 'paid').length * 50} points</span></div>
+              <div className="flex-1 text-center sm:text-left">
+                <h2 className="font-bold text-lg">{user.name}</h2>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
+                  <Badge variant="secondary" className="capitalize">{(user as any).role || 'customer'}</Badge>
+                  {(user as any).phone && <span className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" />{(user as any).phone}</span>}
+                </div>
               </div>
-              {((user as any).role === "admin" || (user as any).role === "superadmin") && (
-                <Button className="w-full mt-4 gap-2" onClick={() => navigate("/admin")}>Go to Admin Panel</Button>
-              )}
-            </CardContent>
-          </Card>
+              <div className="flex flex-wrap gap-3 text-center">
+                <div className="px-3 py-1.5 rounded-lg bg-muted/50">
+                  <p className="text-lg font-black text-primary">{myOrders.length}</p>
+                  <p className="text-[10px] text-muted-foreground">Orders</p>
+                </div>
+                <div className="px-3 py-1.5 rounded-lg bg-muted/50">
+                  <p className="text-lg font-black text-primary">{wishlistProducts.length}</p>
+                  <p className="text-[10px] text-muted-foreground">Wishlist</p>
+                </div>
+                <div className="px-3 py-1.5 rounded-lg bg-muted/50">
+                  <p className="text-lg font-black text-primary">{myOrders.filter((o: any) => o.payment_status === 'paid').length * 50}</p>
+                  <p className="text-[10px] text-muted-foreground">Points</p>
+                </div>
+              </div>
+            </div>
+            {((user as any).role === "admin" || (user as any).role === "superadmin") && (
+              <Button className="w-full sm:w-auto mt-4 gap-2" variant="outline" onClick={() => navigate("/admin")}>Go to Admin Panel</Button>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Main */}
-          <div className="md:col-span-2">
-            <Tabs defaultValue="orders">
-              <TabsList className="flex-wrap h-auto gap-1">
-                <TabsTrigger value="orders" className="gap-1 text-xs"><ShoppingBag className="h-3 w-3" /> Orders ({myOrders.length})</TabsTrigger>
-                <TabsTrigger value="repairs" className="gap-1 text-xs">🔧 Repairs ({myRepairs.length})</TabsTrigger>
-                <TabsTrigger value="profile" className="gap-1 text-xs"><User className="h-3 w-3" /> Profile</TabsTrigger>
-                <TabsTrigger value="wishlist" className="gap-1 text-xs"><Heart className="h-3 w-3" /> Wishlist ({wishlistProducts.length})</TabsTrigger>
-                <TabsTrigger value="password" className="gap-1 text-xs"><Lock className="h-3 w-3" /> Password</TabsTrigger>
-                <TabsTrigger value="addresses" className="gap-1 text-xs"><MapPin className="h-3 w-3" /> Addresses</TabsTrigger>
-                <TabsTrigger value="returns" className="gap-1 text-xs"><Package className="h-3 w-3" /> Returns</TabsTrigger>
-                <TabsTrigger value="wallet" className="gap-1 text-xs">💰 Wallet</TabsTrigger>
-              </TabsList>
+        {/* Tabs — Scrollable on mobile */}
+        <Tabs defaultValue="orders">
+          <div className="overflow-x-auto -mx-4 px-4 mb-4">
+            <TabsList className="inline-flex h-10 gap-1 min-w-max">
+              <TabsTrigger value="orders" className="gap-1.5 text-xs px-3"><ShoppingBag className="h-3.5 w-3.5" /> Orders</TabsTrigger>
+              <TabsTrigger value="addresses" className="gap-1.5 text-xs px-3"><MapPin className="h-3.5 w-3.5" /> Addresses</TabsTrigger>
+              <TabsTrigger value="returns" className="gap-1.5 text-xs px-3"><Package className="h-3.5 w-3.5" /> Returns</TabsTrigger>
+              <TabsTrigger value="wallet" className="gap-1.5 text-xs px-3"><Heart className="h-3.5 w-3.5" /> Wallet</TabsTrigger>
+              <TabsTrigger value="profile" className="gap-1.5 text-xs px-3"><User className="h-3.5 w-3.5" /> Profile</TabsTrigger>
+              <TabsTrigger value="password" className="gap-1.5 text-xs px-3"><Lock className="h-3.5 w-3.5" /> Password</TabsTrigger>
+            </TabsList>
+          </div>
 
-              {/* ORDERS */}
-              <TabsContent value="orders" className="mt-4 space-y-3">
-                {myOrders.length === 0 ? (
-                  <Card><CardContent className="p-8 text-center">
-                    <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                    <p className="font-medium">No orders yet</p>
-                    <Button className="mt-4" onClick={() => navigate("/products")}>Start Shopping</Button>
-                  </CardContent></Card>
+          {/* ORDERS */}
+          <TabsContent value="orders" className="space-y-3">
+            {myOrders.length === 0 ? (
+              <Card><CardContent className="p-8 text-center">
+                <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="font-medium">No orders yet</p>
+                <Button className="mt-4" onClick={() => navigate("/products")}>Start Shopping</Button>
+              </CardContent></Card>
                 ) : myOrders.map(order => {
                   const Icon = STATUS_ICON[order.status] || Package;
                   return (
@@ -316,8 +328,6 @@ const Account = () => {
                 <WalletTab />
               </TabsContent>
             </Tabs>
-          </div>
-        </div>
       </div>
     </CustomerLayout>
   );
