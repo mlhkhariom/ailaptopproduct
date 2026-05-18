@@ -120,6 +120,7 @@ const systemMenu = [
 ];
 
 const settingsMenu = [
+  { title: "All Settings", url: "/admin/settings", icon: Settings },
   { title: "Site & General", url: "/admin/settings/site", icon: Settings },
   { title: "Ecommerce", url: "/admin/settings/ecommerce", icon: ShoppingCart },
   { title: "ERP", url: "/admin/settings/erp", icon: Wrench },
