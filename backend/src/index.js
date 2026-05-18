@@ -17,6 +17,7 @@ process.on('unhandledRejection', (reason) => {
 });
 
 import { registerRoutes } from './routes/registry.js';
+import { registerEventSubscribers } from './lib/eventSubscribers.js';
 import { setIO as setEvolutionIO } from './evolution/webhook.js';
 import { startNotificationProcessor } from './whatsapp/notifications.js';
 import { startPaymentReminderProcessor } from './whatsapp/paymentReminders.js';
@@ -80,6 +81,7 @@ app.use(async (req, res, next) => {
 
 // ── Register all routes via registry ──────────────────────
 await registerRoutes(app);
+registerEventSubscribers();
 app.use('/uploads', express.static(path.resolve(__dirname, '../../uploads')));
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
