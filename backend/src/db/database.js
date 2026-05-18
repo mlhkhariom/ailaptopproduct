@@ -419,6 +419,13 @@ export const initDB = async () => {
     "ALTER TABLE social_settings ADD COLUMN IF NOT EXISTS last_sync_at TIMESTAMPTZ",
     "ALTER TABLE products ADD COLUMN IF NOT EXISTS show_public INTEGER DEFAULT 1",
     "ALTER TABLE job_cards ADD COLUMN IF NOT EXISTS timer_start TIMESTAMPTZ",
+    `CREATE TABLE IF NOT EXISTS crm_tasks (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, type TEXT DEFAULT 'task',
+      lead_id TEXT, assigned_to TEXT, due_date DATE, due_time TEXT,
+      notes TEXT, priority TEXT DEFAULT 'normal',
+      status TEXT DEFAULT 'pending', completed_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     "ALTER TABLE job_cards ADD COLUMN IF NOT EXISTS timer_running INTEGER DEFAULT 0",
     "ALTER TABLE job_cards ADD COLUMN IF NOT EXISTS time_spent INTEGER DEFAULT 0",
     "ALTER TABLE job_cards ADD COLUMN IF NOT EXISTS sla_deadline TIMESTAMPTZ",

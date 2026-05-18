@@ -65,6 +65,19 @@ app.use('/api/auth/register', authLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// ── Redirect handler (from CMS redirect manager) ─────────
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  try {
+    const redirects = await db.prepare("SELECT value FROM app_settings WHERE key LIKE 'redirect_%'").all();
+    for (const r of redirects) {
+      const { from_path, to_path, type } = JSON.parse(r.value);
+      if (req.path === from_path) return res.redirect(Number(type) || 301, to_path);
+    }
+  } catch {}
+  next();
+});
+
 // ── Register all routes via registry ──────────────────────
 await registerRoutes(app);
 app.use('/uploads', express.static(path.resolve(__dirname, '../../uploads')));

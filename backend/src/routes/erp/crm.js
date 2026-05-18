@@ -388,4 +388,131 @@ router.delete('/wa-templates/:name', authMiddleware, adminOnly, async (req, res)
   res.json({ success: true });
 });
 
+// ══════════════════════════════════════════════════════════
+// CRM ADVANCED FEATURES
+// ══════════════════════════════════════════════════════════
+
+// ── TASKS / CALENDAR ──────────────────────────────────────
+
+// GET /api/erp/tasks — all tasks (calendar view)
+router.get('/tasks', authMiddleware, adminOnly, async (req, res) => {
+  const { from, to, assigned_to } = req.query;
+  let q = "SELECT t.*, l.name as lead_name FROM crm_tasks t LEFT JOIN leads l ON t.lead_id=l.id WHERE 1=1";
+  const params = [];
+  if (from) { q += ' AND t.due_date >= ?'; params.push(from); }
+  if (to) { q += ' AND t.due_date <= ?'; params.push(to); }
+  if (assigned_to) { q += ' AND t.assigned_to = ?'; params.push(assigned_to); }
+  q += ' ORDER BY t.due_date ASC';
+  res.json(await db.prepare(q).all(...params));
+});
+
+// POST /api/erp/tasks
+router.post('/tasks', authMiddleware, adminOnly, async (req, res) => {
+  const { title, type, lead_id, assigned_to, due_date, due_time, notes, priority } = req.body;
+  if (!title) return res.status(400).json({ error: 'title required' });
+  const id = uuid();
+  await db.prepare("INSERT INTO crm_tasks (id, title, type, lead_id, assigned_to, due_date, due_time, notes, priority, status) VALUES (?,?,?,?,?,?,?,?,?,?)")
+    .run(id, title, type || 'task', lead_id || null, assigned_to || null, due_date || null, due_time || null, notes || '', priority || 'normal', 'pending');
+  res.status(201).json({ success: true, id });
+});
+
+// PUT /api/erp/tasks/:id/complete
+router.put('/tasks/:id/complete', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare("UPDATE crm_tasks SET status='completed', completed_at=NOW() WHERE id=?").run(req.params.id);
+  res.json({ success: true });
+});
+
+// ── CALL LOG ──────────────────────────────────────────────
+
+// POST /api/erp/leads/:id/call-log
+router.post('/leads/:id/call-log', authMiddleware, adminOnly, async (req, res) => {
+  const { duration, outcome, notes } = req.body;
+  const id = uuid();
+  await db.prepare("INSERT INTO lead_activities (id, lead_id, type, note, created_by) VALUES (?,?,?,?,?)")
+    .run(id, req.params.id, 'call', `📞 Call (${duration || '0'}min) — ${outcome || 'no answer'}${notes ? ': ' + notes : ''}`, req.user?.name || 'Admin');
+  // Update lead last contact
+  await db.prepare("UPDATE leads SET updated_at=NOW() WHERE id=?").run(req.params.id);
+  res.json({ success: true, id });
+});
+
+// ── LEAD SCORING RULES EDITOR ─────────────────────────────
+
+// GET /api/erp/scoring-rules
+router.get('/scoring-rules', authMiddleware, adminOnly, async (req, res) => {
+  const rules = await db.prepare("SELECT * FROM app_settings WHERE key LIKE 'scoring_rule_%' ORDER BY key").all();
+  if (rules.length === 0) {
+    // Return defaults
+    return res.json([
+      { id: 'status', field: 'status', condition: 'equals', values: { contacted: 10, interested: 20, negotiation: 30, won: 40 }, weight: 1 },
+      { id: 'budget', field: 'budget', condition: 'greater_than', values: { 50000: 20, 20000: 10, 5000: 5 }, weight: 1 },
+      { id: 'followups', field: 'followup_count', condition: 'per_unit', values: { per: 10, max: 40 }, weight: 1 },
+    ]);
+  }
+  res.json(rules.map(r => ({ id: r.key, ...JSON.parse(r.value) })));
+});
+
+// POST /api/erp/scoring-rules — save custom rules
+router.post('/scoring-rules', authMiddleware, adminOnly, async (req, res) => {
+  const { rules } = req.body;
+  if (!Array.isArray(rules)) return res.status(400).json({ error: 'rules array required' });
+  // Clear old rules
+  await db.prepare("DELETE FROM app_settings WHERE key LIKE 'scoring_rule_%'").run();
+  for (let i = 0; i < rules.length; i++) {
+    await db.prepare("INSERT INTO app_settings (key, value) VALUES (?,?)").run(`scoring_rule_${i}`, JSON.stringify(rules[i]));
+  }
+  res.json({ success: true, count: rules.length });
+});
+
+// ── CAMPAIGN ATTRIBUTION ──────────────────────────────────
+
+// GET /api/erp/leads/attribution — which campaign/source brought which leads
+router.get('/leads/attribution', authMiddleware, adminOnly, async (req, res) => {
+  const attribution = await db.prepare(`
+    SELECT source, 
+      COUNT(*) as leads,
+      SUM(CASE WHEN status='won' THEN 1 ELSE 0 END) as conversions,
+      COALESCE(SUM(CASE WHEN status='won' THEN deal_value ELSE 0 END), 0) as revenue,
+      COALESCE(AVG(CASE WHEN status='won' THEN deal_value END), 0) as avg_deal
+    FROM leads WHERE source IS NOT NULL GROUP BY source ORDER BY revenue DESC
+  `).all();
+  res.json(attribution);
+});
+
+// ── STAGE-WISE CONVERSION + LOST REASONS ──────────────────
+
+// GET /api/erp/leads/stage-analysis
+router.get('/leads/stage-analysis', authMiddleware, adminOnly, async (req, res) => {
+  const stages = await db.prepare(`
+    SELECT status, COUNT(*) as count, 
+      COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at))/86400), 0) as avg_days_in_stage
+    FROM leads GROUP BY status ORDER BY count DESC
+  `).all();
+  const lostReasons = await db.prepare(`
+    SELECT lost_reason, COUNT(*) as count 
+    FROM leads WHERE status='lost' AND lost_reason IS NOT NULL AND lost_reason != ''
+    GROUP BY lost_reason ORDER BY count DESC LIMIT 10
+  `).all();
+  const stageTransitions = await db.prepare(`
+    SELECT status, 
+      SUM(CASE WHEN status='won' THEN 1 ELSE 0 END) as to_won,
+      SUM(CASE WHEN status='lost' THEN 1 ELSE 0 END) as to_lost
+    FROM leads GROUP BY status
+  `).all();
+  res.json({ stages, lost_reasons: lostReasons, transitions: stageTransitions });
+});
+
+// ── CUSTOMER COMPLAINT LINKAGE ────────────────────────────
+
+// POST /api/erp/leads/:id/complaint
+router.post('/leads/:id/complaint', authMiddleware, adminOnly, async (req, res) => {
+  const { subject, description, priority, linked_order } = req.body;
+  const id = uuid();
+  await db.prepare("INSERT INTO lead_activities (id, lead_id, type, note, created_by) VALUES (?,?,?,?,?)")
+    .run(id, req.params.id, 'complaint', `⚠️ Complaint: ${subject}${linked_order ? ' (Order: ' + linked_order + ')' : ''}\n${description || ''}`, req.user?.name || 'Admin');
+  // Create notification
+  await db.prepare("INSERT INTO notifications (id, type, title, message, link) VALUES (?,?,?,?,?)")
+    .run(uuid(), 'complaint', 'Customer Complaint', `${subject} — Lead #${req.params.id}`, '/admin/erp/crm');
+  res.json({ success: true, id });
+});
+
 export default router;

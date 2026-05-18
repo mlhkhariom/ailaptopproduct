@@ -273,4 +273,98 @@ router.delete('/homepage-sections/:id', authMiddleware, adminOnly, async (req, r
   res.json({ success: true });
 });
 
+// ══════════════════════════════════════════════════════════
+// CMS ADVANCED FEATURES
+// ══════════════════════════════════════════════════════════
+
+// ── SEO META MANAGER (per page) ───────────────────────────
+
+// GET /api/cms/seo-meta — all pages with their SEO meta
+router.get('/seo-meta', authMiddleware, adminOnly, async (req, res) => {
+  const pages = await db.prepare("SELECT slug, title, meta_title, meta_description FROM cms_pages WHERE is_active=1 ORDER BY title").all();
+  const products = await db.prepare("SELECT slug, name, meta_title, meta_description FROM products WHERE status='active' ORDER BY name LIMIT 50").all();
+  const blogs = await db.prepare("SELECT slug, title, seo_title, seo_description FROM blog_posts WHERE status='published' ORDER BY title").all();
+  res.json({ pages, products, blogs });
+});
+
+// PUT /api/cms/seo-meta/:type/:slug — update SEO meta for any page
+router.put('/seo-meta/:type/:slug', authMiddleware, adminOnly, async (req, res) => {
+  const { meta_title, meta_description, og_image, canonical_url } = req.body;
+  const { type, slug } = req.params;
+  if (type === 'page') await db.prepare('UPDATE cms_pages SET meta_title=?, meta_description=? WHERE slug=?').run(meta_title, meta_description, slug);
+  else if (type === 'product') await db.prepare('UPDATE products SET meta_title=?, meta_description=? WHERE slug=?').run(meta_title, meta_description, slug);
+  else if (type === 'blog') await db.prepare('UPDATE blog_posts SET seo_title=?, seo_description=? WHERE slug=?').run(meta_title, meta_description, slug);
+  res.json({ success: true });
+});
+
+// ── SCHEMA MARKUP MANAGER ─────────────────────────────────
+
+// GET /api/cms/schema/:type — get schema markup config
+router.get('/schema/:type', async (req, res) => {
+  const schema = (await db.prepare("SELECT value FROM app_settings WHERE key=?").get(`schema_${req.params.type}`))?.value;
+  res.json(schema ? JSON.parse(schema) : null);
+});
+
+// PUT /api/cms/schema/:type — save custom schema
+router.put('/schema/:type', authMiddleware, adminOnly, async (req, res) => {
+  const { schema } = req.body;
+  await db.prepare("INSERT INTO app_settings (key, value) VALUES (?,?) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value")
+    .run(`schema_${req.params.type}`, JSON.stringify(schema));
+  res.json({ success: true });
+});
+
+// ── REDIRECT MANAGER ──────────────────────────────────────
+
+// GET /api/cms/redirects
+router.get('/redirects', authMiddleware, adminOnly, async (req, res) => {
+  const redirects = await db.prepare("SELECT * FROM app_settings WHERE key LIKE 'redirect_%' ORDER BY key").all();
+  res.json(redirects.map(r => ({ id: r.key, ...JSON.parse(r.value) })));
+});
+
+// POST /api/cms/redirects — add redirect rule
+router.post('/redirects', authMiddleware, adminOnly, async (req, res) => {
+  const { from_path, to_path, type } = req.body;
+  if (!from_path || !to_path) return res.status(400).json({ error: 'from_path and to_path required' });
+  const key = `redirect_${Date.now()}`;
+  await db.prepare("INSERT INTO app_settings (key, value) VALUES (?,?)").run(key, JSON.stringify({ from_path, to_path, type: type || '301' }));
+  res.json({ success: true });
+});
+
+// DELETE /api/cms/redirects/:id
+router.delete('/redirects/:id', authMiddleware, adminOnly, async (req, res) => {
+  await db.prepare("DELETE FROM app_settings WHERE key=?").run(req.params.id);
+  res.json({ success: true });
+});
+
+// ── PAGE VERSION HISTORY / DRAFT-PUBLISH ──────────────────
+
+// GET /api/cms/pages/:id/versions — version history
+router.get('/pages/:id/versions', authMiddleware, adminOnly, async (req, res) => {
+  const versions = await db.prepare("SELECT * FROM app_settings WHERE key LIKE ? ORDER BY key DESC").all(`page_version_${req.params.id}_%`);
+  res.json(versions.map(v => ({ id: v.key, ...JSON.parse(v.value) })));
+});
+
+// POST /api/cms/pages/:id/publish — save version + publish
+router.post('/pages/:id/publish', authMiddleware, adminOnly, async (req, res) => {
+  const page = await db.prepare('SELECT * FROM cms_pages WHERE id=?').get(req.params.id);
+  if (!page) return res.status(404).json({ error: 'Page not found' });
+  // Save current as version
+  const versionKey = `page_version_${req.params.id}_${Date.now()}`;
+  await db.prepare("INSERT INTO app_settings (key, value) VALUES (?,?)").run(versionKey, JSON.stringify({ content: page.content, title: page.title, saved_at: new Date().toISOString(), saved_by: req.user?.name }));
+  // Update page
+  const { content, title, meta_title, meta_description } = req.body;
+  await db.prepare('UPDATE cms_pages SET content=COALESCE(?,content), title=COALESCE(?,title), meta_title=COALESCE(?,meta_title), meta_description=COALESCE(?,meta_description), is_active=1, updated_at=NOW() WHERE id=?')
+    .run(content, title, meta_title, meta_description, req.params.id);
+  res.json({ success: true, version: versionKey });
+});
+
+// POST /api/cms/pages/:id/revert/:versionId — revert to version
+router.post('/pages/:id/revert/:versionId', authMiddleware, adminOnly, async (req, res) => {
+  const version = (await db.prepare("SELECT value FROM app_settings WHERE key=?").get(req.params.versionId))?.value;
+  if (!version) return res.status(404).json({ error: 'Version not found' });
+  const data = JSON.parse(version);
+  await db.prepare('UPDATE cms_pages SET content=?, title=?, updated_at=NOW() WHERE id=?').run(data.content, data.title, req.params.id);
+  res.json({ success: true, reverted_to: req.params.versionId });
+});
+
 export default router;
