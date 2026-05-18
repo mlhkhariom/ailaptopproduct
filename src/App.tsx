@@ -17,6 +17,13 @@ import BrandStore from "./pages/BrandStore";
 import EMICalculator from "./pages/EMICalculator";
 import Offers from "./pages/Offers";
 import BulkOrder from "./pages/BulkOrder";
+import Deals from "./pages/Deals";
+import NewArrivals from "./pages/NewArrivals";
+import BestSellers from "./pages/BestSellers";
+import Categories from "./pages/Categories";
+import StoreLocator from "./pages/StoreLocator";
+import SitemapPage from "./pages/SitemapPage";
+import HelpCenter from "./pages/HelpCenter";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Blog from "./pages/Blog";
@@ -116,6 +123,13 @@ const App = () => (
             <Route path="/emi-calculator" element={<EMICalculator />} />
             <Route path="/offers" element={<Offers />} />
             <Route path="/bulk-order" element={<BulkOrder />} />
+            <Route path="/deals" element={<Deals />} />
+            <Route path="/new-arrivals" element={<NewArrivals />} />
+            <Route path="/best-sellers" element={<BestSellers />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/store-locator" element={<StoreLocator />} />
+            <Route path="/sitemap" element={<SitemapPage />} />
+            <Route path="/help" element={<HelpCenter />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/blog" element={<Blog />} />
