@@ -129,6 +129,7 @@ const settingsMenu = [
   { title: "Security & AI", url: "/admin/settings/security", icon: Shield },
   { title: "API Keys", url: "/admin/settings/api-keys", icon: Key },
   { title: "About Page", url: "/admin/settings/about-page", icon: Users },
+  { title: "CMS", url: "/admin/settings/cms", icon: FileText },
 ];
 
 
