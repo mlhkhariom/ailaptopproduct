@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Save, Key, Bot, Eye, EyeOff, Copy, CheckCircle, AlertCircle } from "lucide-react";
+import { Save, Key, Bot, Eye, EyeOff, Copy, CheckCircle, AlertCircle, CreditCard, Smartphone, MessageCircle, Mail, MapPin, BarChart3, Image, Bell, Cpu, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,52 +11,52 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import { toast } from "sonner";
 
 const API_SERVICES = [
-  { id: 'ai', name: 'AI / LLM', icon: '🤖', keys: [
+  { id: 'ai', name: 'AI / LLM', icon: Cpu, color: 'text-violet-600 bg-violet-50', keys: [
     { key: 'ai_provider', type: 'select', label: 'Provider', options: ['openai', 'gemini', 'claude', 'groq', 'deepseek'] },
     { key: 'ai_api_key', type: 'secret', label: 'API Key' },
     { key: 'ai_model', type: 'text', label: 'Model', placeholder: 'gpt-4o-mini' },
     { key: 'ai_max_tokens', type: 'number', label: 'Max tokens', placeholder: '500' },
     { key: 'ai_temperature', type: 'number', label: 'Temperature (0-1)', placeholder: '0.7' },
   ]},
-  { id: 'razorpay', name: 'Razorpay', icon: '💳', keys: [
+  { id: 'razorpay', name: 'Razorpay', icon: CreditCard, color: 'text-blue-600 bg-blue-50', keys: [
     { key: 'razorpay_key_id', type: 'text', label: 'Key ID' },
     { key: 'razorpay_key_secret', type: 'secret', label: 'Key Secret' },
     { key: 'razorpay_webhook_secret', type: 'secret', label: 'Webhook Secret' },
   ]},
-  { id: 'phonepe', name: 'PhonePe', icon: '📱', keys: [
+  { id: 'phonepe', name: 'PhonePe', icon: Wallet, color: 'text-indigo-600 bg-indigo-50', keys: [
     { key: 'phonepe_merchant_id', type: 'text', label: 'Merchant ID' },
     { key: 'phonepe_salt_key', type: 'secret', label: 'Salt Key' },
     { key: 'phonepe_salt_index', type: 'text', label: 'Salt Index', placeholder: '1' },
   ]},
-  { id: 'whatsapp', name: 'WhatsApp API', icon: '💬', keys: [
+  { id: 'whatsapp', name: 'WhatsApp API', icon: MessageCircle, color: 'text-green-600 bg-green-50', keys: [
     { key: 'wa_provider', type: 'select', label: 'Provider', options: ['wati', 'twilio', 'meta', 'aisensy', 'interakt'] },
     { key: 'wa_api_key', type: 'secret', label: 'API Key / Token' },
     { key: 'wa_api_url', type: 'text', label: 'API Base URL', placeholder: 'https://live-server-xxxx.wati.io' },
   ]},
-  { id: 'sms', name: 'SMS Gateway', icon: '📲', keys: [
+  { id: 'sms', name: 'SMS Gateway', icon: Smartphone, color: 'text-orange-600 bg-orange-50', keys: [
     { key: 'sms_provider', type: 'select', label: 'Provider', options: ['none', 'msg91', 'twilio', 'textlocal', 'fast2sms'] },
     { key: 'sms_api_key', type: 'secret', label: 'API Key' },
     { key: 'sms_sender_id', type: 'text', label: 'Sender ID', placeholder: 'AILPTW' },
   ]},
-  { id: 'smtp', name: 'Email SMTP', icon: '✉️', keys: [
+  { id: 'smtp', name: 'Email SMTP', icon: Mail, color: 'text-red-600 bg-red-50', keys: [
     { key: 'smtp_host', type: 'text', label: 'Host', placeholder: 'smtp.gmail.com' },
     { key: 'smtp_port', type: 'number', label: 'Port', placeholder: '587' },
     { key: 'smtp_user', type: 'text', label: 'Username' },
     { key: 'smtp_pass', type: 'secret', label: 'Password' },
   ]},
-  { id: 'maps', name: 'Google Maps', icon: '🗺️', keys: [
+  { id: 'maps', name: 'Google Maps', icon: MapPin, color: 'text-emerald-600 bg-emerald-50', keys: [
     { key: 'google_maps_key', type: 'secret', label: 'Maps API Key' },
   ]},
-  { id: 'analytics', name: 'Analytics', icon: '📊', keys: [
+  { id: 'analytics', name: 'Analytics', icon: BarChart3, color: 'text-amber-600 bg-amber-50', keys: [
     { key: 'ga_measurement_id', type: 'text', label: 'GA4 Measurement ID', placeholder: 'G-XXXXXXXXXX' },
     { key: 'fb_pixel_id', type: 'text', label: 'Facebook Pixel ID' },
   ]},
-  { id: 'cloudinary', name: 'Cloudinary (Images)', icon: '🖼️', keys: [
+  { id: 'cloudinary', name: 'Cloudinary', icon: Image, color: 'text-sky-600 bg-sky-50', keys: [
     { key: 'cloudinary_cloud_name', type: 'text', label: 'Cloud Name' },
     { key: 'cloudinary_api_key', type: 'text', label: 'API Key' },
     { key: 'cloudinary_api_secret', type: 'secret', label: 'API Secret' },
   ]},
-  { id: 'firebase', name: 'Firebase (Push)', icon: '🔥', keys: [
+  { id: 'firebase', name: 'Firebase Push', icon: Bell, color: 'text-yellow-600 bg-yellow-50', keys: [
     { key: 'fcm_server_key', type: 'secret', label: 'FCM Server Key' },
     { key: 'vapid_public_key', type: 'text', label: 'VAPID Public Key' },
     { key: 'vapid_private_key', type: 'secret', label: 'VAPID Private Key' },
@@ -92,22 +92,28 @@ export default function APIKeysSettings() {
 
         {/* Overview */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-6">
-          {API_SERVICES.map(svc => (
-            <div key={svc.id} className={`p-2 rounded-lg border text-center text-[10px] ${isConfigured(svc) ? 'border-green-200 bg-green-50' : 'border-muted'}`}>
-              <span className="text-lg">{svc.icon}</span>
-              <p className="font-medium mt-0.5">{svc.name}</p>
-              {isConfigured(svc) ? <CheckCircle className="h-3 w-3 text-green-600 mx-auto mt-0.5" /> : <AlertCircle className="h-3 w-3 text-muted-foreground mx-auto mt-0.5" />}
-            </div>
-          ))}
+          {API_SERVICES.map(svc => {
+            const Icon = svc.icon;
+            return (
+              <div key={svc.id} className={`p-3 rounded-xl border-2 text-center transition-all hover:shadow-sm ${isConfigured(svc) ? 'border-green-200 bg-green-50/50' : 'border-muted hover:border-muted-foreground/20'}`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center mx-auto ${svc.color}`}><Icon className="h-4 w-4" /></div>
+                <p className="text-[10px] font-semibold mt-1.5">{svc.name}</p>
+                {isConfigured(svc) ? <CheckCircle className="h-3 w-3 text-green-600 mx-auto mt-1" /> : <AlertCircle className="h-3 w-3 text-muted-foreground mx-auto mt-1" />}
+              </div>
+            );
+          })}
         </div>
 
         <div className="space-y-4">
-          {API_SERVICES.map(svc => (
-            <Card key={svc.id} className={isConfigured(svc) ? 'border-green-200' : ''}>
+          {API_SERVICES.map(svc => {
+            const Icon = svc.icon;
+            return (
+            <Card key={svc.id} className={`transition-all ${isConfigured(svc) ? 'border-green-200 shadow-sm' : 'hover:border-muted-foreground/20'}`}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <span className="text-lg">{svc.icon}</span> {svc.name}
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${svc.color}`}><Icon className="h-3.5 w-3.5" /></div>
+                    {svc.name}
                   </CardTitle>
                   <Badge variant="secondary" className={`text-[9px] ${isConfigured(svc) ? 'bg-green-100 text-green-700' : 'bg-muted'}`}>
                     {isConfigured(svc) ? 'Connected' : 'Not configured'}
@@ -146,7 +152,8 @@ export default function APIKeysSettings() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
 
         {/* AI System Prompt (special — full width) */}
