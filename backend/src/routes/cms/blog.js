@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
   if (status && status !== 'all') { query += ' AND status = ?'; params.push(status); }
   else { query += " AND status = 'published'"; }
   if (category) { query += ' AND category = ?'; params.push(category); }
-  query += ' ORDER BY published_at DESC NULLS LAST, created_at DESC';
+  query += ' ORDER BY published_at DESC NULLS LAST, created_at DESC LIMIT 50';
   res.json((await db.prepare(query).all(...params)).map(p => ({ ...p, tags: parseTags(p.tags) })));
 });
 

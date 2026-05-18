@@ -30,7 +30,7 @@ router.get('/', authMiddleware, adminOnly, async (req, res) => {
   const params = [];
   if (folder) { q += ' AND folder = ?'; params.push(folder); }
   if (type) { q += ' AND type = ?'; params.push(type); }
-  q += ' ORDER BY created_at DESC';
+  q += ' ORDER BY created_at DESC LIMIT 200';
   res.json(await db.prepare(q).all(...params));
 });
 

@@ -94,7 +94,7 @@ router.get('/posts', authMiddleware, adminOnly, async (req, res) => {
   const params = [];
   if (platform) { q += ' AND platform = ?'; params.push(platform); }
   if (status) { q += ' AND status = ?'; params.push(status); }
-  q += ' ORDER BY created_at DESC';
+  q += ' ORDER BY created_at DESC LIMIT 100';
   res.json(await db.prepare(q).all(...params));
 });
 
