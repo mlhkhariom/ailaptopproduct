@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Save, Wrench, Clock, Package, Users, IndianRupee, MapPin } from "lucide-react";
+import { Save, Wrench, Clock, Package, Users, IndianRupee, MapPin, Plus, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -167,49 +167,109 @@ export default function ERPSettings() {
 function BranchManager({ token, defaultBranch, setDefault }: { token: string | null; defaultBranch: string; setDefault: (id: string) => void }) {
   const [branches, setBranches] = useState<any[]>([]);
   const [adding, setAdding] = useState(false);
-  const [form, setForm] = useState({ name: '', address: '', phone: '' });
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const [editing, setEditing] = useState<string | null>(null);
+  const [form, setForm] = useState({ name: '', address: '', phone: '', manager: '' });
+  const headers: any = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
   const load = () => fetch('/api/erp/branches', { headers }).then(r => r.json()).then(d => { if (Array.isArray(d)) setBranches(d); }).catch(() => {});
   useEffect(() => { load(); }, []);
 
   const add = async () => {
     if (!form.name) return toast.error('Branch name required');
-    const id = 'branch-' + form.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    await fetch('/api/erp/branches', { method: 'POST', headers, body: JSON.stringify({ id, ...form, is_active: 1 }) });
-    toast.success('Branch added'); setAdding(false); setForm({ name: '', address: '', phone: '' }); load();
+    await fetch('/api/erp/branches', { method: 'POST', headers, body: JSON.stringify(form) });
+    toast.success('Branch added'); setAdding(false); setForm({ name: '', address: '', phone: '', manager: '' }); load();
+  };
+
+  const update = async (id: string) => {
+    await fetch(`/api/erp/branches/${id}`, { method: 'PUT', headers, body: JSON.stringify({ ...form, is_active: true }) });
+    toast.success('Branch updated'); setEditing(null); setForm({ name: '', address: '', phone: '', manager: '' }); load();
+  };
+
+  const toggleActive = async (b: any) => {
+    await fetch(`/api/erp/branches/${b.id}`, { method: 'PUT', headers, body: JSON.stringify({ ...b, is_active: b.is_active ? 0 : 1 }) });
+    load();
   };
 
   const remove = async (id: string) => {
-    if (!confirm('Delete this branch? Stock data may be affected.')) return;
+    if (!confirm('Delete this branch permanently? All stock data for this branch will be lost.')) return;
     await fetch(`/api/erp/branches/${id}`, { method: 'DELETE', headers });
     toast.success('Branch deleted'); load();
   };
 
+  const startEdit = (b: any) => { setEditing(b.id); setForm({ name: b.name, address: b.address || '', phone: b.phone || '', manager: b.manager || '' }); };
+
   return (
     <div className="space-y-3">
+      {branches.length === 0 && !adding && (
+        <div className="text-center py-6 text-muted-foreground">
+          <MapPin className="h-8 w-8 mx-auto mb-2 opacity-40" />
+          <p className="text-sm">No branches added yet</p>
+          <p className="text-xs">Add your first branch location below</p>
+        </div>
+      )}
+
       {branches.map(b => (
-        <div key={b.id} className={`flex items-center justify-between p-3 rounded-lg border ${b.id === defaultBranch ? 'border-primary bg-primary/5' : ''}`}>
-          <div>
-            <p className="font-medium text-sm">{b.name} {b.id === defaultBranch && <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded ml-2">Default</span>}</p>
-            <p className="text-xs text-muted-foreground">{b.address}</p>
-          </div>
-          <div className="flex gap-1">
-            {b.id !== defaultBranch && <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => setDefault(b.id)}>Set Default</Button>}
-            <Button size="sm" variant="ghost" className="text-xs h-7 text-destructive" onClick={() => remove(b.id)}>Delete</Button>
-          </div>
+        <div key={b.id} className={`rounded-xl border-2 overflow-hidden transition-all ${b.id === defaultBranch ? 'border-primary shadow-sm' : b.is_active ? 'border-muted' : 'border-muted opacity-60'}`}>
+          {editing === b.id ? (
+            <div className="p-4 space-y-3 bg-muted/30">
+              <p className="text-xs font-bold text-muted-foreground uppercase">Editing: {b.name}</p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div><Label className="text-[10px]">Branch Name *</Label><Input className="mt-1 h-8" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+                <div><Label className="text-[10px]">Manager Name</Label><Input className="mt-1 h-8" value={form.manager} onChange={e => setForm(f => ({ ...f, manager: e.target.value }))} /></div>
+                <div><Label className="text-[10px]">Address</Label><Input className="mt-1 h-8" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
+                <div><Label className="text-[10px]">Phone</Label><Input className="mt-1 h-8" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => update(b.id)}>Save Changes</Button>
+                <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${b.id === defaultBranch ? 'bg-primary text-white' : 'bg-muted'}`}>
+                    <MapPin className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-sm">{b.name}</p>
+                      {b.id === defaultBranch && <span className="text-[9px] bg-primary text-white px-1.5 py-0.5 rounded-full font-bold">DEFAULT</span>}
+                      {!b.is_active && <span className="text-[9px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">Inactive</span>}
+                    </div>
+                    {b.address && <p className="text-xs text-muted-foreground mt-0.5">{b.address}</p>}
+                    <div className="flex items-center gap-3 mt-1">
+                      {b.phone && <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Phone className="h-2.5 w-2.5" />{b.phone}</span>}
+                      {b.manager && <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Users className="h-2.5 w-2.5" />{b.manager}</span>}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {b.id !== defaultBranch && <Button size="sm" variant="outline" className="text-[10px] h-7 px-2" onClick={() => setDefault(b.id)}>Set Default</Button>}
+                  <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => startEdit(b)}>Edit</Button>
+                  <Button size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground" onClick={() => toggleActive(b)}>{b.is_active ? 'Disable' : 'Enable'}</Button>
+                  {b.id !== defaultBranch && <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => remove(b.id)}>Delete</Button>}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       ))}
+
       {!adding ? (
-        <Button variant="outline" size="sm" className="w-full" onClick={() => setAdding(true)}>+ Add Branch</Button>
+        <Button variant="outline" className="w-full gap-2 border-dashed" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Add New Branch</Button>
       ) : (
-        <div className="p-3 border rounded-lg space-y-2">
-          <Input placeholder="Branch name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="h-8" />
-          <Input placeholder="Address" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="h-8" />
-          <Input placeholder="Phone" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="h-8" />
+        <div className="p-4 border-2 border-dashed border-primary/30 rounded-xl space-y-3 bg-primary/5">
+          <p className="text-xs font-bold text-primary uppercase">New Branch</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div><Label className="text-[10px]">Branch Name *</Label><Input className="mt-1 h-8" placeholder="e.g., Silver Mall Branch" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+            <div><Label className="text-[10px]">Manager Name</Label><Input className="mt-1 h-8" placeholder="e.g., Rahul Sharma" value={form.manager} onChange={e => setForm(f => ({ ...f, manager: e.target.value }))} /></div>
+            <div><Label className="text-[10px]">Full Address</Label><Input className="mt-1 h-8" placeholder="Shop 12, Silver Mall, RNT Marg, Indore" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
+            <div><Label className="text-[10px]">Phone Number</Label><Input className="mt-1 h-8" placeholder="+91 98934 96163" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+          </div>
           <div className="flex gap-2">
-            <Button size="sm" onClick={add}>Add</Button>
-            <Button size="sm" variant="ghost" onClick={() => setAdding(false)}>Cancel</Button>
+            <Button size="sm" onClick={add} disabled={!form.name}>Add Branch</Button>
+            <Button size="sm" variant="ghost" onClick={() => { setAdding(false); setForm({ name: '', address: '', phone: '', manager: '' }); }}>Cancel</Button>
           </div>
         </div>
       )}
