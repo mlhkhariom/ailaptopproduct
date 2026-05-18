@@ -4,8 +4,8 @@
 
 // Roles hierarchy
 export const ROLES = {
-  owner: { level: 100, label: 'Owner' },
-  superadmin: { level: 95, label: 'Super Admin' },
+  
+  superadmin: { level: 100, label: 'Super Admin (Owner)' },
   admin: { level: 90, label: 'Admin' },
   manager: { level: 70, label: 'Manager' },
   accountant: { level: 60, label: 'Accounts' },
@@ -22,112 +22,112 @@ export const ROLES = {
 // C=Create, R=Read, U=Update, D=Delete
 export const PERMISSIONS = {
   // ── ECOMMERCE ──────────────────────────────────────────
-  'products.create':    ['owner', 'superadmin', 'admin', 'manager'],
-  'products.read':      ['owner', 'superadmin', 'admin', 'manager', 'sales', 'content_editor', 'support'],
-  'products.update':    ['owner', 'superadmin', 'admin', 'manager'],
-  'products.delete':    ['owner', 'superadmin'],
-  'products.bulk':      ['owner', 'superadmin', 'admin'],
+  'products.create':    ['superadmin', 'admin', 'manager'],
+  'products.read':      ['superadmin', 'admin', 'manager', 'sales', 'content_editor', 'support'],
+  'products.update':    ['superadmin', 'admin', 'manager'],
+  'products.delete':    ['superadmin'],
+  'products.bulk':      ['superadmin', 'admin'],
 
-  'orders.create':      ['owner', 'superadmin', 'admin', 'manager', 'sales', 'support'],
-  'orders.read':        ['owner', 'superadmin', 'admin', 'manager', 'sales', 'support', 'accountant'],
-  'orders.update':      ['owner', 'superadmin', 'admin', 'manager', 'sales'],
-  'orders.delete':      ['owner', 'superadmin'],
-  'orders.export':      ['owner', 'superadmin', 'admin', 'manager', 'accountant'],
+  'orders.create':      ['superadmin', 'admin', 'manager', 'sales', 'support'],
+  'orders.read':        ['superadmin', 'admin', 'manager', 'sales', 'support', 'accountant'],
+  'orders.update':      ['superadmin', 'admin', 'manager', 'sales'],
+  'orders.delete':      ['superadmin'],
+  'orders.export':      ['superadmin', 'admin', 'manager', 'accountant'],
 
-  'customers.read':     ['owner', 'superadmin', 'admin', 'manager', 'sales', 'support'],
-  'customers.update':   ['owner', 'superadmin', 'admin', 'manager', 'sales'],
+  'customers.read':     ['superadmin', 'admin', 'manager', 'sales', 'support'],
+  'customers.update':   ['superadmin', 'admin', 'manager', 'sales'],
 
-  'coupons.create':     ['owner', 'superadmin', 'admin', 'manager'],
-  'coupons.read':       ['owner', 'superadmin', 'admin', 'manager', 'sales'],
-  'coupons.delete':     ['owner', 'superadmin', 'admin'],
+  'coupons.create':     ['superadmin', 'admin', 'manager'],
+  'coupons.read':       ['superadmin', 'admin', 'manager', 'sales'],
+  'coupons.delete':     ['superadmin', 'admin'],
 
-  'returns.read':       ['owner', 'superadmin', 'admin', 'manager', 'support'],
-  'returns.update':     ['owner', 'superadmin', 'admin', 'manager'],
+  'returns.read':       ['superadmin', 'admin', 'manager', 'support'],
+  'returns.update':     ['superadmin', 'admin', 'manager'],
 
   // ── ERP ────────────────────────────────────────────────
-  'jobcards.create':    ['owner', 'superadmin', 'admin', 'manager', 'technician', 'support'],
-  'jobcards.read':      ['owner', 'superadmin', 'admin', 'manager', 'technician', 'support'],
-  'jobcards.update':    ['owner', 'superadmin', 'admin', 'manager', 'technician'],
-  'jobcards.delete':    ['owner', 'superadmin', 'admin'],
+  'jobcards.create':    ['superadmin', 'admin', 'manager', 'technician', 'support'],
+  'jobcards.read':      ['superadmin', 'admin', 'manager', 'technician', 'support'],
+  'jobcards.update':    ['superadmin', 'admin', 'manager', 'technician'],
+  'jobcards.delete':    ['superadmin', 'admin'],
 
-  'billing.create':     ['owner', 'superadmin', 'admin', 'manager', 'accountant'],
-  'billing.read':       ['owner', 'superadmin', 'admin', 'manager', 'accountant'],
-  'billing.update':     ['owner', 'superadmin', 'admin', 'manager', 'accountant'],
-  'billing.delete':     ['owner', 'superadmin'],
+  'billing.create':     ['superadmin', 'admin', 'manager', 'accountant'],
+  'billing.read':       ['superadmin', 'admin', 'manager', 'accountant'],
+  'billing.update':     ['superadmin', 'admin', 'manager', 'accountant'],
+  'billing.delete':     ['superadmin'],
 
-  'inventory.read':     ['owner', 'superadmin', 'admin', 'manager', 'technician', 'accountant'],
-  'inventory.update':   ['owner', 'superadmin', 'admin', 'manager'],
-  'inventory.transfer': ['owner', 'superadmin', 'admin', 'manager'],
-  'inventory.audit':    ['owner', 'superadmin', 'admin', 'manager'],
+  'inventory.read':     ['superadmin', 'admin', 'manager', 'technician', 'accountant'],
+  'inventory.update':   ['superadmin', 'admin', 'manager'],
+  'inventory.transfer': ['superadmin', 'admin', 'manager'],
+  'inventory.audit':    ['superadmin', 'admin', 'manager'],
 
-  'expenses.create':    ['owner', 'superadmin', 'admin', 'manager', 'accountant', 'staff'],
-  'expenses.read':      ['owner', 'superadmin', 'admin', 'manager', 'accountant'],
-  'expenses.approve':   ['owner', 'superadmin', 'admin', 'manager'],
+  'expenses.create':    ['superadmin', 'admin', 'manager', 'accountant', 'staff'],
+  'expenses.read':      ['superadmin', 'admin', 'manager', 'accountant'],
+  'expenses.approve':   ['superadmin', 'admin', 'manager'],
 
-  'payroll.read':       ['owner', 'superadmin', 'admin', 'hr'],
-  'payroll.update':     ['owner', 'superadmin', 'admin', 'hr'],
+  'payroll.read':       ['superadmin', 'admin', 'hr'],
+  'payroll.update':     ['superadmin', 'admin', 'hr'],
 
-  'staff.create':       ['owner', 'superadmin', 'admin', 'hr'],
-  'staff.read':         ['owner', 'superadmin', 'admin', 'manager', 'hr'],
-  'staff.update':       ['owner', 'superadmin', 'admin', 'hr'],
-  'staff.delete':       ['owner', 'superadmin'],
+  'staff.create':       ['superadmin', 'admin', 'hr'],
+  'staff.read':         ['superadmin', 'admin', 'manager', 'hr'],
+  'staff.update':       ['superadmin', 'admin', 'hr'],
+  'staff.delete':       ['superadmin'],
 
-  'finance.read':       ['owner', 'superadmin', 'admin', 'accountant'],
-  'finance.pnl':        ['owner', 'superadmin', 'admin'],
-  'finance.reconcile':  ['owner', 'superadmin', 'admin', 'accountant'],
+  'finance.read':       ['superadmin', 'admin', 'accountant'],
+  'finance.pnl':        ['superadmin', 'admin'],
+  'finance.reconcile':  ['superadmin', 'admin', 'accountant'],
 
-  'reports.read':       ['owner', 'superadmin', 'admin', 'manager', 'accountant'],
-  'reports.export':     ['owner', 'superadmin', 'admin', 'manager'],
+  'reports.read':       ['superadmin', 'admin', 'manager', 'accountant'],
+  'reports.export':     ['superadmin', 'admin', 'manager'],
 
   // ── CRM ────────────────────────────────────────────────
-  'leads.create':       ['owner', 'superadmin', 'admin', 'manager', 'sales', 'support'],
-  'leads.read':         ['owner', 'superadmin', 'admin', 'manager', 'sales', 'support'],
-  'leads.update':       ['owner', 'superadmin', 'admin', 'manager', 'sales'],
-  'leads.delete':       ['owner', 'superadmin', 'admin'],
-  'leads.assign':       ['owner', 'superadmin', 'admin', 'manager'],
-  'leads.export':       ['owner', 'superadmin', 'admin', 'manager'],
+  'leads.create':       ['superadmin', 'admin', 'manager', 'sales', 'support'],
+  'leads.read':         ['superadmin', 'admin', 'manager', 'sales', 'support'],
+  'leads.update':       ['superadmin', 'admin', 'manager', 'sales'],
+  'leads.delete':       ['superadmin', 'admin'],
+  'leads.assign':       ['superadmin', 'admin', 'manager'],
+  'leads.export':       ['superadmin', 'admin', 'manager'],
 
-  'campaigns.create':   ['owner', 'superadmin', 'admin', 'manager', 'sales'],
-  'campaigns.send':     ['owner', 'superadmin', 'admin', 'manager'],
+  'campaigns.create':   ['superadmin', 'admin', 'manager', 'sales'],
+  'campaigns.send':     ['superadmin', 'admin', 'manager'],
 
-  'automations.manage': ['owner', 'superadmin', 'admin'],
+  'automations.manage': ['superadmin', 'admin'],
 
   // ── CMS ────────────────────────────────────────────────
-  'blog.create':        ['owner', 'superadmin', 'admin', 'content_editor'],
-  'blog.read':          ['owner', 'superadmin', 'admin', 'content_editor', 'manager'],
-  'blog.update':        ['owner', 'superadmin', 'admin', 'content_editor'],
-  'blog.delete':        ['owner', 'superadmin', 'admin'],
+  'blog.create':        ['superadmin', 'admin', 'content_editor'],
+  'blog.read':          ['superadmin', 'admin', 'content_editor', 'manager'],
+  'blog.update':        ['superadmin', 'admin', 'content_editor'],
+  'blog.delete':        ['superadmin', 'admin'],
 
-  'pages.create':       ['owner', 'superadmin', 'admin', 'content_editor'],
-  'pages.update':       ['owner', 'superadmin', 'admin', 'content_editor'],
+  'pages.create':       ['superadmin', 'admin', 'content_editor'],
+  'pages.update':       ['superadmin', 'admin', 'content_editor'],
 
-  'banners.manage':     ['owner', 'superadmin', 'admin', 'content_editor'],
-  'menus.manage':       ['owner', 'superadmin', 'admin'],
-  'popups.manage':      ['owner', 'superadmin', 'admin', 'content_editor'],
+  'banners.manage':     ['superadmin', 'admin', 'content_editor'],
+  'menus.manage':       ['superadmin', 'admin'],
+  'popups.manage':      ['superadmin', 'admin', 'content_editor'],
 
-  'media.upload':       ['owner', 'superadmin', 'admin', 'content_editor', 'sales', 'technician'],
-  'media.delete':       ['owner', 'superadmin', 'admin'],
+  'media.upload':       ['superadmin', 'admin', 'content_editor', 'sales', 'technician'],
+  'media.delete':       ['superadmin', 'admin'],
 
   // ── SYSTEM ─────────────────────────────────────────────
-  'settings.read':      ['owner', 'superadmin', 'admin'],
-  'settings.update':    ['owner', 'superadmin'],
+  'settings.read':      ['superadmin', 'admin'],
+  'settings.update':    ['superadmin'],
 
-  'whatsapp.send':      ['owner', 'superadmin', 'admin', 'manager', 'sales', 'support'],
-  'whatsapp.broadcast': ['owner', 'superadmin', 'admin', 'manager'],
+  'whatsapp.send':      ['superadmin', 'admin', 'manager', 'sales', 'support'],
+  'whatsapp.broadcast': ['superadmin', 'admin', 'manager'],
 
-  'users.create':       ['owner', 'superadmin'],
-  'users.read':         ['owner', 'superadmin', 'admin', 'hr'],
-  'users.update':       ['owner', 'superadmin'],
-  'users.delete':       ['owner', 'superadmin'],
+  'users.create':       ['superadmin'],
+  'users.read':         ['superadmin', 'admin', 'hr'],
+  'users.update':       ['superadmin'],
+  'users.delete':       ['superadmin'],
 
-  'audit.read':         ['owner', 'superadmin', 'admin'],
+  'audit.read':         ['superadmin', 'admin'],
 };
 
 // ── Middleware: Check specific permission ─────────────────
 export const hasPermission = (...perms) => (req, res, next) => {
   const userRole = req.user?.role || 'customer';
   // Owner/superadmin bypass all checks
-  if (['owner', 'superadmin'].includes(userRole)) return next();
+  if (['superadmin', 'admin'].includes(userRole)) return next();
 
   const allowed = perms.some(perm => {
     const roles = PERMISSIONS[perm];
@@ -148,7 +148,7 @@ export const hasPermission = (...perms) => (req, res, next) => {
 export const getPermissionsForRole = (role) => {
   const perms = {};
   for (const [perm, roles] of Object.entries(PERMISSIONS)) {
-    perms[perm] = roles.includes(role) || ['owner', 'superadmin'].includes(role);
+    perms[perm] = roles.includes(role) || ['superadmin'].includes(role);
   }
   return perms;
 };
