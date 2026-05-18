@@ -37,7 +37,7 @@ router.post('/forgot-password', async (req, res) => {
   if (!user) return res.json({ message: 'If account exists, reset email sent' });
 
   // Generate reset token (valid 1h)
-  const resetToken = jwt.sign({ id: user.id, type: 'reset' }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '1h' });
+  const resetToken = jwt.sign({ id: user.id, type: 'reset' }, process.env.JWT_SECRET, { expiresIn: '1h' });
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
   const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
 
@@ -58,7 +58,7 @@ router.post('/reset-password', async (req, res) => {
   if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (decoded.type !== 'reset') return res.status(400).json({ error: 'Invalid token' });
     const hash = bcrypt.hashSync(newPassword, 10);
     await db.prepare('UPDATE users SET password=? WHERE id=?').run(hash, decoded.id);
@@ -80,7 +80,7 @@ router.post('/login', async (req, res) => {
   if (!user || !bcrypt.compareSync(password, user.password)) return res.status(401).json({ error: 'Invalid credentials' });
   if (!user.is_active) return res.status(403).json({ error: 'Account deactivated' });
 
-  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '7d' });
+  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
   const { password: _, ...safeUser } = user;
   res.json({ token, user: safeUser });
 });
@@ -125,7 +125,7 @@ router.post('/google', async (req, res) => {
         .run(id, name || email.split('@')[0], email, password, 'customer');
       user = await db.prepare('SELECT * FROM users WHERE id = ?').get(id);
     }
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, process.env.JWT_SECRET || 'ailaptopwala-secret-2024', { expiresIn: '30d' });
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, process.env.JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (e) {
     res.status(500).json({ error: 'Google login failed' });
