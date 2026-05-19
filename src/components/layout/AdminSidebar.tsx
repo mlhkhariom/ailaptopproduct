@@ -80,16 +80,21 @@ const mainMenu = [
 const toolsMenu = [
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageCircle, badge: "" },
   { title: "Broadcast", url: "/admin/broadcast", icon: Send, badge: "" },
+  { title: "Social Media", url: "/admin/social", icon: Share2, badge: "" },
   { title: "Blog", url: "/admin/blog", icon: FileText, badge: "" },
   { title: "Media", url: "/admin/media", icon: Image, badge: "" },
   { title: "Reviews", url: "/admin/reviews", icon: Star, badge: "" },
   { title: "CMS Pages", url: "/admin/cms", icon: Palette, badge: "" },
+  { title: "Reels", url: "/admin/reels", icon: Play, badge: "" },
 ];
 
 const systemMenu = [
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3, badge: "" },
   { title: "Reports", url: "/admin/reports", icon: TrendingUp, badge: "" },
+  { title: "ERP Reports", url: "/admin/erp/reports", icon: FileSpreadsheet, badge: "" },
+  { title: "Audit Log", url: "/admin/erp/audit-log", icon: Shield, badge: "" },
   { title: "Users & Roles", url: "/admin/users", icon: UserCog, badge: "" },
+  { title: "Shipping Rules", url: "/admin/shipping-rules", icon: Truck, badge: "" },
   { title: "Contacts", url: "/admin/contacts", icon: Mail, badge: "" },
 ];
 
@@ -97,12 +102,16 @@ const settingsMenu = [
   { title: "All Settings", url: "/admin/settings", icon: Settings },
   { title: "Site & General", url: "/admin/settings/site", icon: Settings },
   { title: "Appearance", url: "/admin/settings/appearance", icon: Palette },
+  { title: "Homepage", url: "/admin/settings/homepage", icon: Layout },
+  { title: "Menus", url: "/admin/settings/menus", icon: Layout },
   { title: "Ecommerce", url: "/admin/settings/ecommerce", icon: ShoppingCart },
   { title: "ERP & Branches", url: "/admin/settings/erp", icon: Wrench },
   { title: "CRM", url: "/admin/settings/crm", icon: Users },
+  { title: "CMS", url: "/admin/settings/cms", icon: FileText },
   { title: "Notifications", url: "/admin/settings/notifications", icon: Bell },
   { title: "API Keys", url: "/admin/settings/api-keys", icon: Key },
   { title: "Security", url: "/admin/settings/security", icon: Shield },
+  { title: "About Page", url: "/admin/settings/about-page", icon: Users },
 ];
 
 
