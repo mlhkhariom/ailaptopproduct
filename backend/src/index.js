@@ -59,8 +59,8 @@ app.options('*', cors());
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 
 // Rate limiting
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false });
-const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'Too many login attempts. Try again in 15 minutes.' } });
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: async (req) => { try { const r = await db.prepare("SELECT value FROM app_settings WHERE key='rate_limit_per_min'").get(); return r?.value ? parseInt(r.value) * 15 : 200; } catch { return 200; } }, standardHeaders: true, legacyHeaders: false });
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: async () => { try { const r = await db.prepare("SELECT value FROM app_settings WHERE key='login_rate_limit'").get(); return r?.value ? parseInt(r.value) : 20; } catch { return 20; } }, message: { error: 'Too many login attempts. Try again in 15 minutes.' } });
 app.use('/api/', limiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);

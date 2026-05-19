@@ -36,6 +36,8 @@ export const routeMap = [
   { path: '/api/app-settings', file: './system/appSettings.js' },
   { path: '/api/sitemap.xml', file: './system/sitemap.js' },
   { path: '/sitemap.xml', file: './system/sitemap.js' },
+  { path: '/robots.txt', file: './system/robots.js' },
+  { path: '/manifest.json', file: './system/manifest.js' },
   { path: '/api/seo', file: './system/seo.js' },
   { path: '/api/menus', file: './system/menus.js' },
   { path: '/api/site-settings', file: './system/siteSettings.js' },
