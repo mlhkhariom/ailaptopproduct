@@ -47,12 +47,34 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => console.log('Socket disconnected:', socket.id));
 });
 
+// Dynamic CORS from settings
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:4173', 'http://localhost:8080', process.env.FRONTEND_URL].filter(Boolean),
+  origin: async (origin, callback) => {
+    try {
+      const r = await db.prepare("SELECT value FROM app_settings WHERE key='cors_origins'").get();
+      const allowed = r?.value || '*';
+      if (allowed === '*') return callback(null, true);
+      const origins = allowed.split(',').map(s => s.trim()).concat(['http://localhost:5173', 'http://localhost:8080']);
+      callback(null, !origin || origins.includes(origin));
+    } catch { callback(null, true); }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
+// Maintenance mode middleware
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api/auth') || req.path.startsWith('/admin') || req.path === '/api/app-settings') return next();
+  try {
+    const r = await db.prepare("SELECT value FROM app_settings WHERE key='maintenance_mode'").get();
+    if (r?.value === '1' || r?.value === 'true') {
+      const msg = (await db.prepare("SELECT value FROM app_settings WHERE key='maintenance_message'").get())?.value || 'Site is under maintenance. Please check back soon.';
+      return res.status(503).json({ maintenance: true, message: msg });
+    }
+  } catch {}
+  next();
+});
 app.options('*', cors());
 
 // Security headers
