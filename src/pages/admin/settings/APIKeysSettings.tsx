@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Save, Key, Bot, Eye, EyeOff, Copy, CheckCircle, AlertCircle, CreditCard, Smartphone, MessageCircle, Mail, MapPin, BarChart3, Image, Bell, Cpu, Wallet } from "lucide-react";
+import { Save, Key, Bot, Eye, EyeOff, Copy, CheckCircle, AlertCircle, CreditCard, MessageCircle, Mail, Cpu, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,10 +11,10 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import { toast } from "sonner";
 
 const API_SERVICES = [
-  { id: 'ai', name: 'AI / LLM', icon: Cpu, color: 'text-violet-600 bg-violet-50', keys: [
-    { key: 'ai_provider', type: 'select', label: 'Provider', options: ['openai', 'gemini', 'claude', 'groq', 'deepseek'] },
+  { id: 'ai', name: 'AI / LLM (OpenRouter)', icon: Cpu, color: 'text-violet-600 bg-violet-50', keys: [
+    { key: 'ai_provider', type: 'select', label: 'Provider', options: ['openrouter', 'openai', 'gemini', 'groq'] },
     { key: 'ai_api_key', type: 'secret', label: 'API Key' },
-    { key: 'ai_model', type: 'text', label: 'Model', placeholder: 'gpt-4o-mini' },
+    { key: 'ai_model', type: 'text', label: 'Model', placeholder: 'google/gemini-2.0-flash-exp:free' },
     { key: 'ai_max_tokens', type: 'number', label: 'Max tokens', placeholder: '500' },
     { key: 'ai_temperature', type: 'number', label: 'Temperature (0-1)', placeholder: '0.7' },
   ]},
@@ -28,38 +28,24 @@ const API_SERVICES = [
     { key: 'phonepe_salt_key', type: 'secret', label: 'Salt Key' },
     { key: 'phonepe_salt_index', type: 'text', label: 'Salt Index', placeholder: '1' },
   ]},
-  { id: 'whatsapp', name: 'WhatsApp API', icon: MessageCircle, color: 'text-green-600 bg-green-50', keys: [
-    { key: 'wa_provider', type: 'select', label: 'Provider', options: ['wati', 'twilio', 'meta', 'aisensy', 'interakt'] },
-    { key: 'wa_api_key', type: 'secret', label: 'API Key / Token' },
-    { key: 'wa_api_url', type: 'text', label: 'API Base URL', placeholder: 'https://live-server-xxxx.wati.io' },
+  { id: 'paytm', name: 'Paytm', icon: CreditCard, color: 'text-sky-600 bg-sky-50', keys: [
+    { key: 'paytm_mid', type: 'text', label: 'Merchant ID (MID)' },
+    { key: 'paytm_merchant_key', type: 'secret', label: 'Merchant Key' },
   ]},
-  { id: 'sms', name: 'SMS Gateway', icon: Smartphone, color: 'text-orange-600 bg-orange-50', keys: [
-    { key: 'sms_provider', type: 'select', label: 'Provider', options: ['none', 'msg91', 'twilio', 'textlocal', 'fast2sms'] },
-    { key: 'sms_api_key', type: 'secret', label: 'API Key' },
-    { key: 'sms_sender_id', type: 'text', label: 'Sender ID', placeholder: 'AILPTW' },
+  { id: 'cashfree', name: 'Cashfree', icon: CreditCard, color: 'text-emerald-600 bg-emerald-50', keys: [
+    { key: 'cashfree_app_id', type: 'text', label: 'App ID' },
+    { key: 'cashfree_secret_key', type: 'secret', label: 'Secret Key' },
+  ]},
+  { id: 'evolution', name: 'Evolution API (WhatsApp)', icon: MessageCircle, color: 'text-green-600 bg-green-50', keys: [
+    { key: 'evolution_api_url', type: 'text', label: 'API URL', placeholder: 'http://localhost:8080' },
+    { key: 'evolution_api_key', type: 'secret', label: 'API Key' },
+    { key: 'evolution_instance', type: 'text', label: 'Instance Name', placeholder: 'ailaptopwala' },
   ]},
   { id: 'smtp', name: 'Email SMTP', icon: Mail, color: 'text-red-600 bg-red-50', keys: [
     { key: 'smtp_host', type: 'text', label: 'Host', placeholder: 'smtp.gmail.com' },
     { key: 'smtp_port', type: 'number', label: 'Port', placeholder: '587' },
-    { key: 'smtp_user', type: 'text', label: 'Username' },
-    { key: 'smtp_pass', type: 'secret', label: 'Password' },
-  ]},
-  { id: 'maps', name: 'Google Maps', icon: MapPin, color: 'text-emerald-600 bg-emerald-50', keys: [
-    { key: 'google_maps_key', type: 'secret', label: 'Maps API Key' },
-  ]},
-  { id: 'analytics', name: 'Analytics', icon: BarChart3, color: 'text-amber-600 bg-amber-50', keys: [
-    { key: 'ga_measurement_id', type: 'text', label: 'GA4 Measurement ID', placeholder: 'G-XXXXXXXXXX' },
-    { key: 'fb_pixel_id', type: 'text', label: 'Facebook Pixel ID' },
-  ]},
-  { id: 'cloudinary', name: 'Cloudinary', icon: Image, color: 'text-sky-600 bg-sky-50', keys: [
-    { key: 'cloudinary_cloud_name', type: 'text', label: 'Cloud Name' },
-    { key: 'cloudinary_api_key', type: 'text', label: 'API Key' },
-    { key: 'cloudinary_api_secret', type: 'secret', label: 'API Secret' },
-  ]},
-  { id: 'firebase', name: 'Firebase Push', icon: Bell, color: 'text-yellow-600 bg-yellow-50', keys: [
-    { key: 'fcm_server_key', type: 'secret', label: 'FCM Server Key' },
-    { key: 'vapid_public_key', type: 'text', label: 'VAPID Public Key' },
-    { key: 'vapid_private_key', type: 'secret', label: 'VAPID Private Key' },
+    { key: 'smtp_user', type: 'text', label: 'Username / Email' },
+    { key: 'smtp_pass', type: 'secret', label: 'Password / App Password' },
   ]},
 ];
 
