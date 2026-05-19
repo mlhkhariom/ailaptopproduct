@@ -59,7 +59,7 @@ export default function EcommerceSettings() {
             </CardHeader>
             <CardContent className="space-y-4">
               {GATEWAYS.map(gw => {
-                const enabled = v(`gateway_${gw.id}`, gw.id === 'cod' ? '1' : '0') === '1';
+                const enabled = v(`payment_${gw.id}`, gw.id === 'cod' ? '1' : '0') === '1';
                 return (
                   <div key={gw.id} className={`p-4 rounded-lg border-2 transition-colors ${enabled ? 'border-primary/30 bg-primary/5' : 'border-muted'}`}>
                     <div className="flex items-center justify-between mb-2">
@@ -67,7 +67,7 @@ export default function EcommerceSettings() {
                         {enabled && <CheckCircle className="h-4 w-4 text-primary" />}
                         <span className="font-medium text-sm">{gw.name}</span>
                       </div>
-                      <Switch checked={enabled} onCheckedChange={c => set(`gateway_${gw.id}`, c ? '1' : '0')} />
+                      <Switch checked={enabled} onCheckedChange={c => set(`payment_${gw.id}`, c ? '1' : '0')} />
                     </div>
                     {enabled && gw.fields.length > 0 && (
                       <div className="grid sm:grid-cols-2 gap-3 mt-3 pt-3 border-t">

@@ -6,7 +6,7 @@ const router = Router();
 
 // ── Helpers ───────────────────────────────────────────────
 const getSetting = async (key) => (await db.prepare('SELECT value FROM app_settings WHERE key = ?').get(key))?.value || '';
-const isEnabled = async (key) => (await getSetting(key)) === 'true';
+const isEnabled = async (key) => { const v = await getSetting(key); return v === 'true' || v === '1'; };
 
 // ── Shipping calculation ──────────────────────────────────
 // GET /api/payment/shipping?subtotal=500

@@ -102,7 +102,7 @@ const Index = () => {
 
   return (
     <CustomerLayout>
-      <SEOHead canonical="/" />
+      <SEOHead canonical="/" title={`${siteSettings.store_name || "AI Laptop Wala"} - Best Laptops`} description={siteSettings.seo_description || ""} />
 
       {/* ── HERO ─────────────────────────────────────────── */}
       <section className="relative min-h-[85svh] md:min-h-[90svh] flex items-center justify-center overflow-hidden"
