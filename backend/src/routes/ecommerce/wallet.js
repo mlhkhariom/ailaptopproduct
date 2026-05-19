@@ -77,3 +77,23 @@ router.post('/referral/apply', authMiddleware, async (req, res) => {
 });
 
 export default router;
+
+// ADMIN: GET /api/wallet/admin/all — list all wallets
+router.get('/admin/all', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'superadmin') return res.status(403).json({ error: 'Admin only' });
+  const wallets = await db.prepare(`SELECT w.*, u.name, u.email, u.phone FROM wallet w JOIN users u ON w.user_id = u.id ORDER BY w.balance DESC`).all();
+  res.json(wallets);
+});
+
+// ADMIN: POST /api/wallet/admin/adjust — add or deduct balance
+router.post('/admin/adjust', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'superadmin') return res.status(403).json({ error: 'Admin only' });
+  const { user_id, amount, type, reason } = req.body;
+  if (!user_id || !amount) return res.status(400).json({ error: 'user_id and amount required' });
+  const wallet = await db.prepare('SELECT * FROM wallet WHERE user_id=?').get(user_id);
+  if (!wallet) return res.status(404).json({ error: 'Wallet not found' });
+  const newBalance = type === 'deduct' ? Math.max(0, wallet.balance - Math.abs(amount)) : wallet.balance + Math.abs(amount);
+  await db.prepare('UPDATE wallet SET balance=? WHERE user_id=?').run(newBalance, user_id);
+  await db.prepare('INSERT INTO wallet_transactions (id, user_id, amount, type, description, created_at) VALUES (?,?,?,?,?,NOW())').run(require('crypto').randomUUID(), user_id, amount, type || 'credit', reason || 'Admin adjustment');
+  res.json({ success: true, new_balance: newBalance });
+});

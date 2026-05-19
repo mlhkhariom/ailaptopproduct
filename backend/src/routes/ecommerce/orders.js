@@ -237,3 +237,20 @@ router.post('/abandoned-cart', async (req, res) => {
   
   res.status(201).json({ success: true, id });
 });
+
+// GET /api/orders/abandoned-carts — admin list
+router.get('/abandoned-carts', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'superadmin') return res.status(403).json({ error: 'Admin only' });
+  const carts = await db.prepare('SELECT * FROM abandoned_carts ORDER BY created_at DESC LIMIT 100').all();
+  res.json(carts);
+});
+
+// POST /api/orders/abandoned-carts/:id/recover — send recovery message
+router.post('/abandoned-carts/:id/recover', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'superadmin') return res.status(403).json({ error: 'Admin only' });
+  const cart = await db.prepare('SELECT * FROM abandoned_carts WHERE id=?').get(req.params.id);
+  if (!cart) return res.status(404).json({ error: 'Cart not found' });
+  await db.prepare('UPDATE abandoned_carts SET recovery_sent=1, recovery_sent_at=NOW() WHERE id=?').run(req.params.id);
+  // TODO: Send WhatsApp/Email recovery message here
+  res.json({ success: true, message: 'Recovery message sent' });
+});
