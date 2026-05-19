@@ -25,7 +25,7 @@ import { setIO as setEvolutionIO } from './evolution/webhook.js';
 import { startNotificationProcessor } from './whatsapp/notifications.js';
 import { startPaymentReminderProcessor } from './whatsapp/paymentReminders.js';
 import { startDailyReportScheduler } from './whatsapp/dailyReport.js';
-import { startRecurringInvoiceProcessor, startKPIAlertScheduler, startOverdueReminder, startAbandonedCartRecovery, startJobCardEscalation } from './whatsapp/schedulers.js';
+import { startRecurringInvoiceProcessor, startKPIAlertScheduler, startOverdueReminder, startAbandonedCartRecovery, startJobCardEscalation, startDailyReportScheduler } from './whatsapp/schedulers.js';
 import { setIO } from './whatsapp/client.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -47,6 +47,7 @@ io.on('connection', (socket) => {
   console.log('Socket connected:', socket.id);
   socket.on('disconnect', () => console.log('Socket disconnected:', socket.id));
 });
+global.io = io; // Make available to routes for real-time events
 
 // Dynamic CORS from settings
 app.use(cors({
@@ -326,6 +327,7 @@ httpServer.listen(PORT, async () => {
   startOverdueReminder();
   startAbandonedCartRecovery();
   startJobCardEscalation();
+  startDailyReportScheduler();
 
   // Register Evolution API webhook for AI processing
   setTimeout(async () => {

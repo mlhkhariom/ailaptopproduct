@@ -91,6 +91,8 @@ router.post('/', optionalAuth, async (req, res) => {
   if (phone) {
     notifyOrderPlaced(order, phone, name);
     if (req.user && !user?.phone && phone) await db.prepare('UPDATE users SET phone=? WHERE id=?').run(phone, req.user.id);
+    // Real-time notification to admin dashboard
+    if (global.io) global.io.emit("new_order", { id: order.id, order_number, total, customer: name });
 
     // Auto-create CRM lead from order (if not exists)
     try {

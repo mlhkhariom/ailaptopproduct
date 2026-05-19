@@ -206,3 +206,34 @@ export function startAbandonedCartRecovery() {
   }, 2 * 60 * 60 * 1000); // Every 2 hours
   console.log('✅ Abandoned cart recovery scheduler started');
 }
+
+// Daily report to owner via WhatsApp
+export function startDailyReportScheduler() {
+  const sendDailyReport = async () => {
+    try {
+      const settings = Object.fromEntries((await db.prepare('SELECT key,value FROM app_settings').all()).map(r => [r.key, r.value]));
+      const hour = parseInt(settings.daily_report_hour || '21');
+      const now = new Date();
+      if (now.getHours() !== hour) return;
+
+      const today = now.toISOString().split('T')[0];
+      const orders = await db.prepare("SELECT COUNT(*) as c, COALESCE(SUM(total),0) as rev FROM orders WHERE DATE(created_at)=?").get(today);
+      const leads = await db.prepare("SELECT COUNT(*) as c FROM leads WHERE DATE(created_at)=?").get(today);
+      const jobs = await db.prepare("SELECT COUNT(*) as c FROM service_bookings WHERE DATE(created_at)=?").get(today);
+
+      const msg = `📊 *Daily Report — ${today}*\n\n🛒 Orders: ${orders?.c || 0} (₹${orders?.rev || 0})\n👥 New Leads: ${leads?.c || 0}\n🔧 Job Cards: ${jobs?.c || 0}\n\n— ${settings.store_name || 'AI Laptop Wala'}`;
+
+      const phone = settings.owner_phone || settings.whatsapp_number;
+      if (phone && settings.evolution_api_url) {
+        await fetch(`${settings.evolution_api_url}/message/sendText/${settings.evolution_instance || 'default'}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: settings.evolution_api_key || '' },
+          body: JSON.stringify({ number: `91${phone}@s.whatsapp.net`, text: msg })
+        }).catch(() => {});
+      }
+    } catch (e) { console.error('[DailyReport]', e.message); }
+  };
+
+  setInterval(sendDailyReport, 60 * 60 * 1000); // Check every hour
+  console.log('📊 Daily report scheduler started');
+}

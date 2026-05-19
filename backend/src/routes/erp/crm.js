@@ -81,6 +81,7 @@ router.post('/leads', authMiddleware, adminOnly, async (req, res) => {
   } catch {}
   await auditLog(req, 'crm', 'lead_created', id, null, { name, source });
   res.status(201).json({ id });
+  if (global.io) global.io.emit("new_lead", { id, name, phone, source });
 });
 
 router.put('/leads/:id', authMiddleware, adminOnly, async (req, res) => {

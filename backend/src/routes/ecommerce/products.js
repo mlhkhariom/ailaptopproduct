@@ -338,3 +338,23 @@ router.post('/bulk/update', authMiddleware, adminOnly, async (req, res) => {
 });
 
 export default router;
+
+// GET /api/products/search/suggestions — ultra search (trending + recent + AI)
+router.get('/search/suggestions', async (req, res) => {
+  const { q } = req.query;
+  if (!q || q.length < 2) return res.json({ products: [], categories: [], brands: [], trending: [] });
+
+  const [products, categories, brands, trending] = await Promise.all([
+    db.prepare("SELECT id, name, slug, price, images FROM products WHERE is_active=1 AND (name ILIKE ? OR brand ILIKE ?) LIMIT 5").all(`%${q}%`, `%${q}%`),
+    db.prepare("SELECT DISTINCT category FROM products WHERE category ILIKE ? AND is_active=1 LIMIT 3").all(`%${q}%`),
+    db.prepare("SELECT DISTINCT brand FROM products WHERE brand ILIKE ? AND is_active=1 LIMIT 3").all(`%${q}%`),
+    db.prepare("SELECT name, slug FROM products WHERE is_active=1 ORDER BY views DESC LIMIT 5").all(),
+  ]);
+
+  res.json({
+    products: products.map(p => ({ ...p, image: (() => { try { return JSON.parse(p.images)[0]; } catch { return p.images; } })() })),
+    categories: categories.map(c => c.category),
+    brands: brands.map(b => b.brand),
+    trending: trending.map(t => ({ name: t.name, slug: t.slug })),
+  });
+});
