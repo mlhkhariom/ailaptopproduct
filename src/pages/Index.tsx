@@ -14,6 +14,7 @@ import { api } from "@/lib/api";
 import logo from "@/assets/logo.jpeg";
 import refurbishedImg from "@/assets/refurbished-laptop.jpg";
 import homeRepairImg from "@/assets/homeservies.jpeg";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 
 const iconMap: Record<string, any> = { Laptop, Shield, Wrench, Truck, CheckCircle, Star };
 
@@ -63,6 +64,7 @@ const DealTimer = () => {
 
 const Index = () => {
   const { products, fetchProducts } = useProductStore();
+  const siteSettings = useSiteSettings() as any;
   const [benefits, setBenefits] = useState<any[]>([]);
   const [testimonials, setTestimonials] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
@@ -121,9 +123,9 @@ const Index = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-semibold text-orange-200 border border-primary/30 bg-primary/15 backdrop-blur-md mb-6 shadow-lg shadow-primary/10">
             <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-            <span>Open Now — Since 2011</span>
+            <span>Open Now — Since {siteSettings.founded_year || '2011'}</span>
             <span className="mx-1 text-white/30">•</span>
-            <span>Trusted by 5000+</span>
+            <span>Trusted by {siteSettings.stat_customers || '5000+'}</span>
           </div>
 
           {/* Heading */}
@@ -150,7 +152,7 @@ const Index = () => {
                 <Wrench size={18} /> Book Repair
               </Button>
             </Link>
-            <a href="https://wa.me/919893496163" target="_blank" rel="noreferrer">
+            <a href={`https://wa.me/${siteSettings.whatsapp_number || "919893496163"}`} target="_blank" rel="noreferrer">
               <Button size="lg" variant="ghost" className="gap-2 px-6 h-12 text-[#25D366] hover:bg-[#25D366]/10 border border-[#25D366]/30">
                 <MessageCircle size={18} /> WhatsApp
               </Button>
@@ -159,7 +161,7 @@ const Index = () => {
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 max-w-sm mx-auto">
-            {[["5000+","Happy Customers"],["15+","Years Experience"],["4.8★","Google Rating"]].map(([v,l]) => (
+            {[[siteSettings.stat_customers || "5000+","Happy Customers"],[siteSettings.stat_experience || "15+","Years Experience"],[siteSettings.stat_rating || "4.8","Google Rating"]].map(([v,l]) => (
               <div key={l} className="text-center">
                 <p className="text-2xl md:text-3xl font-black text-primary">{v}</p>
                 <p className="text-[10px] md:text-xs text-white/50 mt-0.5">{l}</p>
@@ -324,7 +326,7 @@ const Index = () => {
               </div>
               <div className="flex flex-wrap gap-3">
                 <Link to="/services"><Button size="lg" className="gap-2"><Wrench size={16} /> Book Service</Button></Link>
-                <a href="https://wa.me/919893496163?text=Hi, I need laptop repair service" target="_blank" rel="noreferrer">
+                <a href={`https://wa.me/${siteSettings.whatsapp_number || "919893496163"}?text=Hi, I need laptop repair service`} target="_blank" rel="noreferrer">
                   <Button size="lg" variant="outline" className="gap-2 border-green-500 text-green-600 hover:bg-green-50"><MessageCircle size={16} /> WhatsApp</Button>
                 </a>
               </div>
@@ -487,7 +489,7 @@ const Index = () => {
           <h2 className="text-2xl md:text-3xl font-black mb-2">Need Help Choosing a Laptop?</h2>
           <p className="text-muted-foreground text-sm mb-6">Chat with our expert on WhatsApp — free consultation, instant reply!</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a href="https://wa.me/919893496163?text=Hi, I need help choosing a laptop" target="_blank" rel="noreferrer">
+            <a href={`https://wa.me/${siteSettings.whatsapp_number || "919893496163"}?text=Hi, I need help choosing a laptop`} target="_blank" rel="noreferrer">
               <Button size="lg" className="gap-2 bg-[#25D366] hover:bg-[#20b858] text-white px-8">
                 <MessageCircle size={18} /> Chat on WhatsApp
               </Button>
