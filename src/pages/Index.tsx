@@ -130,14 +130,14 @@ const Index = () => {
 
           {/* Heading */}
           <h1 className="text-[2rem] sm:text-4xl md:text-5xl lg:text-[3.5rem] font-black leading-[1.1] mb-4 tracking-tight">
-            <span className="text-white">Your Trusted </span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-yellow-400 to-orange-500">Laptop Partner</span>
+            <span className="text-white">{siteSettings.hero_title || 'Your Trusted '}</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-yellow-400 to-orange-500">{siteSettings.hero_title2 || 'Laptop Partner'}</span>
             <br />
-            <span className="text-white text-[1.5rem] sm:text-3xl md:text-4xl">in Indore</span>
+            <span className="text-white text-[1.5rem] sm:text-3xl md:text-4xl">{siteSettings.hero_subtitle || 'in Indore'}</span>
           </h1>
 
           <p className="text-white/60 text-sm md:text-base mb-8 max-w-xl mx-auto">
-            Buy certified refurbished laptops, MacBooks & gaming laptops. Expert repair & home service across Indore.
+            {siteSettings.hero_description || 'Buy certified refurbished laptops, MacBooks & gaming laptops. Expert repair & home service across Indore.'}
           </p>
 
           {/* CTAs */}

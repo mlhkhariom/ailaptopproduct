@@ -5,7 +5,7 @@ import logo from "@/assets/logo.jpeg";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSiteSettings } from "@/contexts/SiteSettingsContext";
+import { useSiteSettings, useAppSettings } from "@/contexts/SiteSettingsContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -32,6 +32,7 @@ const Header = () => {
   const wishlistCount = useWishlistStore((s) => s.items.length);
   const { user, logout, isAdmin } = useAuth();
   const { sticky_header, wishlist_enabled, store_phone, store_name } = useSiteSettings();
+  const appS = useAppSettings() as any;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -48,7 +49,12 @@ const Header = () => {
 
   return (
     <>
-      <FreeShippingBanner />
+      {appS?.show_announcement !== '0' && appS?.announcement_text && (
+        <div className="w-full text-center py-1.5 text-xs font-medium text-white" style={{ background: appS.announcement_bg || '#2563eb' }}>
+          {appS.announcement_link ? <a href={appS.announcement_link} className="hover:underline">{appS.announcement_text}</a> : appS.announcement_text}
+        </div>
+      )}
+      {(!appS?.announcement_text) && <FreeShippingBanner />}
       <header className={`${sticky_header !== false ? 'fixed' : 'relative'} top-0 left-0 right-0 z-[70] transition-all duration-500 ${scrolled ? "bg-card/95 backdrop-blur-xl shadow-lg border-b border-border/50" : "bg-transparent backdrop-blur-md"}`}>
         <nav className="container mx-auto flex items-center justify-between px-4 py-2.5 md:py-3">
           {/* Logo */}

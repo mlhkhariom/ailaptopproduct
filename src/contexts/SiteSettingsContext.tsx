@@ -78,6 +78,35 @@ export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
     fetch(`${BASE}/app-settings`).then(r => r.json()).then(setApp).catch(() => {});
   }, []);
 
+  // Apply theme colors, custom CSS/JS from settings
+  useEffect(() => {
+    if (!app || typeof app !== 'object') return;
+    const s = app as any;
+    // Theme colors → CSS variables
+    if (s.color_primary) document.documentElement.style.setProperty('--color-primary', s.color_primary);
+    if (s.color_secondary) document.documentElement.style.setProperty('--color-secondary', s.color_secondary);
+    if (s.color_accent) document.documentElement.style.setProperty('--color-accent', s.color_accent);
+    if (s.border_radius) document.documentElement.style.setProperty('--radius', s.border_radius + 'px');
+    // Custom CSS injection
+    if (s.custom_css) {
+      let el = document.getElementById('custom-css-inject');
+      if (!el) { el = document.createElement('style'); el.id = 'custom-css-inject'; document.head.appendChild(el); }
+      el.textContent = s.custom_css;
+    }
+    // Custom JS injection
+    if (s.custom_js) {
+      let el = document.getElementById('custom-js-inject');
+      if (!el) { el = document.createElement('script'); el.id = 'custom-js-inject'; document.body.appendChild(el); }
+      el.textContent = s.custom_js;
+    }
+    // Custom head tags
+    if (s.custom_head_tags) {
+      let el = document.getElementById('custom-head-inject');
+      if (!el) { el = document.createElement('div'); el.id = 'custom-head-inject'; document.head.appendChild(el); }
+      el.innerHTML = s.custom_head_tags;
+    }
+  }, [app]);
+
   return <SiteSettingsContext.Provider value={{ features, app }}>{children}</SiteSettingsContext.Provider>;
 };
 
