@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Save, Palette, Type, Sun, Moon, Code, Paintbrush } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { themes, ThemeName, applyTheme } from "@/lib/themes";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -33,6 +34,33 @@ export default function AppearanceSettings() {
         </div>
 
         <div className="space-y-6">
+
+          {/* THEME PRESETS */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Theme Presets</CardTitle>
+              <CardDescription>Quick-apply a complete theme or customize below</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {(Object.keys(themes) as ThemeName[]).map(name => {
+                  const t = themes[name];
+                  const active = v('active_theme') === name;
+                  return (
+                    <button key={name} onClick={() => { set('active_theme', name); set('color_primary', t.primary); set('color_secondary', t.secondary); set('color_accent', t.accent); set('border_radius', parseInt(t.radius).toString()); set('font_heading', t.font); applyTheme(name); toast.success(`${name} theme applied`); }} className={`p-4 rounded-xl border-2 text-center transition-all ${active ? 'border-primary shadow-md scale-[1.02]' : 'border-muted hover:border-primary/40'}`}>
+                      <div className="flex justify-center gap-1 mb-2">
+                        <span className="w-5 h-5 rounded-full" style={{ background: t.primary }} />
+                        <span className="w-5 h-5 rounded-full" style={{ background: t.secondary }} />
+                        <span className="w-5 h-5 rounded-full" style={{ background: t.accent }} />
+                      </div>
+                      <p className="text-xs font-bold capitalize">{name}</p>
+                      <p className="text-[9px] text-muted-foreground">{t.font}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* COLORS */}
           <Card>
