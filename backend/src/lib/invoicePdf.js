@@ -7,7 +7,7 @@ export async function generateInvoicePDF(orderId) {
   if (!order) throw new Error('Order not found');
 
   const settings = {};
-  const rows = await db.prepare("SELECT key, value FROM app_settings WHERE key IN ('site_name','site_phone','site_email','site_address','gstin','invoice_prefix','invoice_footer')").all();
+  const rows = await db.prepare("SELECT key, value FROM app_settings WHERE key IN ('site_name','site_phone','site_email','site_address','gstin','invoice_prefix','invoice_footer','store_logo')").all();
   rows.forEach(r => { settings[r.key] = r.value; });
 
   const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;

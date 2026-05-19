@@ -302,3 +302,38 @@ router.get('/reports/cashflow', authMiddleware, adminOnly, async (req, res) => {
 });
 
 export default router;
+
+// GET /api/erp/reports/export/:type — export data as CSV
+router.get('/export/:type', authMiddleware, adminOnly, async (req, res) => {
+  const { type } = req.params;
+  const { from, to } = req.query;
+  let rows = [];
+  let filename = `${type}-export.csv`;
+
+  if (type === 'orders') {
+    rows = await db.prepare(`SELECT order_number, status, total, payment_method, payment_status, created_at FROM orders ${from ? "WHERE DATE(created_at)>='" + from + "'" : ''} ORDER BY created_at DESC LIMIT 5000`).all();
+  } else if (type === 'products') {
+    rows = await db.prepare('SELECT name, sku, brand, category, price, stock, status FROM products ORDER BY name LIMIT 5000').all();
+  } else if (type === 'leads') {
+    rows = await db.prepare('SELECT name, phone, email, source, status, priority, score, created_at FROM leads ORDER BY created_at DESC LIMIT 5000').all();
+  } else if (type === 'staff') {
+    rows = await db.prepare('SELECT name, role, phone, email, salary, joining_date, is_active FROM staff ORDER BY name').all();
+  } else if (type === 'expenses') {
+    rows = await db.prepare(`SELECT category, amount, description, payment_method, date FROM expenses ${from ? "WHERE date>='" + from + "'" : ''} ORDER BY date DESC LIMIT 5000`).all();
+  } else if (type === 'invoices') {
+    rows = await db.prepare('SELECT invoice_number, customer_name, total, gst_amount, status, created_at FROM custom_invoices ORDER BY created_at DESC LIMIT 5000').all();
+  } else {
+    return res.status(400).json({ error: 'Invalid export type' });
+  }
+
+  if (rows.length === 0) return res.status(404).json({ error: 'No data to export' });
+
+  // Generate CSV
+  const headers = Object.keys(rows[0]).join(',');
+  const csvRows = rows.map(r => Object.values(r).map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(','));
+  const csv = [headers, ...csvRows].join('\n');
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+  res.send(csv);
+});

@@ -209,3 +209,26 @@ router.delete('/staff/:id/documents/:docId', authMiddleware, adminOnly, async (r
 });
 
 export default router;
+
+// POST /api/erp/staff/advance-request — staff requests advance/loan
+router.post('/advance-request', authMiddleware, async (req, res) => {
+  const { amount, reason, type } = req.body; // type: 'advance' or 'loan'
+  if (!amount) return res.status(400).json({ error: 'Amount required' });
+  const id = uuid();
+  await db.prepare('INSERT INTO staff_advance_requests (id, staff_id, amount, type, reason, status, created_at) VALUES (?,?,?,?,?,?,NOW())')
+    .run(id, req.user.id, amount, type || 'advance', reason || '', 'pending');
+  res.status(201).json({ id, message: 'Request submitted' });
+});
+
+// GET /api/erp/staff/advance-requests — admin view all requests
+router.get('/advance-requests', authMiddleware, adminOnly, async (req, res) => {
+  const requests = await db.prepare('SELECT ar.*, s.name as staff_name FROM staff_advance_requests ar LEFT JOIN staff s ON s.id=ar.staff_id ORDER BY ar.created_at DESC').all();
+  res.json(requests);
+});
+
+// PUT /api/erp/staff/advance-requests/:id — approve/reject
+router.put('/advance-requests/:id', authMiddleware, adminOnly, async (req, res) => {
+  const { status } = req.body; // 'approved' or 'rejected'
+  await db.prepare('UPDATE staff_advance_requests SET status=?, approved_at=NOW() WHERE id=?').run(status, req.params.id);
+  res.json({ message: 'Updated' });
+});

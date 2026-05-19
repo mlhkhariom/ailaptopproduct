@@ -361,3 +361,35 @@ router.post('/quotations/:id/convert', authMiddleware, adminOnly, async (req, re
 });
 
 export default router;
+
+// GET /api/erp/job-cards/:id/thermal — 58mm thermal print format
+router.get('/:id/thermal', authMiddleware, async (req, res) => {
+  const job = await db.prepare('SELECT * FROM service_bookings WHERE id=?').get(req.params.id);
+  if (!job) return res.status(404).json({ error: 'Not found' });
+  const settings = Object.fromEntries((await db.prepare("SELECT key,value FROM app_settings WHERE key IN ('store_name','store_phone','store_address')").all()).map(r => [r.key, r.value]));
+
+  // 58mm thermal receipt format (plain text, 32 chars wide)
+  const line = '================================';
+  const center = (t) => { const pad = Math.max(0, Math.floor((32 - t.length) / 2)); return ' '.repeat(pad) + t; };
+  let receipt = '';
+  receipt += center(settings.store_name || 'AI Laptop Wala') + '\n';
+  receipt += center(settings.store_phone || '') + '\n';
+  receipt += line + '\n';
+  receipt += `JC#: ${job.booking_number}\n`;
+  receipt += `Date: ${new Date(job.created_at).toLocaleDateString('en-IN')}\n`;
+  receipt += line + '\n';
+  receipt += `Customer: ${job.customer_name}\n`;
+  receipt += `Phone: ${job.customer_phone}\n`;
+  receipt += `Device: ${job.device_brand} ${job.device_model}\n`;
+  receipt += `Issue: ${(job.issue_description || '').slice(0, 60)}\n`;
+  receipt += line + '\n';
+  receipt += `Priority: ${job.priority || 'normal'}\n`;
+  receipt += `Status: ${job.status}\n`;
+  receipt += `Tech: ${job.technician || '-'}\n`;
+  if (job.total_charge) receipt += `Total: Rs ${job.total_charge}\n`;
+  receipt += line + '\n';
+  receipt += center('Thank you!') + '\n';
+
+  res.setHeader('Content-Type', 'text/plain');
+  res.send(receipt);
+});

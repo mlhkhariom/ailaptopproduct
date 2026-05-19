@@ -236,3 +236,31 @@ router.get('/stock-count-sheet', authMiddleware, adminOnly, async (req, res) => 
 });
 
 export default router;
+
+// POST /api/inventory/grn — Generate Goods Receipt Note
+router.post('/grn', authMiddleware, adminOnly, async (req, res) => {
+  const { po_id, items, received_by, notes } = req.body;
+  const id = uuid();
+  const grn_number = `GRN-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+  
+  await db.prepare('INSERT INTO grn (id, grn_number, po_id, items, received_by, notes, created_at) VALUES (?,?,?,?,?,?,NOW())')
+    .run(id, grn_number, po_id || null, JSON.stringify(items || []), received_by || null, notes || '');
+
+  // Update stock for received items
+  for (const item of (items || [])) {
+    if (item.product_id && item.qty_received) {
+      await db.prepare('UPDATE products SET stock=stock+?, in_stock=1 WHERE id=?').run(item.qty_received, item.product_id);
+    }
+  }
+
+  // Update PO status if linked
+  if (po_id) await db.prepare("UPDATE purchase_orders SET status='received' WHERE id=?").run(po_id);
+
+  res.status(201).json({ id, grn_number });
+});
+
+// GET /api/inventory/grn — list GRNs
+router.get('/grn', authMiddleware, adminOnly, async (req, res) => {
+  const grns = await db.prepare('SELECT * FROM grn ORDER BY created_at DESC LIMIT 100').all();
+  res.json(grns);
+});
