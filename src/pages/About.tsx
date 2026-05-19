@@ -184,7 +184,7 @@ const About = () => {
         <div className="flex justify-center gap-3 flex-wrap">
           <Link to="/products"><Button size="lg">Browse Laptops</Button></Link>
           <Link to="/services"><Button size="lg" variant="outline">Book Repair</Button></Link>
-          <a href="https://wa.me/919893496163" target="_blank" rel="noreferrer"><Button size="lg" variant="outline">💬 WhatsApp</Button></a>
+          <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noreferrer"><Button size="lg" variant="outline">💬 WhatsApp</Button></a>
         </div>
       </div>
     </section>

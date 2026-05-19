@@ -42,7 +42,7 @@ class ErrorBoundary extends Component<Props, State> {
           </div>
           <p className="text-xs text-muted-foreground mt-6">
             If this keeps happening, contact us at{" "}
-            <a href="tel:+919893496163" className="text-primary">+91 98934 96163</a>
+            <a href={`tel:${settings?.store_phone || "+919893496163"}`} className="text-primary">+91 98934 96163</a>
           </p>
         </div>
       </div>

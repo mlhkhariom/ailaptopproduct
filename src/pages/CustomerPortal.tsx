@@ -1,5 +1,6 @@
 import SEOHead from "@/components/common/SEOHead";
 import { useState } from "react";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function CustomerPortal() {
   const [phone, setPhone] = useState('');
+  const _cs = useSiteSettings() as any;
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -142,7 +144,7 @@ export default function CustomerPortal() {
             <div className="bg-orange-50 rounded-2xl border border-orange-200 p-4 text-center space-y-2">
               <p className="font-bold text-sm">Need help?</p>
               <p className="text-xs text-muted-foreground">Call or WhatsApp us</p>
-              <a href="tel:+919893496163" className="inline-flex items-center gap-1.5 bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-600">
+              <a href={`tel:${_cs.store_phone || "+919893496163"}`} className="inline-flex items-center gap-1.5 bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-600">
                 <Phone className="h-4 w-4" /> +91 98934 96163
               </a>
             </div>

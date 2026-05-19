@@ -3,6 +3,7 @@ import { Wrench, Clock, CheckCircle, Phone, Calendar, Loader2, MessageCircle, Ho
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -34,6 +35,7 @@ const repairFaqSchema = {
 
 const Services = () => {
   const [services, setServices] = useState<any[]>([]);
+  const _ss = useSiteSettings() as any; const _phone = _ss.store_phone || "+919893496163"; const _wa = _ss.whatsapp_number || "919893496163";
   const [category, setCategory] = useState('all');
   const [bookDialog, setBookDialog] = useState(false);
   const [selectedService, setSelectedService] = useState<any>(null);
@@ -129,7 +131,7 @@ const Services = () => {
                       <p className="text-[10px] text-muted-foreground">Starting price</p>
                     </div>
                     <div className="flex gap-2">
-                      <a href={`https://wa.me/919893496163?text=Hi, I need ${encodeURIComponent(s.name)} service`} target="_blank" rel="noreferrer">
+                      <a href={`https://wa.me/${_wa}?text=Hi, I need ${encodeURIComponent(s.name)} service`} target="_blank" rel="noreferrer">
                         <Button size="sm" variant="outline" className="gap-1 border-green-500 text-green-600 hover:bg-green-50 h-8 px-2">
                           <MessageCircle className="h-3.5 w-3.5" />
                         </Button>
@@ -185,8 +187,8 @@ const Services = () => {
           <h2 className="text-2xl font-bold mb-2">Need a Repair?</h2>
           <p className="text-muted-foreground text-sm mb-6">Call us or WhatsApp for instant booking. Our engineer will visit your home/office in Indore.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a href="tel:+919893496163"><Button size="lg" className="gap-2 w-full sm:w-auto"><Phone className="h-4 w-4" /> Call Now</Button></a>
-            <a href="https://wa.me/919893496163?text=Hi, I need laptop repair service" target="_blank" rel="noreferrer">
+            <a href={`tel:${_phone}`}><Button size="lg" className="gap-2 w-full sm:w-auto"><Phone className="h-4 w-4" /> Call Now</Button></a>
+            <a href={`https://wa.me/${_wa}?text=Hi, I need laptop repair service`} target="_blank" rel="noreferrer">
               <Button size="lg" variant="outline" className="gap-2 w-full sm:w-auto border-green-500 text-green-600 hover:bg-green-50"><MessageCircle className="h-4 w-4" /> WhatsApp Us</Button>
             </a>
           </div>

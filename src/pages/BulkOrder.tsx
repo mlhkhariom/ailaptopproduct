@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import { Building2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

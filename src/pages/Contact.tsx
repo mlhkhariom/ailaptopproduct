@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import { Mail, Phone, MapPin, Clock, MessageCircle, Navigation, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

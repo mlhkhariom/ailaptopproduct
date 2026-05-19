@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import { Link } from "react-router-dom";
 import { HelpCircle, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
