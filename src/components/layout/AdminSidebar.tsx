@@ -13,24 +13,21 @@ import { usePermissions } from "@/hooks/usePermissions";
 
 const erpGroups = [
   {
-    label: "Operations",
-    labelIcon: Cpu,
+    label: "Repair & Service",
+    labelIcon: Wrench,
     items: [
-      { title: "ERP Overview", url: "/admin/erp", icon: Building2 },
-      { title: "Live Dashboard", url: "/admin/erp/live", icon: Tv2 },
       { title: "Job Cards", url: "/admin/erp/job-cards", icon: ClipboardList, badge: "core" },
       { title: "Services", url: "/admin/services", icon: Wrench },
-      { title: "Branches", url: "/admin/erp/branches", icon: Building2 },
+      { title: "Live Dashboard", url: "/admin/erp/live", icon: Tv2 },
     ],
   },
   {
-    label: "CRM",
+    label: "CRM & Sales",
     labelIcon: Users,
     items: [
       { title: "Leads & Pipeline", url: "/admin/erp/crm", icon: Users, badge: "core" },
-      { title: "Follow-ups", url: "/admin/erp/crm?tab=list&status=all", icon: Phone },
       { title: "Kanban Board", url: "/admin/erp/crm?tab=kanban", icon: LayoutDashboard },
-      { title: "Automations", url: "/admin/automations", icon: Zap, badge: "NEW" },
+      { title: "Automations", url: "/admin/automations", icon: Zap },
       { title: "Email Campaigns", url: "/admin/email-campaigns", icon: Mail },
       { title: "Customer 360", url: "/admin/erp/customer360", icon: UserCircle },
     ],
@@ -39,10 +36,20 @@ const erpGroups = [
     label: "Finance",
     labelIcon: DollarSign,
     items: [
-      { title: "Billing", url: "/admin/erp/billing", icon: Receipt, badge: "core" },
-      { title: "Recurring", url: "/admin/erp/recurring", icon: RefreshCw },
+      { title: "Billing & Invoices", url: "/admin/erp/billing", icon: Receipt, badge: "core" },
       { title: "Expenses", url: "/admin/erp/expenses", icon: Wallet },
+      { title: "Recurring", url: "/admin/erp/recurring", icon: RefreshCw },
       { title: "GSTR-1 Export", url: "/admin/erp/reports#gstr", icon: FileSpreadsheet },
+    ],
+  },
+  {
+    label: "Inventory",
+    labelIcon: Package,
+    items: [
+      { title: "Stock", url: "/admin/inventory", icon: Package },
+      { title: "Suppliers", url: "/admin/inventory?tab=suppliers", icon: Truck },
+      { title: "Purchase Orders", url: "/admin/inventory?tab=po", icon: ShoppingCart },
+      { title: "Branches", url: "/admin/erp/branches", icon: Building2 },
     ],
   },
   {
@@ -50,90 +57,61 @@ const erpGroups = [
     labelIcon: UserCheck,
     items: [
       { title: "Staff", url: "/admin/erp/staff", icon: UserCheck },
-      { title: "Payroll", url: "/admin/erp/payroll", icon: IndianRupee, perm: 'payroll' },
       { title: "Attendance", url: "/admin/erp/attendance", icon: CalendarCheck },
-      { title: "Shifts", url: "/admin/erp/shifts", icon: Clock },
+      { title: "Payroll", url: "/admin/erp/payroll", icon: IndianRupee, perm: 'payroll' },
       { title: "Leaves", url: "/admin/erp/leaves", icon: CalendarX },
-    ],
-  },
-  {
-    label: "Reports & Analytics",
-    labelIcon: BarChart3,
-    items: [
-      { title: "ERP Reports", url: "/admin/erp/reports", icon: BarChart3 },
-      { title: "Report Builder", url: "/admin/erp/report-builder", icon: Table2 },
-      { title: "KPI Alerts", url: "/admin/erp/kpi-alerts", icon: Bell, perm: 'kpi_alerts' },
-      { title: "Audit Log", url: "/admin/erp/audit-log", icon: Shield, perm: "kpi_alerts" },
-    ],
-  },
-  {
-    label: "Procurement",
-    labelIcon: Box,
-    items: [
-      { title: "Inventory", url: "/admin/inventory", icon: Package },
-      { title: "Suppliers", url: "/admin/inventory?tab=suppliers", icon: Truck },
-      { title: "Purchase Orders", url: "/admin/inventory?tab=po", icon: ShoppingCart },
-      { title: "Stock Movements", url: "/admin/inventory?tab=movements", icon: ArrowUpDown },
-    ],
-  },
-  {
-    label: "Engagement",
-    labelIcon: Gift,
-    items: [
-      { title: "Loyalty Program", url: "/admin/erp/loyalty", icon: Gift },
-      { title: "WA Templates", url: "/admin/erp/wa-templates", icon: MessageCircle },
-      { title: "Coupons", url: "/admin/coupons", icon: Ticket },
+      { title: "Shifts", url: "/admin/erp/shifts", icon: Clock },
     ],
   },
 ];
 
 const mainMenu = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, badge: "" },
-  { title: "Analytics", url: "/admin/analytics", icon: BarChart3, badge: "NEW" },
   { title: "Products", url: "/admin/products", icon: Package, badge: "" },
   { title: "Orders", url: "/admin/orders", icon: ShoppingBag, badge: "" },
   { title: "Payments", url: "/admin/payments", icon: CreditCard, badge: "" },
-  { title: "Returns", url: "/admin/returns", icon: RotateCcw, badge: "" },
   { title: "Customers", url: "/admin/customers", icon: Users, badge: "" },
+  { title: "Returns", url: "/admin/returns", icon: RotateCcw, badge: "" },
   { title: "Categories", url: "/admin/categories", icon: Tag, badge: "" },
+  { title: "Coupons", url: "/admin/coupons", icon: Ticket, badge: "" },
   { title: "Abandoned Carts", url: "/admin/abandoned-carts", icon: ShoppingCart, badge: "" },
-  { title: "Homepage", url: "/admin/homepage-sections", icon: Layout, badge: "NEW" },
 ];
 
 const toolsMenu = [
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageCircle, badge: "" },
-  { title: "WA Broadcast", url: "/admin/broadcast", icon: Send, badge: "NEW" },
-  { title: "Evolution API", url: "/admin/evolution", icon: Zap, badge: "" },
-  { title: "Social Media", url: "/admin/social", icon: Share2, badge: "NEW" },
-  { title: "Reels & Videos", url: "/admin/reels", icon: Play, badge: "" },
-  { title: "Blog / Content", url: "/admin/blog", icon: FileText, badge: "" },
+  { title: "Broadcast", url: "/admin/broadcast", icon: Send, badge: "" },
+  { title: "Social Media", url: "/admin/social", icon: Share2, badge: "" },
+  { title: "Blog", url: "/admin/blog", icon: FileText, badge: "" },
   { title: "CMS / Pages", url: "/admin/cms", icon: Palette, badge: "" },
   { title: "Media Library", url: "/admin/media", icon: Image, badge: "" },
   { title: "Reviews", url: "/admin/reviews", icon: Star, badge: "" },
-  { title: "Contact Queries", url: "/admin/contacts", icon: Mail, badge: "" },
-  { title: "Service Leads", url: "/admin/erp/crm?tab=list&source=Enquiry Form", icon: ClipboardList, badge: "" },
+  { title: "Reels", url: "/admin/reels", icon: Play, badge: "" },
 ];
 
 const systemMenu = [
-  { title: "User & Roles", url: "/admin/users", icon: UserCog, badge: "" },
+  { title: "Analytics", url: "/admin/analytics", icon: BarChart3, badge: "" },
   { title: "Reports", url: "/admin/reports", icon: TrendingUp, badge: "" },
+  { title: "ERP Reports", url: "/admin/erp/reports", icon: FileSpreadsheet, badge: "" },
+  { title: "Audit Log", url: "/admin/erp/audit-log", icon: Shield, badge: "" },
+  { title: "Users & Roles", url: "/admin/users", icon: UserCog, badge: "" },
   { title: "Shipping Rules", url: "/admin/shipping-rules", icon: Truck, badge: "" },
+  { title: "Contacts", url: "/admin/contacts", icon: Mail, badge: "" },
 ];
 
 const settingsMenu = [
   { title: "All Settings", url: "/admin/settings", icon: Settings },
-  { title: "Homepage", url: "/admin/settings/homepage", icon: Layout },
-  { title: "Appearance", url: "/admin/settings/appearance", icon: Palette },
-  { title: "Menus", url: "/admin/settings/menus", icon: Layout },
   { title: "Site & General", url: "/admin/settings/site", icon: Settings },
+  { title: "Appearance", url: "/admin/settings/appearance", icon: Palette },
+  { title: "Homepage", url: "/admin/settings/homepage", icon: Layout },
+  { title: "Menus", url: "/admin/settings/menus", icon: Layout },
   { title: "Ecommerce", url: "/admin/settings/ecommerce", icon: ShoppingCart },
   { title: "ERP", url: "/admin/settings/erp", icon: Wrench },
   { title: "CRM", url: "/admin/settings/crm", icon: Users },
+  { title: "CMS", url: "/admin/settings/cms", icon: FileText },
   { title: "Notifications", url: "/admin/settings/notifications", icon: Bell },
-  { title: "Security & AI", url: "/admin/settings/security", icon: Shield },
+  { title: "Security", url: "/admin/settings/security", icon: Shield },
   { title: "API Keys", url: "/admin/settings/api-keys", icon: Key },
   { title: "About Page", url: "/admin/settings/about-page", icon: Users },
-  { title: "CMS", url: "/admin/settings/cms", icon: FileText },
 ];
 
 
@@ -146,7 +124,7 @@ export function AdminSidebar() {
   const { can } = usePermissions();
   const [erpOpen, setErpOpen] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    "Operations": true, "CRM": true, "Finance": true, "HR & Staff": false, "Reports & Analytics": false, "Procurement": false, "Engagement": false,
+    "Repair & Service": true, "CRM & Sales": true, "Finance": false, "Inventory": false, "HR & Staff": false,
   });
 
   const toggleGroup = (label: string) =>
