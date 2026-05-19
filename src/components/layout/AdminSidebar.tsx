@@ -80,21 +80,16 @@ const mainMenu = [
 const toolsMenu = [
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageCircle, badge: "" },
   { title: "Broadcast", url: "/admin/broadcast", icon: Send, badge: "" },
-  { title: "Social Media", url: "/admin/social", icon: Share2, badge: "" },
   { title: "Blog", url: "/admin/blog", icon: FileText, badge: "" },
-  { title: "CMS / Pages", url: "/admin/cms", icon: Palette, badge: "" },
-  { title: "Media Library", url: "/admin/media", icon: Image, badge: "" },
+  { title: "Media", url: "/admin/media", icon: Image, badge: "" },
   { title: "Reviews", url: "/admin/reviews", icon: Star, badge: "" },
-  { title: "Reels", url: "/admin/reels", icon: Play, badge: "" },
+  { title: "CMS Pages", url: "/admin/cms", icon: Palette, badge: "" },
 ];
 
 const systemMenu = [
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3, badge: "" },
   { title: "Reports", url: "/admin/reports", icon: TrendingUp, badge: "" },
-  { title: "ERP Reports", url: "/admin/erp/reports", icon: FileSpreadsheet, badge: "" },
-  { title: "Audit Log", url: "/admin/erp/audit-log", icon: Shield, badge: "" },
   { title: "Users & Roles", url: "/admin/users", icon: UserCog, badge: "" },
-  { title: "Shipping Rules", url: "/admin/shipping-rules", icon: Truck, badge: "" },
   { title: "Contacts", url: "/admin/contacts", icon: Mail, badge: "" },
 ];
 
@@ -102,16 +97,12 @@ const settingsMenu = [
   { title: "All Settings", url: "/admin/settings", icon: Settings },
   { title: "Site & General", url: "/admin/settings/site", icon: Settings },
   { title: "Appearance", url: "/admin/settings/appearance", icon: Palette },
-  { title: "Homepage", url: "/admin/settings/homepage", icon: Layout },
-  { title: "Menus", url: "/admin/settings/menus", icon: Layout },
   { title: "Ecommerce", url: "/admin/settings/ecommerce", icon: ShoppingCart },
-  { title: "ERP", url: "/admin/settings/erp", icon: Wrench },
+  { title: "ERP & Branches", url: "/admin/settings/erp", icon: Wrench },
   { title: "CRM", url: "/admin/settings/crm", icon: Users },
-  { title: "CMS", url: "/admin/settings/cms", icon: FileText },
   { title: "Notifications", url: "/admin/settings/notifications", icon: Bell },
-  { title: "Security", url: "/admin/settings/security", icon: Shield },
   { title: "API Keys", url: "/admin/settings/api-keys", icon: Key },
-  { title: "About Page", url: "/admin/settings/about-page", icon: Users },
+  { title: "Security", url: "/admin/settings/security", icon: Shield },
 ];
 
 
@@ -124,7 +115,7 @@ export function AdminSidebar() {
   const { can } = usePermissions();
   const [erpOpen, setErpOpen] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    "Repair & Service": true, "CRM & Sales": true, "Finance": false, "Inventory": false, "HR & Staff": false,
+    "Repair & Service": true, "CRM & Sales": true, "Finance": false, "Inventory": false, "HR & Staff": false, settings: false,
   });
 
   const toggleGroup = (label: string) =>
@@ -254,10 +245,12 @@ export function AdminSidebar() {
           <SidebarGroupContent>{renderMenu(systemMenu)}</SidebarGroupContent>
         </SidebarGroup>
 
-        {/* ── Settings ── */}
+        {/* ── Settings (collapsible) ── */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "Settings"}</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenu(settingsMenu)}</SidebarGroupContent>
+          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3 cursor-pointer" onClick={() => setOpenGroups(g => ({ ...g, settings: !g.settings }))}>
+            {!collapsed && <span className="flex items-center justify-between w-full"><span>Settings</span>{openGroups.settings ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}</span>}
+          </SidebarGroupLabel>
+          {(collapsed || openGroups.settings) && <SidebarGroupContent>{renderMenu(settingsMenu)}</SidebarGroupContent>}
         </SidebarGroup>
       </SidebarContent>
 
