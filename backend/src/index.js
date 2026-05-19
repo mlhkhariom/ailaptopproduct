@@ -6,6 +6,7 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import helmet from 'helmet';
+import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import db, { initDB } from './db/database.js';
 import { runSeeder } from './db/seeder.js';
@@ -79,6 +80,7 @@ app.options('*', cors());
 
 // Security headers
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(compression());
 
 // Rate limiting
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: async (req) => { try { const r = await db.prepare("SELECT value FROM app_settings WHERE key='rate_limit_per_min'").get(); return r?.value ? parseInt(r.value) * 15 : 200; } catch { return 200; } }, standardHeaders: true, legacyHeaders: false });
@@ -353,3 +355,12 @@ httpServer.listen(PORT, async () => {
   }, 3000);
   console.log('✅ Evolution API AI processing started');
 });
+
+// Graceful shutdown
+const shutdown = (signal) => {
+  console.log(`\n${signal} received. Shutting down gracefully...`);
+  httpServer.close(() => { console.log('Server closed.'); process.exit(0); });
+  setTimeout(() => { console.error('Forced shutdown.'); process.exit(1); }, 10000);
+};
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
