@@ -29,7 +29,7 @@ const SITE = {
     instagram: "https://www.instagram.com/ailaptopwala",
     facebook: "https://www.facebook.com/profile.php?id=61563386652422",
     youtube: "https://www.youtube.com/@AiLaptopwalaindore",
-    whatsapp: `https://wa.me/${settings.whatsapp_number || "919893496163"}`,
+    whatsapp: "https://wa.me/919893496163",
     justdial1: "https://www.justdial.com/Indore/Ai-Laptop-Wala/0731PX731-X731-251014151403-Y2S4_BZDET",
     justdial2: "https://www.justdial.com/Indore/Ai-Laptopwala-Rnt-Road/0731PX731-X731-260220122854-E9T8_BZDET",
     justdial3: "https://www.justdial.com/Indore/Asati-Infotech-Silver-Mall-Near-Shrimaya-Hotel-Rnt-Road/0731PX731-X731-111212153207-K3X8_BZDET",
