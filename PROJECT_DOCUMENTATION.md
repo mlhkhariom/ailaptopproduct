@@ -1,10 +1,29 @@
-# MLHK ERP Platform — Complete Documentation
+# MLHK ERP Platform v2.1.0 — Complete Documentation
 
-> **Developer:** MLHK Infotech
-> **Product:** ERP/CRM/Ecommerce Platform
-> **Client:** AI Laptop Wala (Indore)
-> **Stack:** React + TypeScript + Vite | Node.js + Express + PostgreSQL
-> **Version:** 2.0.0
+> **Developer:** MLHK Infotech  
+> **Product:** Enterprise ERP/CRM/Ecommerce Platform  
+> **Client:** AI Laptop Wala (Indore, MP)  
+> **Domain:** ailaptopwala.com  
+> **Last Updated:** 19 May 2026  
+> **Total Commits:** 79 (this session)
+
+---
+
+## Platform Stats
+
+| Metric | Count |
+|--------|:-----:|
+| Frontend Routes | 101 |
+| Backend API Endpoints | 482 |
+| Database Tables | 89 |
+| Admin Pages | 50 |
+| Public Pages | 40 |
+| Settings Pages | 12 |
+| Reusable Components | 100 |
+| Backend Route Files | 45 |
+| Modules (Super Admin) | 16 |
+| JS Chunks (code split) | 94 |
+| Prerendered SEO Pages | 17 |
 
 ---
 
@@ -12,17 +31,44 @@
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui |
-| State | Zustand (cart, wishlist, products, notifications) |
-| Backend | Node.js, Express.js, ES Modules |
+| Frontend | React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui |
+| State Management | Zustand (cart, wishlist, products, notifications) |
+| Backend | Node.js + Express.js (ES Modules) |
 | Database | PostgreSQL (89 tables) |
-| Auth | JWT + RBAC (superadmin/admin/manager/staff/customer) |
+| Auth | JWT + RBAC (superadmin → admin → manager → staff → customer) |
 | Payments | Razorpay, PhonePe, Paytm, Cashfree, COD, UPI |
-| WhatsApp | Evolution API (auto-reply, broadcast, templates) |
-| AI | OpenRouter (chatbot, product descriptions) |
-| SEO | Prerender, Sitemap, Schema.org, robots.txt |
-| PWA | manifest.json, service worker ready |
+| WhatsApp | Evolution API (auto-reply, broadcast, templates, notifications) |
+| AI | OpenRouter (chatbot, product descriptions, auto-replies) |
+| SEO | Prerender (17 pages) + Sitemap + Schema.org + robots.txt |
+| PWA | Dynamic manifest.json + service worker ready |
+| Performance | Code splitting (94 chunks) + Suspense + gzip compression |
+| Security | Helmet + CORS (dynamic) + Rate limiting (dynamic) + 2FA ready |
 | Hosting | VPS + Nginx + PM2 + Let's Encrypt SSL |
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    FRONTEND (Vite + React)                │
+│  101 routes | 94 lazy chunks | Prerender 17 pages        │
+│  Zustand stores | SiteSettingsContext | AuthContext       │
+├─────────────────────────────────────────────────────────┤
+│                    NGINX (Reverse Proxy + SSL)            │
+├─────────────────────────────────────────────────────────┤
+│                    BACKEND (Express.js)                   │
+│  482 endpoints | 45 route files | 38 registered modules  │
+│  Helmet | Compression | Rate Limit | CORS | Maintenance  │
+├─────────────────────────────────────────────────────────┤
+│                    DATABASE (PostgreSQL)                  │
+│  89 tables | Settings cache (30s TTL) | Migrations       │
+├─────────────────────────────────────────────────────────┤
+│                    INTEGRATIONS                           │
+│  Evolution API | OpenRouter AI | Razorpay | PhonePe      │
+│  Paytm | Cashfree | SMTP | SMS | Push Notifications     │
+└─────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -32,456 +78,410 @@
 
 ```
 src/
-├── App.tsx                    — Main router (101 routes, lazy loaded)
-├── main.tsx                   — Entry point
-├── index.css                  — Global styles
-├── assets/                    — Images, logos
+├── App.tsx                     — Router (101 routes, 62 lazy-loaded)
+├── main.tsx                    — Entry point
 ├── config/
-│   └── index.ts              — APP_CONFIG, ROLES, MODULES constants
+│   └── index.ts               — APP_CONFIG, ROLES, MODULES constants
 ├── contexts/
-│   ├── AuthContext.tsx        — Login/logout, user state, JWT
-│   └── SiteSettingsContext.tsx — Global settings provider (fetches /api/app-settings)
+│   ├── AuthContext.tsx         — JWT auth, login/logout, user state
+│   └── SiteSettingsContext.tsx — Global settings + theme injection + custom CSS/JS
 ├── hooks/
-│   └── usePermissions.ts     — RBAC permission checker
+│   └── usePermissions.ts      — RBAC permission checker
 ├── lib/
-│   ├── api.ts                — API client (getProducts, getOrders, etc.)
-│   └── themes.ts             — Theme presets (default/ocean/forest/royal)
+│   ├── api.ts                 — API client helpers
+│   └── themes.ts              — 4 theme presets (default/ocean/forest/royal)
 ├── locale/
-│   └── index.ts              — formatCurrency, formatDate, formatDateTime
+│   └── index.ts               — formatCurrency, formatDate, formatDateTime
 ├── store/
-│   ├── cartStore.ts          — Shopping cart (add/remove/clear)
-│   ├── wishlistStore.ts      — Wishlist (add/remove)
-│   ├── productStore.ts       — Products list, filters, pagination
-│   └── notificationStore.ts  — Admin notifications
-├── types/                     — TypeScript interfaces
+│   ├── cartStore.ts           — Shopping cart (add/remove/clear/quantity)
+│   ├── wishlistStore.ts       — Wishlist (add/remove/toggle)
+│   ├── productStore.ts        — Products, filters, pagination, brands
+│   └── notificationStore.ts   — Admin notifications (unread count)
 ├── utils/
-│   └── index.ts              — slugify, debounce, validators, timeAgo
+│   └── index.ts               — slugify, debounce, validators, timeAgo, getInitials
 ├── components/
-│   ├── ui/                   — shadcn/ui primitives (50+ components)
+│   ├── ui/                    — 50+ shadcn/ui primitives
 │   ├── layout/
-│   │   ├── AdminLayout.tsx   — Admin page wrapper
-│   │   ├── AdminSidebar.tsx  — Admin sidebar (module-filtered)
-│   │   ├── CustomerLayout.tsx — Public page wrapper
-│   │   ├── Header.tsx        — Public header (dynamic nav from DB)
-│   │   ├── Footer.tsx        — Public footer (dynamic branches from DB)
+│   │   ├── AdminLayout.tsx    — Admin wrapper
+│   │   ├── AdminSidebar.tsx   — Module-filtered sidebar (reads settings)
+│   │   ├── CustomerLayout.tsx — Public wrapper
+│   │   ├── Header.tsx         — Dynamic nav (from DB) + dark mode + announcement
+│   │   ├── Footer.tsx         — Dynamic branches + social (from DB)
 │   │   └── CustomerBottomNav.tsx — Mobile bottom nav
 │   ├── common/
-│   │   ├── SEOHead.tsx       — Meta tags, JSON-LD schema
-│   │   ├── Breadcrumbs.tsx   — Breadcrumb navigation
-│   │   ├── ModuleGuard.tsx   — Block disabled modules
-│   │   ├── PageSkeleton.tsx  — Loading skeletons
-│   │   └── SiteFeatures.tsx  — WhatsApp widget, banners
+│   │   ├── SEOHead.tsx        — Meta tags + JSON-LD schema
+│   │   ├── Breadcrumbs.tsx    — Breadcrumb navigation
+│   │   ├── ModuleGuard.tsx    — Block disabled modules
+│   │   ├── PageSkeleton.tsx   — Loading skeletons (3 variants)
+│   │   └── SiteFeatures.tsx   — WhatsApp widget, free shipping banner
 │   ├── ecommerce/
-│   │   ├── ProductCard.tsx   — Product grid card
-│   │   └── GlobalSearch.tsx  — Search with autocomplete
+│   │   ├── ProductCard.tsx    — Product grid card
+│   │   └── GlobalSearch.tsx   — Autocomplete search
 │   ├── products/
 │   │   └── ProductFormDialog.tsx — Add/edit product form
-│   ├── settings/
-│   │   ├── InvoiceSettingsTab.tsx
-│   │   ├── FeaturesSettingsTab.tsx
-│   │   └── FooterSettingsTab.tsx
-│   └── ProtectedRoute.tsx    — Auth + module access guard
+│   ├── settings/              — Settings tab components
+│   └── ProtectedRoute.tsx     — Auth guard + module access check
 ├── pages/
-│   ├── (40 public pages)
-│   ├── admin/ (50 admin pages)
-│   └── admin/settings/ (12 settings pages)
-└── modules/
-    ├── erp/
-    ├── crm/
-    ├── ecommerce/
-    ├── cms/
-    └── hr/
+│   ├── *.tsx (40 public pages)
+│   ├── admin/*.tsx (50 admin pages)
+│   └── admin/settings/*.tsx (12 settings pages)
+├── modules/
+│   ├── erp/ crm/ ecommerce/ cms/ hr/
+│   └── README.md
+└── types/                     — TypeScript interfaces
 ```
 
 ### Backend (`backend/src/`)
 
 ```
 backend/src/
-├── index.js                   — Express app (helmet, cors, compression, rate limit)
+├── index.js                    — Express app entry (helmet, cors, compression, rate limit, maintenance)
 ├── db/
-│   └── database.js           — PostgreSQL connection + 89 table schemas + migrations
+│   └── database.js            — PostgreSQL + 89 tables + migrations
 ├── middleware/
-│   ├── auth.js               — JWT verification middleware
-│   └── adminOnly.js          — RBAC: adminOnly, superAdminOnly, requireRole, canAccess
+│   ├── auth.js                — JWT verification
+│   └── adminOnly.js           — RBAC: adminOnly, superAdminOnly, requireRole, canAccess, ERP_PERMS
 ├── routes/
-│   ├── registry.js           — Route auto-loader (38 modules)
-│   ├── auth.js               — Login, register, forgot password, OTP
-│   ├── categories.js         — Category CRUD (12 endpoints)
-│   ├── reviews.js            — Review CRUD + approve/reply (9 endpoints)
-│   ├── services.js           — Repair services (7 endpoints)
-│   ├── inventory.js          — Stock, PO, suppliers, movements (18 endpoints)
-│   ├── invoice.js            — PDF invoice generation
-│   ├── reports.js            — Sales/revenue reports
-│   ├── ai.js                 — AI chatbot, product descriptions (8 endpoints)
-│   ├── evolution.js          — Evolution WhatsApp API (20 endpoints)
-│   ├── whatsapp.js           — WhatsApp chat/messages (26 endpoints)
+│   ├── registry.js            — Auto-loader (38 modules)
+│   ├── auth.js                — Login, register, forgot/reset password
+│   ├── categories.js          — 12 endpoints
+│   ├── reviews.js             — 9 endpoints (approve/reply/delete)
+│   ├── services.js            — 7 endpoints
+│   ├── inventory.js           — 18 endpoints (stock, PO, suppliers, audit)
+│   ├── invoice.js             — PDF generation
+│   ├── reports.js             — Sales/revenue reports
+│   ├── ai.js                  — 8 endpoints (chatbot, descriptions)
+│   ├── evolution.js           — 20 endpoints (WhatsApp Evolution API)
+│   ├── whatsapp.js            — 26 endpoints (chat, messages)
 │   ├── ecommerce/
-│   │   ├── products.js       — Product CRUD + variants (11 endpoints)
-│   │   ├── orders.js         — Orders + abandoned carts (9 endpoints)
-│   │   ├── payment.js        — All payment gateways (15 endpoints)
-│   │   ├── returns.js        — Return/refund processing (4 endpoints)
-│   │   ├── coupons.js        — Discount codes CRUD (6 endpoints)
-│   │   ├── wallet.js         — Wallet + referral + admin adjust (6 endpoints)
-│   │   ├── wishlist.js       — Wishlist CRUD (5 endpoints)
-│   │   ├── customers.js      — Customer management (3 endpoints)
-│   │   ├── addresses.js      — Saved addresses
-│   │   ├── contacts.js       — Contact form queries
-│   │   ├── crmTools.js       — CRM automations (34 endpoints)
+│   │   ├── products.js        — 11 endpoints
+│   │   ├── orders.js          — 9 endpoints + abandoned cart recovery
+│   │   ├── payment.js         — 15 endpoints (all gateways)
+│   │   ├── returns.js         — 4 endpoints
+│   │   ├── coupons.js         — 6 endpoints
+│   │   ├── wallet.js          — 6 endpoints (+ admin adjust)
+│   │   ├── wishlist.js        — 5 endpoints
+│   │   ├── customers.js       — 3 endpoints
+│   │   ├── addresses.js       — CRUD
+│   │   ├── contacts.js        — Contact form
+│   │   ├── crmTools.js        — 34 endpoints (automations)
 │   │   └── productVariants.js — SKU variants
 │   ├── erp/
-│   │   ├── index.js          — ERP dashboard stats
-│   │   ├── jobcards.js       — Job cards + SLA + timer (17 endpoints)
-│   │   ├── crm.js            — Leads, pipeline, scoring (34 endpoints)
-│   │   ├── billing.js        — Invoices, GST, credit notes (21 endpoints)
-│   │   ├── staff.js          — Staff + attendance + payroll (18 endpoints)
-│   │   ├── finance.js        — P&L, cash flow, bank reconciliation (24 endpoints)
-│   │   ├── reports.js        — ERP reports + GSTR-1
-│   │   └── misc.js           — Branches, WA templates, loyalty
+│   │   ├── index.js           — ERP dashboard stats
+│   │   ├── jobcards.js        — 17 endpoints (SLA, timer, photos, parts)
+│   │   ├── crm.js             — 34 endpoints (leads, pipeline, scoring)
+│   │   ├── billing.js         — 21 endpoints (GST invoices, credit notes)
+│   │   ├── staff.js           — 18 endpoints (attendance, payroll, leaves, bank details)
+│   │   ├── finance.js         — 24 endpoints (P&L, cash flow, reconciliation)
+│   │   ├── reports.js         — Dashboard + GSTR-1 + forecasting
+│   │   └── misc.js            — Branches CRUD, WA templates, loyalty, stock
 │   ├── cms/
-│   │   ├── blog.js           — Blog posts CRUD
-│   │   ├── cms.js            — Pages, banners, FAQs, popups, menus
-│   │   ├── media.js          — Media library upload
-│   │   ├── social.js         — Social media posts
-│   │   └── reels.js          — Video reels
+│   │   ├── blog.js            — Blog CRUD + markdown + views
+│   │   ├── cms.js             — Pages, banners, FAQs, popups, menus, redirects
+│   │   ├── media.js           — Upload + library
+│   │   ├── social.js          — Social posts
+│   │   └── reels.js           — Video reels
 │   └── system/
-│       ├── appSettings.js    — GET/PUT app settings
-│       ├── siteSettings.js   — Public site feature flags
-│       ├── notifications.js  — Test email/WA + notification list
-│       ├── sitemap.js        — Auto-generated XML sitemap
-│       ├── robots.js         — Dynamic robots.txt
-│       ├── manifest.js       — PWA manifest.json
-│       ├── seo.js            — Meta tags + Schema.org JSON-LD
-│       ├── menus.js          — Navigation menu CRUD
-│       └── push.js           — Push notifications
+│       ├── appSettings.js     — GET/PUT settings + test email/WA
+│       ├── siteSettings.js    — Public feature flags
+│       ├── notifications.js   — Notification list + test endpoints
+│       ├── sitemap.js         — Auto XML sitemap (products + blogs + categories)
+│       ├── robots.js          — Dynamic robots.txt (from settings)
+│       ├── manifest.js        — PWA manifest (from settings)
+│       ├── seo.js             — Meta tags + Schema.org JSON-LD
+│       ├── menus.js           — Navigation CRUD + reorder
+│       └── push.js            — Push notifications
 ├── settings/
-│   └── index.js              — getSetting, setSetting, cache (30s TTL)
+│   └── index.js               — getSetting, setSetting, cache (30s TTL), isModuleEnabled
 ├── setup/
-│   └── index.js              — Seed defaults, create superadmin
+│   └── index.js               — seedDefaultSettings, createSuperAdmin
 ├── utils/
-│   └── index.js              — uuid, slugify, validators, paginate
+│   └── index.js               — uuid, slugify, formatINR, validators, paginate, hash
 ├── locale/
-│   └── index.js              — Currency/date formatting
-├── handlers/                  — Business logic (separated from routes)
-├── models/                    — DB model documentation
-├── pdf/                       — Invoice PDF generation
+│   └── index.js               — Currency/date formatting (INR)
+├── handlers/                   — Business logic (separated from routes)
+├── models/                     — DB model documentation
+├── pdf/                        — Invoice PDF generation
 ├── ai/
-│   └── agent.js              — AI agent logic (OpenRouter)
-├── evolution/                 — Evolution WhatsApp API client
+│   └── agent.js               — OpenRouter AI agent
+├── evolution/                  — Evolution WhatsApp API client
 ├── whatsapp/
-│   └── notifications.js      — Order/lead/alert WA notifications
-└── public/uploads/            — File storage
+│   └── notifications.js       — Auto WA on order/ship/deliver/lead
+└── public/uploads/             — File storage
 ```
 
 ---
 
-## Pages
+## All Pages
 
 ### Public Pages (40)
 
-| Page | Route | Description |
-|------|-------|-------------|
-| Home | `/` | Hero, banners, featured products, categories |
-| Products | `/products` | Grid with filters, search, pagination |
-| Product Detail | `/product/:slug` | Images, specs, reviews, schema |
-| Cart | `/cart` | Shopping cart with quantity |
-| Checkout | `/checkout` | Address, payment, coupon |
-| Order Success | `/order-success` | Confirmation page |
-| Account | `/account` | Profile, orders, addresses, wishlist |
-| Login | `/login` | Email/password login |
-| Register | `/register` | Signup form |
-| About | `/about` | Dynamic from settings + branches |
-| Contact | `/contact` | Contact form + map |
-| Blog | `/blog` | Blog listing |
-| Blog Post | `/blog/:slug` | Single post |
-| Services | `/services` | Repair services list |
-| Store Locator | `/store-locator` | Branch locations + maps |
-| Help Center | `/help` | FAQs + support contact |
-| Deals | `/deals` | Discounted products |
-| New Arrivals | `/new-arrivals` | Latest products |
-| Best Sellers | `/best-sellers` | Top selling |
-| Categories | `/categories` | All categories grid |
-| Compare | `/compare` | Side-by-side comparison |
-| Wishlist | `/wishlist` | Saved products |
-| EMI Calculator | `/emi-calculator` | Loan EMI calc |
-| Track Order | `/track-order` | Order tracking |
-| Repair Track | `/repair-track` | Job card status |
-| FAQ | `/faq` | Frequently asked questions |
-| Privacy | `/privacy` | Privacy policy |
-| Terms | `/terms` | Terms & conditions |
-| Refund | `/refund` | Refund policy |
-| Shipping | `/shipping` | Shipping policy |
-| Sitemap | `/sitemap` | HTML sitemap |
-| Offers | `/offers` | Current offers |
-| Bulk Order | `/bulk-order` | B2B enquiry |
-| Brand Store | `/brand/:slug` | Brand-specific products |
-| CMS Page | `/page/:slug` | Dynamic CMS pages |
-| Customer Portal | `/portal` | Customer self-service |
-| Notifications | `/notifications` | User notifications |
-| Links | `/links` | Social links page |
-| 404 | `*` | Not found page |
+| # | Page | Route | Dynamic From |
+|---|------|-------|-------------|
+| 1 | Home | `/` | Settings (hero, stats) + DB (products, banners) |
+| 2 | Products | `/products` | DB (filters, search, pagination) |
+| 3 | Product Detail | `/product/:slug` | DB + Schema.org JSON-LD |
+| 4 | Cart | `/cart` | Zustand store |
+| 5 | Checkout | `/checkout` | Settings (gateways) + DB (addresses, coupons) |
+| 6 | Order Success | `/order-success` | DB |
+| 7 | Account | `/account` | DB (orders, addresses, wishlist) |
+| 8 | Login | `/login` | — |
+| 9 | Register | `/register` | — |
+| 10 | About | `/about` | Settings + DB branches |
+| 11 | Contact | `/contact` | Settings (phone, email, WA) |
+| 12 | Blog | `/blog` | DB |
+| 13 | Blog Post | `/blog/:slug` | DB |
+| 14 | Services | `/services` | DB + Settings (phone, WA) |
+| 15 | Store Locator | `/store-locator` | DB branches (map_url) |
+| 16 | Help Center | `/help` | DB FAQs + Settings |
+| 17 | Deals | `/deals` | DB (discounted products) |
+| 18 | New Arrivals | `/new-arrivals` | DB |
+| 19 | Best Sellers | `/best-sellers` | DB |
+| 20 | Categories | `/categories` | DB |
+| 21 | Compare | `/compare` | Zustand store |
+| 22 | Wishlist | `/wishlist` | Zustand store |
+| 23 | EMI Calculator | `/emi-calculator` | — |
+| 24 | Track Order | `/track-order` | DB |
+| 25 | Repair Track | `/repair-track` | DB (job card status) |
+| 26 | FAQ | `/faq` | DB |
+| 27 | Privacy | `/privacy` | Static |
+| 28 | Terms | `/terms` | Static |
+| 29 | Refund | `/refund` | Static |
+| 30 | Shipping | `/shipping` | Static |
+| 31 | Sitemap | `/sitemap` | Auto-generated |
+| 32 | Offers | `/offers` | DB |
+| 33 | Bulk Order | `/bulk-order` | Settings (phone) |
+| 34 | Brand Store | `/brand/:slug` | DB |
+| 35 | CMS Page | `/page/:slug` | DB |
+| 36 | Customer Portal | `/portal` | DB |
+| 37 | Notifications | `/notifications` | DB |
+| 38 | Links | `/links` | Settings (social) |
+| 39 | 404 | `*` | — |
+| 40 | Order Success | `/order-success` | DB |
 
 ### Admin Pages (50)
 
-| Page | Route | Module |
-|------|-------|--------|
-| Dashboard | `/admin` | — |
-| Analytics | `/admin/analytics` | mod_analytics |
-| Products | `/admin/products` | mod_ecommerce |
-| Orders | `/admin/orders` | mod_ecommerce |
-| Payments | `/admin/payments` | mod_ecommerce |
-| Returns | `/admin/returns` | mod_ecommerce |
-| Customers | `/admin/customers` | mod_ecommerce |
-| Categories | `/admin/categories` | mod_ecommerce |
-| Coupons | `/admin/coupons` | mod_loyalty |
-| Abandoned Carts | `/admin/abandoned-carts` | mod_ecommerce |
-| CRM / Leads | `/admin/erp/crm` | mod_crm |
-| Customer 360 | `/admin/erp/customer360` | mod_crm |
-| Automations | `/admin/automations` | mod_crm |
-| Email Campaigns | `/admin/email-campaigns` | mod_crm |
-| Job Cards | `/admin/erp/job-cards` | mod_erp |
-| Services | `/admin/services` | mod_erp |
-| Live Dashboard | `/admin/erp/live` | mod_erp |
-| Billing | `/admin/erp/billing` | mod_billing |
-| Recurring | `/admin/erp/recurring` | mod_billing |
-| Expenses | `/admin/erp/expenses` | mod_billing |
-| Inventory | `/admin/inventory` | mod_inventory |
-| Branches | `/admin/erp/branches` | mod_inventory |
-| Staff | `/admin/erp/staff` | mod_hr |
-| Attendance | `/admin/erp/attendance` | mod_hr |
-| Payroll | `/admin/erp/payroll` | mod_hr |
-| Shifts | `/admin/erp/shifts` | mod_hr |
-| Leaves | `/admin/erp/leaves` | mod_hr |
-| WhatsApp | `/admin/whatsapp` | mod_whatsapp |
-| Broadcast | `/admin/broadcast` | mod_whatsapp |
-| Evolution API | `/admin/evolution` | mod_whatsapp |
-| WA Templates | `/admin/erp/wa-templates` | mod_whatsapp |
-| Blog | `/admin/blog` | mod_blog |
-| CMS Pages | `/admin/cms` | mod_blog |
-| Media Library | `/admin/media` | mod_blog |
-| Social Media | `/admin/social` | mod_social |
-| Reels | `/admin/reels` | mod_social |
-| Reviews | `/admin/reviews` | mod_reviews |
-| Reports | `/admin/reports` | mod_analytics |
-| ERP Reports | `/admin/erp/reports` | mod_analytics |
-| Report Builder | `/admin/erp/report-builder` | mod_analytics |
-| KPI Alerts | `/admin/erp/kpi-alerts` | mod_analytics |
-| Audit Log | `/admin/erp/audit-log` | mod_analytics |
-| Loyalty | `/admin/erp/loyalty` | mod_loyalty |
-| Users & Roles | `/admin/users` | — |
-| Shipping Rules | `/admin/shipping-rules` | — |
-| Contacts | `/admin/contacts` | — |
-| Homepage Sections | `/admin/homepage-sections` | — |
-| ERP Overview | `/admin/erp` | — |
-| Super Admin | `/admin/super-admin` | superadmin only |
-| All Settings | `/admin/settings` | — |
+| # | Page | Route | Module Key |
+|---|------|-------|-----------|
+| 1 | Dashboard | `/admin` | — |
+| 2 | Analytics | `/admin/analytics` | mod_analytics |
+| 3 | Products | `/admin/products` | mod_ecommerce |
+| 4 | Orders | `/admin/orders` | mod_ecommerce |
+| 5 | Payments | `/admin/payments` | mod_ecommerce |
+| 6 | Returns | `/admin/returns` | mod_ecommerce |
+| 7 | Customers | `/admin/customers` | mod_ecommerce |
+| 8 | Categories | `/admin/categories` | mod_ecommerce |
+| 9 | Coupons | `/admin/coupons` | mod_loyalty |
+| 10 | Abandoned Carts | `/admin/abandoned-carts` | mod_ecommerce |
+| 11 | CRM / Leads | `/admin/erp/crm` | mod_crm |
+| 12 | Customer 360 | `/admin/erp/customer360` | mod_crm |
+| 13 | Automations | `/admin/automations` | mod_crm |
+| 14 | Email Campaigns | `/admin/email-campaigns` | mod_crm |
+| 15 | Job Cards | `/admin/erp/job-cards` | mod_erp |
+| 16 | Services | `/admin/services` | mod_erp |
+| 17 | Live Dashboard | `/admin/erp/live` | mod_erp |
+| 18 | Billing | `/admin/erp/billing` | mod_billing |
+| 19 | Recurring | `/admin/erp/recurring` | mod_billing |
+| 20 | Expenses | `/admin/erp/expenses` | mod_billing |
+| 21 | Inventory | `/admin/inventory` | mod_inventory |
+| 22 | Branches | `/admin/erp/branches` | mod_inventory |
+| 23 | Staff | `/admin/erp/staff` | mod_hr |
+| 24 | Attendance | `/admin/erp/attendance` | mod_hr |
+| 25 | Payroll | `/admin/erp/payroll` | mod_hr |
+| 26 | Shifts | `/admin/erp/shifts` | mod_hr |
+| 27 | Leaves | `/admin/erp/leaves` | mod_hr |
+| 28 | WhatsApp | `/admin/whatsapp` | mod_whatsapp |
+| 29 | Broadcast | `/admin/broadcast` | mod_whatsapp |
+| 30 | Evolution API | `/admin/evolution` | mod_whatsapp |
+| 31 | WA Templates | `/admin/erp/wa-templates` | mod_whatsapp |
+| 32 | Blog | `/admin/blog` | mod_blog |
+| 33 | CMS Pages | `/admin/cms` | mod_blog |
+| 34 | Media Library | `/admin/media` | mod_blog |
+| 35 | Social Media | `/admin/social` | mod_social |
+| 36 | Reels | `/admin/reels` | mod_social |
+| 37 | Reviews | `/admin/reviews` | mod_reviews |
+| 38 | Reports | `/admin/reports` | mod_analytics |
+| 39 | ERP Reports | `/admin/erp/reports` | mod_analytics |
+| 40 | Report Builder | `/admin/erp/report-builder` | mod_analytics |
+| 41 | KPI Alerts | `/admin/erp/kpi-alerts` | mod_analytics |
+| 42 | Audit Log | `/admin/erp/audit-log` | mod_analytics |
+| 43 | Loyalty | `/admin/erp/loyalty` | mod_loyalty |
+| 44 | Users & Roles | `/admin/users` | — |
+| 45 | Shipping Rules | `/admin/shipping-rules` | — |
+| 46 | Contacts | `/admin/contacts` | — |
+| 47 | Homepage Sections | `/admin/homepage-sections` | — |
+| 48 | ERP Overview | `/admin/erp` | — |
+| 49 | Super Admin | `/admin/super-admin` | superadmin only |
+| 50 | All Settings | `/admin/settings` | — |
 
 ### Settings Pages (12)
 
-| Page | Route | Controls |
-|------|-------|----------|
-| Site & General | `/admin/settings/site` | Store info, contact, hours, branding, SEO, URLs, social, footer, features |
-| Appearance | `/admin/settings/appearance` | Theme presets, colors, fonts, dark mode, header, announcement, custom CSS/JS |
-| Homepage | `/admin/settings/homepage` | Hero text, CTA buttons, section toggles, counts |
-| Menus | `/admin/settings/menus` | Header/footer/mobile nav items CRUD + reorder |
-| Ecommerce | `/admin/settings/ecommerce` | Payment gateways, shipping zones, order statuses, tax, returns, cart |
-| ERP & Branches | `/admin/settings/erp` | SLA, billing, inventory, branch CRUD, staff, finance |
-| CRM | `/admin/settings/crm` | Pipeline stages, sources, scoring, automations, templates, notifications |
-| CMS | `/admin/settings/cms` | Blog, banners, popups, homepage sections, testimonials, SEO, media |
-| Notifications | `/admin/settings/notifications` | SMTP, WhatsApp API, SMS, email events, push — with test buttons |
-| API Keys | `/admin/settings/api-keys` | AI, Razorpay, PhonePe, Paytm, Cashfree, Evolution, SMTP |
-| Security | `/admin/settings/security` | JWT, 2FA, rate limits, CORS, sessions, maintenance, system |
-| About Page | `/admin/settings/about-page` | Hero, stats, values, founder, team, branches, SEO |
-
----
-
-## API Endpoints (482 total)
-
-### Auth (`/api/auth`)
-- POST `/register` — signup
-- POST `/login` — login (returns JWT)
-- POST `/forgot-password` — send reset email
-- POST `/reset-password` — reset with token
-- GET `/me` — current user profile
-
-### Products (`/api/products`)
-- GET `/` — list (filters, pagination, search)
-- GET `/:id` — single product
-- POST `/` — create (admin)
-- PUT `/:id` — update (admin)
-- DELETE `/:id` — delete (admin)
-- GET `/slug/:slug` — by slug
-- POST `/:id/variants` — add variant
-- GET `/brands` — all brands
-- GET `/search` — autocomplete search
-
-### Orders (`/api/orders`)
-- POST `/` — create order
-- GET `/` — list (admin)
-- GET `/my` — customer's orders
-- GET `/:id` — single order
-- PUT `/:id/status` — update status (triggers WhatsApp)
-- GET `/:id/invoice-pdf` — download PDF
-- POST `/abandoned-cart` — save abandoned cart
-- GET `/abandoned-carts` — admin list
-- POST `/abandoned-carts/:id/recover` — send recovery
-
-### Payments (`/api/payment`)
-- GET `/methods` — enabled gateways (from settings)
-- POST `/razorpay/create-order` — Razorpay order
-- POST `/razorpay/verify` — verify payment
-- POST `/phonepe/initiate` — PhonePe payment
-- POST `/phonepe/callback` — webhook
-- POST `/paytm/initiate` — Paytm payment
-- POST `/paytm/callback` — webhook
-- POST `/cashfree/create-order` — Cashfree
-- POST `/cashfree/verify` — verify
-
-### CRM (`/api/crm-tools`)
-- GET `/leads` — list leads
-- POST `/leads` — create lead
-- PUT `/leads/:id` — update lead
-- DELETE `/leads/:id` — delete
-- PUT `/leads/:id/stage` — move stage
-- POST `/leads/:id/activity` — add activity
-- GET `/automations` — list rules
-- POST `/automations` — create rule
-- PUT `/automations/:id` — toggle/edit
-- GET `/pipeline-stats` — pipeline analytics
-- POST `/leads/import` — CSV import
-
-### Job Cards (`/api/erp/job-cards`)
-- GET `/` — list
-- POST `/` — create
-- PUT `/:id` — update
-- PUT `/:id/status` — change status
-- POST `/:id/parts` — add parts
-- POST `/:id/photos` — upload photos
-- PUT `/:id/timer` — start/stop timer
-- GET `/:id/timeline` — activity log
-
-### Billing (`/api/erp/billing`)
-- GET `/invoices` — list
-- POST `/invoices` — create GST invoice
-- GET `/invoices/:id` — single
-- POST `/credit-notes` — create credit note
-- GET `/quotations` — list quotations
-- POST `/quotations` — create
-
-### Staff (`/api/erp/staff`)
-- GET `/` — list staff
-- POST `/` — add staff
-- POST `/attendance` — mark attendance
-- GET `/attendance` — attendance report
-- POST `/leaves` — apply leave
-- GET `/payroll` — payroll data
-- POST `/payroll/generate` — generate payslips
-
-### Inventory (`/api/inventory`)
-- GET `/` — stock list
-- POST `/stock-entry` — add stock
-- POST `/transfer` — branch transfer
-- GET `/suppliers` — supplier list
-- POST `/purchase-orders` — create PO
-- GET `/movements` — stock movements log
-
-### WhatsApp (`/api/whatsapp`)
-- GET `/messages/:phone` — chat history
-- POST `/send` — send message
-- POST `/broadcast` — bulk send
-- GET `/templates` — message templates
-- POST `/templates` — create template
-
-### System
-- GET `/api/health` — server health
-- GET `/api/app-settings` — all settings (public)
-- PUT `/api/app-settings` — save settings (admin)
-- GET `/api/menus/:location` — nav items
-- GET `/sitemap.xml` — XML sitemap
-- GET `/robots.txt` — robots file
-- GET `/manifest.json` — PWA manifest
-- GET `/api/seo/schema/product/:slug` — product JSON-LD
-- GET `/api/seo/schema/organization` — business JSON-LD
-- POST `/api/notifications/test-email` — test SMTP
-- POST `/api/notifications/test-whatsapp` — test WA
+| # | Page | Route | Sections |
+|---|------|-------|----------|
+| 1 | Site & General | `/admin/settings/site` | Store info, contact, hours, branding/SEO, URLs, social (8), E-Invoice, footer, feature toggles (8) |
+| 2 | Appearance | `/admin/settings/appearance` | 4 theme presets, color pickers, fonts, border radius, dark mode, header/announcement, custom CSS/JS/head |
+| 3 | Homepage | `/admin/settings/homepage` | Hero (title, subtitle, CTA, image), 10 section toggles, section counts |
+| 4 | Menus | `/admin/settings/menus` | Header/footer/mobile nav CRUD + reorder + visibility |
+| 5 | Ecommerce | `/admin/settings/ecommerce` | 6 payment gateways (toggle cards), shipping zones CRUD, order statuses, tax/GST, returns, cart |
+| 6 | ERP & Branches | `/admin/settings/erp` | Job card SLA, billing/GST, inventory, branch CRUD (edit/delete/map), staff/HR, finance/bank |
+| 7 | CRM | `/admin/settings/crm` | Pipeline stages (chips), sources (grid+presets), scoring (sliders), assignment, hours, duplicates, notifications, automations, WA templates (bubble preview) |
+| 8 | CMS | `/admin/settings/cms` | Blog (sliders), banners, popups, homepage sections (8 toggles), testimonials, SEO/sitemap, redirects, media/uploads |
+| 9 | Notifications | `/admin/settings/notifications` | Status overview (4 cards), SMTP (+ test), WhatsApp API (+ test), SMS, 8 email event toggles, push/VAPID |
+| 10 | API Keys | `/admin/settings/api-keys` | 7 services: AI/OpenRouter, Razorpay, PhonePe, Paytm, Cashfree, Evolution, SMTP — eye/copy/test buttons |
+| 11 | Security | `/admin/settings/security` | Security score bar, JWT (generate/copy), 2FA, rate limits, CORS, IP whitelist, sessions, maintenance, system |
+| 12 | About Page | `/admin/settings/about-page` | Hero, stats (editable counters), 4 value propositions, founder/team, branches (from DB), SEO |
 
 ---
 
 ## Role-Based Access Control
 
-| Role | Level | Access |
-|------|:-----:|--------|
-| superadmin | 100 | Everything + Super Admin panel + module control |
-| admin | 90 | Full admin panel (enabled modules only) |
-| owner | 90 | Same as admin |
-| manager | 70 | Most admin features |
-| accountant | 60 | Billing, expenses, reports |
-| sales | 50 | CRM, orders, customers |
-| technician | 40 | Job cards, inventory |
-| staff | 30 | Basic access |
-| customer | — | Public site + account |
+```
+superadmin (MLHK Infotech) — Level 100
+  └── Full access + Super Admin panel + module on/off
+admin (Shop Owner) — Level 90
+  └── Full admin (enabled modules only)
+owner — Level 90
+  └── Same as admin
+manager — Level 70
+  └── Most features except settings/users
+accountant — Level 60
+  └── Billing, expenses, reports
+sales — Level 50
+  └── CRM, orders, customers
+technician — Level 40
+  └── Job cards, inventory
+staff — Level 30
+  └── Basic access (assigned tasks only)
+customer — Public
+  └── Shop, cart, account, orders
+```
 
 ---
 
-## Module System (Super Admin)
+## Module System
 
-16 modules controllable from `/admin/super-admin`:
+16 modules controlled from Super Admin (`/admin/super-admin`):
 
-| Module Key | Controls |
-|-----------|----------|
-| mod_ecommerce | Products, Orders, Payments, Cart |
-| mod_crm | Leads, Pipeline, Automations, Campaigns |
-| mod_erp | Job Cards, Services, Live Dashboard |
-| mod_billing | Invoices, Expenses, Recurring |
-| mod_inventory | Stock, Suppliers, POs, Branches |
-| mod_hr | Staff, Attendance, Payroll, Leaves |
-| mod_blog | Blog, CMS Pages, Media |
-| mod_whatsapp | Chat, Broadcast, Templates |
-| mod_email | Email Campaigns |
-| mod_social | Social Media, Reels |
-| mod_analytics | Analytics, Reports, KPI |
-| mod_loyalty | Coupons, Wallet, Referral |
-| mod_reviews | Product Reviews |
-| mod_multi_branch | Multi-branch features |
-| mod_ai_agent | AI Chatbot |
-| mod_custom_code | Custom CSS/JS injection |
+| Module | Key | Controls | Disable Effect |
+|--------|-----|----------|---------------|
+| Ecommerce | mod_ecommerce | Products, Orders, Payments, Cart | Sidebar hidden + route blocked |
+| CRM | mod_crm | Leads, Pipeline, Automations | Hidden + blocked |
+| ERP | mod_erp | Job Cards, Services, Live | Hidden + blocked |
+| Billing | mod_billing | Invoices, Expenses, Recurring | Hidden + blocked |
+| Inventory | mod_inventory | Stock, Suppliers, POs, Branches | Hidden + blocked |
+| HR | mod_hr | Staff, Attendance, Payroll, Leaves | Hidden + blocked |
+| Blog/CMS | mod_blog | Blog, Pages, Media | Hidden + blocked |
+| WhatsApp | mod_whatsapp | Chat, Broadcast, Templates | Hidden + blocked |
+| Email | mod_email | Email Campaigns | Hidden + blocked |
+| Social | mod_social | Social Media, Reels | Hidden + blocked |
+| Analytics | mod_analytics | Reports, KPI, Audit Log | Hidden + blocked |
+| Loyalty | mod_loyalty | Coupons, Wallet, Referral | Hidden + blocked |
+| Reviews | mod_reviews | Product Reviews | Hidden + blocked |
+| Multi-Branch | mod_multi_branch | Branch features | Hidden + blocked |
+| AI Agent | mod_ai_agent | AI Chatbot | Hidden + blocked |
+| Custom Code | mod_custom_code | CSS/JS injection | Hidden + blocked |
 
-Disabled module → hidden from sidebar + blocked at route level.
+**Superadmin always bypasses module restrictions.**
 
 ---
 
-## Database (89 tables)
+## Dynamic System (Zero Hardcoded Data)
 
-Key tables: users, products, orders, order_items, categories, reviews, coupons, leads, crm_automations, job_cards, invoices, expenses, staff, attendance, leaves, payroll, branches, branch_stock, inventory_movements, blog_posts, banners, faqs, popups, menu_items, app_settings, wallet, wallet_transactions, abandoned_carts, whatsapp_templates, services, addresses, notifications.
+Everything reads from database. Admin changes → site updates instantly:
+
+| Setting | Affects |
+|---------|---------|
+| store_name | Header, Footer, SEO, Schema, Manifest, About |
+| store_phone / whatsapp_number | All pages (Services, Help, Contact, Widget) |
+| color_primary | CSS variables on :root (live) |
+| custom_css / custom_js | Injected in head/body |
+| announcement_text | Header announcement bar |
+| hero_title / hero_subtitle | Homepage hero section |
+| show_announcement | Header bar visibility |
+| dark_mode_toggle | Sun/Moon button in header |
+| payment_razorpay | Checkout gateway visibility |
+| rate_limit_per_min | API rate limiter |
+| cors_origins | CORS whitelist |
+| maintenance_mode | 503 for all public (admin still works) |
+| robots_custom | robots.txt rules |
+| active_theme | CSS variables (colors, fonts, radius) |
+
+---
+
+## SEO & Performance
+
+| Feature | Implementation |
+|---------|---------------|
+| Prerender | 17 static HTML pages at build time |
+| Code Splitting | 94 JS chunks (React.lazy + Suspense) |
+| Sitemap | Auto-generated `/sitemap.xml` (products + blogs + categories) |
+| Robots.txt | Dynamic `/robots.txt` (from settings) |
+| Schema.org | Product JSON-LD + Organization LocalBusiness |
+| Meta Tags | Dynamic per page (title, description, OG) |
+| PWA | `/manifest.json` (dynamic from settings) |
+| Compression | gzip on all responses |
+| Lazy Loading | Images + admin pages |
+| Settings Cache | 30s TTL (no DB hit per request) |
+| Initial Bundle | 737KB (was 2MB+) |
+
+---
+
+## Security
+
+| Feature | Status |
+|---------|:------:|
+| Helmet (security headers) | ✅ |
+| CORS (dynamic from settings) | ✅ |
+| Rate limiting (dynamic) | ✅ |
+| JWT auth | ✅ |
+| RBAC (8 levels) | ✅ |
+| Module access control | ✅ |
+| Parameterized SQL queries | ✅ |
+| Password hashing (bcrypt) | ✅ |
+| Graceful shutdown | ✅ |
+| Maintenance mode | ✅ |
+| 2FA ready (OTP) | ✅ |
+| Error handling (global) | ✅ |
+| Input validation (per-route) | ✅ |
 
 ---
 
 ## Deployment
 
 ```bash
-# Production server
+# Production
 cd /var/www/ailaptopwala
 git pull origin main
-npm run build          # Vite build + prerender 17 pages
+npm run build              # Vite build + prerender 17 pages
 cd backend && npm install
 pm2 restart ailaptopwala-backend --update-env
+
+# Environment
+PORT=5000
+DATABASE_URL=postgresql://...
+JWT_SECRET=...
+FRONTEND_URL=https://ailaptopwala.com
 ```
 
-**Server:** Nginx reverse proxy → Express (port 5000)
-**SSL:** Let's Encrypt (auto-renew)
-**Process:** PM2 (auto-restart, logs)
-**Domain:** ailaptopwala.com
+**Server:** Nginx → Express:5000  
+**SSL:** Let's Encrypt (certbot auto-renew)  
+**Process:** PM2 (cluster mode, auto-restart)  
+**Domain:** ailaptopwala.com  
 
 ---
 
-## Performance
+## Notifications (Auto-triggered)
 
-- Code splitting: 94 JS chunks (lazy loaded)
-- Prerender: 17 static HTML pages for SEO
-- Compression: gzip on all responses
-- Settings cache: 30s TTL (no DB hit per request)
-- Images: lazy loading enabled
-- Bundle: 737KB initial (was 2MB+)
+| Event | Channel | Trigger |
+|-------|---------|---------|
+| Order placed | WhatsApp | Customer places order |
+| Order shipped | WhatsApp | Admin updates status to 'shipped' |
+| Order delivered | WhatsApp | Admin updates status to 'delivered' |
+| New lead | WhatsApp | Lead created (to assigned staff) |
+| SLA breach | System | Job card exceeds SLA hours |
+| Low stock | System | Product stock below threshold |
+| Abandoned cart | Email/WA | Cart inactive for X hours |
 
 ---
 
-*Generated: May 2026 | MLHK Infotech*
+*Documentation auto-generated | MLHK Infotech | v2.1.0 | May 2026*
