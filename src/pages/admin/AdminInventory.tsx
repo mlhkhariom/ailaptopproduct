@@ -131,15 +131,15 @@ export default function AdminInventory() {
     setPurchaseOrders(Array.isArray(po) ? po : []);
     setMovements(Array.isArray(mov) ? mov : []);
     setBranches(Array.isArray(br) ? br : []);
-    fetch('/api/erp/stock-aging', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setAgingData(d)).catch(() => {});
-    fetch('/api/erp/branches', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchList(Array.isArray(d) ? d : [])).catch(() => {});
-    fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : [])).catch(() => {});
-    fetch('/api/erp/branch-stock/summary', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStockSummary(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch('/api/erp/stock-aging', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setAgingData(d)).catch(e => { console.error(e); toast.error("Operation failed"); });
+    fetch('/api/erp/branches', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchList(Array.isArray(d) ? d : [])).catch(e => { console.error(e); toast.error("Operation failed"); });
+    fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : [])).catch(e => { console.error(e); toast.error("Operation failed"); });
+    fetch('/api/erp/branch-stock/summary', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStockSummary(Array.isArray(d) ? d : [])).catch(e => { console.error(e); toast.error("Operation failed"); });
     // Load serials
     const sn = await fetch('/api/erp/serials', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json());
     setSerials(Array.isArray(sn) ? sn : []);
     // Load inventory categories
-    fetch('/api/categories', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(cats => { if (Array.isArray(cats) && cats.length > 0) setInventoryCategories(cats.map((c: any) => c.name)); }).catch(() => {});
+    fetch('/api/categories', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(cats => { if (Array.isArray(cats) && cats.length > 0) setInventoryCategories(cats.map((c: any) => c.name)); }).catch(e => { console.error(e); toast.error("Operation failed"); });
     setLoading(false);
   };
 
@@ -752,7 +752,7 @@ export default function AdminInventory() {
                     const res = await fetch('/api/erp/branch-stock/transfer', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` }, body: JSON.stringify(transferForm) }).then(r => r.json());
                     if (res.error) { toast.error(res.error); return; }
                     setTransferOpen(false);
-                    fetch('/api/erp/branches', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchList(Array.isArray(d) ? d : [])).catch(() => {});
+                    fetch('/api/erp/branches', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchList(Array.isArray(d) ? d : [])).catch(e => { console.error(e); toast.error("Operation failed"); });
     fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : []));
                     fetch('/api/erp/branch-stock/summary', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStockSummary(Array.isArray(d) ? d : []));
                   }}>Transfer</Button>
@@ -970,7 +970,7 @@ export default function AdminInventory() {
                 setProductDialog(false);
                 loadAll();
                 api.getProducts().then((p: any) => setProducts(Array.isArray(p) ? p : p?.products || []));
-                fetch('/api/erp/branches', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchList(Array.isArray(d) ? d : [])).catch(() => {});
+                fetch('/api/erp/branches', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchList(Array.isArray(d) ? d : [])).catch(e => { console.error(e); toast.error("Operation failed"); });
     fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : []));
                 fetch('/api/erp/branch-stock/summary', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStockSummary(Array.isArray(d) ? d : []));
               } else { toast.error('Failed to create product'); }
@@ -1007,7 +1007,7 @@ export default function AdminInventory() {
                 }
               }
               setAssignBranchOpen(false);
-              fetch('/api/erp/branches', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchList(Array.isArray(d) ? d : [])).catch(() => {});
+              fetch('/api/erp/branches', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchList(Array.isArray(d) ? d : [])).catch(e => { console.error(e); toast.error("Operation failed"); });
     fetch('/api/erp/branch-stock', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStock(Array.isArray(d) ? d : []));
               fetch('/api/erp/branch-stock/summary', { headers: { Authorization: `Bearer ${localStorage.getItem('ailaptopwala_token')}` } }).then(r => r.json()).then(d => setBranchStockSummary(Array.isArray(d) ? d : []));
             }}>Save Branch Stock</Button>

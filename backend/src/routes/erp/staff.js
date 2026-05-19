@@ -35,9 +35,9 @@ router.post('/staff', authMiddleware, canAccess('staff'), async (req, res) => {
 });
 
 router.put('/staff/:id', authMiddleware, canAccess('staff'), async (req, res) => {
-  const { name, role, phone, email, salary, joining_date, address, is_active, branch_id } = req.body;
-  await db.prepare('UPDATE staff SET name=?,role=?,phone=?,email=?,salary=?,joining_date=?,address=?,is_active=?,branch_id=? WHERE id=?')
-    .run(name, role, phone, email, salary, joining_date, address, is_active ? 1 : 0, branch_id || null, req.params.id);
+  const { name, role, phone, email, salary, joining_date, address, is_active, branch_id, bank_account, bank_ifsc, bank_name } = req.body;
+  await db.prepare('UPDATE staff SET name=?,role=?,phone=?,email=?,salary=?,joining_date=?,address=?,is_active=?,branch_id=?,bank_account=?,bank_ifsc=?,bank_name=? WHERE id=?')
+    .run(name, role, phone, email, salary, joining_date, address, is_active ? 1 : 0, branch_id || null, bank_account || null, bank_ifsc || null, bank_name || null, req.params.id);
   res.json({ message: 'Updated' });
 });
 

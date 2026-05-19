@@ -67,11 +67,11 @@ router.post('/leads', authMiddleware, adminOnly, async (req, res) => {
   }
 
   const id = uuid();
-  await db.prepare(`INSERT INTO leads (id,name,phone,email,source,interest,budget,deal_value,status,priority,assigned_to,notes,next_followup,expected_close,tags,score)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+  await db.prepare(`INSERT INTO leads (id,name,phone,email,source,interest,budget,deal_value,status,priority,assigned_to,notes,next_followup,expected_close,tags,score,branch_id)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
     .run(id, name, phone, email, source || 'walk-in', interest, budget || 0, deal_value || budget || 0,
       status || 'new', priority || 'normal', assigned_to, notes, next_followup, expected_close,
-      JSON.stringify(tags || []), score || 0);
+      JSON.stringify(tags || []), score || 0, req.body.branch_id || null);
   // Auto-assign based on rules
   try {
     const rule = await db.prepare('SELECT * FROM lead_assignment_rules WHERE source=? AND is_active=1').get(source);

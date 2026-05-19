@@ -44,7 +44,7 @@ router.get('/job-cards', authMiddleware, adminOnly, async (req, res) => {
 router.post('/job-cards', authMiddleware, adminOnly, async (req, res) => {
   const { customer_name, customer_phone, customer_email, service_id, service_name,
     device_brand, device_model, issue_description, priority, technician, diagnosis,
-    parts_used, labour_charge, parts_charge, preferred_date } = req.body;
+    parts_used, labour_charge, parts_charge, preferred_date, sla_hours, branch_id } = req.body;
   if (!customer_name || !customer_phone) return res.status(400).json({ error: 'name and phone required' });
   const id = uuid();
   // Auto-format: JC-YYYY-NNNN (sequential)
@@ -71,9 +71,10 @@ router.post('/job-cards', authMiddleware, adminOnly, async (req, res) => {
   await db.prepare('INSERT INTO notifications (id,type,title,message,link) VALUES (?,?,?,?,?)')
     .run(uuid(), 'service', 'New Job Card', `${customer_name} - ${device_brand} ${device_model}`, '/admin/erp/job-cards');
   // Auto-set SLA deadline (priority: urgent=24h, high=48h, normal=72h, low=96h)
-  const slaHours = { urgent: 24, high: 48, normal: 72, low: 96 };
-  const deadline = new Date(Date.now() + (slaHours[priority] || 72) * 3600000).toISOString();
-  try { await db.prepare('UPDATE job_cards SET sla_deadline=? WHERE id=?').run(deadline, id); } catch {}
+  const slaDefaults = { urgent: 24, high: 48, normal: 72, low: 96 };
+  const slaH = sla_hours || slaDefaults[priority] || 72;
+  const deadline = new Date(Date.now() + slaH * 3600000).toISOString();
+  try { await db.prepare('UPDATE service_bookings SET sla_deadline=?, sla_hours=?, branch_id=? WHERE id=?').run(deadline, slaH, branch_id || null, id); } catch {}
   // Also try on service_bookings
   try { await db.prepare('UPDATE service_bookings SET sla_deadline=? WHERE id=?').run(deadline, id).catch(() => {}); } catch {}
   res.status(201).json({ id, booking_number, sla_deadline: deadline });
