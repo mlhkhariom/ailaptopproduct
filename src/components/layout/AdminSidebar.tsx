@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { useNotificationStore } from "@/store/notificationStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useAppSettings } from "@/contexts/SiteSettingsContext";
 
 const erpGroups = [
   {
@@ -122,6 +123,8 @@ export function AdminSidebar() {
   const unreadCount = useNotificationStore((s) => s.unreadCount());
   const { user } = useAuth();
   const { can } = usePermissions();
+  const appSettings = useAppSettings() as any;
+  const mod = (key: string) => (appSettings?.[key] !== '0'); // module enabled check
   const [erpOpen, setErpOpen] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     "Repair & Service": true, "CRM & Sales": true, "Finance": false, "Inventory": false, "HR & Staff": false, settings: false,
@@ -191,7 +194,7 @@ export function AdminSidebar() {
         {/* ── Main (Ecommerce) ── */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "Ecommerce"}</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenu(mainMenu)}</SidebarGroupContent>
+          <SidebarGroupContent>{renderMenu(mainMenu.filter(i => { if (i.url.includes('coupons')) return mod('mod_loyalty'); return mod('mod_ecommerce'); }))}</SidebarGroupContent>
         </SidebarGroup>
 
         {!collapsed && <Separator className="mx-3 bg-sidebar-border/50" />}
@@ -215,7 +218,14 @@ export function AdminSidebar() {
 
           {erpOpen && (
             <SidebarGroupContent>
-              {erpGroups.map(group => (
+              {erpGroups.filter(group => {
+                if (group.label === 'Repair & Service') return mod('mod_erp');
+                if (group.label === 'CRM & Sales') return mod('mod_crm');
+                if (group.label === 'Finance') return mod('mod_billing');
+                if (group.label === 'Inventory') return mod('mod_inventory');
+                if (group.label === 'HR & Staff') return mod('mod_hr');
+                return true;
+              }).map(group => (
                 <div key={group.label} className="mb-1">
                   {!collapsed && (
                     <button
@@ -243,7 +253,14 @@ export function AdminSidebar() {
         {/* ── Tools ── */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "Tools & Content"}</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenu(toolsMenu)}</SidebarGroupContent>
+          <SidebarGroupContent>{renderMenu(toolsMenu.filter(i => {
+            if (i.url.includes('whatsapp') || i.url.includes('broadcast')) return mod('mod_whatsapp');
+            if (i.url.includes('social')) return mod('mod_social');
+            if (i.url.includes('blog') || i.url.includes('cms') || i.url.includes('media')) return mod('mod_blog');
+            if (i.url.includes('reviews')) return mod('mod_reviews');
+            if (i.url.includes('reels')) return mod('mod_social');
+            return true;
+          }))}</SidebarGroupContent>
         </SidebarGroup>
 
         {!collapsed && <Separator className="mx-3 bg-sidebar-border/50" />}
@@ -251,7 +268,10 @@ export function AdminSidebar() {
         {/* ── System (always visible) ── */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider px-3">{!collapsed && "System"}</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenu(systemMenu)}</SidebarGroupContent>
+          <SidebarGroupContent>{renderMenu(systemMenu.filter(i => {
+            if (i.url.includes('analytics') || i.url.includes('reports') || i.url.includes('erp/reports')) return mod('mod_analytics');
+            return true;
+          }))}</SidebarGroupContent>
         </SidebarGroup>
 
         {/* ── Settings (collapsible) ── */}
