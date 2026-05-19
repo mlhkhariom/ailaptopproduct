@@ -77,6 +77,7 @@ import AdminEvolution from "./pages/admin/AdminEvolution";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminCategories from "./pages/admin/AdminCategories";
 import AdminSettings from "./pages/admin/AdminSettings";
+import SuperAdminPanel from "./pages/admin/SuperAdmin";
 import SiteSettingsPage from "./pages/admin/settings/SiteSettings";
 import EcommerceSettingsPage from "./pages/admin/settings/EcommerceSettings";
 import ERPSettingsPage from "./pages/admin/settings/ERPSettings";
@@ -200,6 +201,7 @@ const App = () => (
             <Route path="/admin/evolution" element={<AdminRoute><AdminEvolution /></AdminRoute>} />
             <Route path="/admin/customers" element={<AdminRoute><AdminCustomers /></AdminRoute>} />
             <Route path="/admin/categories" element={<AdminRoute><AdminCategories /></AdminRoute>} />
+            <Route path="/admin/super-admin" element={<AdminRoute><SuperAdminPanel /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
             <Route path="/admin/settings/site" element={<AdminRoute><SiteSettingsPage /></AdminRoute>} />
             <Route path="/admin/settings/ecommerce" element={<AdminRoute><EcommerceSettingsPage /></AdminRoute>} />

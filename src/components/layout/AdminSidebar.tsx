@@ -261,6 +261,14 @@ export function AdminSidebar() {
           </SidebarGroupLabel>
           {(collapsed || openGroups.settings) && <SidebarGroupContent>{renderMenu(settingsMenu)}</SidebarGroupContent>}
         </SidebarGroup>
+
+        {/* Super Admin (only for superadmin role) */}
+        {(user as any)?.role === 'superadmin' && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-red-500/70 text-[10px] uppercase tracking-wider px-3">{!collapsed && "MLHK Infotech"}</SidebarGroupLabel>
+            <SidebarGroupContent>{renderMenu([{ title: "Super Admin", url: "/admin/super-admin", icon: Shield, badge: "" }])}</SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-3">
