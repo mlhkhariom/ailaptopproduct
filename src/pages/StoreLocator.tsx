@@ -11,7 +11,7 @@ export default function StoreLocator() {
   const [branches, setBranches] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('/api/erp/branches').then(r => r.json()).then(d => {
+    fetch('/api/erp/branches/public').then(r => r.json()).then(d => {
       if (Array.isArray(d)) setBranches(d.filter((b: any) => b.is_active));
     }).catch(() => {});
   }, []);

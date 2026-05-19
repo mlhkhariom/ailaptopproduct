@@ -25,7 +25,7 @@ const About = () => {
   const [branches, setBranches] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('/api/erp/branches').then(r => r.json()).then(d => { if (Array.isArray(d)) setBranches(d.filter((b: any) => b.is_active)); }).catch(() => {});
+    fetch('/api/erp/branches/public').then(r => r.json()).then(d => { if (Array.isArray(d)) setBranches(d.filter((b: any) => b.is_active)); }).catch(() => {});
   }, []);
 
   const storeName = settings.store_name || 'AI Laptop Wala';
