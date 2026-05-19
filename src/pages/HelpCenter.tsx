@@ -3,6 +3,7 @@ import { HelpCircle, MessageCircle, Phone, Mail, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import CustomerLayout from "@/components/layout/CustomerLayout";
 import SEOHead from "@/components/common/SEOHead";
@@ -32,6 +33,11 @@ const HELP_TOPICS = [
 ];
 
 export default function HelpCenter() {
+  const settings = useSiteSettings() as any;
+  const storeName = settings.store_name || 'AI Laptop Wala';
+  const whatsapp = settings.whatsapp_number || '919893496163';
+  const phone = settings.store_phone || '{phone}';
+  const email = settings.store_email || 'contact@ailaptopwala.com';
   const [search, setSearch] = useState('');
   const [dbFaqs, setDbFaqs] = useState<any[]>([]);
 
@@ -48,7 +54,7 @@ export default function HelpCenter() {
 
   return (
     <CustomerLayout>
-      <SEOHead title="Help Center — AI Laptop Wala" description="Get help with orders, payments, returns, and more. Contact support or find answers to common questions." canonical="/help" />
+      <SEOHead title={`Help Center — ${storeName}`} description="Get help with orders, payments, returns, and more. Contact support or find answers to common questions." canonical="/help" />
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-black flex items-center justify-center gap-2"><HelpCircle className="h-8 w-8" /> Help <span className="gradient-text">Center</span></h1>
@@ -63,13 +69,13 @@ export default function HelpCenter() {
 
         {/* Contact Options */}
         <div className="grid grid-cols-3 gap-3 mb-8">
-          <a href="https://wa.me/919893496163?text=Hi, I need help" target="_blank" rel="noreferrer">
+          <a href={`https://wa.me/${whatsapp}?text=Hi, I need help`} target="_blank" rel="noreferrer">
             <Card className="hover:border-green-500 transition-colors cursor-pointer"><CardContent className="p-4 text-center"><MessageCircle className="h-6 w-6 text-green-600 mx-auto mb-2" /><p className="text-xs font-medium">WhatsApp</p><p className="text-[10px] text-muted-foreground">Instant reply</p></CardContent></Card>
           </a>
-          <a href="tel:+919893496163">
-            <Card className="hover:border-blue-500 transition-colors cursor-pointer"><CardContent className="p-4 text-center"><Phone className="h-6 w-6 text-blue-600 mx-auto mb-2" /><p className="text-xs font-medium">Call Us</p><p className="text-[10px] text-muted-foreground">+91 98934 96163</p></CardContent></Card>
+          <a href={`tel:${phone}`}>
+            <Card className="hover:border-blue-500 transition-colors cursor-pointer"><CardContent className="p-4 text-center"><Phone className="h-6 w-6 text-blue-600 mx-auto mb-2" /><p className="text-xs font-medium">Call Us</p><p className="text-[10px] text-muted-foreground">{phone}</p></CardContent></Card>
           </a>
-          <a href="mailto:ailaptopwala@gmail.com">
+          <a href={`mailto:${email}`}>
             <Card className="hover:border-orange-500 transition-colors cursor-pointer"><CardContent className="p-4 text-center"><Mail className="h-6 w-6 text-orange-600 mx-auto mb-2" /><p className="text-xs font-medium">Email</p><p className="text-[10px] text-muted-foreground">24hr response</p></CardContent></Card>
           </a>
         </div>
