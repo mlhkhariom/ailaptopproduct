@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Phone, ShoppingCart, Heart, User, LogIn, Bell } from "lucide-react";
+import { Menu, X, Phone, ShoppingCart, Heart, User, LogIn, Bell, Sun, Moon } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
@@ -13,7 +13,7 @@ import GlobalSearch from "@/components/ecommerce/GlobalSearch";
 import { FreeShippingBanner } from "@/components/common/SiteFeatures";
 import { DarkModeToggle } from "@/components/common/SiteWidgets";
 
-const navLinks = [
+const DEFAULT_NAV = [
   { label: "Home", to: "/" },
   { label: "Products", to: "/products" },
   { label: "Offers", to: "/offers" },
@@ -26,6 +26,7 @@ const navLinks = [
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [navLinks, setNavLinks] = useState(DEFAULT_NAV);
   const location = useLocation();
   const navigate = useNavigate();
   const cartCount = useCartStore((s) => s.getItemCount());
@@ -33,6 +34,12 @@ const Header = () => {
   const { user, logout, isAdmin } = useAuth();
   const { sticky_header, wishlist_enabled, store_phone, store_name } = useSiteSettings();
   const appS = useAppSettings() as any;
+
+  useEffect(() => {
+    fetch('/api/menus/header').then(r => r.json()).then(d => {
+      if (Array.isArray(d) && d.length > 0) setNavLinks(d.filter((i: any) => i.is_visible).map((i: any) => ({ label: i.label, to: i.url })));
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -80,6 +87,14 @@ const Header = () => {
             <div className="hidden md:block">
               <GlobalSearch className="w-56" />
             </div>
+
+            {/* Dark mode toggle */}
+            {appS?.dark_mode_toggle !== '0' && (
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => { document.documentElement.classList.toggle('dark'); }}>
+                <Sun className="h-4 w-4 dark:hidden" />
+                <Moon className="h-4 w-4 hidden dark:block" />
+              </Button>
+            )}
 
             {/* Wishlist (feature toggle) */}
             {wishlist_enabled !== false && (
