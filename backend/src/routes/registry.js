@@ -34,6 +34,9 @@ export const routeMap = [
   { path: '/api/push', file: './system/push.js' },
   { path: '/api/notifications', file: './system/notifications.js' },
   { path: '/api/app-settings', file: './system/appSettings.js' },
+  { path: '/api/sitemap.xml', file: './system/sitemap.js' },
+  { path: '/api/seo', file: './system/seo.js' },
+  { path: '/api/menus', file: './system/menus.js' },
   { path: '/api/site-settings', file: './system/siteSettings.js' },
 
   // Tools

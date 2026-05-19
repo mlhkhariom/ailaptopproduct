@@ -730,6 +730,11 @@ export const initDB = async () => {
     "ALTER TABLE custom_invoices ADD COLUMN IF NOT EXISTS payment_link TEXT",
     "ALTER TABLE expenses ADD COLUMN IF NOT EXISTS receipt_url TEXT",
     "ALTER TABLE branches ADD COLUMN IF NOT EXISTS map_url TEXT",
+    `CREATE TABLE IF NOT EXISTS menu_items (
+      id TEXT PRIMARY KEY, location TEXT DEFAULT 'header', label TEXT NOT NULL, url TEXT NOT NULL,
+      icon TEXT DEFAULT '', open_new_tab INTEGER DEFAULT 0, is_visible INTEGER DEFAULT 1,
+      sort_order INTEGER DEFAULT 0, created_at TIMESTAMPTZ DEFAULT NOW()
+    )`,
     `CREATE TABLE IF NOT EXISTS recurring_expenses (
       id TEXT PRIMARY KEY, category TEXT NOT NULL, amount REAL NOT NULL,
       description TEXT, payment_method TEXT DEFAULT 'cash', branch_id TEXT,

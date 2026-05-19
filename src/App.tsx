@@ -88,6 +88,7 @@ import AboutPageSettingsPage from "./pages/admin/settings/AboutPageSettings";
 import CMSSettingsPage from "./pages/admin/settings/CMSSettings";
 import HomepageEditorPage from "./pages/admin/settings/HomepageEditor";
 import AppearanceSettingsPage from "./pages/admin/settings/AppearanceSettings";
+import MenuEditorPage from "./pages/admin/settings/MenuEditor";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminCMS from "./pages/admin/AdminCMS";
 import AdminContacts from "./pages/admin/AdminContacts";
@@ -211,6 +212,7 @@ const App = () => (
             <Route path="/admin/settings/cms" element={<AdminRoute><CMSSettingsPage /></AdminRoute>} />
             <Route path="/admin/settings/homepage" element={<AdminRoute><HomepageEditorPage /></AdminRoute>} />
             <Route path="/admin/settings/appearance" element={<AdminRoute><AppearanceSettingsPage /></AdminRoute>} />
+            <Route path="/admin/settings/menus" element={<AdminRoute><MenuEditorPage /></AdminRoute>} />
             <Route path="/admin/cms" element={<AdminRoute><AdminCMS /></AdminRoute>} />
             <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
             <Route path="/admin/contacts" element={<AdminRoute><AdminContacts /></AdminRoute>} />
