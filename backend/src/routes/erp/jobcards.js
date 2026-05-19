@@ -76,7 +76,7 @@ router.post('/job-cards', authMiddleware, adminOnly, async (req, res) => {
   const deadline = new Date(Date.now() + slaH * 3600000).toISOString();
   try { await db.prepare('UPDATE service_bookings SET sla_deadline=?, sla_hours=?, branch_id=? WHERE id=?').run(deadline, slaH, branch_id || null, id); } catch {}
   // Also try on service_bookings
-  try { await db.prepare('UPDATE service_bookings SET sla_deadline=? WHERE id=?').run(deadline, id).catch(() => {}); } catch {}
+  try { await db.prepare('UPDATE service_bookings SET sla_deadline=? WHERE id=?').run(deadline, id).catch(e => console.error('[ERR]', e.message)); } catch {}
   res.status(201).json({ id, booking_number, sla_deadline: deadline });
 });
 

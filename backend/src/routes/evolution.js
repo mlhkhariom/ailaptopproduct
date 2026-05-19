@@ -93,7 +93,7 @@ router.post('/instances', authMiddleware, superAdminOnly, async (req, res) => {
     const { Config } = await import('../lib/config.js');
     const backendUrl = (await Config.backendUrl()) || process.env.BACKEND_URL || 'http://localhost:5000';
     const webhookUrl = `${backendUrl}/api/evolution/webhook/${instance_name}`;
-    await setWebhook(instance_name, webhookUrl).catch(() => {});
+    await setWebhook(instance_name, webhookUrl).catch(e => console.error('[ERR]', e.message));
 
     res.status(201).json(await db.prepare('SELECT * FROM evolution_instances WHERE id=?').get(id));
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -141,7 +141,7 @@ router.post('/instances/:name/restart', authMiddleware, superAdminOnly, async (r
 // DELETE /api/evolution/instances/:name
 router.delete('/instances/:name', authMiddleware, superAdminOnly, async (req, res) => {
   try {
-    await deleteInstance(req.params.name).catch(() => {});
+    await deleteInstance(req.params.name).catch(e => console.error('[ERR]', e.message));
     await db.prepare("UPDATE evolution_instances SET is_active=0 WHERE instance_name=?").run(req.params.name);
     res.json({ message: 'Deleted' });
   } catch (e) { res.status(500).json({ error: e.message }); }

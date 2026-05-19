@@ -29,7 +29,7 @@ router.get('/:slug', async (req, res) => {
   const post = await db.prepare('SELECT * FROM blog_posts WHERE slug = ? OR id = ?').get(req.params.slug, req.params.slug);
   if (!post) return res.status(404).json({ error: 'Post not found' });
   // Increment views
-  await db.prepare('UPDATE blog_posts SET views = COALESCE(views,0) + 1 WHERE id=?').run(post.id).catch(() => {});
+  await db.prepare('UPDATE blog_posts SET views = COALESCE(views,0) + 1 WHERE id=?').run(post.id).catch(e => console.error('[ERR]', e.message));
   // Calculate reading time (avg 200 words/min)
   const wordCount = (post.content || '').split(/\s+/).length;
   const readingTime = Math.max(1, Math.ceil(wordCount / 200));
