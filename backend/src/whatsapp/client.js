@@ -153,8 +153,9 @@ export const initWhatsApp = async () => {
       media: mediaData,
     };
     emit('whatsapp:message', msgData);
+    const msgId = msg.id?._serialized || uuid();
     await db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
-      .run(msg.id._serialized, msg.from, 'me', msg.hasMedia ? `[${msg.type}]` : (msg.body || `[${msg.type}]`), 'incoming');
+      .run(msgId, msg.from, 'me', msg.hasMedia ? `[${msg.type}]` : (msg.body || `[${msg.type}]`), 'incoming');
 
     // Auto-create/update CRM lead for WhatsApp contacts
     // Skip @lid (newsletter/link IDs), @g.us (groups), @broadcast
@@ -357,7 +358,7 @@ export const sendMessage = async (phone, message, mediaUrl = null, caption = nul
     msg = await client.sendMessage(chatId, message);
   }
   await db.prepare("INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)")
-    .run(msg.id._serialized, 'me', phone, caption || message || '[media]', 'outgoing');
+    .run(msg.id?._serialized || uuid(), 'me', phone, caption || message || '[media]', 'outgoing');
   return msg;
 };
 
@@ -422,7 +423,7 @@ export const getChatMessages = async (chatId, limit = 50) => {
     // Save to DB for AI memory
     const insert = await db.prepare('INSERT OR IGNORE INTO whatsapp_messages (id, from_phone, to_phone, body, direction) VALUES (?,?,?,?,?)');
     for (const m of messages) {
-      try { await insert.run(m.id._serialized, m.fromMe ? 'me' : chatId, m.fromMe ? chatId : 'me', m.body || `[${m.type}]`, m.fromMe ? 'outgoing' : 'incoming'); } catch {}
+      try { await insert.run(m.id?._serialized || uuid(), m.fromMe ? 'me' : chatId, m.fromMe ? chatId : 'me', m.body || `[${m.type}]`, m.fromMe ? 'outgoing' : 'incoming'); } catch {}
     }
     return messages.map(m => ({
       id: m.id._serialized,
