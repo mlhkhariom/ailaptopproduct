@@ -62,6 +62,19 @@ async function run() {
   await addColumnIfMissing('cms_content', 'sort_order', 'INTEGER DEFAULT 0');
   await addColumnIfMissing('cms_content', 'is_active', 'INTEGER DEFAULT 1');
 
+  // coupons table — column name mismatch fix
+  await addColumnIfMissing('coupons', 'discount_type', "TEXT DEFAULT 'percentage'");
+  await addColumnIfMissing('coupons', 'discount_value', 'REAL DEFAULT 0');
+  await addColumnIfMissing('coupons', 'type', "TEXT DEFAULT 'percentage'");
+  await addColumnIfMissing('coupons', 'value', 'REAL DEFAULT 0');
+  await addColumnIfMissing('coupons', 'description', 'TEXT');
+  // Sync discount_type ↔ type (in case one was filled and other is null)
+  await pool.query(`UPDATE coupons SET discount_type = type WHERE discount_type IS NULL AND type IS NOT NULL`);
+  await pool.query(`UPDATE coupons SET type = discount_type WHERE type IS NULL AND discount_type IS NOT NULL`);
+  await pool.query(`UPDATE coupons SET discount_value = value WHERE discount_value = 0 AND value IS NOT NULL AND value > 0`);
+  await pool.query(`UPDATE coupons SET value = discount_value WHERE value = 0 AND discount_value IS NOT NULL AND discount_value > 0`);
+  console.log('✅ Coupons columns synced');
+
   // blog_posts table
   await addColumnIfMissing('blog_posts', 'views', 'INTEGER DEFAULT 0');
   await addColumnIfMissing('blog_posts', 'reading_time', 'INTEGER DEFAULT 0');

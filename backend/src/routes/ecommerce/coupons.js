@@ -16,7 +16,10 @@ router.post('/validate', async (req, res) => {
   if (coupon.max_uses && coupon.used_count >= coupon.max_uses) return res.status(400).json({ error: 'Coupon usage limit reached' });
   if (subtotal < coupon.min_order) return res.status(400).json({ error: `Minimum order ₹${coupon.min_order} required` });
 
-  let discount = coupon.type === 'percentage' ? (subtotal * Math.min(coupon.value, 100)) / 100 : coupon.value;
+  // Support both column naming conventions (discount_type/discount_value and type/value)
+  const couponType = coupon.discount_type || coupon.type || 'percentage';
+  const couponValue = coupon.discount_value || coupon.value || 0;
+  let discount = couponType === 'percentage' ? (subtotal * Math.min(couponValue, 100)) / 100 : couponValue;
   discount = Math.min(discount, subtotal); // never exceed subtotal
   res.json({ valid: true, discount, coupon });
 });
@@ -24,10 +27,16 @@ router.post('/validate', async (req, res) => {
 // GET /api/coupons/active — public (show available coupons to customers)
 router.get('/active', async (req, res) => {
   const now = new Date().toISOString();
-  const coupons = await db.prepare(`SELECT code, discount_type, discount_value, min_order, description 
+  const coupons = await db.prepare(`SELECT code, discount_type, discount_value, type, value, min_order, description 
     FROM coupons WHERE is_active=1 AND (expires_at IS NULL OR expires_at > ?) 
-    ORDER BY discount_value DESC LIMIT 5`).all(now);
-  res.json(coupons);
+    ORDER BY created_at DESC LIMIT 5`).all(now);
+  // Normalize response
+  const normalized = coupons.map(c => ({
+    ...c,
+    discount_type: c.discount_type || c.type || 'percentage',
+    discount_value: c.discount_value || c.value || 0,
+  }));
+  res.json(normalized);
 });
 
 // GET /api/coupons — admin
@@ -37,19 +46,19 @@ router.get('/', authMiddleware, adminOnly, async (req, res) => {
 
 // POST /api/coupons — admin create
 router.post('/', authMiddleware, adminOnly, async (req, res) => {
-  const { code, type, value, min_order, max_uses, expires_at } = req.body;
+  const { code, type, value, min_order, max_uses, expires_at, description } = req.body;
   if (!code || !type || !value) return res.status(400).json({ error: 'code, type, value required' });
   const id = uuid();
-  await db.prepare('INSERT INTO coupons (id, code, type, value, min_order, max_uses, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .run(id, code.toUpperCase(), type, value, min_order || 0, max_uses || null, expires_at || null);
+  await db.prepare('INSERT INTO coupons (id, code, discount_type, discount_value, type, value, min_order, max_uses, expires_at, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(id, code.toUpperCase(), type, value, type, value, min_order || 0, max_uses || null, expires_at || null, description || null);
   res.status(201).json(await db.prepare('SELECT * FROM coupons WHERE id = ?').get(id));
 });
 
 // PUT /api/coupons/:id — admin update
 router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
-  const { code, type, value, min_order, max_uses, expires_at, is_active } = req.body;
-  await db.prepare('UPDATE coupons SET code=?, type=?, value=?, min_order=?, max_uses=?, expires_at=?, is_active=? WHERE id=?')
-    .run(code?.toUpperCase(), type, value, min_order, max_uses, expires_at, is_active ? 1 : 0, req.params.id);
+  const { code, type, value, min_order, max_uses, expires_at, is_active, description } = req.body;
+  await db.prepare('UPDATE coupons SET code=?, discount_type=?, discount_value=?, type=?, value=?, min_order=?, max_uses=?, expires_at=?, is_active=?, description=? WHERE id=?')
+    .run(code?.toUpperCase(), type, value, type, value, min_order, max_uses, expires_at, is_active ? 1 : 0, description || null, req.params.id);
   res.json({ message: 'Updated' });
 });
 
