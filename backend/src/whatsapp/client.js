@@ -109,8 +109,11 @@ export const initWhatsApp = async () => {
     console.log('✅ WhatsApp ready!');
     if (chatsLoaded) return;
     chatsLoaded = true;
-    setTimeout(async () => {
+
+    // Load chats with retry (Protocol errors happen on first connect)
+    const loadChats = async (attempt = 1) => {
       try {
+        if (!client || status !== 'ready') return;
         const chats = await client.getChats();
         const chatList = [];
         for (const c of chats.slice(0, 25)) {
@@ -120,13 +123,23 @@ export const initWhatsApp = async () => {
               lastMsg = c.lastMessage.body || `[${c.lastMessage.type}]`;
               lastMsgTime = new Date(c.lastMessage.timestamp * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
             }
-            chatList.push({ id: c.id._serialized, name: c.name || c.id.user, lastMsg, lastMsgTime, unread: c.unreadCount || 0, isGroup: c.isGroup });
+            chatList.push({ id: c.id?._serialized, name: c.name || c.id?.user, lastMsg, lastMsgTime, unread: c.unreadCount || 0, isGroup: c.isGroup });
           } catch {}
         }
         emit('whatsapp:chats', chatList);
         console.log(`✅ ${chatList.length} chats loaded`);
-      } catch (e) { console.error('Error loading chats:', e.message); }
-    }, 5000);
+      } catch (e) {
+        // 'r' = ProtocolError (browser not ready yet) — retry up to 3 times
+        if (attempt < 3) {
+          console.log(`⏳ Chat load attempt ${attempt} failed (${e.message}), retrying in ${attempt * 5}s...`);
+          setTimeout(() => loadChats(attempt + 1), attempt * 5000);
+        } else {
+          console.error('Error loading chats after 3 attempts:', e.message || e.toString());
+        }
+      }
+    };
+
+    setTimeout(() => loadChats(), 5000);
   });
 
   client.on('message', async (msg) => {
